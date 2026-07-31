@@ -1,9 +1,11 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import Tesseract from 'tesseract.js';
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
+
+// Vercel build error fix
+export const dynamic = 'force-dynamic';
 
 export default function Home() {
   const [lang, setLang] = useState('en');
@@ -21,7 +23,7 @@ export default function Home() {
 
   const fetchInvoices = async () => {
     const { data } = await supabase.from('invoices').select(`*, customers(name), portals(name)`);
-    if (data) setInvoices(data.reverse()); // Latest first
+    if (data) setInvoices(data.reverse());
   };
 
   const handleTicketUpload = async (e) => {
@@ -29,11 +31,13 @@ export default function Home() {
     if (!file) return;
     setIsExtracting(true);
     try {
+      // Dynamic import to prevent Vercel build crash
+      const Tesseract = await import('tesseract.js');
       const { data: { text } } = await Tesseract.recognize(file, 'eng');
       const phoneMatch = text.match(/\+?\d[\d -]{8,12}\d/);
       setFormData(prev => ({ ...prev, customerPhone: phoneMatch ? phoneMatch[0] : '' }));
     } catch (error) {
-      alert('OCR Error');
+      alert('OCR Error: ' + error.message);
     }
     setIsExtracting(false);
   };
@@ -59,7 +63,7 @@ export default function Home() {
     const qrDataUrl = await QRCode.toDataURL(zatcaBase64);
 
     doc.setFontSize(20);
-    doc.text(lang === 'en' ? "Sueud Al Taayira" : "Sueud Al Taayira", 20, 20);
+    doc.text("Sueud Al Taayira", 20, 20);
     doc.setFontSize(10);
     doc.text(`VAT: ${process.env.NEXT_PUBLIC_COMPANY_VAT || 'N/A'}`, 20, 30);
     doc.text(`CR: ${process.env.NEXT_PUBLIC_COMPANY_CR || 'N/A'}`, 20, 35);
