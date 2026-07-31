@@ -1,10 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import jsPDF from 'jspdf';
-import QRCode from 'qrcode';
 
-// Vercel build error fix
+// Build error fix: Next.js ko batana hai ki ye page static nahi hai
 export const dynamic = 'force-dynamic';
 
 export default function Home() {
@@ -31,7 +29,7 @@ export default function Home() {
     if (!file) return;
     setIsExtracting(true);
     try {
-      // Dynamic import to prevent Vercel build crash
+      // Dynamic import for Tesseract
       const Tesseract = await import('tesseract.js');
       const { data: { text } } = await Tesseract.recognize(file, 'eng');
       const phoneMatch = text.match(/\+?\d[\d -]{8,12}\d/);
@@ -54,10 +52,15 @@ export default function Home() {
     const vat = invoice.vat.toFixed(2);
     const enc = (tag, val) => String.fromCharCode(tag) + String.fromCharCode(val.length) + val;
     const tlv = enc(1, sellerName) + enc(2, vatNumber) + enc(3, timestamp) + enc(4, total) + enc(5, vat);
-    return Buffer.from(tlv, 'utf8').toString('base64');
+    // Browser me Buffer nahi hota, isliye btoa use karenge
+    return btoa(tlv);
   };
 
   const generatePDF = async (invoice) => {
+    // Dynamic imports for PDF and QR Code to prevent Vercel build crash
+    const { default: jsPDF } = await import('jspdf');
+    const { default: QRCode } = await import('qrcode');
+
     const doc = new jsPDF();
     const zatcaBase64 = generateZatcaQR(invoice);
     const qrDataUrl = await QRCode.toDataURL(zatcaBase64);
