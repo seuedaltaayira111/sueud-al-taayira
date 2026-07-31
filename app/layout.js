@@ -1,3 +1,6 @@
+// Isse Vercel page ko static banane ki koshish nahi karega
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'Sueud Al Taayira ERP',
   description: 'Travel and Tourism ERP System',
