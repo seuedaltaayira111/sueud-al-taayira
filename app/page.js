@@ -16,13 +16,16 @@ export default function Home() {
   const [items, setItems] = useState([{ name: 'Ticket', desc: 'JED-RUH', qty: 1, price: 500 }]);
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session) return router.push('/login');
       setUser(session.user);
+      
       const { data: uData } = await supabase.from('app_users').select('*').eq('email', session.user.email).single();
       setUserRole(uData?.role || 'sales');
       fetchAll();
-    });
+    };
+    checkUser();
   }, [router]);
 
   const fetchAll = async () => {
@@ -35,7 +38,6 @@ export default function Home() {
 
   const handleLogout = () => { supabase.auth.signOut(); router.push('/login'); };
 
-  // --- LOGICS ---
   const handleCreateInvoice = async (e) => {
     e.preventDefault();
     const isDomestic = invForm.flightType === 'Domestic';
@@ -61,7 +63,7 @@ export default function Home() {
     if (inv) {
       await supabase.from('invoice_items').insert(items.map(it => ({ invoice_id: inv.id, item_name: it.name, description: it.desc, qty: parseInt(it.qty), price: parseFloat(it.price), total: parseFloat(it.price) * parseInt(it.qty) })));
       await supabase.from('portals').update({ current_balance: (portal.current_balance || 0) - tbv }).eq('id', portal.id);
-      alert('Invoice Generated!');
+      alert('Invoice Generated Successfully!');
       fetchAll();
       setPage('list_inv');
     }
@@ -69,67 +71,72 @@ export default function Home() {
 
   const handleAddEntity = async (table, payload, msg) => {
     await supabase.from(table).insert([payload]);
-    alert(msg + ' Added!');
+    alert(msg + ' Added Successfully!');
     fetchAll();
   };
 
-  // PDF Generator with ZATCA Barcode
   const downloadPDF = async (inv) => {
-    const { default: html2canvas } = await import('html2canvas');
-    const { default: jsPDF } = await import('jspdf');
-    const { default: QRCode } = await import('qrcode');
+    try {
+      const { default: html2canvas } = await import('html2canvas');
+      const { default: jsPDF } = await import('jspdf');
+      const { default: QRCode } = await import('qrcode');
 
-    const seller = "Sueud Al Taayira";
-    const vatNo = "312345678900003";
-    const ts = new Date(inv.created_at).toISOString();
-    const enc = (t, v) => String.fromCharCode(t) + String.fromCharCode(v.length) + v;
-    const tlv = enc(1, seller) + enc(2, vatNo) + enc(3, ts) + enc(4, inv.total.toFixed(2)) + enc(5, inv.vat.toFixed(2));
-    const qrDataUrl = await QRCode.toDataURL(btoa(unescape(encodeURIComponent(tlv))));
+      const seller = "Sueud Al Taayira";
+      const vatNo = "312345678900003";
+      const ts = new Date(inv.created_at).toISOString();
+      const enc = (t, v) => String.fromCharCode(t) + String.fromCharCode(v.length) + v;
+      const tlv = enc(1, seller) + enc(2, vatNo) + enc(3, ts) + enc(4, inv.total.toFixed(2)) + enc(5, inv.vat.toFixed(2));
+      const qrDataUrl = await QRCode.toDataURL(btoa(tlv));
 
-    const html = document.createElement('div');
-    html.style.width = '800px';
-    html.style.padding = '40px';
-    html.style.fontFamily = 'Arial';
-    html.style.direction = 'rtl';
-    html.innerHTML = `
-      <div style="text-align:center; border-bottom:3px solid #003366; padding-bottom:20px; margin-bottom:20px;">
-        <h1 style="margin:0; color:#003366;">Sueud Al Taayira</h1>
-        <p>صعود الطائرة للسفر السياحة</p>
-        <p>VAT: ${vatNo} | CR: 1010123456</p>
-      </div>
-      <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
-        <div><b>Invoice No:</b> ${inv.invoice_no}</div>
-        <div><b>Date:</b> ${new Date(inv.created_at).toLocaleDateString()}</div>
-        <div><b>Customer:</b> ${inv.customers?.name || ''}</div>
-        <div><b>Phone:</b> ${inv.customers?.phone || ''}</div>
-      </div>
-      <table style="width:100%; border-collapse:collapse; text-align:center;">
-        <tr style="background:#003366; color:white;">
-          <th style="padding:10px; border:1px solid #ccc;">Item</th><th style="border:1px solid #ccc;">Desc</th><th style="border:1px solid #ccc;">Qty</th><th style="border:1px solid #ccc;">Price</th>
-        </tr>
-        <tr>
-          <td style="padding:10px; border:1px solid #ccc;">${inv.service_type}</td>
-          <td style="padding:10px; border:1px solid #ccc;">${inv.flight_type}</td>
-          <td style="padding:10px; border:1px solid #ccc;">1</td>
-          <td style="padding:10px; border:1px solid #ccc;">${inv.total_before_vat} SAR</td>
-        </tr>
-      </table>
-      <div style="margin-top:20px; display:flex; justify-content:space-between;">
-        <img src="${qrDataUrl}" width="120" height="120" />
-        <div style="text-align:left;">
-          <p>Total Before VAT: ${inv.total_before_vat} SAR</p>
-          <p>VAT (15%): ${inv.vat} SAR</p>
-          <h3>Total: ${inv.total} SAR</h3>
-          <p>Paid: ${inv.paid_amount} SAR | Due: ${inv.due_amount} SAR</p>
+      const html = document.createElement('div');
+      html.style.width = '800px';
+      html.style.padding = '40px';
+      html.style.fontFamily = 'Arial';
+      html.style.direction = 'rtl';
+      html.style.position = 'absolute';
+      html.style.left = '-9999px';
+      html.innerHTML = `
+        <div style="text-align:center; border-bottom:3px solid #003366; padding-bottom:20px; margin-bottom:20px;">
+          <h1 style="margin:0; color:#003366;">Sueud Al Taayira</h1>
+          <p>صعود الطائرة للسفر السياحة</p>
+          <p>VAT: ${vatNo} | CR: 1010123456</p>
         </div>
-      </div>
-    `;
-    document.body.appendChild(html);
-    const canvas = await html2canvas(html);
-    const doc = new jsPDF('p', 'mm', 'a4');
-    doc.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, 190, 0);
-    doc.save(`${inv.invoice_no}.pdf`);
-    document.body.removeChild(html);
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+          <div><b>Invoice No:</b> ${inv.invoice_no}</div>
+          <div><b>Date:</b> ${new Date(inv.created_at).toLocaleDateString()}</div>
+          <div><b>Customer:</b> ${inv.customers?.name || ''}</div>
+          <div><b>Phone:</b> ${inv.customers?.phone || ''}</div>
+        </div>
+        <table style="width:100%; border-collapse:collapse; text-align:center;">
+          <tr style="background:#003366; color:white;">
+            <th style="padding:10px; border:1px solid #ccc;">Item</th><th style="border:1px solid #ccc;">Desc</th><th style="border:1px solid #ccc;">Qty</th><th style="border:1px solid #ccc;">Price</th>
+          </tr>
+          <tr>
+            <td style="padding:10px; border:1px solid #ccc;">${inv.service_type}</td>
+            <td style="padding:10px; border:1px solid #ccc;">${inv.flight_type}</td>
+            <td style="padding:10px; border:1px solid #ccc;">1</td>
+            <td style="padding:10px; border:1px solid #ccc;">${inv.total_before_vat} SAR</td>
+          </tr>
+        </table>
+        <div style="margin-top:20px; display:flex; justify-content:space-between;">
+          <img src="${qrDataUrl}" width="120" height="120" />
+          <div style="text-align:left;">
+            <p>Total Before VAT: ${inv.total_before_vat} SAR</p>
+            <p>VAT (15%): ${inv.vat} SAR</p>
+            <h3>Total: ${inv.total} SAR</h3>
+            <p>Paid: ${inv.paid_amount} SAR | Due: ${inv.due_amount} SAR</p>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(html);
+      const canvas = await html2canvas(html);
+      const doc = new jsPDF('p', 'mm', 'a4');
+      doc.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, 190, 0);
+      doc.save(`${inv.invoice_no}.pdf`);
+      document.body.removeChild(html);
+    } catch (err) {
+      alert('PDF Error: ' + err.message);
+    }
   };
 
   if (!user) return <div style={{ padding: 50, textAlign: 'center' }}>Loading ERP...</div>;
@@ -144,25 +151,23 @@ export default function Home() {
 
   return (
     <div style={{ display: 'flex', height: '100vh', fontFamily: 'Arial', backgroundColor: '#f4f6f9' }}>
-      {/* Sidebar */}
-      <aside style={{ width: '260px', backgroundColor: '#1a1a24', color: 'white' }}>
+      <aside style={{ width: '260px', backgroundColor: '#1a1a24', color: 'white', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '20px', textAlign: 'center', borderBottom: '1px solid #333' }}>
           <h2 style={{ margin: 0 }}>✈️ Sueud Al Taayira</h2>
           <p style={{ fontSize: '12px', color: '#888' }}>Enterprise ERP</p>
         </div>
-        <nav>
+        <nav style={{ flex: 1 }}>
           {menu.filter(m => m.roles.includes(userRole)).map(m => (
             <button key={m.id} onClick={() => setPage(m.id)} style={{ width: '100%', textAlign: 'left', padding: '15px 20px', background: page === m.id ? '#2c3e50' : 'none', border: 'none', color: page === m.id ? '#fff' : '#aaa', cursor: 'pointer', borderLeft: page === m.id ? '4px solid #3498db' : 'none' }}>
               {m.label}
             </button>
           ))}
         </nav>
-        <div style={{ position: 'absolute', bottom: 0, width: '260px', padding: '20px', boxSizing: 'border-box' }}>
+        <div style={{ padding: '20px' }}>
           <button onClick={handleLogout} style={{ width: '100%', padding: '10px', background: '#c0392b', color: 'white', border: 'none', cursor: 'pointer' }}>Logout</button>
         </div>
       </aside>
 
-      {/* Main Content */}
       <main style={{ flex: 1, overflowY: 'auto' }}>
         <header style={{ background: 'white', padding: '15px 30px', borderBottom: '2px solid #eee', display: 'flex', justifyContent: 'space-between' }}>
           <h2 style={{ margin: 0, textTransform: 'capitalize' }}>{menu.find(m=>m.id===page)?.label || 'Dashboard'}</h2>
@@ -171,7 +176,6 @@ export default function Home() {
 
         <div style={{ padding: '30px' }}>
           
-          {/* Dashboard */}
           {page === 'dashboard' && (
             <div style={{ display: 'flex', gap: '20px' }}>
               <div style={{ background: 'white', padding: '20px', borderRadius: '8px', width: '200px' }}>
@@ -185,7 +189,6 @@ export default function Home() {
             </div>
           )}
 
-          {/* Create Invoice */}
           {page === 'create_inv' && (
             <div style={{ background: 'white', padding: '30px', borderRadius: '8px' }}>
               <form onSubmit={handleCreateInvoice}>
@@ -193,7 +196,7 @@ export default function Home() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
                   <input placeholder="Customer Name" onChange={(e) => setInvForm({...invForm, customerName: e.target.value})} required style={styles.i} />
                   <input placeholder="Contact Number" onChange={(e) => setInvForm({...invForm, phone: e.target.value})} required style={styles.i} />
-                  <select onChange={(e) => setInvForm({...invForm, portal: e.target.value})} style={styles.i}>{data.portals.map(p => <option>{p.name}</option>)}</select>
+                  <select onChange={(e) => setInvForm({...invForm, portal: e.target.value})} style={styles.i}>{data.portals.map(p => <option key={p.id}>{p.name}</option>)}</select>
                   <select onChange={(e) => setInvForm({...invForm, service: e.target.value})} style={styles.i}><option>Flight Ticket</option><option>Hotel</option><option>Visa</option><option>Package</option></select>
                   <select onChange={(e) => setInvForm({...invForm, flightType: e.target.value})} style={styles.i}>
                     <option value="Domestic">Domestic Flight (15% VAT)</option>
@@ -222,7 +225,6 @@ export default function Home() {
             </div>
           )}
 
-          {/* List Invoices */}
           {page === 'list_inv' && (
             <div style={{ background: 'white', padding: '30px', borderRadius: '8px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -243,7 +245,6 @@ export default function Home() {
             </div>
           )}
 
-          {/* Admin: Portals & Users */}
           {page === 'portals' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
               <div style={{ background: 'white', padding: '20px', borderRadius: '8px' }}>
@@ -269,7 +270,6 @@ export default function Home() {
             </div>
           )}
 
-          {/* HR Management */}
           {page === 'hr' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               <div style={{ background: 'white', padding: '20px', borderRadius: '8px' }}>
