@@ -7,69 +7,43 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const router = useRouter();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-    } else {
-      router.push('/'); // Login successful toh main page par bhej dega
-      router.refresh();
-    }
+    if (error) alert(error.message);
+    else router.push('/');
+    setLoading(false);
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f4f6f9' }}>
-      <div style={{ width: '100%', maxWidth: '400px', padding: '40px', backgroundColor: '#fff', borderRadius: '10px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <h1 style={{ margin: 0, color: '#000' }}>Sueud Al Taayira</h1>
-          <p style={{ color: '#666', fontSize: '14px' }}>صعود الطائرة للسفر السياحة</p>
+    <div style={{ display: 'flex', height: '100vh', fontFamily: 'Arial', backgroundColor: '#f0f4f8' }}>
+      {/* Left Side - Aviation Branding */}
+      <div style={{ flex: 1.2, background: 'linear-gradient(135deg, #003366 0%, #0055a4 100%)', color: 'white', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '40px' }}>
+        <div style={{ fontSize: '80px', marginBottom: '20px' }}>✈️</div>
+        <h1 style={{ fontSize: '36px', margin: 0, textAlign: 'center' }}>Sueud Al Taayira</h1>
+        <h2 style={{ fontSize: '24px', marginTop: '10px', opacity: 0.9 }}>صعود الطائرة للسفر السياحة</h2>
+        <p style={{ marginTop: '20px', opacity: 0.7, textAlign: 'center' }}>Complete Enterprise Travel & Tourism ERP System</p>
+      </div>
+      
+      {/* Right Side - Login Form */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+        <div style={{ width: '100%', maxWidth: '350px', padding: '40px', backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
+          <h3 style={{ color: '#003366', marginBottom: '20px' }}>Sign In to ERP</h3>
+          <form onSubmit={handleLogin}>
+            <input type="email" placeholder="Email (e.g. atallah@sueud.com)" value={email} onChange={(e) => setEmail(e.target.value)} required style={styles.input} />
+            <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required style={styles.input} />
+            <button type="submit" disabled={loading} style={styles.btn}>{loading ? 'Verifying...' : 'LOGIN'}</button>
+          </form>
         </div>
-        
-        <form onSubmit={handleLogin}>
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', fontSize: '14px' }}>User ID (Email)</label>
-            <input 
-              type="email" 
-              placeholder="atallah@sueud.com" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '5px', boxSizing: 'border-box' }}
-            />
-          </div>
-          
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', fontSize: '14px' }}>Password</label>
-            <input 
-              type="password" 
-              placeholder="••••••••" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '5px', boxSizing: 'border-box' }}
-            />
-          </div>
-
-          {error && <p style={{ color: 'red', fontSize: '14px', marginBottom: '15px' }}>{error}</p>}
-
-          <button 
-            type="submit" 
-            disabled={loading}
-            style={{ width: '100%', padding: '12px', backgroundColor: '#000', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold', fontSize: '16px' }}
-          >
-            {loading ? 'Logging in...' : 'LOGIN TO ERP'}
-          </button>
-        </form>
       </div>
     </div>
   );
 }
+
+const styles = {
+  input: { width: '100%', padding: '12px', marginBottom: '15px', border: '1px solid #ccc', borderRadius: '6px', boxSizing: 'border-box' },
+  btn: { width: '100%', padding: '12px', backgroundColor: '#003366', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '16px' }
+};
