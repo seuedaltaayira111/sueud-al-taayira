@@ -13,7 +13,7 @@ export default function Home() {
 
   const [data, setData] = useState({ invoices: [], portals: [], employees: [], appUsers: [] });
   const [invForm, setInvForm] = useState({ customerName: '', phone: '', portal: '', flightType: 'Domestic', service: 'Flight Ticket', payment: 'Cash', paid: '' });
-  const [items, setItems] = useState([{ name: 'Ticket', desc: 'JED-RUH', qty: 1, price: 500 }]);
+  const [items, setItems] = useState([{ name: '', desc: '', qty: 1, price: 0 }]);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -21,15 +21,12 @@ export default function Home() {
       if (!session) return router.push('/login');
       setUser(session.user);
       
-      // --- OWNER FIX ---
-      // Agar email atallah hai, toh direct owner bana do, warna database me check karo
       if (session.user.email === 'atallah@sueud.com') {
         setUserRole('owner');
       } else {
         const { data: uData } = await supabase.from('app_users').select('*').eq('email', session.user.email).single();
         setUserRole(uData?.role || 'sales');
       }
-      
       fetchAll();
     };
     checkUser();
@@ -40,44 +37,76 @@ export default function Home() {
     const por = await supabase.from('portals').select('*');
     const emp = await supabase.from('employees').select('*');
     const usr = await supabase.from('app_users').select('*');
-    setData({ invoices: inv.data || [], portals: por.data || [], employees: emp.data || [], appUsers: usr.data || [] });
+    
+    const portalsData = por.data || [];
+    setData({ invoices: inv.data || [], portals: portalsData, employees: emp.data || [], appUsers: usr.data || [] });
+    
+    if (portalsData.length > 0 && !invForm.portal) {
+      setInvForm(prev => ({ ...prev, portal: portalsData[0].name }));
+    }
   };
 
   const handleLogout = () => { supabase.auth.signOut(); router.push('/login'); };
 
   const handleCreateInvoice = async (e) => {
     e.preventDefault();
-    const isDomestic = invForm.flightType === 'Domestic';
-    let tbv = 0;
-    items.forEach(it => { tbv += parseFloat(it.price) * parseInt(it.qty); });
-    const vat = isDomestic ? tbv * 0.15 : 0;
-    const total = tbv + vat;
-    const paid = parseFloat(invForm.paid) || 0;
-    const due = total - paid;
+    
+    try {
+      const isDomestic = invForm.flightType === 'Domestic';
+      let tbv = 0;
+      items.forEach(it => { tbv += parseFloat(it.price) * parseInt(it.qty); });
+      const vat = isDomestic ? tbv * 0.15 : 0;
+      const total = tbv + vat;
+      const paid = parseFloat(invForm.paid) || 0;
+      const due = total - paid;
 
-    let cid;
-    const { data: exC } = await supabase.from('customers').select('*').eq('phone', invForm.phone).single();
-    if (exC) cid = exC.id;
-    else { const { data: nC } = await supabase.from('customers').insert([{ name: invForm.customerName, phone: invForm.phone }]).select().single(); cid = nC.id; }
+      // 1. Save or Get Customer
+      let cid;
+      const { data: exC } = await supabase.from('customers').select('*').eq('phone', invForm.phone).single();
+      if (exC) cid = exC.id;
+      else {
+        const { data: nC, error: custErr } = await supabase.from('customers').insert([{ name: invForm.customerName, phone: invForm.phone }]).select().single();
+        if (custErr) throw custErr;
+        cid = nC.id;
+      }
 
-    const { data: portal } = await supabase.from('portals').select('*').eq('name', invForm.portal).single();
-    const invNo = `INV-${Date.now()}`;
-    const { data: inv } = await supabase.from('invoices').insert([{
-      invoice_no: invNo, customer_id: cid, portal_id: portal?.id, flight_type: invForm.flightType, service_type: invForm.service,
-      total_before_vat: tbv, vat, total, paid_amount: paid, due_amount: due, payment_method: invForm.payment
-    }]).select().single();
+      // 2. Get Portal ID
+      const { data: portal, error: portalErr } = await supabase.from('portals').select('*').eq('name', invForm.portal).single();
+      if (portalErr) throw portalErr;
 
-    if (inv) {
-      await supabase.from('invoice_items').insert(items.map(it => ({ invoice_id: inv.id, item_name: it.name, description: it.desc, qty: parseInt(it.qty), price: parseFloat(it.price), total: parseFloat(it.price) * parseInt(it.qty) })));
-      await supabase.from('portals').update({ current_balance: (portal.current_balance || 0) - tbv }).eq('id', portal.id);
-      alert('Invoice Generated Successfully!');
+      // 3. Save Invoice
+      const invNo = `INV-${Date.now()}`;
+      const { data: inv, error: invErr } = await supabase.from('invoices').insert([{
+        invoice_no: invNo, customer_id: cid, portal_id: portal.id, flight_type: invForm.flightType, service_type: invForm.service,
+        total_before_vat: tbv, vat, total, paid_amount: paid, due_amount: due, payment_method: invForm.payment
+      }]).select().single();
+      if (invErr) throw invErr;
+
+      // 4. Save Invoice Items
+      const itemsToInsert = items.map(it => ({ 
+        invoice_id: inv.id, item_name: it.name, description: it.desc, 
+        qty: parseInt(it.qty), price: parseFloat(it.price), total: parseFloat(it.price) * parseInt(it.qty) 
+      }));
+      const { error: itemErr } = await supabase.from('invoice_items').insert(itemsToInsert);
+      if (itemErr) throw itemErr;
+
+      // 5. Deduct Portal Balance
+      const { error: balErr } = await supabase.from('portals').update({ current_balance: (portal.current_balance || 0) - tbv }).eq('id', portal.id);
+      if (balErr) throw balErr;
+
+      alert('Success: Invoice Generated & Saved!');
       fetchAll();
+      setItems([{ name: '', desc: '', qty: 1, price: 0 }]);
+      setInvForm({ customerName: '', phone: '', portal: data.portals[0]?.name || '', flightType: 'Domestic', service: 'Flight Ticket', payment: 'Cash', paid: '' });
       setPage('list_inv');
+    } catch (err) {
+      alert('Error Saving Invoice: ' + err.message);
     }
   };
 
   const handleAddEntity = async (table, payload, msg) => {
-    await supabase.from(table).insert([payload]);
+    const { error } = await supabase.from(table).insert([payload]);
+    if (error) return alert('Error: ' + error.message);
     alert(msg + ' Added Successfully!');
     fetchAll();
   };
@@ -102,6 +131,7 @@ export default function Home() {
       html.style.direction = 'rtl';
       html.style.position = 'absolute';
       html.style.left = '-9999px';
+      html.style.backgroundColor = 'white';
       html.innerHTML = `
         <div style="text-align:center; border-bottom:3px solid #003366; padding-bottom:20px; margin-bottom:20px;">
           <h1 style="margin:0; color:#003366;">Sueud Al Taayira</h1>
@@ -201,18 +231,25 @@ export default function Home() {
               <form onSubmit={handleCreateInvoice}>
                 <h3>Customer & Flight Details</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
-                  <input placeholder="Customer Name" onChange={(e) => setInvForm({...invForm, customerName: e.target.value})} required style={styles.i} />
-                  <input placeholder="Contact Number" onChange={(e) => setInvForm({...invForm, phone: e.target.value})} required style={styles.i} />
-                  <select onChange={(e) => setInvForm({...invForm, portal: e.target.value})} style={styles.i}>{data.portals.map(p => <option key={p.id}>{p.name}</option>)}</select>
-                  <select onChange={(e) => setInvForm({...invForm, service: e.target.value})} style={styles.i}><option>Flight Ticket</option><option>Hotel</option><option>Visa</option><option>Package</option></select>
-                  <select onChange={(e) => setInvForm({...invForm, flightType: e.target.value})} style={styles.i}>
+                  <input placeholder="Customer Name" value={invForm.customerName} onChange={(e) => setInvForm({...invForm, customerName: e.target.value})} required style={styles.i} />
+                  <input placeholder="Contact Number" value={invForm.phone} onChange={(e) => setInvForm({...invForm, phone: e.target.value})} required style={styles.i} />
+                  <select value={invForm.portal} onChange={(e) => setInvForm({...invForm, portal: e.target.value})} style={styles.i} required>
+                    <option value="">Select Portal</option>
+                    {data.portals.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                  </select>
+                  <select value={invForm.service} onChange={(e) => setInvForm({...invForm, service: e.target.value})} style={styles.i}>
+                    <option>Flight Ticket</option><option>Hotel</option><option>Visa</option><option>Package</option>
+                  </select>
+                  <select value={invForm.flightType} onChange={(e) => setInvForm({...invForm, flightType: e.target.value})} style={styles.i}>
                     <option value="Domestic">Domestic Flight (15% VAT)</option>
                     <option value="International">International Flight (0% VAT)</option>
                   </select>
-                  <select onChange={(e) => setInvForm({...invForm, payment: e.target.value})} style={styles.i}><option>Cash</option><option>Bank Transfer</option><option>Tabby</option><option>Tamara</option><option>Credit</option></select>
+                  <select value={invForm.payment} onChange={(e) => setInvForm({...invForm, payment: e.target.value})} style={styles.i}>
+                    <option>Cash</option><option>Bank Transfer</option><option>Tabby</option><option>Tamara</option><option>Credit</option>
+                  </select>
                 </div>
 
-                <h3>Items</h3>
+                <h3>Items / Tickets</h3>
                 {items.map((it, idx) => (
                   <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1fr 0.5fr', gap: '10px', marginBottom: '10px' }}>
                     <input placeholder="Service Name" value={it.name} onChange={(e) => { const n=[...items]; n[idx].name=e.target.value; setItems(n); }} style={styles.i} required />
@@ -225,7 +262,7 @@ export default function Home() {
                 <button type="button" onClick={() => setItems([...items, { name: '', desc: '', qty: 1, price: 0 }])} style={{ background: '#3498db', color: 'white', padding: '10px', border: 'none', cursor: 'pointer', marginBottom: '20px' }}>+ Add Item</button>
 
                 <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                  <input placeholder="Paid Amount (SAR)" type="number" onChange={(e) => setInvForm({...invForm, paid: e.target.value})} style={styles.i} required />
+                  <input placeholder="Paid Amount (SAR)" type="number" value={invForm.paid} onChange={(e) => setInvForm({...invForm, paid: e.target.value})} style={styles.i} required />
                   <button type="submit" style={{ background: '#27ae60', color: 'white', padding: '12px 30px', border: 'none', cursor: 'pointer', fontSize: '16px' }}>Generate & Save</button>
                 </div>
               </form>
@@ -237,16 +274,20 @@ export default function Home() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr style={{ background: '#f8f9fa' }}><th style={styles.th}>Invoice No</th><th style={styles.th}>Customer</th><th style={styles.th}>Type</th><th style={styles.th}>Total</th><th style={styles.th}>Due</th><th style={styles.th}>PDF</th></tr></thead>
                 <tbody>
-                  {data.invoices.map(inv => (
-                    <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={styles.td}>{inv.invoice_no}</td>
-                      <td style={styles.td}>{inv.customers?.name || 'N/A'}</td>
-                      <td style={styles.td}>{inv.flight_type}</td>
-                      <td style={styles.td}>{inv.total} SAR</td>
-                      <td style={styles.td}>{inv.due_amount} SAR</td>
-                      <td style={styles.td}><button onClick={() => downloadPDF(inv)} style={{ background: '#3498db', color: 'white', border: 'none', padding: '5px 10px', cursor: 'pointer' }}>Download</button></td>
-                    </tr>
-                  ))}
+                  {data.invoices.length === 0 ? (
+                    <tr><td colSpan="6" style={{textAlign:'center', padding:'20px'}}>No Invoices Found. Create one from 'Create Invoice' tab.</td></tr>
+                  ) : (
+                    data.invoices.map(inv => (
+                      <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
+                        <td style={styles.td}>{inv.invoice_no}</td>
+                        <td style={styles.td}>{inv.customers?.name || 'N/A'}</td>
+                        <td style={styles.td}>{inv.flight_type}</td>
+                        <td style={styles.td}>{inv.total} SAR</td>
+                        <td style={styles.td}>{inv.due_amount} SAR</td>
+                        <td style={styles.td}><button onClick={() => downloadPDF(inv)} style={{ background: '#3498db', color: 'white', border: 'none', padding: '5px 10px', cursor: 'pointer' }}>Download</button></td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -272,7 +313,7 @@ export default function Home() {
               </div>
               <div style={{ background: 'white', padding: '20px', borderRadius: '8px' }}>
                 <h3>Current Balances</h3>
-                {data.portals.map(p => <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', padding: '10px 0' }}><span>{p.name}</span><b>{p.current_balance} SAR</b></div>)}
+                {data.portals.length === 0 ? <p>No portals added yet.</p> : data.portals.map(p => <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', padding: '10px 0' }}><span>{p.name}</span><b>{p.current_balance} SAR</b></div>)}
               </div>
             </div>
           )}
@@ -290,7 +331,7 @@ export default function Home() {
               </div>
               <div style={{ background: 'white', padding: '20px', borderRadius: '8px' }}>
                 <h3>Employees List</h3>
-                {data.employees.map(emp => <div key={emp.id} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', padding: '10px 0' }}><span>{emp.name} ({emp.role})</span><b>{emp.monthly_salary} SAR</b></div>)}
+                {data.employees.length === 0 ? <p>No employees added yet.</p> : data.employees.map(emp => <div key={emp.id} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', padding: '10px 0' }}><span>{emp.name} ({emp.role})</span><b>{emp.monthly_salary} SAR</b></div>)}
               </div>
             </div>
           )}
