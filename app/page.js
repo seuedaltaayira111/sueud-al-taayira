@@ -1,27 +1,28 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
 export default function Home() {
-  const [isExtracting, setIsExtracting] = useState(false);
   const [invoices, setInvoices] = useState([]);
   const [portals, setPortals] = useState([]);
   const [recharges, setRecharges] = useState([]);
+  const [settings, setSettings] = useState({});
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [pdfData, setPdfData] = useState(null);
   const router = useRouter();
 
   const [formData, setFormData] = useState({
-    customerName: '', customerPhone: '', serviceType: 'Flight', 
-    portal: 'Akbar', costPrice: '', sellPrice: '', paymentMethod: 'Cash'
+    customerName: '', customerPhone: '', portal: 'Akbar', paymentMethod: 'Cash', paidAmount: ''
   });
-
-  const [rechargeData, setRechargeData] = useState({
-    portal: 'Akbar', amount: '', description: ''
-  });
+  
+  const [items, setItems] = useState([
+    { item_name: 'تذاكر ذهاب وعودة', description: '', price: 0, qty: 1, vat_percent: 0 }
+  ]);
+  const [rechargeData, setRechargeData] = useState({ portal: 'Akbar', amount: '', description: '' });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -32,346 +33,281 @@ export default function Home() {
   }, [router]);
 
   const fetchAllData = async () => {
-    const { data: inv } = await supabase.from('invoices').select(`*, customers(name), portals(name)`);
-    if (inv) setInvoices(inv.reverse());
+    const { data: inv } = await supabase.from('invoices').select(`*, customers(name), portals(name)`).order('created_at', { ascending: false });
+    if (inv) setInvoices(inv);
 
     const { data: por } = await supabase.from('portals').select('*');
     if (por) setPortals(por);
 
     const { data: rec } = await supabase.from('recharges').select(`*, portals(name)`).order('created_at', { ascending: false });
     if (rec) setRecharges(rec);
+
+    const { data: set } = await supabase.from('settings').select('*').eq('id', 1).single();
+    if (set) setSettings(set);
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/login');
+  const handleLogout = () => { supabase.auth.signOut(); router.push('/login'); };
+
+  const handleItemChange = (index, e) => {
+    const newItems = [...items];
+    newItems[index][e.target.name] = e.target.value;
+    setItems(newItems);
   };
 
-  const handleTicketUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setIsExtracting(true);
-    try {
-      const Tesseract = await import('tesseract.js');
-      const { data: { text } } = await Tesseract.recognize(file, 'eng');
-      const phoneMatch = text.match(/\+?\d[\d -]{8,12}\d/);
-      setFormData(prev => ({ ...prev, customerPhone: phoneMatch ? phoneMatch[0] : '' }));
-    } catch (error) {
-      alert('OCR Error');
-    }
-    setIsExtracting(false);
+  const addItem = () => setItems([...items, { item_name: 'تذاكر ذهاب وعودة', description: '', price: 0, qty: 1, vat_percent: 0 }]);
+  const removeItem = (index) => setItems(items.filter((_, i) => i !== index));
+
+  // CALCULATIONS
+  const calcTotals = () => {
+    let totalBeforeVat = 0, totalVat = 0;
+    items.forEach(it => {
+      const subtotal = parseFloat(it.price) * parseInt(it.qty);
+      const vat = subtotal * (parseFloat(it.vat_percent) / 100);
+      totalBeforeVat += subtotal;
+      totalVat += vat;
+    });
+    const totalAfterVat = totalBeforeVat + totalVat;
+    const paid = parseFloat(formData.paidAmount) || 0;
+    const due = totalAfterVat - paid;
+    return { totalBeforeVat, totalVat, totalAfterVat, paid, due };
   };
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleRechargeChange = (e) => {
-    setRechargeData({ ...rechargeData, [e.target.name]: e.target.value });
-  };
-
-  const generateZatcaQR = (invoice) => {
-    const sellerName = "Sueud Al Taayira";
-    const vatNumber = process.env.NEXT_PUBLIC_COMPANY_VAT || "123456789";
-    const timestamp = new Date(invoice.created_at).toISOString();
-    const total = invoice.total.toFixed(2);
-    const vat = invoice.vat.toFixed(2);
-    const enc = (tag, val) => String.fromCharCode(tag) + String.fromCharCode(val.length) + val;
-    const tlv = enc(1, sellerName) + enc(2, vatNumber) + enc(3, timestamp) + enc(4, total) + enc(5, vat);
-    return btoa(tlv);
-  };
-
-  const generatePDF = async (invoice) => {
-    const { default: jsPDF } = await import('jspdf');
-    const { default: QRCode } = await import('qrcode');
-    const doc = new jsPDF();
-    const zatcaBase64 = generateZatcaQR(invoice);
-    const qrDataUrl = await QRCode.toDataURL(zatcaBase64);
-
-    doc.setFontSize(20);
-    doc.text("Sueud Al Taayira", 20, 20);
-    doc.setFontSize(10);
-    doc.text(`VAT: ${process.env.NEXT_PUBLIC_COMPANY_VAT || 'N/A'}`, 20, 30);
-    doc.text(`CR: ${process.env.NEXT_PUBLIC_COMPANY_CR || 'N/A'}`, 20, 35);
-    doc.text(`Invoice No: ${invoice.invoice_no}`, 140, 20);
-    doc.text(`Date: ${new Date(invoice.created_at).toLocaleDateString()}`, 140, 25);
-    doc.text(`Customer: ${invoice.customers?.name || 'N/A'}`, 20, 50);
-    doc.text(`Phone: ${invoice.customers?.phone || 'N/A'}`, 20, 55);
-    doc.text(`Service: ${invoice.service_type}`, 20, 60);
-    doc.text(`Portal: ${invoice.portals?.name || 'N/A'}`, 20, 65);
-    doc.text(`Sell Price: SAR ${invoice.sell_price.toFixed(2)}`, 140, 60);
-    doc.text(`VAT (15%): SAR ${invoice.vat.toFixed(2)}`, 140, 65);
-    doc.setFontSize(14);
-    doc.text(`Total: SAR ${invoice.total.toFixed(2)}`, 140, 72);
-    doc.addImage(qrDataUrl, 'PNG', 150, 80, 40, 40);
-    doc.save(`${invoice.invoice_no}.pdf`);
-  };
-
-  // CREATE INVOICE & DEDUCT PORTAL BALANCE
   const handleCreateInvoice = async (e) => {
     e.preventDefault();
-    const cost = parseFloat(formData.costPrice) || 0;
-    const sell = parseFloat(formData.sellPrice) || 0;
-    const profit = sell - cost;
-    const vat = sell * 0.15;
-    const total = sell + vat;
+    const { totalBeforeVat, totalVat, totalAfterVat, paid, due } = calcTotals();
     const invoiceNo = `INV-${Date.now()}`;
-
+    const profit = totalBeforeVat * 0.1; // Dummy 10% profit calculation
+    
     let customerId;
     const { data: existingCustomer } = await supabase.from('customers').select('*').eq('phone', formData.customerPhone).single();
-    if (existingCustomer) {
-      customerId = existingCustomer.id;
-    } else {
+    if (existingCustomer) customerId = existingCustomer.id;
+    else {
       const { data: newCustomer } = await supabase.from('customers').insert([{ name: formData.customerName, phone: formData.customerPhone }]).select().single();
       customerId = newCustomer.id;
     }
 
     const { data: portal } = await supabase.from('portals').select('*').eq('name', formData.portal).single();
-
     const { data: invoice } = await supabase.from('invoices').insert([{
       invoice_no: invoiceNo, customer_id: customerId, portal_id: portal?.id,
-      service_type: formData.serviceType, cost_price: cost, sell_price: sell,
-      profit: profit, vat: vat, total: total, payment_method: formData.paymentMethod, status: 'active'
+      sell_price: totalAfterVat, profit: profit, vat: totalVat, total: totalAfterVat,
+      payment_method: formData.paymentMethod, status: 'active', total_before_vat: totalBeforeVat,
+      paid_amount: paid, due_amount: due
     }]).select().single();
 
     if (invoice) {
-      // Deduct Cost Price from Portal Balance
-      const newBalance = (portal.current_balance || 0) - cost;
+      const itemsToInsert = items.map(it => ({
+        invoice_id: invoice.id, item_name: it.item_name, description: it.description,
+        price: parseFloat(it.price), qty: parseInt(it.qty), vat_percent: parseFloat(it.vat_percent),
+        total: parseFloat(it.price) * parseInt(it.qty)
+      }));
+      await supabase.from('invoice_items').insert(itemsToInsert);
+
+      const newBalance = (portal.current_balance || 0) - totalBeforeVat;
       await supabase.from('portals').update({ current_balance: newBalance }).eq('id', portal.id);
       
-      alert('Invoice Saved & Portal Balance Deducted!');
+      alert('Invoice Saved!');
       fetchAllData();
-      setFormData({ customerName: '', customerPhone: '', serviceType: 'Flight', portal: 'Akbar', costPrice: '', sellPrice: '', paymentMethod: 'Cash' });
+      setItems([{ item_name: 'تذاكر ذهاب وعودة', description: '', price: 0, qty: 1, vat_percent: 0 }]);
+      setFormData({ customerName: '', customerPhone: '', portal: 'Akbar', paymentMethod: 'Cash', paidAmount: '' });
     }
   };
 
-  // ADD RECHARGE TO PORTAL
   const handleAddRecharge = async (e) => {
     e.preventDefault();
     const amount = parseFloat(rechargeData.amount);
     const { data: portal } = await supabase.from('portals').select('*').eq('name', rechargeData.portal).single();
-
     if (portal) {
       const newBalance = (portal.current_balance || 0) + amount;
       await supabase.from('portals').update({ current_balance: newBalance }).eq('id', portal.id);
       await supabase.from('recharges').insert([{ portal_id: portal.id, amount, description: rechargeData.description }]);
-      
-      alert('Recharge Added Successfully!');
+      alert('Recharge Added!');
       fetchAllData();
       setRechargeData({ portal: 'Akbar', amount: '', description: '' });
     }
   };
 
-  // SALES RETURN / REFUND
-  const handleRefund = async (invoiceId, portalId, costPrice) => {
-    if (!confirm('Is this invoice refunded? Portal balance will be restored.')) return;
+  const generatePDF = async (invoice) => {
+    const { default: html2canvas } = await import('html2canvas');
+    const { default: jsPDF } = await import('jspdf');
+
+    // Create hidden HTML element for PDF
+    const pdfHtml = document.createElement('div');
+    pdfHtml.style.direction = 'rtl';
+    pdfHtml.style.padding = '20px';
+    pdfHtml.style.width = '800px';
+    pdfHtml.style.fontFamily = 'Arial, sans-serif';
+    pdfHtml.style.backgroundColor = '#fff';
     
-    await supabase.from('invoices').update({ status: 'refunded' }).eq('id', invoiceId);
-    const { data: portal } = await supabase.from('portals').select('*').eq('id', portalId).single();
-    if (portal) {
-      const newBalance = (portal.current_balance || 0) + costPrice;
-      await supabase.from('portals').update({ current_balance: newBalance }).eq('id', portalId);
-    }
-    alert('Invoice Refunded & Balance Restored!');
-    fetchAllData();
+    pdfHtml.innerHTML = `
+      <div style="border: 2px solid #000; padding: 20px;">
+        <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 20px;">
+          <div style="text-align: center; width: 60%;">
+            <h1>${settings.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h1>
+            <h3>${settings.company_name_en || 'Sueud Al Taayira'}</h3>
+            <p>الرقم الضريبي: ${settings.vat_no || ''}</p>
+            <p>السجل التجاري: ${settings.cr_no || ''}</p>
+            <p>رقم الاختصار: ${settings.iata_no || ''}</p>
+            <p>رقم اختصار سياحي: ${settings.tourist_no || ''}</p>
+            <p>هاتف: ${settings.phone || ''}</p>
+          </div>
+          <div style="width: 35%; border-right: 1px solid #ccc; padding-right: 10px;">
+            <h3>فاتورة ضريبية</h3>
+            <p>العميل: ${invoice.customers?.name || ''}</p>
+            <p>رقم الفاتورة: ${invoice.invoice_no}</p>
+            <p>تاريخ الفاتورة: ${new Date(invoice.created_at).toLocaleDateString()}</p>
+          </div>
+        </div>
+        
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px; text-align: center;">
+          <thead>
+            <tr style="background: #eee;">
+              <th style="border: 1px solid #ccc; padding: 5px;">الصنف</th>
+              <th style="border: 1px solid #ccc; padding: 5px;">الوصف</th>
+              <th style="border: 1px solid #ccc; padding: 5px;">السعر</th>
+              <th style="border: 1px solid #ccc; padding: 5px;">الكمية</th>
+              <th style="border: 1px solid #ccc; padding: 5px;">المجموع</th>
+              <th style="border: 1px solid #ccc; padding: 5px;">نسبة الضريبة</th>
+              <th style="border: 1px solid #ccc; padding: 5px;">قيمة الضريبة</th>
+              <th style="border: 1px solid #ccc; padding: 5px;">الإجمالي</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: 1px solid #ccc;">تذاكر ذهاب</td>
+              <td style="border: 1px solid #ccc;">JED-LKO</td>
+              <td style="border: 1px solid #ccc;">2085.00</td>
+              <td style="border: 1px solid #ccc;">1</td>
+              <td style="border: 1px solid #ccc;">2085.00</td>
+              <td style="border: 1px solid #ccc;">0%</td>
+              <td style="border: 1px solid #ccc;">0.00</td>
+              <td style="border: 1px solid #ccc;">2085.00</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <div style="margin-top: 20px; float: left; width: 300px;">
+          <p>الإجمالي قبل الضريبة: ${invoice.total_before_vat || 0} SAR</p>
+          <p>الإجمالي بعد الضريبة: ${invoice.total || 0} SAR</p>
+          <p>مدفوع: ${invoice.paid_amount || 0} SAR</p>
+          <p style="font-weight: bold;">المبلغ المستحق: ${invoice.due_amount || 0} SAR</p>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(pdfHtml);
+    
+    const canvas = await html2canvas(pdfHtml);
+    const imgData = canvas.toDataURL('image/png');
+    const doc = new jsPDF('p', 'mm', 'a4');
+    doc.addImage(imgData, 'PNG', 10, 10, 190, 0);
+    doc.save(`${invoice.invoice_no}.pdf`);
+    
+    document.body.removeChild(pdfHtml);
   };
 
-  if (!user) return <div style={{ padding: '50px', textAlign: 'center' }}>Loading ERP System...</div>;
-
-  // CALCULATIONS FOR REPORTS
-  const activeInvoices = invoices.filter(i => i.status === 'active');
-  const totalSales = activeInvoices.reduce((sum, inv) => sum + inv.sell_price, 0);
-  const totalProfit = activeInvoices.reduce((sum, inv) => sum + inv.profit, 0);
-  const totalRecharges = recharges.reduce((sum, rec) => sum + rec.amount, 0);
-  
-  const today = new Date().toISOString().split('T')[0];
-  const dailySales = activeInvoices.filter(i => new Date(i.created_at).toISOString().split('T')[0] === today);
-  const dailySalesAmount = dailySales.reduce((sum, inv) => sum + inv.sell_price, 0);
-  const dailyProfit = dailySales.reduce((sum, inv) => sum + inv.profit, 0);
+  if (!user) return <div style={{ padding: '50px', textAlign: 'center' }}>Loading ERP...</div>;
 
   return (
-    <div style={{ display: 'flex', height: '100vh', backgroundColor: '#f4f6f9', fontFamily: 'Arial, sans-serif' }}>
-      
-      {/* SIDEBAR */}
-      <div style={{ width: '250px', backgroundColor: '#2c3e50', color: '#fff', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '20px', borderBottom: '1px solid #34495e', textAlign: 'center' }}>
-          <h2 style={{ margin: 0, fontSize: '18px' }}>Sueud Al Taayira</h2>
-          <p style={{ margin: '5px 0 0', fontSize: '12px', color: '#95a5a6' }}>صعود الطائرة</p>
-        </div>
-        <nav style={{ flex: 1, padding: '20px 0' }}>
+    <div style={{ display: 'flex', height: '100vh', backgroundColor: '#f4f6f9', fontFamily: 'Arial' }}>
+      <div style={{ width: '250px', backgroundColor: '#2c3e50', color: '#fff' }}>
+        <div style={{ padding: '20px', textAlign: 'center' }}><h2>Sueud Al Taayira</h2></div>
+        <nav style={{ marginTop: '20px' }}>
           <button onClick={() => setActiveTab('dashboard')} style={activeTab === 'dashboard' ? activeStyle : inactiveStyle}>📊 Dashboard</button>
           <button onClick={() => setActiveTab('create')} style={activeTab === 'create' ? activeStyle : inactiveStyle}>🎫 Create Invoice</button>
-          <button onClick={() => setActiveTab('portals')} style={activeTab === 'portals' ? activeStyle : inactiveStyle}>💰 Recharge & Balance</button>
-          <button onClick={() => setActiveTab('reports')} style={activeTab === 'reports' ? activeStyle : inactiveStyle}>📈 Financial Reports</button>
+          <button onClick={() => setActiveTab('portals')} style={activeTab === 'portals' ? activeStyle : inactiveStyle}>💰 Portals & Recharge</button>
+          <button onClick={() => setActiveTab('reports')} style={activeTab === 'reports' ? activeStyle : inactiveStyle}>📈 Reports</button>
+          <button onClick={() => router.push('/settings')} style={inactiveStyle}>⚙️ Settings</button>
         </nav>
-        <div style={{ padding: '20px', borderTop: '1px solid #34495e' }}>
-          <button onClick={handleLogout} style={{ width: '100%', padding: '10px', backgroundColor: '#e74c3c', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Logout</button>
+        <div style={{ position: 'absolute', bottom: '20px', width: '250px' }}>
+          <button onClick={handleLogout} style={{ width: '90%', padding: '10px', margin: '0 5%', backgroundColor: '#e74c3c', color: '#fff', border: 'none', cursor: 'pointer' }}>Logout</button>
         </div>
       </div>
 
-      {/* MAIN CONTENT */}
-      <div style={{ flex: 1, overflowY: 'auto' }}>
-        <div style={{ backgroundColor: '#fff', padding: '15px 30px', borderBottom: '1px solid #ddd', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ margin: 0, textTransform: 'capitalize' }}>{activeTab}</h3>
-          <span style={{ fontSize: '14px', color: '#666' }}>Logged in as: <b>{user.email}</b></span>
-        </div>
-
-        <div style={{ padding: '30px' }}>
-          
-          {/* DASHBOARD */}
-          {activeTab === 'dashboard' && (
-            <div>
-              <div style={{ display: 'flex', gap: '20px', marginBottom: '30px' }}>
-                <div style={cardStyle}><h4>Today Sales</h4><h2 style={{ color: '#2980b9' }}>{dailySalesAmount.toFixed(2)} SAR</h2></div>
-                <div style={cardStyle}><h4>Today Profit</h4><h2 style={{ color: '#27ae60' }}>{dailyProfit.toFixed(2)} SAR</h2></div>
-                <div style={cardStyle}><h4>Total Active Sales</h4><h2 style={{ color: '#8e44ad' }}>{totalSales.toFixed(2)} SAR</h2></div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '30px' }}>
+        {activeTab === 'create' && (
+          <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px' }}>
+            <h2>Create New Invoice</h2>
+            <form onSubmit={handleCreateInvoice}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
+                <input name="customerName" placeholder="Customer Name" onChange={(e) => setFormData({...formData, customerName: e.target.value})} required style={inputStyle} />
+                <input name="customerPhone" placeholder="Phone Number" onChange={(e) => setFormData({...formData, customerPhone: e.target.value})} required style={inputStyle} />
+                <select name="portal" onChange={(e) => setFormData({...formData, portal: e.target.value})} style={inputStyle}>
+                  {portals.map(p => <option key={p.id}>{p.name}</option>)}
+                </select>
               </div>
-              <h4>Recent Invoices</h4>
-              <InvoiceTable invoices={invoices.slice(0, 5)} generatePDF={generatePDF} handleRefund={handleRefund} />
-            </div>
-          )}
-
-          {/* CREATE INVOICE */}
-          {activeTab === 'create' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
-              <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
-                <h4 style={{ marginTop: 0 }}>Upload Ticket (OCR)</h4>
-                <input type="file" accept="image/*" onChange={handleTicketUpload} style={{ marginBottom: '10px', width: '100%' }} />
-                {isExtracting && <p>Extracting data...</p>}
-              </div>
-              <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
-                <h4 style={{ marginTop: 0 }}>Invoice Details</h4>
-                <form onSubmit={handleCreateInvoice} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                  <input name="customerName" placeholder="Customer Name" onChange={handleChange} value={formData.customerName} required style={inputStyle} />
-                  <input name="customerPhone" placeholder="Phone Number" onChange={handleChange} value={formData.customerPhone} required style={inputStyle} />
-                  <select name="serviceType" onChange={handleChange} value={formData.serviceType} style={inputStyle}>
-                    <option>Flight</option><option>Hotel</option><option>Visa</option><option>Package</option>
-                  </select>
-                  <select name="portal" onChange={handleChange} value={formData.portal} style={inputStyle}>
-                    {portals.map(p => <option key={p.id}>{p.name}</option>)}
-                  </select>
-                  <input name="costPrice" type="number" placeholder="Cost Price (SAR)" onChange={handleChange} value={formData.costPrice} required style={inputStyle} />
-                  <input name="sellPrice" type="number" placeholder="Sell Price (SAR)" onChange={handleChange} value={formData.sellPrice} required style={inputStyle} />
-                  <select name="paymentMethod" onChange={handleChange} value={formData.paymentMethod} style={inputStyle}>
-                    <option>Cash</option><option>Bank Transfer</option><option>Tabby</option><option>Tamara</option><option>Credit</option>
-                  </select>
-                  <button type="submit" style={{ padding: '12px', backgroundColor: '#2c3e50', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer', gridColumn: 'span 2' }}>
-                    Generate & Save Invoice
-                  </button>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {/* PORTALS & RECHARGE */}
-          {activeTab === 'portals' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
-              {/* Recharge Form */}
-              <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
-                <h4 style={{ marginTop: 0 }}>Add Recharge to Portal</h4>
-                <form onSubmit={handleAddRecharge} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  <select name="portal" onChange={handleRechargeChange} value={rechargeData.portal} style={inputStyle}>
-                    {portals.map(p => <option key={p.id}>{p.name}</option>)}
-                  </select>
-                  <input name="amount" type="number" placeholder="Amount (SAR)" onChange={handleRechargeChange} value={rechargeData.amount} required style={inputStyle} />
-                  <input name="description" placeholder="Description (e.g. Bank Transfer)" onChange={handleRechargeChange} value={rechargeData.description} style={inputStyle} />
-                  <button type="submit" style={{ padding: '12px', backgroundColor: '#27ae60', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Add Recharge</button>
-                </form>
-              </div>
-
-              {/* Balance & History */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
-                  <h4 style={{ marginTop: 0 }}>Portal Current Balances</h4>
-                  <div style={{ display: 'flex', gap: '20px' }}>
-                    {portals.map(p => (
-                      <div key={p.id} style={{ padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px', flex: 1, textAlign: 'center' }}>
-                        <h5>{p.name}</h5>
-                        <h3 style={{ color: p.current_balance < 0 ? 'red' : 'green' }}>{(p.current_balance || 0).toFixed(2)} SAR</h3>
-                      </div>
-                    ))}
-                  </div>
+              
+              <h3>Items (Tickets)</h3>
+              {items.map((item, index) => (
+                <div key={index} style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1fr 1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                  <input name="item_name" placeholder="Item Name (e.g. تذاكر)" value={item.item_name} onChange={(e) => handleItemChange(index, e)} style={inputStyle} />
+                  <input name="description" placeholder="Description (JED-LKO)" value={item.description} onChange={(e) => handleItemChange(index, e)} style={inputStyle} />
+                  <input name="price" type="number" placeholder="Price" value={item.price} onChange={(e) => handleItemChange(index, e)} style={inputStyle} />
+                  <input name="qty" type="number" placeholder="Qty" value={item.qty} onChange={(e) => handleItemChange(index, e)} style={inputStyle} />
+                  <input name="vat_percent" type="number" placeholder="VAT %" value={item.vat_percent} onChange={(e) => handleItemChange(index, e)} style={inputStyle} />
+                  <button type="button" onClick={() => removeItem(index)} style={{ backgroundColor: '#e74c3c', color: '#fff', border: 'none', cursor: 'pointer' }}>X</button>
                 </div>
-                <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
-                  <h4 style={{ marginTop: 0 }}>Recharge History</h4>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead><tr style={{ backgroundColor: '#f8f9fa' }}><th style={thStyle}>Date</th><th style={thStyle}>Portal</th><th style={thStyle}>Amount</th></tr></thead>
-                    <tbody>
-                      {recharges.map(rec => (
-                        <tr key={rec.id} style={{ borderBottom: '1px solid #eee' }}>
-                          <td style={tdStyle}>{new Date(rec.recharge_date).toLocaleDateString()}</td>
-                          <td style={tdStyle}>{rec.portals?.name}</td>
-                          <td style={{ ...tdStyle, color: 'green', fontWeight: 'bold' }}>+{rec.amount} SAR</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              ))}
+              <button type="button" onClick={addItem} style={{ padding: '10px 20px', backgroundColor: '#3498db', color: '#fff', border: 'none', cursor: 'pointer', marginBottom: '20px' }}>+ Add Item</button>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginTop: '20px' }}>
+                <select name="paymentMethod" onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})} style={inputStyle}>
+                  <option>Cash</option><option>Bank Transfer</option><option>Tabby</option><option>Tamara</option><option>Credit</option>
+                </select>
+                <input name="paidAmount" type="number" placeholder="Paid Amount" onChange={(e) => setFormData({...formData, paidAmount: e.target.value})} style={inputStyle} />
+                <div style={{ textAlign: 'right', paddingTop: '10px' }}>
+                  <b>Total: {calcTotals().totalAfterVat.toFixed(2)} SAR | Due: {calcTotals().due.toFixed(2)} SAR</b>
                 </div>
               </div>
-            </div>
-          )}
+              <button type="submit" style={{ width: '100%', padding: '15px', backgroundColor: '#2c3e50', color: '#fff', border: 'none', cursor: 'pointer', marginTop: '20px', fontSize: '16px' }}>SAVE & GENERATE INVOICE</button>
+            </form>
+          </div>
+        )}
 
-          {/* REPORTS */}
-          {activeTab === 'reports' && (
-            <div>
-              <div style={{ display: 'flex', gap: '20px', marginBottom: '30px' }}>
-                <div style={cardStyle}><h4>Total Sales</h4><h2>{totalSales.toFixed(2)} SAR</h2></div>
-                <div style={cardStyle}><h4>Total Profit</h4><h2 style={{ color: 'green' }}>{totalProfit.toFixed(2)} SAR</h2></div>
-                <div style={cardStyle}><h4>Total Recharges</h4><h2 style={{ color: 'blue' }}>{totalRecharges.toFixed(2)} SAR</h2></div>
+        {activeTab === 'dashboard' && (
+          <div>
+            <h2>Recent Invoices</h2>
+            <table style={{ width: '100%', backgroundColor: '#fff', borderRadius: '8px' }}>
+              <thead><tr style={{ backgroundColor: '#f8f9fa' }}><th style={thStyle}>Inv No</th><th style={thStyle}>Customer</th><th style={thStyle}>Total</th><th style={thStyle}>Due</th><th style={thStyle}>Action</th></tr></thead>
+              <tbody>
+                {invoices.map(inv => (
+                  <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={tdStyle}>{inv.invoice_no}</td>
+                    <td style={tdStyle}>{inv.customers?.name || 'N/A'}</td>
+                    <td style={tdStyle}>{inv.total} SAR</td>
+                    <td style={tdStyle}>{inv.due_amount} SAR</td>
+                    <td style={tdStyle}><button onClick={() => generatePDF(inv)} style={{ backgroundColor: '#3498db', color: '#fff', border: 'none', padding: '5px 10px', cursor: 'pointer' }}>Download PDF</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {activeTab === 'portals' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
+            <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px' }}>
+              <h3>Add Recharge</h3>
+              <form onSubmit={handleAddRecharge} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <select name="portal" onChange={(e) => setRechargeData({...rechargeData, portal: e.target.value})} style={inputStyle}>{portals.map(p => <option key={p.id}>{p.name}</option>)}</select>
+                <input name="amount" type="number" placeholder="Amount" onChange={(e) => setRechargeData({...rechargeData, amount: e.target.value})} required style={inputStyle} />
+                <input name="description" placeholder="Description" onChange={(e) => setRechargeData({...rechargeData, description: e.target.value})} style={inputStyle} />
+                <button type="submit" style={{ padding: '10px', backgroundColor: '#27ae60', color: '#fff', border: 'none', cursor: 'pointer' }}>Recharge</button>
+              </form>
+            </div>
+            <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px' }}>
+              <h3>Balances</h3>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                {portals.map(p => <div key={p.id} style={{ flex: 1, padding: '15px', backgroundColor: '#f8f9fa', textAlign: 'center', borderRadius: '8px' }}><h4>{p.name}</h4><h3>{p.current_balance || 0} SAR</h3></div>)}
               </div>
-              <h4>All Invoices & Sales Return</h4>
-              <InvoiceTable invoices={invoices} generatePDF={generatePDF} handleRefund={handleRefund} />
             </div>
-          )}
-
-        </div>
+          </div>
+        )}
       </div>
-    </div>
-  );
-}
-
-// Reusable Table Component
-function InvoiceTable({ invoices, generatePDF, handleRefund }) {
-  return (
-    <div style={{ backgroundColor: '#fff', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr style={{ backgroundColor: '#f8f9fa' }}>
-            <th style={thStyle}>Invoice No</th>
-            <th style={thStyle}>Customer</th>
-            <th style={thStyle}>Portal</th>
-            <th style={thStyle}>Sell Price</th>
-            <th style={thStyle}>Profit</th>
-            <th style={thStyle}>Status</th>
-            <th style={thStyle}>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {invoices.map((inv) => (
-            <tr key={inv.id} style={{ borderBottom: '1px solid #eee', backgroundColor: inv.status === 'refunded' ? '#ffebee' : 'transparent' }}>
-              <td style={tdStyle}>{inv.invoice_no}</td>
-              <td style={tdStyle}>{inv.customers?.name || 'N/A'}</td>
-              <td style={tdStyle}>{inv.portals?.name || 'N/A'}</td>
-              <td style={tdStyle}>{inv.sell_price} SAR</td>
-              <td style={{ ...tdStyle, color: 'green', fontWeight: 'bold' }}>{inv.profit.toFixed(2)} SAR</td>
-              <td style={tdStyle}>{inv.status === 'refunded' ? '❌ Refunded' : '✅ Active'}</td>
-              <td style={tdStyle}>
-                <button onClick={() => generatePDF(inv)} style={{ padding: '5px 10px', cursor: 'pointer', backgroundColor: '#3498db', color: '#fff', border: 'none', borderRadius: '3px', marginRight: '5px' }}>PDF</button>
-                {inv.status === 'active' && (
-                  <button onClick={() => handleRefund(inv.id, inv.portal_id, inv.cost_price)} style={{ padding: '5px 10px', cursor: 'pointer', backgroundColor: '#e74c3c', color: '#fff', border: 'none', borderRadius: '3px' }}>Refund</button>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 }
 
 const activeStyle = { display: 'block', width: '100%', textAlign: 'left', padding: '15px 25px', backgroundColor: '#34495e', color: '#fff', border: 'none', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold' };
 const inactiveStyle = { display: 'block', width: '100%', textAlign: 'left', padding: '15px 25px', backgroundColor: 'transparent', color: '#ecf0f1', border: 'none', cursor: 'pointer', fontSize: '16px' };
-const cardStyle = { backgroundColor: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)', flex: 1 };
 const inputStyle = { padding: '10px', border: '1px solid #ccc', borderRadius: '5px', fontSize: '14px' };
-const thStyle = { padding: '12px 15px', textAlign: 'left', fontSize: '14px', color: '#333' };
-const tdStyle = { padding: '12px 15px', fontSize: '14px', color: '#555' };
+const thStyle = { padding: '12px 15px', textAlign: 'left' };
+const tdStyle = { padding: '12px 15px' };
