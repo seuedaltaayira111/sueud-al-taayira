@@ -24,8 +24,8 @@ export default function Home() {
       if (session.user.email === 'atallah@sueud.com') {
         setUserRole('owner');
       } else {
-        const { data: uData } = await supabase.from('app_users').select('*').eq('email', session.user.email).maybeSingle();
-        setUserRole(uData?.role || 'sales');
+        const { data: uData } = await supabase.from('app_users').select('*').eq('email', session.user.email).limit(1);
+        setUserRole(uData && uData.length > 0 ? uData[0].role : 'sales');
       }
       fetchAll();
     };
@@ -60,20 +60,21 @@ export default function Home() {
       const paid = parseFloat(invForm.paid) || 0;
       const due = total - paid;
 
-      // 1. Save or Get Customer (FIXED: .maybeSingle() use kiya hai)
+      // 1. Save or Get Customer (FIXED: .limit(1) use kiya hai, isse duplicates hone par bhi error nahi aayega)
       let cid;
-      const { data: exC } = await supabase.from('customers').select('*').eq('phone', invForm.phone).maybeSingle();
-      if (exC) {
-        cid = exC.id;
+      const { data: exCData } = await supabase.from('customers').select('id').eq('phone', invForm.phone).limit(1);
+      if (exCData && exCData.length > 0) {
+        cid = exCData[0].id;
       } else {
         const { data: nC, error: custErr } = await supabase.from('customers').insert([{ name: invForm.customerName, phone: invForm.phone }]).select().single();
         if (custErr) throw custErr;
         cid = nC.id;
       }
 
-      // 2. Get Portal ID
-      const { data: portal, error: portalErr } = await supabase.from('portals').select('*').eq('name', invForm.portal).maybeSingle();
-      if (portalErr) throw portalErr;
+      // 2. Get Portal ID (FIXED)
+      const { data: portalData } = await supabase.from('portals').select('*').eq('name', invForm.portal).limit(1);
+      if (!portalData || portalData.length === 0) throw new Error("Portal not found");
+      const portal = portalData[0];
 
       // 3. Save Invoice
       const invNo = `INV-${Date.now()}`;
