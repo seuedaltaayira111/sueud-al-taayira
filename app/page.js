@@ -11,12 +11,16 @@ export default function Home() {
   const router = useRouter();
 
   const [data, setData] = useState({ invoices: [], portals: [], customers: [], recharges: [], settings: {} });
-  
   const today = new Date().toISOString().split('T')[0];
+  
   const [invForm, setInvForm] = useState({ customerName: '', phone: '', portal: '', bookingDate: today, invoiceDate: today, service: 'Flight', flightType: 'Domestic', payment: 'Cash', paid: '' });
   const [items, setItems] = useState([{ name: 'Ticket', ticket_no: '', pnr: '', sector: '', qty: 1, cost: 0, sell: 0 }]);
   const [rechargeForm, setRechargeForm] = useState({ portal: '', amount: '', date: today, desc: '' });
   const [refundForm, setRefundForm] = useState({ id: '', compRefund: 0, custRefund: 0 });
+  
+  // Reports State
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -35,8 +39,10 @@ export default function Home() {
     
     const portalsData = por.data || [];
     setData({ invoices: inv.data || [], portals: portalsData, customers: cus.data || [], recharges: rec.data || [], settings: set.data || {} });
-    if (portalsData.length > 0 && !invForm.portal) setInvForm(f => ({ ...f, portal: portalsData[0].name }));
-    if (portalsData.length > 0 && !rechargeForm.portal) setRechargeForm(f => ({ ...f, portal: portalsData[0].name }));
+    if (portalsData.length > 0) {
+      setInvForm(f => ({ ...f, portal: f.portal || portalsData[0].name }));
+      setRechargeForm(f => ({ ...f, portal: f.portal || portalsData[0].name }));
+    }
   };
 
   const handleLogout = () => { supabase.auth.signOut(); router.push('/login'); };
@@ -75,27 +81,41 @@ export default function Home() {
       })));
       await supabase.from('portals').update({ current_balance: (portal.current_balance || 0) - tCost }).eq('id', portal.id);
 
-      alert('Invoice Generated!');
+      alert('Invoice Generated Successfully!');
       fetchAll();
       setItems([{ name: 'Ticket', ticket_no: '', pnr: '', sector: '', qty: 1, cost: 0, sell: 0 }]);
       setPage('list_inv');
     } catch (err) { alert('Error: ' + err.message); }
   };
 
+  // REFUND LOGIC (Alag Invoice banegi)
   const handleRefund = async (e) => {
     e.preventDefault();
-    const { data: invArr } = await supabase.from('invoices').select('*, portals(*)').eq('id', refundForm.id).limit(1);
+    const { data: invArr } = await supabase.from('invoices').select('*, portals(*), customers(*)').eq('id', refundForm.id).limit(1);
     if (!invArr || invArr.length === 0) return alert('Invoice not found');
     const inv = invArr[0];
     
     const compRef = parseFloat(refundForm.compRefund) || 0;
     const custRef = parseFloat(refundForm.custRefund) || 0;
 
+    // 1. Original Invoice ko Refunded mark karo
     await supabase.from('invoices').update({ status: 'refunded', refund_company: compRef, refund_customer: custRef }).eq('id', inv.id);
+
+    // 2. NAYI Refund Invoice (Credit Note) banao
+    const refNo = `REF-${Date.now()}`;
+    await supabase.from('invoices').insert([{
+      invoice_no: refNo, customer_id: inv.customer_id, portal_id: inv.portal_id, 
+      booking_date: today, invoice_date: today,
+      service_type: `Refund for ${inv.invoice_no}`, flight_type: inv.flight_type,
+      total_sell: -custRef, total: -custRef, paid_amount: -custRef, 
+      status: 'refunded', refund_company: compRef, refund_customer: custRef
+    }]);
+
+    // 3. Portal Balance wapas karo
     if (inv.portals) {
       await supabase.from('portals').update({ current_balance: (inv.portals.current_balance || 0) + compRef }).eq('id', inv.portals.id);
     }
-    alert('Refund Processed!');
+    alert('Refund Invoice Generated!');
     setRefundForm({ id: '', compRefund: 0, custRefund: 0 });
     fetchAll();
   };
@@ -131,6 +151,7 @@ export default function Home() {
 
       const html = document.createElement('div');
       html.style.width = '800px'; html.style.padding = '40px'; html.style.fontFamily = 'Arial'; html.style.direction = 'rtl'; html.style.position = 'absolute'; html.style.left = '-9999px'; html.style.backgroundColor = 'white';
+      const isRefund = inv.invoice_no.startsWith('REF-');
       html.innerHTML = `
         <div style="text-align:center; border-bottom:3px solid #003366; padding-bottom:20px; margin-bottom:20px;">
           ${s.logo_url ? `<img src="${s.logo_url}" style="height:80px; margin-bottom:10px;" />` : ''}
@@ -139,7 +160,7 @@ export default function Home() {
           <p>VAT: ${vatNo} | CR: ${s.cr_no || ''} | IATA: ${s.iata_no || ''}</p>
         </div>
         <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
-          <div><b>Invoice No:</b> ${inv.invoice_no}<br/><b>Booking Date:</b> ${inv.booking_date || 'N/A'}</div>
+          <div><b>${isRefund ? 'Refund Invoice' : 'Invoice No'}:</b> ${inv.invoice_no}<br/><b>Booking Date:</b> ${inv.booking_date || 'N/A'}</div>
           <div><b>Invoice Date:</b> ${inv.invoice_date || 'N/A'}</div>
           <div><b>Client:</b> ${inv.customers?.name || ''}<br/><b>Phone:</b> ${inv.customers?.phone || ''}</div>
         </div>
@@ -147,22 +168,17 @@ export default function Home() {
           <tr style="background:#003366; color:white;">
             <th style="padding:8px; border:1px solid #ccc;">Service</th>
             <th style="border:1px solid #ccc;">Sector</th>
-            <th style="border:1px solid #ccc;">Sell Price</th>
-            <th style="border:1px solid #ccc;">VAT</th>
             <th style="border:1px solid #ccc;">Total</th>
           </tr>
           <tr>
-            <td style="padding:8px; border:1px solid #ccc;">${inv.service_type} (${inv.flight_type})</td>
+            <td style="padding:8px; border:1px solid #ccc;">${inv.service_type}</td>
             <td style="padding:8px; border:1px solid #ccc;">${inv.flight_type}</td>
-            <td style="padding:8px; border:1px solid #ccc;">${inv.total_sell.toFixed(2)}</td>
-            <td style="padding:8px; border:1px solid #ccc;">${inv.vat.toFixed(2)}</td>
-            <td style="padding:8px; border:1px solid #ccc;">${inv.total.toFixed(2)}</td>
+            <td style="padding:8px; border:1px solid #ccc;">${inv.total.toFixed(2)} SAR</td>
           </tr>
         </table>
         <div style="margin-top:20px; display:flex; justify-content:space-between;">
           <img src="${qrDataUrl}" width="120" height="120" />
           <div style="text-align:left; direction:ltr;">
-            <p>Paid: ${inv.paid_amount.toFixed(2)} SAR</p>
             <h3>Total: ${inv.total.toFixed(2)} SAR</h3>
           </div>
         </div>
@@ -193,14 +209,15 @@ export default function Home() {
 
   if (!user) return <div style={{ padding: 50, textAlign: 'center' }}>Loading ERP...</div>;
 
-  const menu = [
-    { id: 'dashboard', label: '📊 Dashboard' },
-    { id: 'create_inv', label: '🎫 Create Invoice' },
-    { id: 'list_inv', label: '📋 Invoices & Refund' },
-    { id: 'portals', label: '🏢 Companies & Recharge' },
-    { id: 'reports', label: '📈 Reports & Export' },
-    { id: 'settings', label: '⚙️ Settings' },
-  ];
+  // Filter Reports by Date
+  const filteredInvoices = data.invoices.filter(inv => {
+    if (!fromDate || !toDate) return true;
+    const invDate = inv.invoice_date || inv.created_at.split('T')[0];
+    return invDate >= fromDate && invDate <= toDate;
+  });
+
+  const menu = ['Dashboard', 'Create Invoice', 'Invoices & Refund', 'Companies & Recharge', 'Reports & Export', 'Settings'];
+  const menuIds = ['dashboard', 'create_inv', 'list_inv', 'portals', 'reports', 'settings'];
 
   return (
     <div style={{ display: 'flex', height: '100vh', fontFamily: 'Arial', backgroundColor: '#f4f6f9' }}>
@@ -210,9 +227,9 @@ export default function Home() {
           <h2 style={{ margin: 0 }}>Sueud Al Taayira</h2>
         </div>
         <nav style={{ flex: 1 }}>
-          {menu.map(m => (
-            <button key={m.id} onClick={() => setPage(m.id)} style={{ width: '100%', textAlign: 'left', padding: '15px 20px', background: page === m.id ? '#2c3e50' : 'none', border: 'none', color: page === m.id ? '#fff' : '#aaa', cursor: 'pointer' }}>
-              {m.label}
+          {menu.map((m, i) => (
+            <button key={menuIds[i]} onClick={() => setPage(menuIds[i])} style={{ width: '100%', textAlign: 'left', padding: '15px 20px', background: page === menuIds[i] ? '#2c3e50' : 'none', border: 'none', color: page === menuIds[i] ? '#fff' : '#aaa', cursor: 'pointer' }}>
+              {m}
             </button>
           ))}
         </nav>
@@ -223,12 +240,11 @@ export default function Home() {
 
       <main style={{ flex: 1, overflowY: 'auto' }}>
         <header style={{ background: 'white', padding: '15px 30px', borderBottom: '2px solid #eee' }}>
-          <h2 style={{ margin: 0 }}>{menu.find(m=>m.id===page)?.label}</h2>
+          <h2 style={{ margin: 0 }}>{menu[menuIds.indexOf(page)]}</h2>
         </header>
 
         <div style={{ padding: '30px' }}>
           
-          {/* CREATE INVOICE */}
           {page === 'create_inv' && (
             <div style={{ background: 'white', padding: '30px', borderRadius: '8px' }}>
               <form onSubmit={handleCreateInvoice}>
@@ -255,7 +271,7 @@ export default function Home() {
                   <select value={invForm.payment} onChange={(e) => setInvForm({...invForm, payment: e.target.value})} style={styles.i}><option>Cash</option><option>Bank Transfer</option><option>Tabby</option><option>Tamara</option><option>Credit</option></select>
                 </div>
 
-                <h3>Ticket Details (Cost Price Hidden from PDF)</h3>
+                <h3>Ticket Details</h3>
                 {items.map((it, idx) => (
                   <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 0.5fr 1fr 1fr 0.5fr', gap: '5px', marginBottom: '10px' }}>
                     <input placeholder="Item Name" value={it.name} onChange={(e) => { const n=[...items]; n[idx].name=e.target.value; setItems(n); }} style={styles.i} required />
@@ -278,19 +294,19 @@ export default function Home() {
             </div>
           )}
 
-          {/* INVOICES & REFUND */}
           {page === 'list_inv' && (
             <div style={{ background: 'white', padding: '30px', borderRadius: '8px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr style={{ background: '#f8f9fa' }}>
-                  <th style={styles.th}>Inv No</th><th style={styles.th}>Customer</th><th style={styles.th}>Profit</th><th style={styles.th}>Status</th><th style={styles.th}>Actions</th>
+                  <th style={styles.th}>Inv No</th><th style={styles.th}>Customer</th><th style={styles.th}>Total</th><th style={styles.th}>Status</th><th style={styles.th}>Actions</th>
                 </tr></thead>
                 <tbody>
-                  {data.invoices.map(inv => (
+                  {data.invoices.length === 0 ? <tr><td colSpan="5" style={{textAlign:'center', padding:'20px'}}>No Invoices Yet.</td></tr> : 
+                  data.invoices.map(inv => (
                     <tr key={inv.id} style={{ borderBottom: '1px solid #eee', backgroundColor: inv.status === 'refunded' ? '#ffebee' : 'transparent' }}>
                       <td style={styles.td}>{inv.invoice_no}</td>
                       <td style={styles.td}>{inv.customers?.name || 'N/A'}</td>
-                      <td style={{...styles.td, color:'green'}}>{inv.profit} SAR</td>
+                      <td style={styles.td}>{inv.total} SAR</td>
                       <td style={styles.td}>{inv.status}</td>
                       <td style={styles.td}>
                         <button onClick={() => downloadPDF(inv)} style={{ background: '#3498db', color: 'white', border: 'none', padding: '5px 10px', cursor: 'pointer' }}>PDF</button>
@@ -303,9 +319,9 @@ export default function Home() {
 
               {refundForm.id && (
                 <div style={{ marginTop: '30px', padding: '20px', border: '2px solid #e67e22', borderRadius: '8px' }}>
-                  <h3>Process Partial Refund</h3>
+                  <h3>Process Refund (Will create separate Refund Invoice)</h3>
                   <form onSubmit={handleRefund} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px' }}>
-                    <input type="number" placeholder="Refund from Company (Portal)" value={refundForm.compRefund} onChange={(e) => setRefundForm({...refundForm, compRefund: e.target.value})} required style={styles.i} />
+                    <input type="number" placeholder="Refund from Company" value={refundForm.compRefund} onChange={(e) => setRefundForm({...refundForm, compRefund: e.target.value})} required style={styles.i} />
                     <input type="number" placeholder="Refund to Customer" value={refundForm.custRefund} onChange={(e) => setRefundForm({...refundForm, custRefund: e.target.value})} required style={styles.i} />
                     <button type="submit" style={{ background: '#e67e22', color: 'white', border: 'none', cursor: 'pointer' }}>Confirm Refund</button>
                   </form>
@@ -314,11 +330,10 @@ export default function Home() {
             </div>
           )}
 
-          {/* COMPANIES & RECHARGE */}
           {page === 'portals' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
               <div style={{ background: 'white', padding: '20px', borderRadius: '8px' }}>
-                <h3>Add New Company/Portal</h3>
+                <h3>Add New Company</h3>
                 <form onSubmit={handleAddPortal} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <input name="name" placeholder="e.g. Saudi Airlines" style={styles.i} required />
                   <button type="submit" style={styles.btn}>Add Company</button>
@@ -336,36 +351,40 @@ export default function Home() {
               </div>
               <div style={{ background: 'white', padding: '20px', borderRadius: '8px' }}>
                 <h3>Balances</h3>
-                {data.portals.map(p => <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', padding: '10px 0' }}><span>{p.name}</span><b>{p.current_balance} SAR</b></div>)}
+                {data.portals.length === 0 ? <p>No companies added.</p> : data.portals.map(p => <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', padding: '10px 0' }}><span>{p.name}</span><b>{p.current_balance} SAR</b></div>)}
               </div>
             </div>
           )}
 
-          {/* REPORTS & EXPORT */}
           {page === 'reports' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              <div style={{ background: 'white', padding: '20px', borderRadius: '8px' }}>
-                <h3>Sales Report (Excel)</h3>
-                <p>Download all sales with Cost, Sell, Profit, Dates.</p>
-                <button onClick={() => exportCSV(data.invoices.map(i => ({ InvNo: i.invoice_no, Customer: i.customers?.name, Phone: i.customers?.phone, BookingDate: i.booking_date, Service: i.service_type, TotalSell: i.total_sell, Profit: i.profit, Status: i.status })), 'Sales_Report.csv')} style={{...styles.btn, background: '#27ae60'}}>Download Sales CSV</button>
+            <div style={{ background: 'white', padding: '20px', borderRadius: '8px' }}>
+              <h3>Date Range Filter</h3>
+              <div style={{ display: 'flex', gap: '15px', marginBottom: '20px' }}>
+                <label>From: <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} style={styles.i} /></label>
+                <label>To: <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} style={styles.i} /></label>
+                <button onClick={() => exportCSV(filteredInvoices.map(i => ({ InvNo: i.invoice_no, Customer: i.customers?.name, Phone: i.customers?.phone, Date: i.invoice_date, Service: i.service_type, Total: i.total, Status: i.status })), 'Sales_Report.csv')} style={{...styles.btn, background: '#27ae60', width: 'auto', padding: '10px 20px'}}>Export Filtered Sales CSV</button>
+                <button onClick={() => exportCSV(data.recharges.map(r => ({ Date: r.recharge_date, Company: r.portals?.name, Amount: r.amount, Desc: r.description })), 'Recharge_Report.csv')} style={{...styles.btn, background: '#2980b9', width: 'auto', padding: '10px 20px'}}>Export Recharge CSV</button>
+                <button onClick={() => exportCSV(data.customers, 'Customers.csv')} style={{...styles.btn, background: '#8e44ad', width: 'auto', padding: '10px 20px'}}>Export Customers CSV</button>
               </div>
-              <div style={{ background: 'white', padding: '20px', borderRadius: '8px' }}>
-                <h3>Recharge Report (Excel)</h3>
-                <p>Download company-wise recharge statements.</p>
-                <button onClick={() => exportCSV(data.recharges.map(r => ({ Date: r.recharge_date, Company: r.portals?.name, Amount: r.amount, Desc: r.description })), 'Recharge_Report.csv')} style={{...styles.btn, background: '#2980b9'}}>Download Recharge CSV</button>
-              </div>
-              <div style={{ background: 'white', padding: '20px', borderRadius: '8px' }}>
-                <h3>Customers Data (Excel)</h3>
-                <p>Download all customer contacts.</p>
-                <button onClick={() => exportCSV(data.customers, 'Customers.csv')} style={{...styles.btn, background: '#8e44ad'}}>Download Customers CSV</button>
-              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr style={{ background: '#f8f9fa' }}><th style={styles.th}>Date</th><th style={styles.th}>Invoice</th><th style={styles.th}>Customer</th><th style={styles.th}>Total</th></tr></thead>
+                <tbody>
+                  {filteredInvoices.map(inv => (
+                    <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <td style={styles.td}>{inv.invoice_date}</td>
+                      <td style={styles.td}>{inv.invoice_no}</td>
+                      <td style={styles.td}>{inv.customers?.name}</td>
+                      <td style={styles.td}>{inv.total} SAR</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
 
-          {/* SETTINGS */}
           {page === 'settings' && (
             <div style={{ background: 'white', padding: '30px', borderRadius: '8px' }}>
-              <h3>Company Settings</h3>
+              <h3>Company Settings & Logo Upload</h3>
               <SettingsPage data={data.settings} fetchAll={fetchAll} />
             </div>
           )}
@@ -377,12 +396,27 @@ export default function Home() {
 
 function SettingsPage({ data, fetchAll }) {
   const [form, setForm] = useState(data);
+  const [uploading, setUploading] = useState(false);
 
   const handleSave = async (e) => {
     e.preventDefault();
     await supabase.from('settings').update(form).eq('id', 1);
     alert('Settings Saved!');
     fetchAll();
+  };
+
+  // LOGO UPLOAD FUNCTION
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    const fileName = `logo_${Date.now()}.png`;
+    const { error } = await supabase.storage.from('logos').upload(fileName, file);
+    if (error) { alert('Upload Error: ' + error.message); setUploading(false); return; }
+    const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName);
+    setForm({ ...form, logo_url: urlData.publicUrl });
+    setUploading(false);
+    alert('Logo Uploaded! Click Save Settings to apply.');
   };
 
   return (
@@ -393,7 +427,14 @@ function SettingsPage({ data, fetchAll }) {
       <input placeholder="CR Number" value={form.cr_no || ''} onChange={(e) => setForm({...form, cr_no: e.target.value})} style={styles.i} />
       <input placeholder="IATA Number" value={form.iata_no || ''} onChange={(e) => setForm({...form, iata_no: e.target.value})} style={styles.i} />
       <input placeholder="Phone" value={form.phone || ''} onChange={(e) => setForm({...form, phone: e.target.value})} style={styles.i} />
-      <input placeholder="Logo Image URL (Link)" value={form.logo_url || ''} onChange={(e) => setForm({...form, logo_url: e.target.value})} style={styles.i} />
+      
+      <div style={{ gridColumn: 'span 2', border: '1px solid #ccc', padding: '15px', borderRadius: '8px' }}>
+        <label><b>Upload Company Logo:</b></label><br/>
+        {form.logo_url && <img src={form.logo_url} style={{height:'60px', marginTop:'10px', marginBottom:'10px'}} />}
+        <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ marginTop: '10px' }} />
+        {uploading && <p>Uploading...</p>}
+      </div>
+
       <button type="submit" style={{ gridColumn: 'span 2', padding: '15px', background: '#27ae60', color: 'white', border: 'none', cursor: 'pointer', fontSize: '16px' }}>SAVE SETTINGS</button>
     </form>
   );
