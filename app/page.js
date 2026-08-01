@@ -21,8 +21,15 @@ export default function Home() {
       if (!session) return router.push('/login');
       setUser(session.user);
       
-      const { data: uData } = await supabase.from('app_users').select('*').eq('email', session.user.email).single();
-      setUserRole(uData?.role || 'sales');
+      // --- OWNER FIX ---
+      // Agar email atallah hai, toh direct owner bana do, warna database me check karo
+      if (session.user.email === 'atallah@sueud.com') {
+        setUserRole('owner');
+      } else {
+        const { data: uData } = await supabase.from('app_users').select('*').eq('email', session.user.email).single();
+        setUserRole(uData?.role || 'sales');
+      }
+      
       fetchAll();
     };
     checkUser();
