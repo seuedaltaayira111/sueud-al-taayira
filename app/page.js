@@ -24,7 +24,7 @@ export default function Home() {
       if (session.user.email === 'atallah@sueud.com') {
         setUserRole('owner');
       } else {
-        const { data: uData } = await supabase.from('app_users').select('*').eq('email', session.user.email).single();
+        const { data: uData } = await supabase.from('app_users').select('*').eq('email', session.user.email).maybeSingle();
         setUserRole(uData?.role || 'sales');
       }
       fetchAll();
@@ -60,18 +60,19 @@ export default function Home() {
       const paid = parseFloat(invForm.paid) || 0;
       const due = total - paid;
 
-      // 1. Save or Get Customer
+      // 1. Save or Get Customer (FIXED: .maybeSingle() use kiya hai)
       let cid;
-      const { data: exC } = await supabase.from('customers').select('*').eq('phone', invForm.phone).single();
-      if (exC) cid = exC.id;
-      else {
+      const { data: exC } = await supabase.from('customers').select('*').eq('phone', invForm.phone).maybeSingle();
+      if (exC) {
+        cid = exC.id;
+      } else {
         const { data: nC, error: custErr } = await supabase.from('customers').insert([{ name: invForm.customerName, phone: invForm.phone }]).select().single();
         if (custErr) throw custErr;
         cid = nC.id;
       }
 
       // 2. Get Portal ID
-      const { data: portal, error: portalErr } = await supabase.from('portals').select('*').eq('name', invForm.portal).single();
+      const { data: portal, error: portalErr } = await supabase.from('portals').select('*').eq('name', invForm.portal).maybeSingle();
       if (portalErr) throw portalErr;
 
       // 3. Save Invoice
