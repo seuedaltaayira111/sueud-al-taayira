@@ -16,7 +16,8 @@ export default function Home() {
   const [data, setData] = useState({ invoices: [], portals: [], customers: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [], audits: [] });
   const today = new Date().toISOString().split('T')[0];
   
-  const [invForm, setInvForm] = useState({ custId: 'new', custName: '', custPhone: '', employeeId: '', portal: '', bookingDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', airline: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
+  // Added invoiceDate, flightJourney, flightSector
+  const [invForm, setInvForm] = useState({ custId: 'new', custName: '', custPhone: '', employeeId: '', portal: '', bookingDate: today, invoiceDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', airline: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
   const [refundForm, setRefundForm] = useState({ id: '', compRefund: 0, custRefund: 0 });
   const [settleForm, setSettleForm] = useState({ id: '', date: today, mode: 'Cash', tabbyNo: '', tamaraNo: '' });
   const [cashForm, setCashForm] = useState({ date: today, type: 'Cash-In', desc: '', amount: '' });
@@ -95,8 +96,9 @@ export default function Home() {
       const portal = pArr && pArr.length > 0 ? pArr[0] : null;
       if (!portal) throw new Error("Please select a valid Portal/Company.");
 
+      // Updated Description Logic with Journey & Sector
       let desc = '';
-      if (invForm.service === 'Flight') desc = `${invForm.flightSub} (${invForm.flightType}) - ${invForm.airline}`;
+      if (invForm.service === 'Flight') desc = `${invForm.flightSub} (${invForm.flightType}) - ${invForm.airline} - ${invForm.flightJourney} - ${invForm.flightSector}`;
       else if (invForm.service === 'Hotel') desc = `${invForm.hotelName} - ${invForm.destination}`;
       else if (invForm.service.includes('Visa')) desc = `${invForm.visaType} Visa`;
       else desc = invForm.service;
@@ -104,7 +106,8 @@ export default function Home() {
       const invNo = `INV-${Date.now()}`;
       const { error: invErr } = await supabase.from('invoices').insert([{
         invoice_no: invNo, customer_id: cid, portal_id: portal.id, employee_id: invForm.employeeId || null,
-        booking_date: invForm.bookingDate, invoice_date: today,
+        booking_date: invForm.bookingDate, 
+        invoice_date: invForm.invoiceDate, // FIXED: Now uses form date instead of today
         service_type: invForm.service, flight_type: invForm.flightType, flight_sub: invForm.flightSub, pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty: qty, discount: discount,
         total_cost: cost, total_sell: sell, profit, vat, total, paid_amount: paid, due_amount: due, payment_method: invForm.payment,
         credit_due_date: due > 0 ? invForm.creditDueDate : null,
@@ -117,7 +120,7 @@ export default function Home() {
       await supabase.from('portals').update({ current_balance: (portal.current_balance || 0) - cost }).eq('id', portal.id);
       if (paid > 0) {
         const cbType = invForm.payment === 'Cash' ? 'Cash-In' : (invForm.payment === 'Bank Transfer' ? 'Bank-In' : null);
-        if (cbType) await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Payment for ${invNo}`, amount: paid }]);
+        if (cbType) await supabase.from('cashbook').insert([{ trans_date: invForm.invoiceDate, type: cbType, description: `Payment for ${invNo}`, amount: paid }]);
       }
       await logAction(`Created Invoice ${invNo}`);
       alert('Invoice Generated Successfully!');
@@ -179,7 +182,6 @@ export default function Home() {
     fetchAll();
   };
 
-  // CUSTOMER WALLET ADJUSTMENT
   const handleWalletAdjust = async (e) => {
     e.preventDefault();
     const cust = data.customers.find(c => c.id === walletForm.custId);
@@ -194,7 +196,6 @@ export default function Home() {
     fetchAll();
   };
 
-  // DOCUMENT UPLOAD (PASSPORT/VISA)
   const handleDocUpload = async (custId, file, docType) => {
     if (!file) return;
     const fileName = `doc_${Date.now()}.png`;
@@ -451,79 +452,160 @@ export default function Home() {
             </div>
           )}
 
+          {/* CREATE INVOICE FORM WITH LABELS & NEW FIELDS */}
           {page === 'create' && (
             <div style={{ background: 'white', padding: '30px', borderRadius: '8px', borderTop: '4px solid #D4AF37' }}>
               <form onSubmit={handleCreateInvoice}>
-                <h3 style={{color: '#0F3D2E'}}>Customer Details</h3>
+                <h3 style={{color: '#0F3D2E', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>Customer Details</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
-                  <select value={invForm.custId} onChange={(e) => setInvForm({...invForm, custId: e.target.value})} style={styles.i}>
-                    <option value="new">+ New Customer</option>
-                    {data.customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.phone})</option>)}
-                  </select>
+                  <div>
+                    <label style={styles.label}>Select Customer</label>
+                    <select value={invForm.custId} onChange={(e) => setInvForm({...invForm, custId: e.target.value})} style={styles.i}>
+                      <option value="new">+ New Customer</option>
+                      {data.customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.phone})</option>)}
+                    </select>
+                  </div>
                   {invForm.custId === 'new' && <>
-                    <input placeholder="Customer Name" value={invForm.custName} onChange={(e) => setInvForm({...invForm, custName: e.target.value})} required style={styles.i} />
-                    <input placeholder="Phone" value={invForm.custPhone} onChange={(e) => setInvForm({...invForm, custPhone: e.target.value})} required style={styles.i} />
+                    <div>
+                      <label style={styles.label}>Customer Name</label>
+                      <input placeholder="Enter Name" value={invForm.custName} onChange={(e) => setInvForm({...invForm, custName: e.target.value})} required style={styles.i} />
+                    </div>
+                    <div>
+                      <label style={styles.label}>Phone Number</label>
+                      <input placeholder="Enter Phone" value={invForm.custPhone} onChange={(e) => setInvForm({...invForm, custPhone: e.target.value})} required style={styles.i} />
+                    </div>
                   </>}
                 </div>
 
-                <h3 style={{color: '#0F3D2E'}}>Service Details</h3>
+                <h3 style={{color: '#0F3D2E', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>Service Details</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
-                  <select value={invForm.service} onChange={(e) => setInvForm({...invForm, service: e.target.value})} style={styles.i}>
-                    {data.services.map(s => <option key={s.id}>{s.name}</option>)}
-                  </select>
+                  <div>
+                    <label style={styles.label}>Service Type</label>
+                    <select value={invForm.service} onChange={(e) => setInvForm({...invForm, service: e.target.value})} style={styles.i}>
+                      {data.services.map(s => <option key={s.id}>{s.name}</option>)}
+                    </select>
+                  </div>
                   
                   {invForm.service === 'Flight' && <>
-                    <select value={invForm.flightType} onChange={(e) => setInvForm({...invForm, flightType: e.target.value})} style={styles.i}>
-                      <option value="Domestic">Domestic</option>
-                      <option value="International">International</option>
-                    </select>
-                    <select value={invForm.flightSub} onChange={(e) => setInvForm({...invForm, flightSub: e.target.value})} style={styles.i}>
-                      <option>New Booking</option><option>Reissue</option><option>Extra Baggage</option>
-                    </select>
-                    <input placeholder="Airline" value={invForm.airline} onChange={(e) => setInvForm({...invForm, airline: e.target.value})} style={styles.i} required />
-                    <input placeholder="PNR" value={invForm.pnr} onChange={(e) => setInvForm({...invForm, pnr: e.target.value})} style={styles.i} required />
-                    <input placeholder="Ticket Number" value={invForm.ticketNo} onChange={(e) => setInvForm({...invForm, ticketNo: e.target.value})} style={styles.i} />
+                    <div>
+                      <label style={styles.label}>Flight Type</label>
+                      <select value={invForm.flightType} onChange={(e) => setInvForm({...invForm, flightType: e.target.value})} style={styles.i}>
+                        <option value="Domestic">Domestic</option>
+                        <option value="International">International</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={styles.label}>Booking Type</label>
+                      <select value={invForm.flightSub} onChange={(e) => setInvForm({...invForm, flightSub: e.target.value})} style={styles.i}>
+                        <option>New Booking</option><option>Reissue</option><option>Extra Baggage</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={styles.label}>Journey Type</label>
+                      <select value={invForm.flightJourney} onChange={(e) => setInvForm({...invForm, flightJourney: e.target.value})} style={styles.i}>
+                        <option>Single</option><option>Roundtrip</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={styles.label}>Airline</label>
+                      <input placeholder="e.g. Flynas" value={invForm.airline} onChange={(e) => setInvForm({...invForm, airline: e.target.value})} style={styles.i} required />
+                    </div>
+                    <div>
+                      <label style={styles.label}>Sector (From - To)</label>
+                      <input placeholder="e.g. JED - RUH" value={invForm.flightSector} onChange={(e) => setInvForm({...invForm, flightSector: e.target.value})} style={styles.i} required />
+                    </div>
+                    <div>
+                      <label style={styles.label}>PNR</label>
+                      <input placeholder="Booking Ref" value={invForm.pnr} onChange={(e) => setInvForm({...invForm, pnr: e.target.value})} style={styles.i} required />
+                    </div>
+                    <div>
+                      <label style={styles.label}>Ticket Number</label>
+                      <input placeholder="Ticket No" value={invForm.ticketNo} onChange={(e) => setInvForm({...invForm, ticketNo: e.target.value})} style={styles.i} />
+                    </div>
                   </>}
                   {invForm.service === 'Hotel' && <>
-                    <input placeholder="Destination" value={invForm.destination} onChange={(e) => setInvForm({...invForm, destination: e.target.value})} style={styles.i} required />
-                    <input placeholder="Hotel Name" value={invForm.hotelName} onChange={(e) => setInvForm({...invForm, hotelName: e.target.value})} style={styles.i} required />
+                    <div>
+                      <label style={styles.label}>Destination City</label>
+                      <input placeholder="e.g. Dubai" value={invForm.destination} onChange={(e) => setInvForm({...invForm, destination: e.target.value})} style={styles.i} required />
+                    </div>
+                    <div>
+                      <label style={styles.label}>Hotel Name</label>
+                      <input placeholder="e.g. Atlantis" value={invForm.hotelName} onChange={(e) => setInvForm({...invForm, hotelName: e.target.value})} style={styles.i} required />
+                    </div>
                   </>}
                   {invForm.service.includes('Visa') && <>
-                    <select value={invForm.visaType} onChange={(e) => setInvForm({...invForm, visaType: e.target.value})} style={styles.i}>
-                      <option>Tourist</option><option>Business</option><option>Work</option><option>Family</option>
-                    </select>
+                    <div>
+                      <label style={styles.label}>Visa Type</label>
+                      <select value={invForm.visaType} onChange={(e) => setInvForm({...invForm, visaType: e.target.value})} style={styles.i}>
+                        <option>Tourist</option><option>Business</option><option>Work</option><option>Family</option>
+                      </select>
+                    </div>
                   </>}
                 </div>
 
-                <h3 style={{color: '#0F3D2E'}}>Pricing & Payment</h3>
+                <h3 style={{color: '#0F3D2E', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>Pricing & Payment</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
-                  <select value={invForm.employeeId} onChange={(e) => setInvForm({...invForm, employeeId: e.target.value})} style={styles.i}>
-                    <option value="">Select Sales Rep</option>
-                    {data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-                  </select>
-                  <select value={invForm.portal} onChange={(e) => setInvForm({...invForm, portal: e.target.value})} style={styles.i} required>
-                    <option value="">Select Portal</option>
-                    {data.portals.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
-                  </select>
-                  <input type="number" placeholder="Quantity" value={invForm.qty} onChange={(e) => setInvForm({...invForm, qty: e.target.value})} style={styles.i} required />
-                  <input type="number" placeholder="Cost Price (Per Unit)" value={invForm.cost} onChange={(e) => setInvForm({...invForm, cost: e.target.value})} style={styles.i} required />
-                  <input type="number" placeholder="Sell Price (Per Unit)" value={invForm.sell} onChange={(e) => setInvForm({...invForm, sell: e.target.value})} style={styles.i} required />
-                  <input type="number" placeholder="Discount (SAR)" value={invForm.discount} onChange={(e) => setInvForm({...invForm, discount: e.target.value})} style={styles.i} />
-                  <select value={invForm.taxRate} onChange={(e) => setInvForm({...invForm, taxRate: e.target.value})} style={styles.i}>
-                    <option value="15">Tax 15%</option>
-                    <option value="0">Tax 0% (Exempt)</option>
-                  </select>
-                  <select value={invForm.payment} onChange={(e) => setInvForm({...invForm, payment: e.target.value})} style={styles.i}>
-                    <option>Cash</option><option>Bank Transfer</option><option>Tabby</option><option>Tamara</option><option>Credit</option>
-                  </select>
-                  <input type="date" value={invForm.bookingDate} onChange={(e) => setInvForm({...invForm, bookingDate: e.target.value})} style={styles.i} required />
-                  <input type="number" placeholder="Paid Amount" value={invForm.paid} onChange={(e) => setInvForm({...invForm, paid: e.target.value})} style={styles.i} required />
+                  <div>
+                    <label style={styles.label}>Sales Representative</label>
+                    <select value={invForm.employeeId} onChange={(e) => setInvForm({...invForm, employeeId: e.target.value})} style={styles.i}>
+                      <option value="">Select Rep</option>
+                      {data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={styles.label}>Portal / Supplier</label>
+                    <select value={invForm.portal} onChange={(e) => setInvForm({...invForm, portal: e.target.value})} style={styles.i} required>
+                      <option value="">Select Portal</option>
+                      {data.portals.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={styles.label}>Quantity</label>
+                    <input type="number" placeholder="1" value={invForm.qty} onChange={(e) => setInvForm({...invForm, qty: e.target.value})} style={styles.i} required />
+                  </div>
+                  <div>
+                    <label style={styles.label}>Cost Price (Per Unit)</label>
+                    <input type="number" placeholder="0.00" value={invForm.cost} onChange={(e) => setInvForm({...invForm, cost: e.target.value})} style={styles.i} required />
+                  </div>
+                  <div>
+                    <label style={styles.label}>Sell Price (Per Unit)</label>
+                    <input type="number" placeholder="0.00" value={invForm.sell} onChange={(e) => setInvForm({...invForm, sell: e.target.value})} style={styles.i} required />
+                  </div>
+                  <div>
+                    <label style={styles.label}>Discount (SAR)</label>
+                    <input type="number" placeholder="0.00" value={invForm.discount} onChange={(e) => setInvForm({...invForm, discount: e.target.value})} style={styles.i} />
+                  </div>
+                  <div>
+                    <label style={styles.label}>Tax Rate</label>
+                    <select value={invForm.taxRate} onChange={(e) => setInvForm({...invForm, taxRate: e.target.value})} style={styles.i}>
+                      <option value="15">Tax 15%</option>
+                      <option value="0">Tax 0% (Exempt)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={styles.label}>Payment Method</label>
+                    <select value={invForm.payment} onChange={(e) => setInvForm({...invForm, payment: e.target.value})} style={styles.i}>
+                      <option>Cash</option><option>Bank Transfer</option><option>Tabby</option><option>Tamara</option><option>Credit</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={styles.label}>Booking Date</label>
+                    <input type="date" value={invForm.bookingDate} onChange={(e) => setInvForm({...invForm, bookingDate: e.target.value})} style={styles.i} required />
+                  </div>
+                  <div>
+                    <label style={styles.label}>Invoice Date (Backdate Allowed)</label>
+                    <input type="date" value={invForm.invoiceDate} onChange={(e) => setInvForm({...invForm, invoiceDate: e.target.value})} style={styles.i} required />
+                  </div>
+                  <div>
+                    <label style={styles.label}>Paid Amount</label>
+                    <input type="number" placeholder="0.00" value={invForm.paid} onChange={(e) => setInvForm({...invForm, paid: e.target.value})} style={styles.i} required />
+                  </div>
                   
-                  {invForm.payment === 'Tabby' && <input placeholder="Tabby Order No." value={invForm.tabbyNo} onChange={(e) => setInvForm({...invForm, tabbyNo: e.target.value})} style={styles.i} required />}
-                  {invForm.payment === 'Tamara' && <input placeholder="Tamara Order No." value={invForm.tamaraNo} onChange={(e) => setInvForm({...invForm, tamaraNo: e.target.value})} style={styles.i} required />}
-                  {invForm.payment === 'Credit' && <input type="date" placeholder="Credit Due Date" value={invForm.creditDueDate} onChange={(e) => setInvForm({...invForm, creditDueDate: e.target.value})} style={styles.i} required />}
+                  {invForm.payment === 'Tabby' && <div><label style={styles.label}>Tabby Order No.</label><input placeholder="Order ID" value={invForm.tabbyNo} onChange={(e) => setInvForm({...invForm, tabbyNo: e.target.value})} style={styles.i} required /></div>}
+                  {invForm.payment === 'Tamara' && <div><label style={styles.label}>Tamara Order No.</label><input placeholder="Order ID" value={invForm.tamaraNo} onChange={(e) => setInvForm({...invForm, tamaraNo: e.target.value})} style={styles.i} required /></div>}
+                  {invForm.payment === 'Credit' && <div><label style={styles.label}>Credit Due Date</label><input type="date" value={invForm.creditDueDate} onChange={(e) => setInvForm({...invForm, creditDueDate: e.target.value})} style={styles.i} required /></div>}
                 </div>
-                <button type="submit" style={{ background: '#D4AF37', color: '#0F3D2E', border: 'none', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', padding: '15px' }}>Generate Invoice</button>
+                <button type="submit" style={{ background: '#D4AF37', color: '#0F3D2E', border: 'none', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', padding: '15px', width: '100%' }}>Generate Invoice</button>
               </form>
             </div>
           )}
@@ -535,7 +617,7 @@ export default function Home() {
                 <tbody>
                   {activeInv.map(inv => (
                     <tr key={inv.id} style={{ borderBottom: '1px solid #eee', backgroundColor: inv.due_amount > 0 ? '#fff3cd' : 'transparent' }}>
-                      <td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.customers?.name || 'N/A'}</td>
+                      <td style={styles.td}>{inv.invoice_no}<br/><small>{inv.invoice_date}</small></td><td style={styles.td}>{inv.customers?.name || 'N/A'}</td>
                       <td style={styles.td}>{inv.employees?.name || 'N/A'}</td>
                       <td style={styles.td}>{inv.qty || 1}</td>
                       <td style={{...styles.td, color:'green'}}>{inv.profit} SAR</td><td style={styles.td}>{inv.total} SAR</td>
@@ -595,7 +677,6 @@ export default function Home() {
              </div>
           )}
 
-          {/* CUSTOMER CRM & DOCUMENT MANAGEMENT */}
           {page === 'customers' && (
             <div style={{ display: 'grid', gap: '20px' }}>
               <div style={styles.card}>
@@ -885,7 +966,6 @@ export default function Home() {
                 </div>
               )}
 
-              {/* COMMISSION REPORT */}
               {reportTab === 'commission' && (
                 <div>
                   <h3>Employee Commission Report</h3>
@@ -1047,6 +1127,7 @@ function SettingsPage({ data, fetchAll, services, handleDelete, handleAddEntity,
 
 const styles = {
   card: { background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' },
+  label: { fontSize: '14px', fontWeight: 'bold', color: '#0F3D2E', marginBottom: '5px', display: 'block' },
   i: { width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', marginBottom: '10px', boxSizing: 'border-box' },
   btn: { width: '100%', padding: '10px', background: '#0F3D2E', color: '#D4AF37', border: 'none', cursor: 'pointer', borderRadius: '4px', fontWeight: 'bold' },
   btnSm: { background: '#0F3D2E', color: '#D4AF37', border: 'none', padding: '8px 15px', cursor: 'pointer', marginRight: '5px', borderRadius: '4px' },
