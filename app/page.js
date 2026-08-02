@@ -135,7 +135,7 @@ export default function Home() {
         const { error: invErr } = await supabase.from('invoices').insert([{ invoice_no: invNo, ...payload }]);
         if (invErr) throw invErr;
         
-        // FIXED: Portal balance deduct hoga jab ticket issue hoga
+        // FIXED: Portal balance deduct hoga jab ticket issue hoga (Cost Price se)
         await supabase.from('portals').update({ current_balance: (portal.current_balance || 0) - cost }).eq('id', portal.id);
         if (paid > 0) {
           const cbType = invForm.payment === 'Cash' ? 'Cash-In' : (invForm.payment === 'Bank Transfer' ? 'Bank-In' : null);
@@ -258,7 +258,7 @@ export default function Home() {
     fetchAll();
   };
 
-  // FIXED: DEDICATED RECHARGE FUNCTION
+  // FIXED: DEDICATED RECHARGE FUNCTION WITH HISTORY UPDATE
   const handleRecharge = async (e) => {
     e.preventDefault();
     const portalName = e.target.portal.value;
@@ -269,7 +269,7 @@ export default function Home() {
     const p = data.portals.find(p => p.name === portalName);
     if (!p) return alert("Select a valid portal");
     
-    // 1. Insert Recharge Record
+    // 1. Insert Recharge Record (For History & Report)
     const { error: recErr } = await supabase.from('recharges').insert([{ 
       portal_id: p.id, 
       amount: amount, 
@@ -277,7 +277,7 @@ export default function Home() {
       description: desc 
     }]);
     
-    if (recErr) return alert("Error: " + recErr.message);
+    if (recErr) return alert("Error saving recharge: " + recErr.message);
     
     // 2. Update Portal Balance (ADD amount)
     const newBalance = (p.current_balance || 0) + amount;
@@ -289,7 +289,7 @@ export default function Home() {
     
     await logAction(`Recharged ${amount} to ${portalName}`);
     alert('Recharge Added Successfully! Balance Updated.');
-    fetchAll();
+    fetchAll(); // Fetch all to update history list
     e.target.reset();
   };
 
@@ -833,37 +833,67 @@ export default function Home() {
             </div>
           )}
 
-          {/* PORTAL & RECHARGE SECTION FIXED */}
+          {/* PORTAL & RECHARGE SECTION WITH HISTORY LIST */}
           {page === 'portals' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
-              <div style={styles.card}>
-                <h3>Add Portal</h3>
-                <form onSubmit={(e) => { e.preventDefault(); handleAddEntity('portals', { name: e.target.name.value, current_balance: 0 }, 'Portal'); e.target.reset(); }} style={{display:'flex', flexDirection:'column', gap:'10px'}}>
-                  <input name="name" placeholder="Portal Name" style={styles.i} required />
-                  <button type="submit" style={styles.btn}>Add</button>
-                </form>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+                <div style={styles.card}>
+                  <h3>Add Portal</h3>
+                  <form onSubmit={(e) => { e.preventDefault(); handleAddEntity('portals', { name: e.target.name.value, current_balance: 0 }, 'Portal'); e.target.reset(); }} style={{display:'flex', flexDirection:'column', gap:'10px'}}>
+                    <input name="name" placeholder="Portal Name" style={styles.i} required />
+                    <button type="submit" style={styles.btn}>Add</button>
+                  </form>
+                </div>
+                <div style={styles.card}>
+                  <h3>Recharge Portal</h3>
+                  <form onSubmit={handleRecharge} style={{display:'flex', flexDirection:'column', gap:'10px'}}>
+                    <select name="portal" style={styles.i} required>
+                      {data.portals.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                    </select>
+                    <input name="date" type="date" defaultValue={today} style={styles.i} required />
+                    <input name="amt" type="number" placeholder="Amount" style={styles.i} required />
+                    <input name="desc" placeholder="Description" style={styles.i} />
+                    <button type="submit" style={styles.btn}>Recharge</button>
+                  </form>
+                </div>
+                <div style={styles.card}>
+                  <h3>Balances & Delete</h3>
+                  {data.portals.map(p => (
+                    <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', padding: '10px 0', alignItems: 'center' }}>
+                      <span>{p.name}<br/><b>{p.current_balance || 0} SAR</b></span>
+                      <button onClick={() => handleDelete('portals', p.id)} style={{background:'#e74c3c', color:'white', border:'none', padding:'2px 5px', cursor:'pointer'}}>X</button>
+                    </div>
+                  ))}
+                </div>
               </div>
+
+              {/* RECHARGE HISTORY LIST (FIXED) */}
               <div style={styles.card}>
-                <h3>Recharge Portal</h3>
-                {/* Using Dedicated handleRecharge function */}
-                <form onSubmit={handleRecharge} style={{display:'flex', flexDirection:'column', gap:'10px'}}>
-                  <select name="portal" style={styles.i} required>
-                    {data.portals.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
-                  </select>
-                  <input name="date" type="date" defaultValue={today} style={styles.i} required />
-                  <input name="amt" type="number" placeholder="Amount" style={styles.i} required />
-                  <input name="desc" placeholder="Description" style={styles.i} />
-                  <button type="submit" style={styles.btn}>Recharge</button>
-                </form>
-              </div>
-              <div style={styles.card}>
-                <h3>Balances & Delete</h3>
-                {data.portals.map(p => (
-                  <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', padding: '10px 0', alignItems: 'center' }}>
-                    <span>{p.name}<br/><b>{p.current_balance || 0} SAR</b></span>
-                    <button onClick={() => handleDelete('portals', p.id)} style={{background:'#e74c3c', color:'white', border:'none', padding:'2px 5px', cursor:'pointer'}}>X</button>
-                  </div>
-                ))}
+                <h3 style={{color:'#0F3D2E'}}>Recharge History (All Portals)</h3>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: '#2980b9', color: 'white' }}>
+                      <th style={styles.th}>Date</th>
+                      <th style={styles.th}>Portal / Company</th>
+                      <th style={styles.th}>Amount</th>
+                      <th style={styles.th}>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.recharges.length === 0 ? (
+                      <tr><td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>No recharges yet.</td></tr>
+                    ) : (
+                      data.recharges.map(r => (
+                        <tr key={r.id} style={{ borderBottom: '1px solid #eee' }}>
+                          <td style={styles.td}>{r.recharge_date}</td>
+                          <td style={styles.td}>{r.portals?.name || 'N/A'}</td>
+                          <td style={{ ...styles.td, color: 'green', fontWeight: 'bold' }}>+{r.amount} SAR</td>
+                          <td style={styles.td}>{r.description || 'N/A'}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
@@ -996,6 +1026,7 @@ export default function Home() {
                 </div>
               )}
 
+              {/* PORTAL REPORT FIXED */}
               {reportTab === 'portals' && (
                 <div>
                   <h3>Portals Recharge Report</h3>
@@ -1003,11 +1034,15 @@ export default function Home() {
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead><tr style={{ background: '#f8f9fa' }}><th style={styles.th}>Date</th><th style={styles.th}>Company</th><th style={styles.th}>Amount</th></tr></thead>
                     <tbody>
-                      {filteredRecharges.map(rec => (
-                        <tr key={rec.id} style={{ borderBottom: '1px solid #eee' }}>
-                          <td style={styles.td}>{rec.recharge_date}</td><td style={styles.td}>{rec.portals?.name}</td><td style={{...styles.td, color:'blue'}}>{rec.amount} SAR</td>
-                        </tr>
-                      ))}
+                      {filteredRecharges.length === 0 ? (
+                        <tr><td colSpan="3" style={{textAlign:'center', padding:'20px'}}>No recharges in this date range.</td></tr>
+                      ) : (
+                        filteredRecharges.map(rec => (
+                          <tr key={rec.id} style={{ borderBottom: '1px solid #eee' }}>
+                            <td style={styles.td}>{rec.recharge_date}</td><td style={styles.td}>{rec.portals?.name}</td><td style={{...styles.td, color:'blue'}}>{rec.amount} SAR</td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
