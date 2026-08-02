@@ -9,7 +9,6 @@ export default function Home() {
   const [user, setUser] = useState(null);
   const [lang, setLang] = useState('en');
   const [page, setPage] = useState('dashboard');
-  const [previewInv, setPreviewInv] = useState(null);
   const router = useRouter();
 
   const [data, setData] = useState({ invoices: [], portals: [], customers: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [] });
@@ -158,7 +157,8 @@ export default function Home() {
           <h1 style="margin:0;color:#0F3D2E;">${s.company_name_ar || 'صعود الطائرة'}</h1>
           <p>${s.company_name_en || 'Sueud Al Taiyyarah'}</p>
           <p>الرقم الضريبي: ${s.vat_no||''} | السجل التجاري: ${s.cr_no||''}</p>
-          <p>رقم الترخيص: ${s.license_no||''} | هاتف: ${s.phone||''}</p>
+          <p>رقم الترخيص: ${s.license_no||''} | رقم ترخيص السياحي: ${s.tourist_license_no||''}</p>
+          <p>هاتف: ${s.phone||''} | موقع: ${s.address||''}</p>
         </div>
         <div style="display:flex;justify-content:space-between;margin-bottom:20px;">
           <div><b>Invoice No:</b> ${inv.invoice_no}<br/><b>Date:</b> ${inv.invoice_date}</div>
@@ -184,7 +184,6 @@ export default function Home() {
 
   if (!user) return <div style={{ padding: 50, textAlign: 'center' }}>Loading ERP...</div>;
 
-  // Calculations
   const activeInv = data.invoices.filter(i => !i.invoice_no.startsWith('REF-'));
   const refundInv = data.invoices.filter(i => i.invoice_no.startsWith('REF-'));
   const tSales = activeInv.reduce((s,i) => s + i.total, 0);
@@ -193,7 +192,6 @@ export default function Home() {
   const tSal = data.payroll.reduce((s,p) => s + p.amount, 0);
   const netProfit = tProfit - tExp - tSal;
 
-  // Date Filter Logic
   const filteredInvoices = data.invoices.filter(inv => {
     if (!fromDate || !toDate) return true;
     const invDate = inv.invoice_date || inv.created_at.split('T')[0];
@@ -525,7 +523,10 @@ function SettingsPage({ data, fetchAll }) {
       <input placeholder="VAT Number (الرقم الضريبي)" value={form.vat_no || ''} onChange={(e) => setForm({...form, vat_no: e.target.value})} style={styles.i} />
       <input placeholder="CR Number (السجل التجاري)" value={form.cr_no || ''} onChange={(e) => setForm({...form, cr_no: e.target.value})} style={styles.i} />
       <input placeholder="License No (رقم الترخيص)" value={form.license_no || ''} onChange={(e) => setForm({...form, license_no: e.target.value})} style={styles.i} />
+      <input placeholder="Tourist License No (رقم ترخيص السياحي)" value={form.tourist_license_no || ''} onChange={(e) => setForm({...form, tourist_license_no: e.target.value})} style={styles.i} />
       <input placeholder="Phone (هاتف)" value={form.phone || ''} onChange={(e) => setForm({...form, phone: e.target.value})} style={styles.i} />
+      <input placeholder="Address (موقع)" value={form.address || ''} onChange={(e) => setForm({...form, address: e.target.value})} style={styles.i} />
+      
       <div style={{ gridColumn: 'span 2', border: '1px solid #D4AF37', padding: '15px', borderRadius: '8px' }}>
         <label><b>Upload Logo:</b></label><br/>
         {form.logo_url && <img src={form.logo_url} style={{height:'60px', marginTop:'10px', marginBottom:'10px'}} />}
