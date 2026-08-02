@@ -13,19 +13,20 @@ export default function Home() {
   const [showOverduePopup, setShowOverduePopup] = useState(false);
   const router = useRouter();
 
-  const [data, setData] = useState({ invoices: [], portals: [], customers: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [] });
+  const [data, setData] = useState({ invoices: [], portals: [], customers: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [] });
   const today = new Date().toISOString().split('T')[0];
   
-  const [invForm, setInvForm] = useState({ custId: 'new', custName: '', custPhone: '', portal: '', bookingDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', airline: '', qty: 1, cost: 0, sell: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '' });
+  const [invForm, setInvForm] = useState({ custId: 'new', custName: '', custPhone: '', portal: '', bookingDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', airline: '', qty: 1, cost: 0, sell: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
   const [refundForm, setRefundForm] = useState({ id: '', compRefund: 0, custRefund: 0 });
   const [settleForm, setSettleForm] = useState({ id: '', date: today, mode: 'Cash', tabbyNo: '', tamaraNo: '' });
+  const [cashForm, setCashForm] = useState({ date: today, type: 'Cash-In', desc: '', amount: '' });
   const [reportTab, setReportTab] = useState('pnl');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
   const t = {
-    en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices List', refunds: 'Refund Invoices', customers: 'Customer List', portals: 'Portals & Recharge', hr: 'HR & Expenses', users: 'User Management', reports: 'Financial Reports', settings: 'Settings', logout: 'Logout' },
-    ar: { dash: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'قائمة الفواتير', refunds: 'فواتير الاسترجاع', customers: 'قائمة العملاء', portals: 'البوابات والرصيد', hr: 'الموارد البشرية والمصاريف', users: 'إدارة المستخدمين', reports: 'التقارير المالية', settings: 'الإعدادات', logout: 'تسجيل الخروج' }
+    en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices List', refunds: 'Refund Invoices', customers: 'Customer List', portals: 'Portals & Recharge', hr: 'HR & Accounts', users: 'User Management', reports: 'Financial Reports', settings: 'Settings', logout: 'Logout' },
+    ar: { dash: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'قائمة الفواتير', refunds: 'فواتير الاسترجاع', customers: 'قائمة العملاء', portals: 'البوابات والرصيد', hr: 'الموارد البشرية والحسابات', users: 'إدارة المستخدمين', reports: 'التقارير المالية', settings: 'الإعدادات', logout: 'تسجيل الخروج' }
   };
   const tr = t[lang];
 
@@ -48,15 +49,15 @@ export default function Home() {
     const usr = await supabase.from('app_users').select('*');
     const exp = await supabase.from('expenses').select('*');
     const srv = await supabase.from('services').select('*');
+    const cbk = await supabase.from('cashbook').select('*').order('trans_date', { ascending: false });
     
     const portalsData = por.data || [];
     const servicesData = srv.data || [];
-    setData({ invoices: inv.data || [], portals: portalsData, customers: cus.data || [], recharges: rec.data || [], settings: set.data || {}, employees: emp.data || [], payroll: pay.data || [], appUsers: usr.data || [], expenses: exp.data || [], services: servicesData });
+    setData({ invoices: inv.data || [], portals: portalsData, customers: cus.data || [], recharges: rec.data || [], settings: set.data || {}, employees: emp.data || [], payroll: pay.data || [], appUsers: usr.data || [], expenses: exp.data || [], services: servicesData, cashbook: cbk.data || [] });
     
     if (portalsData.length > 0) setInvForm(f => ({ ...f, portal: f.portal || portalsData[0].name }));
     if (servicesData.length > 0 && !servicesData.find(s => s.name === invForm.service)) setInvForm(f => ({ ...f, service: servicesData[0].name }));
 
-    // Check for Overdue Invoices to trigger popup
     const overdue = (inv.data || []).filter(i => i.due_amount > 0 && i.credit_due_date && new Date(i.credit_due_date) < new Date(today));
     if (overdue.length > 0) setShowOverduePopup(true);
   };
@@ -99,18 +100,27 @@ export default function Home() {
         total_cost: cost, total_sell: sell, profit, vat, total, paid_amount: paid, due_amount: due, payment_method: invForm.payment,
         credit_due_date: due > 0 ? invForm.creditDueDate : null,
         tabby_order_no: invForm.payment === 'Tabby' ? invForm.tabbyNo : null,
-        tamara_order_no: invForm.payment === 'Tamara' ? invForm.tamaraNo : null
+        tamara_order_no: invForm.payment === 'Tamara' ? invForm.tamaraNo : null,
+        ticket_status: invForm.ticketStatus
       }]);
       if (invErr) throw invErr;
 
       await supabase.from('portals').update({ current_balance: (portal.current_balance || 0) - cost }).eq('id', portal.id);
+      
+      // Add to Cashbook if paid
+      if (paid > 0) {
+        const cbType = invForm.payment === 'Cash' ? 'Cash-In' : (invForm.payment === 'Bank Transfer' ? 'Bank-In' : null);
+        if (cbType) {
+          await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Payment for ${invNo}`, amount: paid }]);
+        }
+      }
+
       alert('Invoice Generated Successfully!');
       fetchAll();
       setPage('list');
     } catch (err) { alert('Error: ' + err.message); }
   };
 
-  // SETTLE CREDIT PAYMENT (Tabby/Tamara/Cash)
   const handleSettlePayment = async (e) => {
     e.preventDefault();
     const { data: invArr } = await supabase.from('invoices').select('*').eq('id', settleForm.id).limit(1);
@@ -119,14 +129,16 @@ export default function Home() {
     
     const newPaid = inv.paid_amount + inv.due_amount;
     await supabase.from('invoices').update({ 
-      paid_amount: newPaid, 
-      due_amount: 0, 
-      settlement_date: settleForm.date, 
-      payment_method: settleForm.mode,
-      tabby_order_no: settleForm.mode === 'Tabby' ? settleForm.tabbyNo : null,
-      tamara_order_no: settleForm.mode === 'Tamara' ? settleForm.tamaraNo : null
+      paid_amount: newPaid, due_amount: 0, settlement_date: settleForm.date, payment_method: settleForm.mode,
+      tabby_order_no: settleForm.mode === 'Tabby' ? settleForm.tabbyNo : null, tamara_order_no: settleForm.mode === 'Tamara' ? settleForm.tamaraNo : null
     }).eq('id', inv.id);
     
+    // Add settlement to Cashbook
+    const cbType = settleForm.mode === 'Cash' ? 'Cash-In' : (settleForm.mode === 'Bank Transfer' ? 'Bank-In' : null);
+    if (cbType) {
+      await supabase.from('cashbook').insert([{ trans_date: settleForm.date, type: cbType, description: `Settlement for ${inv.invoice_no}`, amount: inv.due_amount }]);
+    }
+
     alert('Payment Settled Successfully!');
     setSettleForm({ id: '', date: today, mode: 'Cash', tabbyNo: '', tamaraNo: '' });
     fetchAll();
@@ -149,8 +161,22 @@ export default function Home() {
     }]);
 
     if (inv.portals) await supabase.from('portals').update({ current_balance: (inv.portals.current_balance || 0) + compRef }).eq('id', inv.portals.id);
+    
+    // Refund out from Cashbook
+    if (custRef > 0) {
+      await supabase.from('cashbook').insert([{ trans_date: today, type: 'Cash-Out', description: `Refund to customer for ${inv.invoice_no}`, amount: custRef }]);
+    }
+
     alert('Refund Processed!');
     setRefundForm({ id: '', compRefund: 0, custRefund: 0 });
+    fetchAll();
+  };
+
+  const handleAddCash = async (e) => {
+    e.preventDefault();
+    await supabase.from('cashbook').insert([{ trans_date: cashForm.date, type: cashForm.type, description: cashForm.desc, amount: parseFloat(cashForm.amount) }]);
+    alert('Transaction Added!');
+    setCashForm({ date: today, type: 'Cash-In', desc: '', amount: '' });
     fetchAll();
   };
 
@@ -297,6 +323,8 @@ export default function Home() {
   const refundInv = data.invoices.filter(i => i.invoice_no.startsWith('REF-'));
   const outstandingInv = activeInv.filter(i => i.due_amount > 0);
   const overdueInv = outstandingInv.filter(i => i.credit_due_date && new Date(i.credit_due_date) < new Date(today));
+  const pendingTickets = activeInv.filter(i => i.ticket_status !== 'Confirmed');
+  const todaysBookings = activeInv.filter(i => i.booking_date === today);
   
   const tSales = activeInv.reduce((s,i) => s + i.total, 0);
   const tProfit = activeInv.reduce((s,i) => s + i.profit, 0);
@@ -306,6 +334,14 @@ export default function Home() {
   const netProfit = tProfit - tExp - tSal;
   const vatPayable = activeInv.reduce((s,i) => s + i.vat, 0);
   const totalOutstanding = outstandingInv.reduce((s,i) => s + i.due_amount, 0);
+  
+  // Cashbook Calculations
+  const cashIn = data.cashbook.filter(c => c.type === 'Cash-In').reduce((s,c) => s + c.amount, 0);
+  const cashOut = data.cashbook.filter(c => c.type === 'Cash-Out').reduce((s,c) => s + c.amount, 0);
+  const bankIn = data.cashbook.filter(c => c.type === 'Bank-In').reduce((s,c) => s + c.amount, 0);
+  const bankOut = data.cashbook.filter(c => c.type === 'Bank-Out').reduce((s,c) => s + c.amount, 0);
+  const cashBalance = cashIn - cashOut;
+  const bankBalance = bankIn - bankOut;
 
   const todayDate = new Date();
   const futureDate = new Date(); futureDate.setDate(todayDate.getDate() + 15);
@@ -323,6 +359,7 @@ export default function Home() {
   const filteredRecharges = data.recharges.filter(rec => filterByDate(rec, 'recharge_date'));
   const filteredPayroll = data.payroll.filter(p => filterByDate(p, 'paid_date'));
   const filteredExpenses = data.expenses.filter(e => filterByDate(e, 'expense_date'));
+  const filteredCashbook = data.cashbook.filter(c => filterByDate(c, 'trans_date'));
 
   const menu = [
     { id: 'dashboard', label: tr.dash },
@@ -369,23 +406,25 @@ export default function Home() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '20px' }}>
                 <div style={{...styles.card, borderTop: '4px solid #0F3D2E'}}><h3>Total Sales</h3><h1 style={{color:'#0F3D2E'}}>{tSales.toFixed(0)} SAR</h1></div>
                 <div style={{...styles.card, borderTop: '4px solid #27ae60'}}><h3>Gross Profit</h3><h1 style={{color:'#27ae60'}}>{tProfit.toFixed(0)} SAR</h1></div>
-                <div style={{...styles.card, borderTop: '4px solid #e74c3c'}}><h3>Outstanding (Credit)</h3><h1 style={{color:'#e74c3c'}}>{totalOutstanding.toFixed(0)} SAR</h1></div>
-                <div style={{...styles.card, borderTop: '4px solid #8e44ad'}}><h3>VAT Payable (Govt)</h3><h1 style={{color:'#8e44ad'}}>{vatPayable.toFixed(0)} SAR</h1></div>
-                <div style={{...styles.card, borderTop: '4px solid #f39c12'}}><h3>Net Profit</h3><h1 style={{color: netProfit>0?'#27ae60':'#e74c3c'}}>{netProfit.toFixed(0)} SAR</h1></div>
+                <div style={{...styles.card, borderTop: '4px solid #f39c12'}}><h3>Cash Balance</h3><h1 style={{color:'#f39c12'}}>{cashBalance.toFixed(0)} SAR</h1></div>
+                <div style={{...styles.card, borderTop: '4px solid #2980b9'}}><h3>Bank Balance</h3><h1 style={{color:'#2980b9'}}>{bankBalance.toFixed(0)} SAR</h1></div>
+                <div style={{...styles.card, borderTop: '4px solid #e74c3c'}}><h3>Outstanding</h3><h1 style={{color:'#e74c3c'}}>{totalOutstanding.toFixed(0)} SAR</h1></div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                 <div style={{...styles.card, borderLeft: '4px solid #e67e22'}}>
-                  <h3 style={{color:'#e67e22'}}>⚠️ Iqama Expiring (15 Days)</h3>
-                  {expiringIqama.length === 0 ? <p>No Iqama expiring soon.</p> : 
-                    expiringIqama.map(e => <div key={e.id} style={{borderBottom:'1px solid #eee', padding:'5px 0'}}><b>{e.name}</b> - Expires on: {e.iqama_expiry}</div>)
-                  }
+                  <h3 style={{color:'#e67e22'}}>⚠️ Alerts</h3>
+                  <p>📂 Pending Tickets: <b>{pendingTickets.length}</b></p>
+                  <p>⚠️ Iqama Expiring: <b>{expiringIqama.length}</b></p>
+                  <p>💰 Salary Due Today: <b>{salaryDueToday.length}</b></p>
                 </div>
-                <div style={{...styles.card, borderLeft: '4px solid #c0392b'}}>
-                  <h3 style={{color:'#c0392b'}}>💰 Salary Due Today</h3>
-                  {salaryDueToday.length === 0 ? <p>No salaries due today.</p> : 
-                    salaryDueToday.map(e => <div key={e.id} style={{borderBottom:'1px solid #eee', padding:'5px 0'}}><b>{e.name}</b> - Base: {e.base_salary} SAR + Comm: {e.commission_pct}%</div>)
-                  }
+                <div style={{...styles.card, borderLeft: '4px solid #0F3D2E'}}>
+                  <h3 style={{color:'#0F3D2E'}}>📅 Today's Bookings ({todaysBookings.length})</h3>
+                  <div style={{maxHeight: '100px', overflowY: 'auto'}}>
+                    {todaysBookings.length === 0 ? <p>No bookings today.</p> : 
+                      todaysBookings.map(inv => <div key={inv.id} style={{borderBottom:'1px solid #eee', padding:'5px 0', fontSize:'14px'}}>{inv.customers?.name} - {inv.service_type}</div>)
+                    }
+                  </div>
                 </div>
               </div>
 
@@ -495,11 +534,12 @@ export default function Home() {
           {page === 'list' && (
             <div style={{ background: 'white', padding: '30px', borderRadius: '8px', borderTop: '4px solid #D4AF37' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.th}>Inv No</th><th style={styles.th}>Customer</th><th style={styles.th}>Details</th><th style={styles.th}>Qty</th><th style={styles.th}>Profit</th><th style={styles.th}>Total</th><th style={styles.th}>Due</th><th style={styles.th}>Actions</th></tr></thead>
+                <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.th}>Inv No</th><th style={styles.th}>Customer</th><th style={styles.th}>Status</th><th style={styles.th}>Qty</th><th style={styles.th}>Profit</th><th style={styles.th}>Total</th><th style={styles.th}>Due</th><th style={styles.th}>Actions</th></tr></thead>
                 <tbody>
                   {activeInv.map(inv => (
-                    <tr key={inv.id} style={{ borderBottom: '1px solid #eee', backgroundColor: inv.due_amount > 0 ? '#fff3cd' : 'transparent' }}>
-                      <td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.customers?.name || 'N/A'}</td><td style={styles.td}>{inv.sector || inv.service_type}</td>
+                    <tr key={inv.id} style={{ borderBottom: '1px solid #eee', backgroundColor: inv.due_amount > 0 ? '#fff3cd' : (inv.ticket_status !== 'Confirmed' ? '#e8f4fc' : 'transparent') }}>
+                      <td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.customers?.name || 'N/A'}</td>
+                      <td style={styles.td}>{inv.ticket_status || 'Confirmed'}</td>
                       <td style={styles.td}>{inv.qty || 1}</td>
                       <td style={{...styles.td, color:'green'}}>{inv.profit} SAR</td><td style={styles.td}>{inv.total} SAR</td>
                       <td style={{...styles.td, color: inv.due_amount > 0 ? 'red' : 'green'}}>{inv.due_amount} SAR</td>
@@ -610,6 +650,7 @@ export default function Home() {
             </div>
           )}
 
+          {/* HR & ACCOUNTS MODULE */}
           {page === 'hr' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
               <div style={styles.card}>
@@ -636,12 +677,15 @@ export default function Home() {
                 </form>
               </div>
               <div style={styles.card}>
-                <h3>Pay Salary</h3>
-                <form onSubmit={(e) => { e.preventDefault(); handleAddEntity('payroll', { employee_id: e.target.emp.value, amount: e.target.amt.value, month: e.target.month.value }, 'Salary'); e.target.reset(); }} style={{display:'flex', flexDirection:'column', gap:'10px'}}>
-                  <select name="emp" style={styles.i} required><option value="">Select</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select>
-                  <input name="amt" type="number" placeholder="Amount Paid" style={styles.i} required />
-                  <input name="month" type="month" style={styles.i} required />
-                  <button type="submit" style={styles.btn}>Pay</button>
+                <h3>Cashbook Entry</h3>
+                <form onSubmit={handleAddCash} style={{display:'flex', flexDirection:'column', gap:'10px'}}>
+                  <input type="date" value={cashForm.date} onChange={(e) => setCashForm({...cashForm, date: e.target.value})} style={styles.i} required />
+                  <select value={cashForm.type} onChange={(e) => setCashForm({...cashForm, type: e.target.value})} style={styles.i}>
+                    <option>Cash-In</option><option>Cash-Out</option><option>Bank-In</option><option>Bank-Out</option>
+                  </select>
+                  <input placeholder="Description" value={cashForm.desc} onChange={(e) => setCashForm({...cashForm, desc: e.target.value})} style={styles.i} required />
+                  <input type="number" placeholder="Amount" value={cashForm.amount} onChange={(e) => setCashForm({...cashForm, amount: e.target.value})} style={styles.i} required />
+                  <button type="submit" style={styles.btn}>Add Entry</button>
                 </form>
               </div>
             </div>
@@ -678,6 +722,8 @@ export default function Home() {
                 <button onClick={() => setReportTab('portals')} style={reportTab==='portals'?styles.btnSm:styles.btnSmInactive}>Portals Report</button>
                 <button onClick={() => setReportTab('salary')} style={reportTab==='salary'?styles.btnSm:styles.btnSmInactive}>Salary & Exp Report</button>
                 <button onClick={() => setReportTab('outstanding')} style={reportTab==='outstanding'?styles.btnSm:styles.btnSmInactive}>Outstanding Report</button>
+                <button onClick={() => setReportTab('vat')} style={reportTab==='vat'?styles.btnSm:styles.btnSmInactive}>ZATCA VAT Report</button>
+                <button onClick={() => setReportTab('cashbook')} style={reportTab==='cashbook'?styles.btnSm:styles.btnSmInactive}>Cashbook Report</button>
               </div>
 
               <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -767,6 +813,42 @@ export default function Home() {
                   </table>
                 </div>
               )}
+
+              {reportTab === 'vat' && (
+                <div>
+                  <h3>ZATCA VAT Return Report</h3>
+                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                    <div style={{flex:1, background:'#e8f8f5', padding:'15px', minWidth:'200px'}}>
+                      <h4>Output VAT (From Sales)</h4><h2>{filteredInvoices.filter(i=>!i.invoice_no.startsWith('REF-')).reduce((s,i)=>s+i.vat,0).toFixed(2)} SAR</h2>
+                    </div>
+                    <div style={{flex:1, background:'#fdedec', padding:'15px', minWidth:'200px'}}>
+                      <h4>Input VAT (From Expenses)</h4><h2>0.00 SAR</h2> <p style={{fontSize:'12px', color:'#888'}}>(Assuming 0 VAT on expenses)</p>
+                    </div>
+                    <div style={{flex:1, background:'#0F3D2E', color:'#D4AF37', padding:'15px', minWidth:'200px'}}>
+                      <h4>Net VAT Payable to Govt</h4><h2>{filteredInvoices.filter(i=>!i.invoice_no.startsWith('REF-')).reduce((s,i)=>s+i.vat,0).toFixed(2)} SAR</h2>
+                    </div>
+                  </div>
+                  <button onClick={() => exportCSV([{OutputVAT: filteredInvoices.reduce((s,i)=>s+i.vat,0), InputVAT: 0, NetVAT: filteredInvoices.reduce((s,i)=>s+i.vat,0)}], 'VAT_Report.csv')} style={{...styles.btn, background: '#8e44ad', width: 'auto', padding: '10px 20px', marginTop: '20px'}}>Export VAT Excel</button>
+                </div>
+              )}
+
+              {reportTab === 'cashbook' && (
+                <div>
+                  <h3>Cash & Bank Ledger</h3>
+                  <button onClick={() => exportCSV(filteredCashbook.map(c => ({ Date: c.trans_date, Type: c.type, Desc: c.description, Amount: c.amount })), 'Cashbook_Report.csv')} style={{...styles.btn, background: '#2980b9', width: 'auto', padding: '10px 20px', marginBottom: '20px'}}>Export Cashbook Excel</button>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead><tr style={{ background: '#f8f9fa' }}><th style={styles.th}>Date</th><th style={styles.th}>Type</th><th style={styles.th}>Description</th><th style={styles.th}>Amount</th></tr></thead>
+                    <tbody>
+                      {filteredCashbook.map(c => (
+                        <tr key={c.id} style={{ borderBottom: '1px solid #eee' }}>
+                          <td style={styles.td}>{c.trans_date}</td><td style={styles.td}>{c.type}</td><td style={styles.td}>{c.description}</td>
+                          <td style={{...styles.td, color: c.type.includes('In') ? 'green' : 'red'}}>{c.type.includes('In') ? '+' : '-'}{c.amount} SAR</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 
@@ -774,7 +856,6 @@ export default function Home() {
         </div>
       </main>
 
-      {/* OVERDUE POPUP */}
       {showOverduePopup && (
         <div style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#e74c3c', color: 'white', padding: '20px 30px', borderRadius: '8px', boxShadow: '0 10px 20px rgba(0,0,0,0.3)', zIndex: 2000, display: 'flex', alignItems: 'center', gap: '20px' }}>
           <div>
