@@ -10,14 +10,14 @@ export default function Home() {
   const [lang, setLang] = useState('en');
   const [page, setPage] = useState('dashboard');
   const [previewInv, setPreviewInv] = useState(null);
+  const [editingId, setEditingId] = useState(null); // For Edit Invoice
   const [showOverduePopup, setShowOverduePopup] = useState(false);
   const router = useRouter();
 
   const [data, setData] = useState({ invoices: [], portals: [], customers: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [], audits: [] });
   const today = new Date().toISOString().split('T')[0];
   
-  // Added invoiceDate, flightJourney, flightSector
-  const [invForm, setInvForm] = useState({ custId: 'new', custName: '', custPhone: '', employeeId: '', portal: '', bookingDate: today, invoiceDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', airline: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
+  const [invForm, setInvForm] = useState({ custId: 'new', custName: '', custPhone: '', custType: 'Individual', passengerNames: '', employeeId: '', portal: '', bookingDate: today, invoiceDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', airline: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
   const [refundForm, setRefundForm] = useState({ id: '', compRefund: 0, custRefund: 0 });
   const [settleForm, setSettleForm] = useState({ id: '', date: today, mode: 'Cash', tabbyNo: '', tamaraNo: '' });
   const [cashForm, setCashForm] = useState({ date: today, type: 'Cash-In', desc: '', amount: '' });
@@ -45,7 +45,7 @@ export default function Home() {
   };
 
   const fetchAll = async () => {
-    const inv = await supabase.from('invoices').select(`*, customers(name), portals(name), employees(name)`).order('created_at', { ascending: false });
+    const inv = await supabase.from('invoices').select(`*, customers(name, type), portals(name), employees(name)`).order('created_at', { ascending: false });
     const por = await supabase.from('portals').select('*');
     const cus = await supabase.from('customers').select('*').order('name', { ascending: true });
     const rec = await supabase.from('recharges').select(`*, portals(name)`).order('recharge_date', { ascending: false });
@@ -88,7 +88,7 @@ export default function Home() {
 
       let cid;
       if (invForm.custId === 'new') {
-        const { data: nC } = await supabase.from('customers').insert([{ name: invForm.custName, phone: invForm.custPhone }]).select().single();
+        const { data: nC } = await supabase.from('customers').insert([{ name: invForm.custName, phone: invForm.custPhone, type: invForm.custType }]).select().single();
         cid = nC.id;
       } else { cid = invForm.custId; }
 
@@ -96,37 +96,64 @@ export default function Home() {
       const portal = pArr && pArr.length > 0 ? pArr[0] : null;
       if (!portal) throw new Error("Please select a valid Portal/Company.");
 
-      // Updated Description Logic with Journey & Sector
       let desc = '';
       if (invForm.service === 'Flight') desc = `${invForm.flightSub} (${invForm.flightType}) - ${invForm.airline} - ${invForm.flightJourney} - ${invForm.flightSector}`;
       else if (invForm.service === 'Hotel') desc = `${invForm.hotelName} - ${invForm.destination}`;
       else if (invForm.service.includes('Visa')) desc = `${invForm.visaType} Visa`;
       else desc = invForm.service;
 
-      const invNo = `INV-${Date.now()}`;
-      const { error: invErr } = await supabase.from('invoices').insert([{
-        invoice_no: invNo, customer_id: cid, portal_id: portal.id, employee_id: invForm.employeeId || null,
-        booking_date: invForm.bookingDate, 
-        invoice_date: invForm.invoiceDate, // FIXED: Now uses form date instead of today
+      const payload = {
+        customer_id: cid, portal_id: portal.id, employee_id: invForm.employeeId || null,
+        booking_date: invForm.bookingDate, invoice_date: invForm.invoiceDate,
         service_type: invForm.service, flight_type: invForm.flightType, flight_sub: invForm.flightSub, pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty: qty, discount: discount,
+        passenger_names: invForm.passengerNames || null, // ADDED PASSENGER NAMES
         total_cost: cost, total_sell: sell, profit, vat, total, paid_amount: paid, due_amount: due, payment_method: invForm.payment,
         credit_due_date: due > 0 ? invForm.creditDueDate : null,
         tabby_order_no: invForm.payment === 'Tabby' ? invForm.tabbyNo : null,
         tamara_order_no: invForm.payment === 'Tamara' ? invForm.tamaraNo : null,
         ticket_status: invForm.ticketStatus
-      }]);
-      if (invErr) throw invErr;
+      };
 
-      await supabase.from('portals').update({ current_balance: (portal.current_balance || 0) - cost }).eq('id', portal.id);
-      if (paid > 0) {
-        const cbType = invForm.payment === 'Cash' ? 'Cash-In' : (invForm.payment === 'Bank Transfer' ? 'Bank-In' : null);
-        if (cbType) await supabase.from('cashbook').insert([{ trans_date: invForm.invoiceDate, type: cbType, description: `Payment for ${invNo}`, amount: paid }]);
+      if (editingId) {
+        // EDIT MODE
+        const { error: editErr } = await supabase.from('invoices').update(payload).eq('id', editingId);
+        if (editErr) throw editErr;
+        await logAction(`Updated Invoice ID ${editingId}`);
+        alert('Invoice Updated Successfully!');
+        setEditingId(null);
+      } else {
+        // CREATE MODE
+        const invNo = `INV-${Date.now()}`;
+        const { error: invErr } = await supabase.from('invoices').insert([{ invoice_no: invNo, ...payload }]);
+        if (invErr) throw invErr;
+        
+        await supabase.from('portals').update({ current_balance: (portal.current_balance || 0) - cost }).eq('id', portal.id);
+        if (paid > 0) {
+          const cbType = invForm.payment === 'Cash' ? 'Cash-In' : (invForm.payment === 'Bank Transfer' ? 'Bank-In' : null);
+          if (cbType) await supabase.from('cashbook').insert([{ trans_date: invForm.invoiceDate, type: cbType, description: `Payment for ${invNo}`, amount: paid }]);
+        }
+        await logAction(`Created Invoice ${invNo}`);
+        alert('Invoice Generated Successfully!');
       }
-      await logAction(`Created Invoice ${invNo}`);
-      alert('Invoice Generated Successfully!');
+      
       fetchAll();
+      setInvForm({ custId: 'new', custName: '', custPhone: '', custType: 'Individual', passengerNames: '', employeeId: '', portal: data.portals[0]?.name || '', bookingDate: today, invoiceDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', airline: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
       setPage('list');
     } catch (err) { alert('Error: ' + err.message); }
+  };
+
+  const handleEditClick = (inv) => {
+    setEditingId(inv.id);
+    setInvForm({
+      custId: inv.customer_id, custName: '', custPhone: '', custType: inv.customers?.type || 'Individual', passengerNames: inv.passenger_names || '',
+      employeeId: inv.employee_id || '', portal: inv.portals?.name || '', bookingDate: inv.booking_date || today, invoiceDate: inv.invoice_date || today,
+      service: inv.service_type, flightType: inv.flight_type || 'Domestic', flightSub: inv.flight_sub || 'New Booking', flightJourney: 'Single', flightSector: inv.sector || '', 
+      destination: '', hotelName: '', visaType: 'Tourist', pnr: inv.pnr || '', ticketNo: inv.ticket_no || '', airline: '', 
+      qty: inv.qty || 1, cost: inv.total_cost || 0, sell: inv.total_sell || 0, discount: inv.discount || 0, taxRate: inv.vat > 0 ? '15' : '0', 
+      payment: inv.payment_method || 'Cash', paid: inv.paid_amount || 0, creditDueDate: inv.credit_due_date || '', 
+      tabbyNo: inv.tabby_order_no || '', tamaraNo: inv.tamara_order_no || '', ticketStatus: inv.ticket_status || 'Confirmed'
+    });
+    setPage('create');
   };
 
   const handleSettlePayment = async (e) => {
@@ -262,7 +289,11 @@ export default function Home() {
             <p style="font-size:14px;margin-top:10px;line-height:1.5;">Invoice No / رقم الفاتورة: ${inv.invoice_no}<br/>Date / التاريخ: ${inv.invoice_date}</p>
           </div>
         </div>
-        <div style="margin-bottom:20px;border:1px solid #eee;padding:10px;background:#f9f9f9;"><b>Customer / العميل:</b> ${inv.customers?.name || ''}<br/><b>Phone / الهاتف:</b> ${inv.customers?.phone || ''}</div>
+        <div style="margin-bottom:20px;border:1px solid #eee;padding:10px;background:#f9f9f9;">
+          <b>Customer / العميل:</b> ${inv.customers?.name || ''} (${inv.customers?.type || 'Individual'})<br/>
+          <b>Phone / الهاتف:</b> ${inv.customers?.phone || ''}
+          ${inv.passenger_names ? `<br/><b>Passengers / المسافرون:</b><br/><span style="font-size:12px;white-space:pre-wrap;">${inv.passenger_names}</span>` : ''}
+        </div>
         <table style="width:100%;border-collapse:collapse;text-align:center;font-size:14px;">
           <thead><tr style="background:#0F3D2E;color:#fff;"><th style="padding:10px;border:1px solid #ddd;">Service / الخدمة</th><th style="padding:10px;border:1px solid #ddd;">Qty / الكمية</th><th style="padding:10px;border:1px solid #ddd;">PNR / رقم الحجز</th><th style="padding:10px;border:1px solid #ddd;">Details / التفاصيل</th><th style="padding:10px;border:1px solid #ddd;">Amount / المبلغ</th></tr></thead>
           <tbody><tr><td style="padding:10px;border:1px solid #ddd;">${inv.service_type}</td><td style="padding:10px;border:1px solid #ddd;">${inv.qty || 1}</td><td style="padding:10px;border:1px solid #ddd;">${inv.pnr || ''}</td><td style="padding:10px;border:1px solid #ddd;">${inv.sector || ''}</td><td style="padding:10px;border:1px solid #ddd;">${inv.total_sell.toFixed(2)} SAR</td></tr></tbody>
@@ -349,6 +380,17 @@ export default function Home() {
   const filteredExpenses = data.expenses.filter(e => filterByDate(e, 'expense_date'));
   const filteredCashbook = data.cashbook.filter(c => filterByDate(c, 'trans_date'));
 
+  // Customer/Company Report Logic
+  const customerReport = {};
+  activeInv.forEach(inv => {
+    const cName = inv.customers?.name || 'N/A';
+    const cType = inv.customers?.type || 'Individual';
+    if(!customerReport[cName]) customerReport[cName] = { type: cType, count: 0, total: 0, profit: 0 };
+    customerReport[cName].count++;
+    customerReport[cName].total += inv.total;
+    customerReport[cName].profit += inv.profit;
+  });
+
   const menu = [
     { id: 'dashboard', label: tr.dash },
     { id: 'create', label: tr.create },
@@ -362,6 +404,11 @@ export default function Home() {
     { id: 'audit', label: tr.audit },
     { id: 'settings', label: tr.settings },
   ];
+
+  // Dynamic check for Passenger Names
+  const selectedCust = data.customers.find(c => c.id === invForm.custId);
+  const currentCustType = invForm.custId === 'new' ? invForm.custType : selectedCust?.type;
+  const showPassengerBox = currentCustType === 'Group' || currentCustType === 'Company' || currentCustType === 'Corporate';
 
   return (
     <div style={{ display: 'flex', height: '100vh', fontFamily: 'Arial', backgroundColor: '#F5F7F2', direction: lang === 'ar' ? 'rtl' : 'ltr' }}>
@@ -385,7 +432,7 @@ export default function Home() {
 
       <main style={{ flex: 1, overflowY: 'auto' }}>
         <header style={{ background: 'white', padding: '15px 30px', borderBottom: '2px solid #D4AF37' }}>
-          <h2 style={{ margin: 0, color: '#0F3D2E' }}>{menu.find(m=>m.id===page)?.label}</h2>
+          <h2 style={{ margin: 0, color: '#0F3D2E' }}>{editingId && page === 'create' ? 'Edit Invoice' : menu.find(m=>m.id===page)?.label}</h2>
         </header>
 
         <div style={{ padding: '30px' }}>
@@ -432,27 +479,9 @@ export default function Home() {
                   }
                 </div>
               </div>
-
-              <div style={{...styles.card}}>
-                <h3 style={{color:'#0F3D2E'}}>Sales vs Profit (Last 5 Invoices)</h3>
-                <div style={{ display: 'flex', gap: '20px', height: '250px', alignItems: 'flex-end', paddingTop: '20px', borderBottom: '2px solid #eee' }}>
-                  {activeInv.slice(0, 5).map(inv => (
-                    <div key={inv.id} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <div style={{ width: '100%', background: '#0F3D2E', height: `${(inv.total / Math.max(...activeInv.map(i=>i.total), 1)) * 200}px`, borderRadius: '5px 5px 0 0', marginBottom: '2px' }} title={`Sales: ${inv.total}`}></div>
-                      <div style={{ width: '100%', background: '#D4AF37', height: `${(inv.profit / Math.max(...activeInv.map(i=>i.total), 1)) * 200}px`, borderRadius: '5px 5px 0 0' }} title={`Profit: ${inv.profit}`}></div>
-                      <p style={{ fontSize: '10px', margin: '5px 0 0', color: '#666' }}>{inv.invoice_no.substr(4, 5)}</p>
-                    </div>
-                  ))}
-                </div>
-                <div style={{display:'flex', gap:'20px', marginTop:'10px', justifyContent:'center'}}>
-                  <span style={{display:'flex', alignItems:'center', gap:'5px'}}><div style={{width:'12px', height:'12px', background:'#0F3D2E'}}></div> Sales</span>
-                  <span style={{display:'flex', alignItems:'center', gap:'5px'}}><div style={{width:'12px', height:'12px', background:'#D4AF37'}}></div> Profit</span>
-                </div>
-              </div>
             </div>
           )}
 
-          {/* CREATE INVOICE FORM WITH LABELS & NEW FIELDS */}
           {page === 'create' && (
             <div style={{ background: 'white', padding: '30px', borderRadius: '8px', borderTop: '4px solid #D4AF37' }}>
               <form onSubmit={handleCreateInvoice}>
@@ -460,22 +489,36 @@ export default function Home() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
                   <div>
                     <label style={styles.label}>Select Customer</label>
-                    <select value={invForm.custId} onChange={(e) => setInvForm({...invForm, custId: e.target.value})} style={styles.i}>
+                    <select value={invForm.custId} onChange={(e) => setInvForm({...invForm, custId: e.target.value})} style={styles.i} disabled={editingId}>
                       <option value="new">+ New Customer</option>
-                      {data.customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.phone})</option>)}
+                      {data.customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.type})</option>)}
                     </select>
                   </div>
                   {invForm.custId === 'new' && <>
                     <div>
-                      <label style={styles.label}>Customer Name</label>
+                      <label style={styles.label}>Customer / Company Name</label>
                       <input placeholder="Enter Name" value={invForm.custName} onChange={(e) => setInvForm({...invForm, custName: e.target.value})} required style={styles.i} />
                     </div>
                     <div>
                       <label style={styles.label}>Phone Number</label>
                       <input placeholder="Enter Phone" value={invForm.custPhone} onChange={(e) => setInvForm({...invForm, custPhone: e.target.value})} required style={styles.i} />
                     </div>
+                    <div>
+                      <label style={styles.label}>Customer Type</label>
+                      <select value={invForm.custType} onChange={(e) => setInvForm({...invForm, custType: e.target.value})} style={styles.i}>
+                        <option>Individual</option><option>Group</option><option>Company</option>
+                      </select>
+                    </div>
                   </>}
                 </div>
+
+                {/* PASSENGER NAMES FOR GROUP/COMPANY */}
+                {showPassengerBox && (
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={styles.label}>Passenger Names (One per line)</label>
+                    <textarea placeholder="John Doe\nJane Smith\nAli Ahmed" value={invForm.passengerNames} onChange={(e) => setInvForm({...invForm, passengerNames: e.target.value})} style={{...styles.i, height: '100px'}} />
+                  </div>
+                )}
 
                 <h3 style={{color: '#0F3D2E', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>Service Details</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
@@ -605,7 +648,8 @@ export default function Home() {
                   {invForm.payment === 'Tamara' && <div><label style={styles.label}>Tamara Order No.</label><input placeholder="Order ID" value={invForm.tamaraNo} onChange={(e) => setInvForm({...invForm, tamaraNo: e.target.value})} style={styles.i} required /></div>}
                   {invForm.payment === 'Credit' && <div><label style={styles.label}>Credit Due Date</label><input type="date" value={invForm.creditDueDate} onChange={(e) => setInvForm({...invForm, creditDueDate: e.target.value})} style={styles.i} required /></div>}
                 </div>
-                <button type="submit" style={{ background: '#D4AF37', color: '#0F3D2E', border: 'none', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', padding: '15px', width: '100%' }}>Generate Invoice</button>
+                <button type="submit" style={{ background: '#D4AF37', color: '#0F3D2E', border: 'none', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', padding: '15px', width: '100%' }}>{editingId ? 'Update Invoice' : 'Generate Invoice'}</button>
+                {editingId && <button type="button" onClick={() => { setEditingId(null); setInvForm({ custId: 'new', custName: '', custPhone: '', custType: 'Individual', passengerNames: '', portal: data.portals[0]?.name || '', bookingDate: today, invoiceDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', airline: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' }); setPage('list'); }} style={{ background: '#e74c3c', color: 'white', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '15px', width: '100%', marginTop: '10px' }}>Cancel Edit</button>}
               </form>
             </div>
           )}
@@ -613,17 +657,17 @@ export default function Home() {
           {page === 'list' && (
             <div style={{ background: 'white', padding: '30px', borderRadius: '8px', borderTop: '4px solid #D4AF37' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.th}>Inv No</th><th style={styles.th}>Customer</th><th style={styles.th}>Sales Rep</th><th style={styles.th}>Qty</th><th style={styles.th}>Profit</th><th style={styles.th}>Total</th><th style={styles.th}>Due</th><th style={styles.th}>Actions</th></tr></thead>
+                <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.th}>Inv No</th><th style={styles.th}>Customer</th><th style={styles.th}>Type</th><th style={styles.th}>Qty</th><th style={styles.th}>Profit</th><th style={styles.th}>Total</th><th style={styles.th}>Actions</th></tr></thead>
                 <tbody>
                   {activeInv.map(inv => (
                     <tr key={inv.id} style={{ borderBottom: '1px solid #eee', backgroundColor: inv.due_amount > 0 ? '#fff3cd' : 'transparent' }}>
                       <td style={styles.td}>{inv.invoice_no}<br/><small>{inv.invoice_date}</small></td><td style={styles.td}>{inv.customers?.name || 'N/A'}</td>
-                      <td style={styles.td}>{inv.employees?.name || 'N/A'}</td>
+                      <td style={styles.td}>{inv.customers?.type || 'N/A'}</td>
                       <td style={styles.td}>{inv.qty || 1}</td>
                       <td style={{...styles.td, color:'green'}}>{inv.profit} SAR</td><td style={styles.td}>{inv.total} SAR</td>
-                      <td style={{...styles.td, color: inv.due_amount > 0 ? 'red' : 'green'}}>{inv.due_amount} SAR</td>
                       <td style={styles.td}>
                         <button onClick={() => setPreviewInv(inv)} style={styles.btnSm}>Preview</button>
+                        <button onClick={() => handleEditClick(inv)} style={{...styles.btnSm, background:'#2980b9'}}>Edit</button>
                         {inv.due_amount > 0 && <button onClick={() => setSettleForm({id: inv.id, date: today, mode: 'Cash', tabbyNo: '', tamaraNo: ''})} style={{...styles.btnSm, background:'#27ae60'}}>Settle</button>}
                         <button onClick={() => setRefundForm({id: inv.id, compRefund: 0, custRefund: 0})} style={{...styles.btnSm, background:'#e67e22'}}>Refund</button>
                         <button onClick={() => handleDelete('invoices', inv.id)} style={{...styles.btnSm, background:'#e74c3c'}}>Del</button>
@@ -702,22 +746,21 @@ export default function Home() {
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}>
-                    <th style={styles.th}>Name</th><th style={styles.th}>Phone</th><th style={styles.th}>Wallet</th><th style={styles.th}>Passport</th><th style={styles.th}>Visa</th><th style={styles.th}>Action</th>
+                    <th style={styles.th}>Name</th><th style={styles.th}>Type</th><th style={styles.th}>Phone</th><th style={styles.th}>Wallet</th><th style={styles.th}>Docs</th><th style={styles.th}>Action</th>
                   </tr></thead>
                   <tbody>
                     {data.customers.map(c => (
                       <tr key={c.id} style={{ borderBottom: '1px solid #eee' }}>
-                        <td style={styles.td}>{c.name}</td><td style={styles.td}>{c.phone}</td>
+                        <td style={styles.td}>{c.name}</td><td style={styles.td}>{c.type || 'Individual'}</td><td style={styles.td}>{c.phone}</td>
                         <td style={{...styles.td, color: c.wallet_balance > 0 ? 'green' : '#333'}}>{c.wallet_balance || 0} SAR</td>
                         <td style={styles.td}>
-                          {c.doc_passport ? <a href={c.doc_passport} target="_blank" style={{color:'#2980b9', marginRight:'5px'}}>View</a> : null}
-                          <input type="file" accept="image/*" onChange={(e) => handleDocUpload(c.id, e.target.files[0], 'doc_passport')} style={{fontSize:'10px'}} />
+                          {c.doc_passport ? <a href={c.doc_passport} target="_blank" style={{color:'#2980b9', marginRight:'5px'}}>Passport</a> : null}
+                          {c.doc_visa ? <a href={c.doc_visa} target="_blank" style={{color:'#2980b9'}}>Visa</a> : null}
                         </td>
                         <td style={styles.td}>
-                          {c.doc_visa ? <a href={c.doc_visa} target="_blank" style={{color:'#2980b9', marginRight:'5px'}}>View</a> : null}
+                          <input type="file" accept="image/*" onChange={(e) => handleDocUpload(c.id, e.target.files[0], 'doc_passport')} style={{fontSize:'10px', marginBottom:'5px'}} />
                           <input type="file" accept="image/*" onChange={(e) => handleDocUpload(c.id, e.target.files[0], 'doc_visa')} style={{fontSize:'10px'}} />
                         </td>
-                        <td style={styles.td}><button onClick={() => handleDelete('customers', c.id)} style={{background:'#e74c3c', color:'white', border:'none', padding:'2px 5px', cursor:'pointer'}}>Delete</button></td>
                       </tr>
                     ))}
                   </tbody>
@@ -846,6 +889,7 @@ export default function Home() {
                 <button onClick={() => setReportTab('vat')} style={reportTab==='vat'?styles.btnSm:styles.btnSmInactive}>ZATCA VAT Report</button>
                 <button onClick={() => setReportTab('cashbook')} style={reportTab==='cashbook'?styles.btnSm:styles.btnSmInactive}>Cashbook Report</button>
                 <button onClick={() => setReportTab('commission')} style={reportTab==='commission'?styles.btnSm:styles.btnSmInactive}>Commission Report</button>
+                <button onClick={() => setReportTab('customer')} style={reportTab==='customer'?styles.btnSm:styles.btnSmInactive}>Customer Report</button>
               </div>
 
               <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -863,7 +907,6 @@ export default function Home() {
                     <div style={{flex:1, background:'#fdedec', padding:'15px', minWidth:'200px'}}><h4>Office Expenses</h4><h2>-{filteredExpenses.reduce((s,e)=>s+e.amount,0).toFixed(0)} SAR</h2></div>
                     <div style={{flex:1, background:'#0F3D2E', color:'#D4AF37', padding:'15px', minWidth:'200px'}}><h4>Net Profit</h4><h2>{(filteredInvoices.filter(i=>!i.invoice_no.startsWith('REF-')).reduce((s,i)=>s+i.profit,0) - filteredPayroll.reduce((s,p)=>s+p.amount,0) - filteredExpenses.reduce((s,e)=>s+e.amount,0)).toFixed(0)} SAR</h2></div>
                   </div>
-                  <button onClick={() => exportCSV([{Sales: filteredInvoices.reduce((s,i)=>s+i.total,0), Profit: filteredInvoices.reduce((s,i)=>s+i.profit,0), Salaries: filteredPayroll.reduce((s,p)=>s+p.amount,0), Expenses: filteredExpenses.reduce((s,e)=>s+e.amount,0)}], 'PnL_Report.csv')} style={{...styles.btn, background: '#27ae60', width: 'auto', padding: '10px 20px', marginTop: '20px'}}>Export P&L Excel</button>
                 </div>
               )}
 
@@ -944,7 +987,6 @@ export default function Home() {
                     <div style={{flex:1, background:'#fdedec', padding:'15px', minWidth:'200px'}}><h4>Input VAT (From Expenses)</h4><h2>0.00 SAR</h2> <p style={{fontSize:'12px', color:'#888'}}>(Assuming 0 VAT on expenses)</p></div>
                     <div style={{flex:1, background:'#0F3D2E', color:'#D4AF37', padding:'15px', minWidth:'200px'}}><h4>Net VAT Payable to Govt</h4><h2>{filteredInvoices.filter(i=>!i.invoice_no.startsWith('REF-')).reduce((s,i)=>s+i.vat,0).toFixed(2)} SAR</h2></div>
                   </div>
-                  <button onClick={() => exportCSV([{OutputVAT: filteredInvoices.reduce((s,i)=>s+i.vat,0), InputVAT: 0, NetVAT: filteredInvoices.reduce((s,i)=>s+i.vat,0)}], 'VAT_Report.csv')} style={{...styles.btn, background: '#8e44ad', width: 'auto', padding: '10px 20px', marginTop: '20px'}}>Export VAT Excel</button>
                 </div>
               )}
 
@@ -969,12 +1011,6 @@ export default function Home() {
               {reportTab === 'commission' && (
                 <div>
                   <h3>Employee Commission Report</h3>
-                  <button onClick={() => exportCSV(data.employees.map(e => {
-                    const empSales = activeInv.filter(i => i.employee_id === e.id);
-                    const empProfit = empSales.reduce((s,i) => s + i.profit, 0);
-                    const comm = (empProfit * (e.commission_pct || 0)) / 100;
-                    return { Name: e.name, Role: e.role, SalesCount: empSales.length, TotalProfit: empProfit, CommissionPct: e.commission_pct, CommissionEarned: comm };
-                  }), 'Commission_Report.csv')} style={{...styles.btn, background: '#8e44ad', width: 'auto', padding: '10px 20px', marginBottom: '20px'}}>Export Commission Excel</button>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead><tr style={{ background: '#f8f9fa' }}><th style={styles.th}>Employee</th><th style={styles.th}>Sales Count</th><th style={styles.th}>Total Profit</th><th style={styles.th}>Commission %</th><th style={styles.th}>Commission Earned</th></tr></thead>
                     <tbody>
@@ -991,6 +1027,27 @@ export default function Home() {
                           </tr>
                         );
                       })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* CUSTOMER / COMPANY REPORT */}
+              {reportTab === 'customer' && (
+                <div>
+                  <h3>Customer & Company Report</h3>
+                  <button onClick={() => exportCSV(Object.entries(customerReport).map(([name, val]) => ({ Name: name, Type: val.type, Tickets: val.count, TotalSales: val.total, Profit: val.profit })), 'Customer_Report.csv')} style={{...styles.btn, background: '#8e44ad', width: 'auto', padding: '10px 20px', marginBottom: '20px'}}>Export Customer Excel</button>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead><tr style={{ background: '#f8f9fa' }}><th style={styles.th}>Customer Name</th><th style={styles.th}>Type</th><th style={styles.th}>Tickets Count</th><th style={styles.th}>Total Sales</th><th style={styles.th}>Profit Generated</th></tr></thead>
+                    <tbody>
+                      {Object.entries(customerReport).map(([name, val]) => (
+                        <tr key={name} style={{ borderBottom: '1px solid #eee' }}>
+                          <td style={styles.td}>{name}</td><td style={styles.td}>{val.type}</td>
+                          <td style={styles.td}>{val.count}</td>
+                          <td style={{...styles.td, color:'blue'}}>{val.total.toFixed(0)} SAR</td>
+                          <td style={{...styles.td, color:'green'}}>{val.profit.toFixed(0)} SAR</td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -1032,7 +1089,8 @@ export default function Home() {
                   <p>Invoice No / رقم الفاتورة: {previewInv.invoice_no}<br/>Date / التاريخ: {previewInv.invoice_date}</p>
                 </div>
               </div>
-              <p><b>Customer / العميل:</b> {previewInv.customers?.name}</p>
+              <p><b>Customer / العميل:</b> {previewInv.customers?.name} ({previewInv.customers?.type})</p>
+              {previewInv.passenger_names && <p style={{whiteSpace: 'pre-wrap'}}><b>Passengers / المسافرون:</b><br/>{previewInv.passenger_names}</p>}
               <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px', textAlign: 'center' }}>
                 <tr style={{ background: '#0F3D2E', color: 'white' }}>
                   <th style={styles.th}>Service / الخدمة</th><th style={styles.th}>Qty / الكمية</th><th style={styles.th}>PNR / رقم الحجز</th><th style={styles.th}>Amount / المبلغ</th>
