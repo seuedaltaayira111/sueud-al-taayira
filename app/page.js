@@ -15,11 +15,9 @@ export default function Home() {
   const [data, setData] = useState({ invoices: [], portals: [], customers: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [] });
   const today = new Date().toISOString().split('T')[0];
   
-  const [invForm, setInvForm] = useState({ custId: 'new', custName: '', custPhone: '', portal: '', bookingDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', airline: '', cost: 0, sell: 0, taxRate: '15', payment: 'Cash', paid: '' });
+  const [invForm, setInvForm] = useState({ custId: 'new', custName: '', custPhone: '', portal: '', bookingDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', airline: '', qty: 1, cost: 0, sell: 0, taxRate: '15', payment: 'Cash', paid: '' });
   const [refundForm, setRefundForm] = useState({ id: '', compRefund: 0, custRefund: 0 });
-  
-  // Report Filters
-  const [reportTab, setReportTab] = useState('pnl'); // pnl, sales, portals, salary
+  const [reportTab, setReportTab] = useState('pnl');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
@@ -58,8 +56,9 @@ export default function Home() {
   const handleCreateInvoice = async (e) => {
     e.preventDefault();
     try {
-      const cost = parseFloat(invForm.cost) || 0;
-      const sell = parseFloat(invForm.sell) || 0;
+      const qty = parseInt(invForm.qty) || 1;
+      const cost = (parseFloat(invForm.cost) || 0) * qty;
+      const sell = (parseFloat(invForm.sell) || 0) * qty;
       const taxRate = parseFloat(invForm.taxRate) || 0;
       const vat = sell * (taxRate / 100);
       const total = sell + vat;
@@ -86,7 +85,7 @@ export default function Home() {
       const invNo = `INV-${Date.now()}`;
       const { error: invErr } = await supabase.from('invoices').insert([{
         invoice_no: invNo, customer_id: cid, portal_id: portal.id, booking_date: invForm.bookingDate, invoice_date: today,
-        service_type: invForm.service, flight_type: invForm.flightType, flight_sub: invForm.flightSub, pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc,
+        service_type: invForm.service, flight_type: invForm.flightType, flight_sub: invForm.flightSub, pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty: qty,
         total_cost: cost, total_sell: sell, profit, vat, total, paid_amount: paid, due_amount: due, payment_method: invForm.payment
       }]);
       if (invErr) throw invErr;
@@ -145,7 +144,6 @@ export default function Home() {
     link.click();
   };
 
-  // STYLISH BILINGUAL PDF TEMPLATE (FIXED TEXT & LOGO)
   const downloadPDF = async (inv) => {
     try {
       const { default: html2canvas } = await import('html2canvas');
@@ -194,6 +192,7 @@ export default function Home() {
           <thead>
             <tr style="background:#0F3D2E;color:#fff;">
               <th style="padding:10px;border:1px solid #ddd;">Service / الخدمة</th>
+              <th style="padding:10px;border:1px solid #ddd;">Qty / الكمية</th>
               <th style="padding:10px;border:1px solid #ddd;">PNR / رقم الحجز</th>
               <th style="padding:10px;border:1px solid #ddd;">Details / التفاصيل</th>
               <th style="padding:10px;border:1px solid #ddd;">Amount / المبلغ</th>
@@ -202,6 +201,7 @@ export default function Home() {
           <tbody>
             <tr>
               <td style="padding:10px;border:1px solid #ddd;">${inv.service_type}</td>
+              <td style="padding:10px;border:1px solid #ddd;">${inv.qty || 1}</td>
               <td style="padding:10px;border:1px solid #ddd;">${inv.pnr || ''}</td>
               <td style="padding:10px;border:1px solid #ddd;">${inv.sector || ''}</td>
               <td style="padding:10px;border:1px solid #ddd;">${inv.total_sell.toFixed(2)} SAR</td>
@@ -248,7 +248,6 @@ export default function Home() {
         </div>
       `;
       document.body.appendChild(html);
-      // useCORS: true added to fix logo missing in PDF
       const canvas = await html2canvas(html, { useCORS: true, allowTaint: true });
       const doc = new jsPDF('p', 'mm', 'a4');
       doc.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, 190, 0);
@@ -267,8 +266,15 @@ export default function Home() {
   const tSal = data.payroll.reduce((s,p) => s + p.amount, 0);
   const tRecharges = data.recharges.reduce((s,r) => s + r.amount, 0);
   const netProfit = tProfit - tExp - tSal;
+  const vatPayable = activeInv.reduce((s,i) => s + i.vat, 0);
 
-  // Filter Logic for Reports
+  // Dashboard Alerts Calculations
+  const todayDate = new Date();
+  const futureDate = new Date(); futureDate.setDate(todayDate.getDate() + 15);
+  const expiringIqama = data.employees.filter(e => e.iqama_expiry && new Date(e.iqama_expiry) <= futureDate && new Date(e.iqama_expiry) >= todayDate);
+  const currentDay = todayDate.getDate();
+  const salaryDueToday = data.employees.filter(e => e.salary_day && parseInt(e.salary_day) === currentDay);
+
   const filterByDate = (item, dateField) => {
     if (!fromDate || !toDate) return true;
     const itemDate = item[dateField] || item.created_at.split('T')[0];
@@ -320,17 +326,46 @@ export default function Home() {
 
         <div style={{ padding: '30px' }}>
           
-          {/* STYLISH DASHBOARD WITH GRAPHS */}
+          {/* DASHBOARD WITH ALERTS & GRAPHS */}
           {page === 'dashboard' && (
             <div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '20px' }}>
                 <div style={{...styles.card, borderTop: '4px solid #0F3D2E'}}><h3>Total Sales</h3><h1 style={{color:'#0F3D2E'}}>{tSales.toFixed(0)} SAR</h1></div>
                 <div style={{...styles.card, borderTop: '4px solid #27ae60'}}><h3>Gross Profit</h3><h1 style={{color:'#27ae60'}}>{tProfit.toFixed(0)} SAR</h1></div>
-                <div style={{...styles.card, borderTop: '4px solid #2980b9'}}><h3>Recharges</h3><h1 style={{color:'#2980b9'}}>{tRecharges.toFixed(0)} SAR</h1></div>
+                <div style={{...styles.card, borderTop: '4px solid #8e44ad'}}><h3>VAT Payable (Govt)</h3><h1 style={{color:'#8e44ad'}}>{vatPayable.toFixed(0)} SAR</h1></div>
                 <div style={{...styles.card, borderTop: '4px solid #e74c3c'}}><h3>Net Profit</h3><h1 style={{color: netProfit>0?'#27ae60':'#e74c3c'}}>{netProfit.toFixed(0)} SAR</h1></div>
               </div>
-              
+
+              {/* ALERTS SECTION */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+                <div style={{...styles.card, borderLeft: '4px solid #e67e22'}}>
+                  <h3 style={{color:'#e67e22'}}>⚠️ Iqama Expiring (15 Days)</h3>
+                  {expiringIqama.length === 0 ? <p>No Iqama expiring soon.</p> : 
+                    expiringIqama.map(e => <div key={e.id} style={{borderBottom:'1px solid #eee', padding:'5px 0'}}><b>{e.name}</b> - Expires on: {e.iqama_expiry}</div>)
+                  }
+                </div>
+                <div style={{...styles.card, borderLeft: '4px solid #c0392b'}}>
+                  <h3 style={{color:'#c0392b'}}>💰 Salary Due Today</h3>
+                  {salaryDueToday.length === 0 ? <p>No salaries due today.</p> : 
+                    salaryDueToday.map(e => <div key={e.id} style={{borderBottom:'1px solid #eee', padding:'5px 0'}}><b>{e.name}</b> - Base: {e.base_salary} SAR + Comm: {e.commission_pct}%</div>)
+                  }
+                </div>
+              </div>
+
+              {/* PORTAL BALANCES SECTION */}
               <div style={{...styles.card, marginBottom: '20px'}}>
+                <h3 style={{color:'#0F3D2E'}}>Portal Current Balances</h3>
+                <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+                  {data.portals.map(p => (
+                    <div key={p.id} style={{ flex: 1, minWidth: '150px', background: '#f8f9fa', padding: '15px', borderRadius: '8px', textAlign: 'center' }}>
+                      <h4 style={{margin:'0 0 5px'}}>{p.name}</h4>
+                      <h2 style={{margin:0, color: p.current_balance < 0 ? '#e74c3c' : '#0F3D2E'}}>{p.current_balance || 0} SAR</h2>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{...styles.card}}>
                 <h3 style={{color:'#0F3D2E'}}>Sales vs Profit (Last 5 Invoices)</h3>
                 <div style={{ display: 'flex', gap: '20px', height: '250px', alignItems: 'flex-end', paddingTop: '20px', borderBottom: '2px solid #eee' }}>
                   {activeInv.slice(0, 5).map(inv => (
@@ -400,8 +435,9 @@ export default function Home() {
                     <option value="">Select Portal</option>
                     {data.portals.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
                   </select>
-                  <input type="number" placeholder="Cost Price" value={invForm.cost} onChange={(e) => setInvForm({...invForm, cost: e.target.value})} style={styles.i} required />
-                  <input type="number" placeholder="Sell Price" value={invForm.sell} onChange={(e) => setInvForm({...invForm, sell: e.target.value})} style={styles.i} required />
+                  <input type="number" placeholder="Quantity" value={invForm.qty} onChange={(e) => setInvForm({...invForm, qty: e.target.value})} style={styles.i} required />
+                  <input type="number" placeholder="Cost Price (Per Unit)" value={invForm.cost} onChange={(e) => setInvForm({...invForm, cost: e.target.value})} style={styles.i} required />
+                  <input type="number" placeholder="Sell Price (Per Unit)" value={invForm.sell} onChange={(e) => setInvForm({...invForm, sell: e.target.value})} style={styles.i} required />
                   <select value={invForm.taxRate} onChange={(e) => setInvForm({...invForm, taxRate: e.target.value})} style={styles.i}>
                     <option value="15">Tax 15%</option>
                     <option value="0">Tax 0% (Exempt)</option>
@@ -418,11 +454,12 @@ export default function Home() {
           {page === 'list' && (
             <div style={{ background: 'white', padding: '30px', borderRadius: '8px', borderTop: '4px solid #D4AF37' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.th}>Inv No</th><th style={styles.th}>Customer</th><th style={styles.th}>Details</th><th style={styles.th}>Profit</th><th style={styles.th}>Total</th><th style={styles.th}>Actions</th></tr></thead>
+                <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.th}>Inv No</th><th style={styles.th}>Customer</th><th style={styles.th}>Details</th><th style={styles.th}>Qty</th><th style={styles.th}>Profit</th><th style={styles.th}>Total</th><th style={styles.th}>Actions</th></tr></thead>
                 <tbody>
                   {activeInv.map(inv => (
                     <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
                       <td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.customers?.name || 'N/A'}</td><td style={styles.td}>{inv.sector || inv.service_type}</td>
+                      <td style={styles.td}>{inv.qty || 1}</td>
                       <td style={{...styles.td, color:'green'}}>{inv.profit} SAR</td><td style={styles.td}>{inv.total} SAR</td>
                       <td style={styles.td}>
                         <button onClick={() => setPreviewInv(inv)} style={styles.btnSm}>Preview</button>
@@ -514,21 +551,27 @@ export default function Home() {
             </div>
           )}
 
+          {/* HR & EXPENSES MODULE */}
           {page === 'hr' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
               <div style={styles.card}>
                 <h3>Add Employee</h3>
-                <form onSubmit={(e) => { e.preventDefault(); handleAddEntity('employees', { name: e.target.name.value, role: e.target.role.value, monthly_salary: e.target.sal.value }, 'Employee'); e.target.reset(); }} style={{display:'flex', flexDirection:'column', gap:'10px'}}>
+                <form onSubmit={(e) => { e.preventDefault(); handleAddEntity('employees', { name: e.target.name.value, role: e.target.role.value, join_date: e.target.join_date.value, iqama_no: e.target.iqama_no.value, iqama_expiry: e.target.iqama_expiry.value, base_salary: parseFloat(e.target.base_sal.value), commission_pct: parseFloat(e.target.comm_pct.value), salary_day: parseInt(e.target.sal_day.value) }, 'Employee'); e.target.reset(); }} style={{display:'flex', flexDirection:'column', gap:'10px'}}>
                   <input name="name" placeholder="Name" style={styles.i} required />
                   <input name="role" placeholder="Role" style={styles.i} required />
-                  <input name="sal" type="number" placeholder="Salary" style={styles.i} required />
+                  <input name="join_date" type="date" style={styles.i} required />
+                  <input name="iqama_no" placeholder="Iqama Number" style={styles.i} required />
+                  <input name="iqama_expiry" type="date" style={styles.i} required />
+                  <input name="base_sal" type="number" placeholder="Base Salary" style={styles.i} required />
+                  <input name="comm_pct" type="number" placeholder="Commission %" style={styles.i} required />
+                  <input name="sal_day" type="number" min="1" max="31" placeholder="Salary Day (1-31)" style={styles.i} required />
                   <button type="submit" style={styles.btn}>Add</button>
                 </form>
               </div>
               <div style={styles.card}>
                 <h3>Add Expense</h3>
                 <form onSubmit={(e) => { e.preventDefault(); handleAddEntity('expenses', { category: e.target.cat.value, amount: parseFloat(e.target.amt.value), description: e.target.desc.value }, 'Expense'); e.target.reset(); }} style={{display:'flex', flexDirection:'column', gap:'10px'}}>
-                  <select name="cat" style={styles.i}><option>Rent</option><option>Electricity</option><option>Internet</option><option>Misc</option></select>
+                  <input name="cat" placeholder="Category (Rent, Net, etc)" style={styles.i} required />
                   <input name="amt" type="number" placeholder="Amount" style={styles.i} required />
                   <input name="desc" placeholder="Desc" style={styles.i} />
                   <button type="submit" style={styles.btn}>Add</button>
@@ -538,7 +581,7 @@ export default function Home() {
                 <h3>Pay Salary</h3>
                 <form onSubmit={(e) => { e.preventDefault(); handleAddEntity('payroll', { employee_id: e.target.emp.value, amount: e.target.amt.value, month: e.target.month.value }, 'Salary'); e.target.reset(); }} style={{display:'flex', flexDirection:'column', gap:'10px'}}>
                   <select name="emp" style={styles.i} required><option value="">Select</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select>
-                  <input name="amt" type="number" placeholder="Amount" style={styles.i} required />
+                  <input name="amt" type="number" placeholder="Amount Paid" style={styles.i} required />
                   <input name="month" type="month" style={styles.i} required />
                   <button type="submit" style={styles.btn}>Pay</button>
                 </form>
@@ -569,7 +612,6 @@ export default function Home() {
             </div>
           )}
 
-          {/* ADVANCED FINANCIAL REPORTS */}
           {page === 'reports' && (
             <div style={styles.card}>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '2px solid #eee', paddingBottom: '10px' }}>
@@ -676,10 +718,10 @@ export default function Home() {
               <p><b>Customer / العميل:</b> {previewInv.customers?.name}</p>
               <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px', textAlign: 'center' }}>
                 <tr style={{ background: '#0F3D2E', color: 'white' }}>
-                  <th style={styles.th}>Service / الخدمة</th><th style={styles.th}>PNR / رقم الحجز</th><th style={styles.th}>Details / التفاصيل</th><th style={styles.th}>Amount / المبلغ</th>
+                  <th style={styles.th}>Service / الخدمة</th><th style={styles.th}>Qty / الكمية</th><th style={styles.th}>PNR / رقم الحجز</th><th style={styles.th}>Amount / المبلغ</th>
                 </tr>
                 <tr>
-                  <td style={styles.td}>{previewInv.service_type}</td><td style={styles.td}>{previewInv.pnr}</td><td style={styles.td}>{previewInv.sector}</td><td style={styles.td}>{previewInv.total_sell} SAR</td>
+                  <td style={styles.td}>{previewInv.service_type}</td><td style={styles.td}>{previewInv.qty || 1}</td><td style={styles.td}>{previewInv.pnr}</td><td style={styles.td}>{previewInv.total_sell} SAR</td>
                 </tr>
               </table>
               <div style={{marginTop:'20px', textAlign:'right'}}>
