@@ -10,13 +10,15 @@ export default function Home() {
   const [lang, setLang] = useState('en');
   const [page, setPage] = useState('dashboard');
   const [previewInv, setPreviewInv] = useState(null);
+  const [showOverduePopup, setShowOverduePopup] = useState(false);
   const router = useRouter();
 
-  const [data, setData] = useState({ invoices: [], portals: [], customers: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [] });
+  const [data, setData] = useState({ invoices: [], portals: [], customers: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [] });
   const today = new Date().toISOString().split('T')[0];
   
-  const [invForm, setInvForm] = useState({ custId: 'new', custName: '', custPhone: '', portal: '', bookingDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', airline: '', qty: 1, cost: 0, sell: 0, taxRate: '15', payment: 'Cash', paid: '' });
+  const [invForm, setInvForm] = useState({ custId: 'new', custName: '', custPhone: '', portal: '', bookingDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', airline: '', qty: 1, cost: 0, sell: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '' });
   const [refundForm, setRefundForm] = useState({ id: '', compRefund: 0, custRefund: 0 });
+  const [settleForm, setSettleForm] = useState({ id: '', date: today, mode: 'Cash', tabbyNo: '', tamaraNo: '' });
   const [reportTab, setReportTab] = useState('pnl');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
@@ -45,10 +47,18 @@ export default function Home() {
     const pay = await supabase.from('payroll').select(`*, employees(name)`);
     const usr = await supabase.from('app_users').select('*');
     const exp = await supabase.from('expenses').select('*');
+    const srv = await supabase.from('services').select('*');
     
     const portalsData = por.data || [];
-    setData({ invoices: inv.data || [], portals: portalsData, customers: cus.data || [], recharges: rec.data || [], settings: set.data || {}, employees: emp.data || [], payroll: pay.data || [], appUsers: usr.data || [], expenses: exp.data || [] });
+    const servicesData = srv.data || [];
+    setData({ invoices: inv.data || [], portals: portalsData, customers: cus.data || [], recharges: rec.data || [], settings: set.data || {}, employees: emp.data || [], payroll: pay.data || [], appUsers: usr.data || [], expenses: exp.data || [], services: servicesData });
+    
     if (portalsData.length > 0) setInvForm(f => ({ ...f, portal: f.portal || portalsData[0].name }));
+    if (servicesData.length > 0 && !servicesData.find(s => s.name === invForm.service)) setInvForm(f => ({ ...f, service: servicesData[0].name }));
+
+    // Check for Overdue Invoices to trigger popup
+    const overdue = (inv.data || []).filter(i => i.due_amount > 0 && i.credit_due_date && new Date(i.credit_due_date) < new Date(today));
+    if (overdue.length > 0) setShowOverduePopup(true);
   };
 
   const handleLogout = () => { supabase.auth.signOut(); router.push('/login'); };
@@ -86,7 +96,10 @@ export default function Home() {
       const { error: invErr } = await supabase.from('invoices').insert([{
         invoice_no: invNo, customer_id: cid, portal_id: portal.id, booking_date: invForm.bookingDate, invoice_date: today,
         service_type: invForm.service, flight_type: invForm.flightType, flight_sub: invForm.flightSub, pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty: qty,
-        total_cost: cost, total_sell: sell, profit, vat, total, paid_amount: paid, due_amount: due, payment_method: invForm.payment
+        total_cost: cost, total_sell: sell, profit, vat, total, paid_amount: paid, due_amount: due, payment_method: invForm.payment,
+        credit_due_date: due > 0 ? invForm.creditDueDate : null,
+        tabby_order_no: invForm.payment === 'Tabby' ? invForm.tabbyNo : null,
+        tamara_order_no: invForm.payment === 'Tamara' ? invForm.tamaraNo : null
       }]);
       if (invErr) throw invErr;
 
@@ -95,6 +108,28 @@ export default function Home() {
       fetchAll();
       setPage('list');
     } catch (err) { alert('Error: ' + err.message); }
+  };
+
+  // SETTLE CREDIT PAYMENT (Tabby/Tamara/Cash)
+  const handleSettlePayment = async (e) => {
+    e.preventDefault();
+    const { data: invArr } = await supabase.from('invoices').select('*').eq('id', settleForm.id).limit(1);
+    if (!invArr || invArr.length === 0) return alert('Invoice not found');
+    const inv = invArr[0];
+    
+    const newPaid = inv.paid_amount + inv.due_amount;
+    await supabase.from('invoices').update({ 
+      paid_amount: newPaid, 
+      due_amount: 0, 
+      settlement_date: settleForm.date, 
+      payment_method: settleForm.mode,
+      tabby_order_no: settleForm.mode === 'Tabby' ? settleForm.tabbyNo : null,
+      tamara_order_no: settleForm.mode === 'Tamara' ? settleForm.tamaraNo : null
+    }).eq('id', inv.id);
+    
+    alert('Payment Settled Successfully!');
+    setSettleForm({ id: '', date: today, mode: 'Cash', tabbyNo: '', tamaraNo: '' });
+    fetchAll();
   };
 
   const handleRefund = async (e) => {
@@ -260,6 +295,9 @@ export default function Home() {
 
   const activeInv = data.invoices.filter(i => !i.invoice_no.startsWith('REF-'));
   const refundInv = data.invoices.filter(i => i.invoice_no.startsWith('REF-'));
+  const outstandingInv = activeInv.filter(i => i.due_amount > 0);
+  const overdueInv = outstandingInv.filter(i => i.credit_due_date && new Date(i.credit_due_date) < new Date(today));
+  
   const tSales = activeInv.reduce((s,i) => s + i.total, 0);
   const tProfit = activeInv.reduce((s,i) => s + i.profit, 0);
   const tExp = data.expenses.reduce((s,e) => s + e.amount, 0);
@@ -267,8 +305,8 @@ export default function Home() {
   const tRecharges = data.recharges.reduce((s,r) => s + r.amount, 0);
   const netProfit = tProfit - tExp - tSal;
   const vatPayable = activeInv.reduce((s,i) => s + i.vat, 0);
+  const totalOutstanding = outstandingInv.reduce((s,i) => s + i.due_amount, 0);
 
-  // Dashboard Alerts Calculations
   const todayDate = new Date();
   const futureDate = new Date(); futureDate.setDate(todayDate.getDate() + 15);
   const expiringIqama = data.employees.filter(e => e.iqama_expiry && new Date(e.iqama_expiry) <= futureDate && new Date(e.iqama_expiry) >= todayDate);
@@ -326,17 +364,16 @@ export default function Home() {
 
         <div style={{ padding: '30px' }}>
           
-          {/* DASHBOARD WITH ALERTS & GRAPHS */}
           {page === 'dashboard' && (
             <div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '20px' }}>
                 <div style={{...styles.card, borderTop: '4px solid #0F3D2E'}}><h3>Total Sales</h3><h1 style={{color:'#0F3D2E'}}>{tSales.toFixed(0)} SAR</h1></div>
                 <div style={{...styles.card, borderTop: '4px solid #27ae60'}}><h3>Gross Profit</h3><h1 style={{color:'#27ae60'}}>{tProfit.toFixed(0)} SAR</h1></div>
+                <div style={{...styles.card, borderTop: '4px solid #e74c3c'}}><h3>Outstanding (Credit)</h3><h1 style={{color:'#e74c3c'}}>{totalOutstanding.toFixed(0)} SAR</h1></div>
                 <div style={{...styles.card, borderTop: '4px solid #8e44ad'}}><h3>VAT Payable (Govt)</h3><h1 style={{color:'#8e44ad'}}>{vatPayable.toFixed(0)} SAR</h1></div>
-                <div style={{...styles.card, borderTop: '4px solid #e74c3c'}}><h3>Net Profit</h3><h1 style={{color: netProfit>0?'#27ae60':'#e74c3c'}}>{netProfit.toFixed(0)} SAR</h1></div>
+                <div style={{...styles.card, borderTop: '4px solid #f39c12'}}><h3>Net Profit</h3><h1 style={{color: netProfit>0?'#27ae60':'#e74c3c'}}>{netProfit.toFixed(0)} SAR</h1></div>
               </div>
 
-              {/* ALERTS SECTION */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                 <div style={{...styles.card, borderLeft: '4px solid #e67e22'}}>
                   <h3 style={{color:'#e67e22'}}>⚠️ Iqama Expiring (15 Days)</h3>
@@ -352,7 +389,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* PORTAL BALANCES SECTION */}
               <div style={{...styles.card, marginBottom: '20px'}}>
                 <h3 style={{color:'#0F3D2E'}}>Portal Current Balances</h3>
                 <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
@@ -402,8 +438,7 @@ export default function Home() {
                 <h3 style={{color: '#0F3D2E'}}>Service Details</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
                   <select value={invForm.service} onChange={(e) => setInvForm({...invForm, service: e.target.value})} style={styles.i}>
-                    <option>Flight</option><option>Hotel</option><option>Holiday Package</option>
-                    <option>Driving License</option><option>Visit Visa</option><option>Umrah Visa</option>
+                    {data.services.map(s => <option key={s.id}>{s.name}</option>)}
                   </select>
                   
                   {invForm.service === 'Flight' && <>
@@ -442,11 +477,17 @@ export default function Home() {
                     <option value="15">Tax 15%</option>
                     <option value="0">Tax 0% (Exempt)</option>
                   </select>
-                  <select value={invForm.payment} onChange={(e) => setInvForm({...invForm, payment: e.target.value})} style={styles.i}><option>Cash</option><option>Bank Transfer</option><option>Tabby</option><option>Tamara</option><option>Credit</option></select>
+                  <select value={invForm.payment} onChange={(e) => setInvForm({...invForm, payment: e.target.value})} style={styles.i}>
+                    <option>Cash</option><option>Bank Transfer</option><option>Tabby</option><option>Tamara</option><option>Credit</option>
+                  </select>
                   <input type="date" value={invForm.bookingDate} onChange={(e) => setInvForm({...invForm, bookingDate: e.target.value})} style={styles.i} required />
                   <input type="number" placeholder="Paid Amount" value={invForm.paid} onChange={(e) => setInvForm({...invForm, paid: e.target.value})} style={styles.i} required />
-                  <button type="submit" style={{ background: '#D4AF37', color: '#0F3D2E', border: 'none', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold' }}>Generate Invoice</button>
+                  
+                  {invForm.payment === 'Tabby' && <input placeholder="Tabby Order No." value={invForm.tabbyNo} onChange={(e) => setInvForm({...invForm, tabbyNo: e.target.value})} style={styles.i} required />}
+                  {invForm.payment === 'Tamara' && <input placeholder="Tamara Order No." value={invForm.tamaraNo} onChange={(e) => setInvForm({...invForm, tamaraNo: e.target.value})} style={styles.i} required />}
+                  {invForm.payment === 'Credit' && <input type="date" placeholder="Credit Due Date" value={invForm.creditDueDate} onChange={(e) => setInvForm({...invForm, creditDueDate: e.target.value})} style={styles.i} required />}
                 </div>
+                <button type="submit" style={{ background: '#D4AF37', color: '#0F3D2E', border: 'none', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', padding: '15px' }}>Generate Invoice</button>
               </form>
             </div>
           )}
@@ -454,16 +495,18 @@ export default function Home() {
           {page === 'list' && (
             <div style={{ background: 'white', padding: '30px', borderRadius: '8px', borderTop: '4px solid #D4AF37' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.th}>Inv No</th><th style={styles.th}>Customer</th><th style={styles.th}>Details</th><th style={styles.th}>Qty</th><th style={styles.th}>Profit</th><th style={styles.th}>Total</th><th style={styles.th}>Actions</th></tr></thead>
+                <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.th}>Inv No</th><th style={styles.th}>Customer</th><th style={styles.th}>Details</th><th style={styles.th}>Qty</th><th style={styles.th}>Profit</th><th style={styles.th}>Total</th><th style={styles.th}>Due</th><th style={styles.th}>Actions</th></tr></thead>
                 <tbody>
                   {activeInv.map(inv => (
-                    <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
+                    <tr key={inv.id} style={{ borderBottom: '1px solid #eee', backgroundColor: inv.due_amount > 0 ? '#fff3cd' : 'transparent' }}>
                       <td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.customers?.name || 'N/A'}</td><td style={styles.td}>{inv.sector || inv.service_type}</td>
                       <td style={styles.td}>{inv.qty || 1}</td>
                       <td style={{...styles.td, color:'green'}}>{inv.profit} SAR</td><td style={styles.td}>{inv.total} SAR</td>
+                      <td style={{...styles.td, color: inv.due_amount > 0 ? 'red' : 'green'}}>{inv.due_amount} SAR</td>
                       <td style={styles.td}>
                         <button onClick={() => setPreviewInv(inv)} style={styles.btnSm}>Preview</button>
                         <button onClick={() => downloadPDF(inv)} style={{...styles.btnSm, background:'#8e44ad'}}>PDF</button>
+                        {inv.due_amount > 0 && <button onClick={() => setSettleForm({id: inv.id, date: today, mode: 'Cash', tabbyNo: '', tamaraNo: ''})} style={{...styles.btnSm, background:'#27ae60'}}>Settle</button>}
                         <button onClick={() => setRefundForm({id: inv.id, compRefund: 0, custRefund: 0})} style={{...styles.btnSm, background:'#e67e22'}}>Refund</button>
                         <button onClick={() => handleDelete('invoices', inv.id)} style={{...styles.btnSm, background:'#e74c3c'}}>Del</button>
                       </td>
@@ -471,6 +514,22 @@ export default function Home() {
                   ))}
                 </tbody>
               </table>
+
+              {settleForm.id && (
+                <div style={{ marginTop: '20px', padding: '15px', border: '2px solid #27ae60', borderRadius: '8px' }}>
+                  <h3>Settle Credit Payment</h3>
+                  <form onSubmit={handleSettlePayment} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '15px' }}>
+                    <input type="date" value={settleForm.date} onChange={(e) => setSettleForm({...settleForm, date: e.target.value})} required style={styles.i} />
+                    <select value={settleForm.mode} onChange={(e) => setSettleForm({...settleForm, mode: e.target.value})} style={styles.i}>
+                      <option>Cash</option><option>Bank Transfer</option><option>Tabby</option><option>Tamara</option>
+                    </select>
+                    {settleForm.mode === 'Tabby' && <input placeholder="Tabby Order No." value={settleForm.tabbyNo} onChange={(e) => setSettleForm({...settleForm, tabbyNo: e.target.value})} required style={styles.i} />}
+                    {settleForm.mode === 'Tamara' && <input placeholder="Tamara Order No." value={settleForm.tamaraNo} onChange={(e) => setSettleForm({...settleForm, tamaraNo: e.target.value})} required style={styles.i} />}
+                    <button type="submit" style={{ background: '#27ae60', color: 'white', border: 'none', cursor: 'pointer' }}>Confirm Settlement</button>
+                  </form>
+                </div>
+              )}
+
               {refundForm.id && (
                 <div style={{ marginTop: '20px', padding: '15px', border: '2px solid #e67e22', borderRadius: '8px' }}>
                   <h3>Process Partial Refund</h3>
@@ -485,19 +544,19 @@ export default function Home() {
           )}
 
           {page === 'refunds' && (
-            <div style={{ background: 'white', padding: '30px', borderRadius: '8px', borderTop: '4px solid #e74c3c' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr style={{ background: '#e74c3c', color: 'white' }}><th style={styles.th}>Refund No</th><th style={styles.th}>Original Inv</th><th style={styles.th}>Cust Refund</th><th style={styles.th}>Comp Refund</th></tr></thead>
-                <tbody>
-                  {refundInv.map(inv => (
-                    <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.service_type}</td>
-                      <td style={{...styles.td, color:'red'}}>{inv.refund_customer} SAR</td><td style={{...styles.td, color:'green'}}>{inv.refund_company} SAR</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+             <div style={{ background: 'white', padding: '30px', borderRadius: '8px', borderTop: '4px solid #e74c3c' }}>
+               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                 <thead><tr style={{ background: '#e74c3c', color: 'white' }}><th style={styles.th}>Refund No</th><th style={styles.th}>Original Inv</th><th style={styles.th}>Cust Refund</th><th style={styles.th}>Comp Refund</th></tr></thead>
+                 <tbody>
+                   {refundInv.map(inv => (
+                     <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
+                       <td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.service_type}</td>
+                       <td style={{...styles.td, color:'red'}}>{inv.refund_customer} SAR</td><td style={{...styles.td, color:'green'}}>{inv.refund_company} SAR</td>
+                     </tr>
+                   ))}
+                 </tbody>
+               </table>
+             </div>
           )}
 
           {page === 'customers' && (
@@ -551,7 +610,6 @@ export default function Home() {
             </div>
           )}
 
-          {/* HR & EXPENSES MODULE */}
           {page === 'hr' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
               <div style={styles.card}>
@@ -614,11 +672,12 @@ export default function Home() {
 
           {page === 'reports' && (
             <div style={styles.card}>
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '2px solid #eee', paddingBottom: '10px' }}>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '2px solid #eee', paddingBottom: '10px', flexWrap:'wrap' }}>
                 <button onClick={() => setReportTab('pnl')} style={reportTab==='pnl'?styles.btnSm:styles.btnSmInactive}>P&L Statement</button>
                 <button onClick={() => setReportTab('sales')} style={reportTab==='sales'?styles.btnSm:styles.btnSmInactive}>Sales Report</button>
                 <button onClick={() => setReportTab('portals')} style={reportTab==='portals'?styles.btnSm:styles.btnSmInactive}>Portals Report</button>
                 <button onClick={() => setReportTab('salary')} style={reportTab==='salary'?styles.btnSm:styles.btnSmInactive}>Salary & Exp Report</button>
+                <button onClick={() => setReportTab('outstanding')} style={reportTab==='outstanding'?styles.btnSm:styles.btnSmInactive}>Outstanding Report</button>
               </div>
 
               <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -688,12 +747,43 @@ export default function Home() {
                   </table>
                 </div>
               )}
+
+              {reportTab === 'outstanding' && (
+                <div>
+                  <h3>Outstanding Credit Report</h3>
+                  <button onClick={() => exportCSV(outstandingInv.map(i => ({ InvNo: i.invoice_no, Customer: i.customers?.name, Phone: i.customers?.phone, Total: i.total, Paid: i.paid_amount, Due: i.due_amount, DueDate: i.credit_due_date })), 'Outstanding_Report.csv')} style={{...styles.btn, background: '#e74c3c', width: 'auto', padding: '10px 20px', marginBottom: '20px'}}>Export Outstanding Excel</button>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead><tr style={{ background: '#f8f9fa' }}><th style={styles.th}>Inv No</th><th style={styles.th}>Customer</th><th style={styles.th}>Phone</th><th style={styles.th}>Due Amount</th><th style={styles.th}>Due Date</th><th style={styles.th}>Status</th></tr></thead>
+                    <tbody>
+                      {outstandingInv.map(inv => (
+                        <tr key={inv.id} style={{ borderBottom: '1px solid #eee', backgroundColor: inv.credit_due_date && new Date(inv.credit_due_date) < new Date(today) ? '#ffebee' : 'transparent' }}>
+                          <td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.customers?.name}</td><td style={styles.td}>{inv.customers?.phone}</td>
+                          <td style={{...styles.td, color:'red'}}>{inv.due_amount} SAR</td>
+                          <td style={styles.td}>{inv.credit_due_date || 'N/A'}</td>
+                          <td style={styles.td}>{inv.credit_due_date && new Date(inv.credit_due_date) < new Date(today) ? 'Overdue' : 'Pending'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 
-          {page === 'settings' && <SettingsPage data={data.settings} fetchAll={fetchAll} />}
+          {page === 'settings' && <SettingsPage data={data.settings} fetchAll={fetchAll} services={data.services} handleDelete={handleDelete} handleAddEntity={handleAddEntity} />}
         </div>
       </main>
+
+      {/* OVERDUE POPUP */}
+      {showOverduePopup && (
+        <div style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#e74c3c', color: 'white', padding: '20px 30px', borderRadius: '8px', boxShadow: '0 10px 20px rgba(0,0,0,0.3)', zIndex: 2000, display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <div>
+            <h3 style={{margin:0}}>⚠️ Overdue Payments Alert!</h3>
+            <p style={{margin:'5px 0 0'}}>You have {overdueInv.length} overdue credit invoices. Total Due: {overdueInv.reduce((s,i)=>s+i.due_amount,0).toFixed(0)} SAR.</p>
+          </div>
+          <button onClick={() => setShowOverduePopup(false)} style={{ background: 'white', color: '#e74c3c', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Dismiss</button>
+        </div>
+      )}
 
       {previewInv && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
@@ -740,7 +830,7 @@ export default function Home() {
   );
 }
 
-function SettingsPage({ data, fetchAll }) {
+function SettingsPage({ data, fetchAll, services, handleDelete, handleAddEntity }) {
   const [form, setForm] = useState(data);
   const [uploading, setUploading] = useState(false);
 
@@ -764,24 +854,42 @@ function SettingsPage({ data, fetchAll }) {
   };
 
   return (
-    <form onSubmit={handleSave} style={{ background: 'white', padding: '30px', borderRadius: '8px', borderTop: '4px solid #D4AF37', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-      <input placeholder="Company Name (EN)" value={form.company_name_en || ''} onChange={(e) => setForm({...form, company_name_en: e.target.value})} style={styles.i} />
-      <input placeholder="Company Name (AR)" value={form.company_name_ar || ''} onChange={(e) => setForm({...form, company_name_ar: e.target.value})} style={styles.i} />
-      <input placeholder="VAT Number (الرقم الضريبي)" value={form.vat_no || ''} onChange={(e) => setForm({...form, vat_no: e.target.value})} style={styles.i} />
-      <input placeholder="CR Number (السجل التجاري)" value={form.cr_no || ''} onChange={(e) => setForm({...form, cr_no: e.target.value})} style={styles.i} />
-      <input placeholder="License No (رقم الترخيص)" value={form.license_no || ''} onChange={(e) => setForm({...form, license_no: e.target.value})} style={styles.i} />
-      <input placeholder="Tourist License No (رقم ترخيص السياحي)" value={form.tourist_license_no || ''} onChange={(e) => setForm({...form, tourist_license_no: e.target.value})} style={styles.i} />
-      <input placeholder="Phone (هاتف)" value={form.phone || ''} onChange={(e) => setForm({...form, phone: e.target.value})} style={styles.i} />
-      <input placeholder="Address (موقع)" value={form.address || ''} onChange={(e) => setForm({...form, address: e.target.value})} style={styles.i} />
-      
-      <div style={{ gridColumn: 'span 2', border: '1px solid #D4AF37', padding: '15px', borderRadius: '8px' }}>
-        <label><b>Upload Logo:</b></label><br/>
-        {form.logo_url && <img src={form.logo_url} style={{height:'60px', marginTop:'10px', marginBottom:'10px'}} />}
-        <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ marginTop: '10px' }} />
-        {uploading && <p>Uploading...</p>}
+    <div style={{ display: 'grid', gap: '30px' }}>
+      <form onSubmit={handleSave} style={{ background: 'white', padding: '30px', borderRadius: '8px', borderTop: '4px solid #D4AF37', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+        <input placeholder="Company Name (EN)" value={form.company_name_en || ''} onChange={(e) => setForm({...form, company_name_en: e.target.value})} style={styles.i} />
+        <input placeholder="Company Name (AR)" value={form.company_name_ar || ''} onChange={(e) => setForm({...form, company_name_ar: e.target.value})} style={styles.i} />
+        <input placeholder="VAT Number (الرقم الضريبي)" value={form.vat_no || ''} onChange={(e) => setForm({...form, vat_no: e.target.value})} style={styles.i} />
+        <input placeholder="CR Number (السجل التجاري)" value={form.cr_no || ''} onChange={(e) => setForm({...form, cr_no: e.target.value})} style={styles.i} />
+        <input placeholder="License No (رقم الترخيص)" value={form.license_no || ''} onChange={(e) => setForm({...form, license_no: e.target.value})} style={styles.i} />
+        <input placeholder="Tourist License No (رقم ترخيص السياحي)" value={form.tourist_license_no || ''} onChange={(e) => setForm({...form, tourist_license_no: e.target.value})} style={styles.i} />
+        <input placeholder="Phone (هاتف)" value={form.phone || ''} onChange={(e) => setForm({...form, phone: e.target.value})} style={styles.i} />
+        <input placeholder="Address (موقع)" value={form.address || ''} onChange={(e) => setForm({...form, address: e.target.value})} style={styles.i} />
+        
+        <div style={{ gridColumn: 'span 2', border: '1px solid #D4AF37', padding: '15px', borderRadius: '8px' }}>
+          <label><b>Upload Logo:</b></label><br/>
+          {form.logo_url && <img src={form.logo_url} style={{height:'60px', marginTop:'10px', marginBottom:'10px'}} />}
+          <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ marginTop: '10px' }} />
+          {uploading && <p>Uploading...</p>}
+        </div>
+        <button type="submit" style={{ gridColumn: 'span 2', padding: '15px', background: '#D4AF37', color: '#0F3D2E', border: 'none', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold' }}>SAVE SETTINGS</button>
+      </form>
+
+      <div style={{ background: 'white', padding: '30px', borderRadius: '8px', borderTop: '4px solid #0F3D2E' }}>
+        <h3 style={{color: '#0F3D2E', marginTop: 0}}>Manage Services (Add/Delete)</h3>
+        <form onSubmit={(e) => { e.preventDefault(); handleAddEntity('services', { name: e.target.name.value }, 'Service'); e.target.reset(); }} style={{display:'flex', gap:'10px', marginBottom:'20px'}}>
+          <input name="name" placeholder="New Service Name (e.g. Railway Ticket, Insurance)" style={styles.i} required />
+          <button type="submit" style={{...styles.btn, width: 'auto', padding: '10px 20px'}}>Add Service</button>
+        </form>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          {services.map(s => (
+            <div key={s.id} style={{ background: '#f8f9fa', padding: '5px 10px', borderRadius: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {s.name}
+              <button onClick={() => handleDelete('services', s.id)} style={{ background: '#e74c3c', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>X</button>
+            </div>
+          ))}
+        </div>
       </div>
-      <button type="submit" style={{ gridColumn: 'span 2', padding: '15px', background: '#D4AF37', color: '#0F3D2E', border: 'none', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold' }}>SAVE SETTINGS</button>
-    </form>
+    </div>
   );
 }
 
