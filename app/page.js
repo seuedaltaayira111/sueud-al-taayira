@@ -68,8 +68,14 @@ export default function Home() {
         cid = nC.id;
       } else { cid = invForm.custId; }
 
+      // --- SAFETY CHECK FOR PORTAL (FIXED) ---
       const { data: pArr } = await supabase.from('portals').select('*').eq('name', invForm.portal).limit(1);
-      const portal = pArr[0];
+      const portal = pArr && pArr.length > 0 ? pArr[0] : null;
+      
+      if (!portal) {
+        throw new Error("Please select a valid Portal/Company. Go to 'Portals & Recharge' tab to add one if empty.");
+      }
+      // ---------------------------------------
 
       let desc = '';
       if (invForm.service === 'Flight') desc = `${invForm.flightSub} (${invForm.flightType}) - ${invForm.airline}`;
@@ -86,7 +92,7 @@ export default function Home() {
       if (invErr) throw invErr;
 
       await supabase.from('portals').update({ current_balance: (portal.current_balance || 0) - cost }).eq('id', portal.id);
-      alert('Invoice Generated!');
+      alert('Invoice Generated Successfully!');
       fetchAll();
       setPage('list');
     } catch (err) { alert('Error: ' + err.message); }
@@ -295,7 +301,10 @@ export default function Home() {
 
                 <h3 style={{color: '#0F3D2E'}}>Pricing & Payment</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
-                  <select value={invForm.portal} onChange={(e) => setInvForm({...invForm, portal: e.target.value})} style={styles.i}>{data.portals.map(p => <option key={p.id}>{p.name}</option>)}</select>
+                  <select value={invForm.portal} onChange={(e) => setInvForm({...invForm, portal: e.target.value})} style={styles.i} required>
+                    <option value="">Select Portal</option>
+                    {data.portals.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                  </select>
                   <input type="number" placeholder="Cost Price" value={invForm.cost} onChange={(e) => setInvForm({...invForm, cost: e.target.value})} style={styles.i} required />
                   <input type="number" placeholder="Sell Price" value={invForm.sell} onChange={(e) => setInvForm({...invForm, sell: e.target.value})} style={styles.i} required />
                   <select value={invForm.payment} onChange={(e) => setInvForm({...invForm, payment: e.target.value})} style={styles.i}><option>Cash</option><option>Bank Transfer</option><option>Tabby</option><option>Tamara</option><option>Credit</option></select>
