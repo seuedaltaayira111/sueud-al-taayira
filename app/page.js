@@ -18,13 +18,13 @@ export default function Home() {
   
   const [invForm, setInvForm] = useState({ custId: 'new', custName: '', custPhone: '', custType: 'Individual', portal: '', bookingDate: today, invoiceDate: today, service: 'Flight', flightType: 'Domestic', payment: 'Cash', paid: '' });
   const [items, setItems] = useState([{ name: 'Ticket', ticket_no: '', pnr: '', sector: '', qty: 1, cost: 0, sell: 0 }]);
-  
+  const [refundForm, setRefundForm] = useState({ id: '', compRefund: 0, custRefund: 0 });
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
   const t = {
-    en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices & Refund', portals: 'Companies & Recharge', reports: 'P&L Statement', settings: 'Settings', hr: 'HR & Payroll', users: 'User Management', logout: 'Logout', selectCust: 'Select Customer', newCust: '+ New Customer', comp: 'Company', indiv: 'Individual', custName: 'Customer Name', phone: 'Phone', bDate: 'Booking Date', iDate: 'Invoice Date', service: 'Service', portal: 'Portal', payment: 'Payment Method', paid: 'Paid Amount', items: 'Ticket Details', tNo: 'Ticket No', pnr: 'PNR', sector: 'Sector', qty: 'Qty', cost: 'Cost Price', sell: 'Sell Price', gen: 'Generate & Save', invNo: 'Invoice No', total: 'Total', status: 'Status', actions: 'Actions', preview: 'Preview', refund: 'Refund', del: 'Delete', active: 'Active', refunded: 'Refunded', addEmp: 'Add Employee', paySalary: 'Pay Salary', empName: 'Employee Name', role: 'Role', salary: 'Salary', addUser: 'Add System User', userName: 'User Name', email: 'Email', permission: 'Permission', sales: 'Sales', acc: 'Accountant', owner: 'Owner', monthlyProfit: 'Monthly Profit', totalSales: 'Total Sales', totalSalary: 'Total Salaries', netProfit: 'Net Profit' },
-    ar: { dash: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'الفواتير والاسترجاع', portals: 'الشركات والرصيد', reports: 'كشف الأرباح', settings: 'الإعدادات', hr: 'الموارد البشرية', users: 'إدارة المستخدمين', logout: 'تسجيل الخروج', selectCust: 'اختر العميل', newCust: '+ عميل جديد', comp: 'شركة', indiv: 'فرد', custName: 'اسم العميل', phone: 'الهاتف', bDate: 'تاريخ الحجز', iDate: 'تاريخ الفاتورة', service: 'الخدمة', portal: 'البوابة', payment: 'طريقة الدفع', paid: 'المبلغ المدفوع', items: 'تفاصيل التذكرة', tNo: 'رقم التذكرة', pnr: 'PNR', sector: 'القطاع', qty: 'الكمية', cost: 'سعر التكلفة', sell: 'سعر البيع', gen: 'حفظ وإنشاء', invNo: 'رقم الفاتورة', total: 'الإجمالي', status: 'الحالة', actions: 'إجراءات', preview: 'معاينة', refund: 'استرجاع', del: 'حذف', active: 'نشط', refunded: 'مسترجع', addEmp: 'إضافة موظف', paySalary: 'دفع الراتب', empName: 'اسم الموظف', role: 'الوظيفة', salary: 'الراتب', addUser: 'إضافة مستخدم', userName: 'اسم المستخدم', email: 'البريد الإلكتروني', permission: 'الصلاحية', sales: 'مبيعات', acc: 'محاسب', owner: 'مالك', monthlyProfit: 'الربح الشهري', totalSales: 'إجمالي المبيعات', totalSalary: 'إجمالي الرواتب', netProfit: 'صافي الربح' }
+    en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices & Refund', portals: 'Companies & Recharge', reports: 'P&L Statement & Export', settings: 'Settings', hr: 'HR & Accounting', users: 'User Management', logout: 'Logout', selectCust: 'Select Customer', newCust: '+ New Customer', comp: 'Company', indiv: 'Individual', custName: 'Customer Name', phone: 'Phone', bDate: 'Booking Date', iDate: 'Invoice Date', service: 'Service', portal: 'Portal', payment: 'Payment Method', paid: 'Paid Amount', items: 'Ticket Details', tNo: 'Ticket No', pnr: 'PNR', sector: 'Sector', qty: 'Qty', cost: 'Cost Price', sell: 'Sell Price', gen: 'Generate & Save', invNo: 'Invoice No', total: 'Total', status: 'Status', actions: 'Actions', preview: 'Preview', refund: 'Refund', del: 'Delete', active: 'Active', refunded: 'Refunded', addEmp: 'Add Employee', paySalary: 'Pay Salary', addExp: 'Add Office Expense', empName: 'Employee Name', role: 'Role', salary: 'Salary', addUser: 'Add System User', userName: 'User Name', email: 'Email', permission: 'Permission', sales: 'Sales', acc: 'Accountant', owner: 'Owner', monthlyProfit: 'Gross Profit', totalSales: 'Total Sales', totalSalary: 'Total Salaries', netProfit: 'Net Profit', todaySales: "Today's Sales", totalBal: 'Portals Balance' },
+    ar: { dash: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'الفواتير والاسترجاع', portals: 'الشركات والرصيد', reports: 'كشف الأرباح والتصدير', settings: 'الإعدادات', hr: 'الموارد البشرية والحسابات', users: 'إدارة المستخدمين', logout: 'تسجيل الخروج', selectCust: 'اختر العميل', newCust: '+ عميل جديد', comp: 'شركة', indiv: 'فرد', custName: 'اسم العميل', phone: 'الهاتف', bDate: 'تاريخ الحجز', iDate: 'تاريخ الفاتورة', service: 'الخدمة', portal: 'البوابة', payment: 'طريقة الدفع', paid: 'المبلغ المدفوع', items: 'تفاصيل التذكرة', tNo: 'رقم التذكرة', pnr: 'PNR', sector: 'القطاع', qty: 'الكمية', cost: 'سعر التكلفة', sell: 'سعر البيع', gen: 'حفظ وإنشاء', invNo: 'رقم الفاتورة', total: 'الإجمالي', status: 'الحالة', actions: 'إجراءات', preview: 'معاينة', refund: 'استرجاع', del: 'حذف', active: 'نشط', refunded: 'مسترجع', addEmp: 'إضافة موظف', paySalary: 'دفع الراتب', addExp: 'إضافة مصروف', empName: 'اسم الموظف', role: 'الوظيفة', salary: 'الراتب', addUser: 'إضافة مستخدم', userName: 'اسم المستخدم', email: 'البريد الإلكتروني', permission: 'الصلاحية', sales: 'مبيعات', acc: 'محاسب', owner: 'مالك', monthlyProfit: 'إجمالي الربح', totalSales: 'إجمالي المبيعات', totalSalary: 'إجمالي الرواتب', netProfit: 'صافي الربح', todaySales: 'مبيعات اليوم', totalBal: 'رصيد البوابات' }
   };
   const tr = t[lang];
 
@@ -74,9 +74,7 @@ export default function Home() {
       if (invForm.custId === 'new') {
         const { data: nC } = await supabase.from('customers').insert([{ name: invForm.custName, phone: invForm.custPhone, type: invForm.custType }]).select().single();
         cid = nC.id;
-      } else {
-        cid = invForm.custId;
-      }
+      } else { cid = invForm.custId; }
 
       const { data: pArr } = await supabase.from('portals').select('*').eq('name', invForm.portal).limit(1);
       const portal = pArr[0];
@@ -100,6 +98,33 @@ export default function Home() {
       setItems([{ name: 'Ticket', ticket_no: '', pnr: '', sector: '', qty: 1, cost: 0, sell: 0 }]);
       setPage('list_inv');
     } catch (err) { alert('Error: ' + err.message); }
+  };
+
+  // PARTIAL REFUND LOGIC
+  const handleRefund = async (e) => {
+    e.preventDefault();
+    const { data: invArr } = await supabase.from('invoices').select('*, portals(*)').eq('id', refundForm.id).limit(1);
+    if (!invArr || invArr.length === 0) return alert('Invoice not found');
+    const inv = invArr[0];
+    
+    const compRef = parseFloat(refundForm.compRefund) || 0;
+    const custRef = parseFloat(refundForm.custRefund) || 0;
+
+    await supabase.from('invoices').update({ status: 'refunded', refund_company: compRef, refund_customer: custRef }).eq('id', inv.id);
+
+    const refNo = `REF-${Date.now()}`;
+    await supabase.from('invoices').insert([{
+      invoice_no: refNo, customer_id: inv.customer_id, portal_id: inv.portal_id, booking_date: today, invoice_date: today,
+      service_type: `Refund for ${inv.invoice_no}`, flight_type: inv.flight_type,
+      total_sell: -custRef, total: -custRef, paid_amount: -custRef, status: 'refunded', refund_company: compRef, refund_customer: custRef
+    }]);
+
+    if (inv.portals) {
+      await supabase.from('portals').update({ current_balance: (inv.portals.current_balance || 0) + compRef }).eq('id', inv.portals.id);
+    }
+    alert('Refund Invoice Generated!');
+    setRefundForm({ id: '', compRefund: 0, custRefund: 0 });
+    fetchAll();
   };
 
   const handleDelete = async (id) => {
@@ -161,22 +186,44 @@ export default function Home() {
     } catch (err) { alert('PDF Error: ' + err.message); }
   };
 
+  const exportCSV = (csvData, filename) => {
+    if (!csvData || csvData.length === 0) return alert('No data to export');
+    const headers = Object.keys(csvData[0]);
+    const csvRows = [headers.join(',')];
+    for (const row of csvData) {
+      const values = headers.map(h => `"${row[h] || ''}"`);
+      csvRows.push(values.join(','));
+    }
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+  };
+
   if (!user) return <div style={{ padding: 50, textAlign: 'center' }}>Loading ERP...</div>;
 
-  // P&L Calculations
+  // Calculations
   const tSales = data.invoices.filter(i => !i.invoice_no.startsWith('REF-')).reduce((s,i) => s + i.total, 0);
   const tProfit = data.invoices.filter(i => !i.invoice_no.startsWith('REF-')).reduce((s,i) => s + i.profit, 0);
   const tSalary = data.payroll.reduce((s,p) => s + p.amount, 0);
   const tExp = data.expenses.reduce((s,e) => s + e.amount, 0);
   const netProfit = tProfit - tSalary - tExp;
+  const todaySales = data.invoices.filter(i => i.invoice_date === today && !i.invoice_no.startsWith('REF-')).reduce((s,i) => s + i.total, 0);
+  const portalBalance = data.portals.reduce((s,p) => s + p.current_balance, 0);
 
-  // Menu based on Role
+  const filteredInvoices = data.invoices.filter(inv => {
+    if (!fromDate || !toDate) return true;
+    const invDate = inv.invoice_date || inv.created_at.split('T')[0];
+    return invDate >= fromDate && invDate <= toDate;
+  });
+
   const allMenu = [
     { id: 'dashboard', label: tr.dash, roles: ['owner', 'sales', 'acc'] },
     { id: 'create_inv', label: tr.create, roles: ['owner', 'sales'] },
     { id: 'list_inv', label: tr.list, roles: ['owner', 'sales', 'acc'] },
     { id: 'portals', label: tr.portals, roles: ['owner', 'sales'] },
-    { id: 'hr', label: tr.hr, roles: ['owner'] },
+    { id: 'hr', label: tr.hr, roles: ['owner', 'acc'] },
     { id: 'users', label: tr.users, roles: ['owner'] },
     { id: 'reports', label: tr.reports, roles: ['owner', 'acc'] },
     { id: 'settings', label: tr.settings, roles: ['owner'] },
@@ -210,10 +257,12 @@ export default function Home() {
         <div style={{ padding: '30px' }}>
           
           {page === 'dashboard' && (
-            <div style={{ display: 'flex', gap: '20px' }}>
+            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+              <div style={styles.card}><h3>{tr.todaySales}</h3><h1 style={{color:'#2980b9'}}>{todaySales.toFixed(0)} SAR</h1></div>
               <div style={styles.card}><h3>{tr.totalSales}</h3><h1 style={{color:'#2980b9'}}>{tSales.toFixed(0)} SAR</h1></div>
               <div style={styles.card}><h3>{tr.monthlyProfit}</h3><h1 style={{color:'#27ae60'}}>{tProfit.toFixed(0)} SAR</h1></div>
               <div style={styles.card}><h3>{tr.netProfit}</h3><h1 style={{color: netProfit>0?'#27ae60':'#e74c3c'}}>{netProfit.toFixed(0)} SAR</h1></div>
+              <div style={styles.card}><h3>{tr.totalBal}</h3><h1 style={{color:'#f39c12'}}>{portalBalance.toFixed(0)} SAR</h1></div>
             </div>
           )}
 
@@ -270,7 +319,7 @@ export default function Home() {
             <div style={{ background: 'white', padding: '30px', borderRadius: '8px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr style={{ background: '#f8f9fa' }}>
-                  <th style={styles.th}>{tr.invNo}</th><th style={styles.th}>{tr.custName}</th><th style={styles.th}>{tr.total}</th><th style={styles.th}>{tr.actions}</th>
+                  <th style={styles.th}>{tr.invNo}</th><th style={styles.th}>{tr.custName}</th><th style={styles.th}>{tr.total}</th><th style={styles.th}>{tr.status}</th><th style={styles.th}>{tr.actions}</th>
                 </tr></thead>
                 <tbody>
                   {data.invoices.map(inv => (
@@ -278,14 +327,53 @@ export default function Home() {
                       <td style={styles.td}>{inv.invoice_no}</td>
                       <td style={styles.td}>{inv.customers?.name || 'N/A'}</td>
                       <td style={styles.td}>{inv.total} SAR</td>
+                      <td style={styles.td}>{inv.status}</td>
                       <td style={styles.td}>
                         <button onClick={() => handlePreview(inv)} style={styles.btnSm}>Preview</button>
+                        <button onClick={() => downloadPDF(inv, previewInv?.items || [])} style={{...styles.btnSm, background:'#8e44ad'}}>PDF</button>
+                        {inv.status === 'active' && !inv.invoice_no.startsWith('REF-') && <button onClick={() => setRefundForm({id: inv.id, compRefund: 0, custRefund: 0})} style={{...styles.btnSm, background:'#e67e22'}}>Refund</button>}
                         <button onClick={() => handleDelete(inv.id)} style={{...styles.btnSm, background:'#e74c3c'}}>Delete</button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+
+              {refundForm.id && (
+                <div style={{ marginTop: '30px', padding: '20px', border: '2px solid #e67e22', borderRadius: '8px' }}>
+                  <h3>Process Partial Refund</h3>
+                  <form onSubmit={handleRefund} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px' }}>
+                    <input type="number" placeholder="Refund from Company" value={refundForm.compRefund} onChange={(e) => setRefundForm({...refundForm, compRefund: e.target.value})} required style={styles.i} />
+                    <input type="number" placeholder="Refund to Customer" value={refundForm.custRefund} onChange={(e) => setRefundForm({...refundForm, custRefund: e.target.value})} required style={styles.i} />
+                    <button type="submit" style={{ background: '#e67e22', color: 'white', border: 'none', cursor: 'pointer' }}>Confirm Refund</button>
+                  </form>
+                </div>
+              )}
+            </div>
+          )}
+
+          {page === 'portals' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+              <div style={styles.card}>
+                <h3>Add Portal</h3>
+                <form onSubmit={(e) => { e.preventDefault(); handleAddEntity('portals', { name: e.target.name.value, current_balance: 0 }, 'Portal'); e.target.reset(); }} style={{display:'flex', flexDirection:'column', gap:'10px'}}>
+                  <input name="name" placeholder="Portal Name" style={styles.i} required />
+                  <button type="submit" style={styles.btn}>Add</button>
+                </form>
+              </div>
+              <div style={styles.card}>
+                <h3>Add Recharge</h3>
+                <form onSubmit={(e) => { e.preventDefault(); handleAddEntity('recharges', { portal_id: data.portals.find(p=>p.name===e.target.portal.value)?.id, amount: parseFloat(e.target.amt.value), recharge_date: today, description: e.target.desc.value }, 'Recharge'); e.target.reset(); }} style={{display:'flex', flexDirection:'column', gap:'10px'}}>
+                  <select name="portal" style={styles.i}>{data.portals.map(p => <option key={p.id}>{p.name}</option>)}</select>
+                  <input name="amt" type="number" placeholder="Amount" style={styles.i} required />
+                  <input name="desc" placeholder="Desc" style={styles.i} />
+                  <button type="submit" style={styles.btn}>Recharge</button>
+                </form>
+              </div>
+              <div style={styles.card}>
+                <h3>Balances</h3>
+                {data.portals.map(p => <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', padding: '10px 0' }}><span>{p.name}</span><b>{p.current_balance} SAR</b></div>)}
+              </div>
             </div>
           )}
 
@@ -310,8 +398,13 @@ export default function Home() {
                 </form>
               </div>
               <div style={styles.card}>
-                <h3>Salary History</h3>
-                {data.payroll.map(p => <div key={p.id} style={{borderBottom:'1px solid #eee', padding:'5px 0'}}>{p.employees?.name} - {p.amount} SAR ({p.month})</div>)}
+                <h3>{tr.addExp}</h3>
+                <form onSubmit={(e) => { e.preventDefault(); handleAddEntity('expenses', { category: e.target.cat.value, amount: parseFloat(e.target.amt.value), description: e.target.desc.value }, 'Expense'); e.target.reset(); }} style={{display:'flex', flexDirection:'column', gap:'10px'}}>
+                  <select name="cat" style={styles.i}><option>Rent</option><option>Electricity</option><option>Internet</option><option>Misc</option></select>
+                  <input name="amt" type="number" placeholder="Amount" style={styles.i} required />
+                  <input name="desc" placeholder="Desc" style={styles.i} />
+                  <button type="submit" style={styles.btn}>Add</button>
+                </form>
               </div>
             </div>
           )}
@@ -326,7 +419,6 @@ export default function Home() {
                   <select name="role" style={styles.i}><option value="sales">{tr.sales}</option><option value="acc">{tr.acc}</option></select>
                   <button type="submit" style={styles.btn}>Add User</button>
                 </form>
-                <p style={{fontSize:'12px', color:'#888'}}>Note: User must be created in Supabase Authentication first with the same email.</p>
               </div>
               <div style={styles.card}>
                 <h3>System Users</h3>
@@ -337,15 +429,41 @@ export default function Home() {
 
           {page === 'reports' && (
             <div style={styles.card}>
-              <h3>{tr.reports}</h3>
-              <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-                <div style={{flex:1, background:'#f8f9fa', padding:'15px'}}><h4>{tr.totalSales}</h4><h2>{tSales.toFixed(0)} SAR</h2></div>
-                <div style={{flex:1, background:'#f8f9fa', padding:'15px'}}><h4>{tr.monthlyProfit}</h4><h2>{tProfit.toFixed(0)} SAR</h2></div>
-                <div style={{flex:1, background:'#f8f9fa', padding:'15px'}}><h4>{tr.totalSalary}</h4><h2>{tSalary.toFixed(0)} SAR</h2></div>
-                <div style={{flex:1, background:'#f8f9fa', padding:'15px'}}><h4>{tr.netProfit}</h4><h2>{netProfit.toFixed(0)} SAR</h2></div>
+              <h3>P&L Statement & Export</h3>
+              <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                <div style={{flex:1, background:'#f8f9fa', padding:'15px', minWidth:'200px'}}><h4>{tr.totalSales}</h4><h2>{tSales.toFixed(0)} SAR</h2></div>
+                <div style={{flex:1, background:'#f8f9fa', padding:'15px', minWidth:'200px'}}><h4>{tr.monthlyProfit}</h4><h2>{tProfit.toFixed(0)} SAR</h2></div>
+                <div style={{flex:1, background:'#f8f9fa', padding:'15px', minWidth:'200px'}}><h4>{tr.totalSalary}</h4><h2>{tSalary.toFixed(0)} SAR</h2></div>
+                <div style={{flex:1, background:'#f8f9fa', padding:'15px', minWidth:'200px'}}><h4>Expenses</h4><h2>{tExp.toFixed(0)} SAR</h2></div>
+                <div style={{flex:1, background:'#e8f8f5', padding:'15px', minWidth:'200px'}}><h4>{tr.netProfit}</h4><h2>{netProfit.toFixed(0)} SAR</h2></div>
               </div>
+
+              <h3>Date Range Filter & Export</h3>
+              <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <label>From: <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} style={styles.i} /></label>
+                <label>To: <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} style={styles.i} /></label>
+                <button onClick={() => exportCSV(filteredInvoices.map(i => ({ InvNo: i.invoice_no, Customer: i.customers?.name, Phone: i.customers?.phone, Date: i.invoice_date, Service: i.service_type, Total: i.total, Status: i.status })), 'Sales_Report.csv')} style={{...styles.btn, background: '#27ae60', width: 'auto', padding: '10px 20px'}}>Export Sales CSV</button>
+                <button onClick={() => exportCSV(data.recharges.map(r => ({ Date: r.recharge_date, Company: r.portals?.name, Amount: r.amount, Desc: r.description })), 'Recharge_Report.csv')} style={{...styles.btn, background: '#2980b9', width: 'auto', padding: '10px 20px'}}>Export Recharge CSV</button>
+                <button onClick={() => exportCSV(data.customers, 'Customers.csv')} style={{...styles.btn, background: '#8e44ad', width: 'auto', padding: '10px 20px'}}>Export Customers CSV</button>
+              </div>
+
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr style={{ background: '#f8f9fa' }}><th style={styles.th}>Date</th><th style={styles.th}>Invoice</th><th style={styles.th}>Customer</th><th style={styles.th}>Total</th></tr></thead>
+                <tbody>
+                  {filteredInvoices.map(inv => (
+                    <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <td style={styles.td}>{inv.invoice_date}</td>
+                      <td style={styles.td}>{inv.invoice_no}</td>
+                      <td style={styles.td}>{inv.customers?.name}</td>
+                      <td style={styles.td}>{inv.total} SAR</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
+
+          {page === 'settings' && <SettingsPage data={data.settings} fetchAll={fetchAll} lang={lang} />}
         </div>
       </main>
 
@@ -376,6 +494,51 @@ export default function Home() {
         </div>
       )}
     </div>
+  );
+}
+
+function SettingsPage({ data, fetchAll, lang }) {
+  const [form, setForm] = useState(data);
+  const [uploading, setUploading] = useState(false);
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    await supabase.from('settings').update(form).eq('id', 1);
+    alert(lang === 'en' ? 'Settings Saved!' : 'تم حفظ الإعدادات!');
+    fetchAll();
+  };
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    const fileName = `logo_${Date.now()}.png`;
+    const { error } = await supabase.storage.from('logos').upload(fileName, file);
+    if (error) { alert('Error: ' + error.message); setUploading(false); return; }
+    const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName);
+    setForm({ ...form, logo_url: urlData.publicUrl });
+    setUploading(false);
+    alert(lang === 'en' ? 'Logo Uploaded! Click Save.' : 'تم رفع الشعار! اضغط حفظ.');
+  };
+
+  return (
+    <form onSubmit={handleSave} style={{ background: 'white', padding: '30px', borderRadius: '8px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+      <input placeholder="Company Name (EN)" value={form.company_name_en || ''} onChange={(e) => setForm({...form, company_name_en: e.target.value})} style={styles.i} />
+      <input placeholder="Company Name (AR)" value={form.company_name_ar || ''} onChange={(e) => setForm({...form, company_name_ar: e.target.value})} style={styles.i} />
+      <input placeholder="VAT Number" value={form.vat_no || ''} onChange={(e) => setForm({...form, vat_no: e.target.value})} style={styles.i} />
+      <input placeholder="CR Number" value={form.cr_no || ''} onChange={(e) => setForm({...form, cr_no: e.target.value})} style={styles.i} />
+      <input placeholder="IATA Number" value={form.iata_no || ''} onChange={(e) => setForm({...form, iata_no: e.target.value})} style={styles.i} />
+      <input placeholder="Phone" value={form.phone || ''} onChange={(e) => setForm({...form, phone: e.target.value})} style={styles.i} />
+      
+      <div style={{ gridColumn: 'span 2', border: '1px solid #ccc', padding: '15px', borderRadius: '8px' }}>
+        <label><b>Upload Logo:</b></label><br/>
+        {form.logo_url && <img src={form.logo_url} style={{height:'60px', marginTop:'10px', marginBottom:'10px'}} />}
+        <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ marginTop: '10px' }} />
+        {uploading && <p>Uploading...</p>}
+      </div>
+
+      <button type="submit" style={{ gridColumn: 'span 2', padding: '15px', background: '#27ae60', color: 'white', border: 'none', cursor: 'pointer', fontSize: '16px' }}>SAVE SETTINGS</button>
+    </form>
   );
 }
 
