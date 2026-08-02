@@ -88,7 +88,6 @@ export default function Home() {
 
       let cid;
       if (invForm.custId === 'new') {
-        // Check for duplicate before inserting
         const exists = data.customers.find(c => c.name.toLowerCase() === invForm.custName.toLowerCase() || (c.phone && c.phone === invForm.custPhone));
         if (exists) {
           alert("Customer already exists! Selecting existing customer.");
@@ -136,6 +135,7 @@ export default function Home() {
         const { error: invErr } = await supabase.from('invoices').insert([{ invoice_no: invNo, ...payload }]);
         if (invErr) throw invErr;
         
+        // FIXED: Portal balance deduct hoga jab ticket issue hoga
         await supabase.from('portals').update({ current_balance: (portal.current_balance || 0) - cost }).eq('id', portal.id);
         if (paid > 0) {
           const cbType = invForm.payment === 'Cash' ? 'Cash-In' : (invForm.payment === 'Bank Transfer' ? 'Bank-In' : null);
@@ -256,6 +256,41 @@ export default function Home() {
     await logAction(`Added new ${msg} in ${table}`);
     alert(msg + ' Added!');
     fetchAll();
+  };
+
+  // FIXED: DEDICATED RECHARGE FUNCTION
+  const handleRecharge = async (e) => {
+    e.preventDefault();
+    const portalName = e.target.portal.value;
+    const amount = parseFloat(e.target.amt.value);
+    const date = e.target.date.value;
+    const desc = e.target.desc.value;
+    
+    const p = data.portals.find(p => p.name === portalName);
+    if (!p) return alert("Select a valid portal");
+    
+    // 1. Insert Recharge Record
+    const { error: recErr } = await supabase.from('recharges').insert([{ 
+      portal_id: p.id, 
+      amount: amount, 
+      recharge_date: date, 
+      description: desc 
+    }]);
+    
+    if (recErr) return alert("Error: " + recErr.message);
+    
+    // 2. Update Portal Balance (ADD amount)
+    const newBalance = (p.current_balance || 0) + amount;
+    const { error: balErr } = await supabase.from('portals')
+      .update({ current_balance: newBalance })
+      .eq('id', p.id);
+      
+    if (balErr) return alert("Error updating balance: " + balErr.message);
+    
+    await logAction(`Recharged ${amount} to ${portalName}`);
+    alert('Recharge Added Successfully! Balance Updated.');
+    fetchAll();
+    e.target.reset();
   };
 
   const exportCSV = (csvData, filename) => {
@@ -418,7 +453,6 @@ export default function Home() {
   const currentCustType = invForm.custId === 'new' ? invForm.custType : selectedCust?.type;
   const showPassengerBox = currentCustType === 'Group' || currentCustType === 'Company' || currentCustType === 'Corporate';
   
-  // Live Duplicate Check
   const isDuplicate = invForm.custId === 'new' && invForm.custName && data.customers.find(c => c.name.toLowerCase() === invForm.custName.toLowerCase() || (c.phone && c.phone === invForm.custPhone));
 
   return (
@@ -483,7 +517,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* PORTAL BALANCES ON DASHBOARD */}
               <div style={{...styles.card, marginBottom: '20px'}}>
                 <h3 style={{color:'#0F3D2E'}}>Portal Current Balances</h3>
                 <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
@@ -537,7 +570,6 @@ export default function Home() {
                   </>}
                 </div>
 
-                {/* LIVE DUPLICATE WARNING */}
                 {isDuplicate && (
                   <div style={{ background: '#ffebee', color: '#c0392b', padding: '10px', borderRadius: '5px', marginBottom: '20px', border: '1px solid #e74c3c' }}>
                     ⚠️ <b>Customer already exists!</b> Please select "{isDuplicate.name}" from the dropdown instead of creating a new one.
@@ -801,6 +833,7 @@ export default function Home() {
             </div>
           )}
 
+          {/* PORTAL & RECHARGE SECTION FIXED */}
           {page === 'portals' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
               <div style={styles.card}>
@@ -811,12 +844,15 @@ export default function Home() {
                 </form>
               </div>
               <div style={styles.card}>
-                <h3>Recharge</h3>
-                <form onSubmit={(e) => { e.preventDefault(); handleAddEntity('recharges', { portal_id: data.portals.find(p=>p.name===e.target.portal.value)?.id, amount: parseFloat(e.target.amt.value), recharge_date: e.target.date.value, description: e.target.desc.value }, 'Recharge'); e.target.reset(); }} style={{display:'flex', flexDirection:'column', gap:'10px'}}>
-                  <select name="portal" style={styles.i}>{data.portals.map(p => <option key={p.id}>{p.name}</option>)}</select>
+                <h3>Recharge Portal</h3>
+                {/* Using Dedicated handleRecharge function */}
+                <form onSubmit={handleRecharge} style={{display:'flex', flexDirection:'column', gap:'10px'}}>
+                  <select name="portal" style={styles.i} required>
+                    {data.portals.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                  </select>
                   <input name="date" type="date" defaultValue={today} style={styles.i} required />
                   <input name="amt" type="number" placeholder="Amount" style={styles.i} required />
-                  <input name="desc" placeholder="Desc" style={styles.i} />
+                  <input name="desc" placeholder="Description" style={styles.i} />
                   <button type="submit" style={styles.btn}>Recharge</button>
                 </form>
               </div>
@@ -824,7 +860,7 @@ export default function Home() {
                 <h3>Balances & Delete</h3>
                 {data.portals.map(p => (
                   <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', padding: '10px 0', alignItems: 'center' }}>
-                    <span>{p.name}<br/><b>{p.current_balance} SAR</b></span>
+                    <span>{p.name}<br/><b>{p.current_balance || 0} SAR</b></span>
                     <button onClick={() => handleDelete('portals', p.id)} style={{background:'#e74c3c', color:'white', border:'none', padding:'2px 5px', cursor:'pointer'}}>X</button>
                   </div>
                 ))}
