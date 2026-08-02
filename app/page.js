@@ -15,9 +15,11 @@ export default function Home() {
   const [data, setData] = useState({ invoices: [], portals: [], customers: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [] });
   const today = new Date().toISOString().split('T')[0];
   
-  // Added taxRate field
   const [invForm, setInvForm] = useState({ custId: 'new', custName: '', custPhone: '', portal: '', bookingDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', airline: '', cost: 0, sell: 0, taxRate: '15', payment: 'Cash', paid: '' });
   const [refundForm, setRefundForm] = useState({ id: '', compRefund: 0, custRefund: 0 });
+  
+  // Report Filters
+  const [reportTab, setReportTab] = useState('pnl'); // pnl, sales, portals, salary
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
@@ -143,7 +145,7 @@ export default function Home() {
     link.click();
   };
 
-  // STYLISH BILINGUAL PDF TEMPLATE
+  // STYLISH BILINGUAL PDF TEMPLATE (FIXED TEXT & LOGO)
   const downloadPDF = async (inv) => {
     try {
       const { default: html2canvas } = await import('html2canvas');
@@ -156,32 +158,29 @@ export default function Home() {
       const qr = await QRCode.toDataURL(btoa(tlv));
 
       const isExempt = inv.vat === 0;
-      const taxLabelEn = isExempt ? 'Exempt (0%)' : 'VAT (15%)';
-      const taxLabelAr = isExempt ? 'معافاة (0%)' : 'ضريبة (15%)';
+      const taxLabel = isExempt ? 'Exempt (معافاة)' : 'VAT 15% (ضريبة 15%)';
 
       const html = document.createElement('div');
       html.style.cssText = 'width:800px;padding:40px;font-family:Arial;background:#fff;color:#333;';
       html.innerHTML = `
         <div style="display:flex;justify-content:space-between;border-bottom:4px solid #D4AF37;padding-bottom:20px;margin-bottom:20px;">
           <div style="max-width:350px;">
-            ${s.logo_url ? `<img src="${s.logo_url}" style="height:80px;margin-bottom:10px;" />` : ''}
+            ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:80px;margin-bottom:10px;" />` : ''}
             <h1 style="margin:0;color:#0F3D2E;font-size:24px;">${s.company_name_en || 'Sueud Al Taiyyarah'}</h1>
             <h2 style="margin:0;color:#0F3D2E;font-size:20px;">${s.company_name_ar || 'صعود الطائرة'}</h2>
             <p style="font-size:12px;margin-top:10px;line-height:1.5;">
-              VAT: ${s.vat_no || ''} (الرقم الضريبي)<br/>
-              CR: ${s.cr_no || ''} (السجل التجاري)<br/>
-              ${s.address || ''} (الموقع)<br/>
-              ${s.phone || ''} (هاتف)
+              VAT / الرقم الضريبي: ${s.vat_no || ''}<br/>
+              CR / السجل التجاري: ${s.cr_no || ''}<br/>
+              Address / الموقع: ${s.address || ''}<br/>
+              Phone / هاتف: ${s.phone || ''}
             </p>
           </div>
           <div style="text-align:right;">
             <h1 style="color:#0F3D2E;margin:0;font-size:28px;">TAX INVOICE</h1>
             <h2 style="color:#D4AF37;margin:0;font-size:22px;">فاتورة ضريبية</h2>
             <p style="font-size:14px;margin-top:10px;line-height:1.5;">
-              Invoice No: ${inv.invoice_no}<br/>
-              رقم الفاتورة: ${inv.invoice_no}<br/>
-              Date: ${inv.invoice_date}<br/>
-              التاريخ: ${inv.invoice_date}
+              Invoice No / رقم الفاتورة: ${inv.invoice_no}<br/>
+              Date / التاريخ: ${inv.invoice_date}
             </p>
           </div>
         </div>
@@ -217,23 +216,23 @@ export default function Home() {
           </div>
           <div style="text-align:right;width:300px;font-size:14px;">
             <p style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:5px 0;">
-              <span>Total Before VAT (الإجمالي قبل الضريبة):</span>
+              <span>Total Before VAT / الإجمالي قبل الضريبة:</span>
               <b>${inv.total_sell.toFixed(2)} SAR</b>
             </p>
             <p style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:5px 0;">
-              <span>${taxLabelEn} (${taxLabelAr}):</span>
+              <span>${taxLabel}:</span>
               <b>${inv.vat.toFixed(2)} SAR</b>
             </p>
             <p style="display:flex;justify-content:space-between;background:#f0f0f0;padding:10px;font-weight:bold;font-size:16px;border:1px solid #ddd;">
-              <span>Total After VAT (الإجمالي بعد الضريبة):</span>
+              <span>Total After VAT / الإجمالي بعد الضريبة:</span>
               <b>${inv.total.toFixed(2)} SAR</b>
             </p>
             <p style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:5px 0;color:#27ae60;">
-              <span>Paid (مدفوع):</span>
+              <span>Paid / مدفوع:</span>
               <b>${inv.paid_amount.toFixed(2)} SAR</b>
             </p>
             <p style="display:flex;justify-content:space-between;padding:5px 0;color:#e74c3c;font-weight:bold;font-size:16px;">
-              <span>Due Amount (المبلغ المتبقي):</span>
+              <span>Due Amount / المبلغ المتبقي:</span>
               <b>${inv.due_amount.toFixed(2)} SAR</b>
             </p>
           </div>
@@ -249,7 +248,8 @@ export default function Home() {
         </div>
       `;
       document.body.appendChild(html);
-      const canvas = await html2canvas(html);
+      // useCORS: true added to fix logo missing in PDF
+      const canvas = await html2canvas(html, { useCORS: true, allowTaint: true });
       const doc = new jsPDF('p', 'mm', 'a4');
       doc.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, 190, 0);
       doc.save(`${inv.invoice_no}.pdf`);
@@ -265,13 +265,20 @@ export default function Home() {
   const tProfit = activeInv.reduce((s,i) => s + i.profit, 0);
   const tExp = data.expenses.reduce((s,e) => s + e.amount, 0);
   const tSal = data.payroll.reduce((s,p) => s + p.amount, 0);
+  const tRecharges = data.recharges.reduce((s,r) => s + r.amount, 0);
   const netProfit = tProfit - tExp - tSal;
 
-  const filteredInvoices = data.invoices.filter(inv => {
+  // Filter Logic for Reports
+  const filterByDate = (item, dateField) => {
     if (!fromDate || !toDate) return true;
-    const invDate = inv.invoice_date || inv.created_at.split('T')[0];
-    return invDate >= fromDate && invDate <= toDate;
-  });
+    const itemDate = item[dateField] || item.created_at.split('T')[0];
+    return itemDate >= fromDate && itemDate <= toDate;
+  };
+
+  const filteredInvoices = data.invoices.filter(inv => filterByDate(inv, 'invoice_date'));
+  const filteredRecharges = data.recharges.filter(rec => filterByDate(rec, 'recharge_date'));
+  const filteredPayroll = data.payroll.filter(p => filterByDate(p, 'paid_date'));
+  const filteredExpenses = data.expenses.filter(e => filterByDate(e, 'expense_date'));
 
   const menu = [
     { id: 'dashboard', label: tr.dash },
@@ -313,12 +320,31 @@ export default function Home() {
 
         <div style={{ padding: '30px' }}>
           
+          {/* STYLISH DASHBOARD WITH GRAPHS */}
           {page === 'dashboard' && (
             <div>
-              <div style={{ display: 'flex', gap: '20px', marginBottom: '30px', flexWrap: 'wrap' }}>
-                <div style={styles.card}><h3>Total Sales</h3><h1 style={{color:'#0F3D2E'}}>{tSales.toFixed(0)} SAR</h1></div>
-                <div style={styles.card}><h3>Gross Profit</h3><h1 style={{color:'#27ae60'}}>{tProfit.toFixed(0)} SAR</h1></div>
-                <div style={styles.card}><h3>Net Profit</h3><h1 style={{color: netProfit>0?'#27ae60':'#e74c3c'}}>{netProfit.toFixed(0)} SAR</h1></div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+                <div style={{...styles.card, borderTop: '4px solid #0F3D2E'}}><h3>Total Sales</h3><h1 style={{color:'#0F3D2E'}}>{tSales.toFixed(0)} SAR</h1></div>
+                <div style={{...styles.card, borderTop: '4px solid #27ae60'}}><h3>Gross Profit</h3><h1 style={{color:'#27ae60'}}>{tProfit.toFixed(0)} SAR</h1></div>
+                <div style={{...styles.card, borderTop: '4px solid #2980b9'}}><h3>Recharges</h3><h1 style={{color:'#2980b9'}}>{tRecharges.toFixed(0)} SAR</h1></div>
+                <div style={{...styles.card, borderTop: '4px solid #e74c3c'}}><h3>Net Profit</h3><h1 style={{color: netProfit>0?'#27ae60':'#e74c3c'}}>{netProfit.toFixed(0)} SAR</h1></div>
+              </div>
+              
+              <div style={{...styles.card, marginBottom: '20px'}}>
+                <h3 style={{color:'#0F3D2E'}}>Sales vs Profit (Last 5 Invoices)</h3>
+                <div style={{ display: 'flex', gap: '20px', height: '250px', alignItems: 'flex-end', paddingTop: '20px', borderBottom: '2px solid #eee' }}>
+                  {activeInv.slice(0, 5).map(inv => (
+                    <div key={inv.id} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <div style={{ width: '100%', background: '#0F3D2E', height: `${(inv.total / Math.max(...activeInv.map(i=>i.total), 1)) * 200}px`, borderRadius: '5px 5px 0 0', marginBottom: '2px' }} title={`Sales: ${inv.total}`}></div>
+                      <div style={{ width: '100%', background: '#D4AF37', height: `${(inv.profit / Math.max(...activeInv.map(i=>i.total), 1)) * 200}px`, borderRadius: '5px 5px 0 0' }} title={`Profit: ${inv.profit}`}></div>
+                      <p style={{ fontSize: '10px', margin: '5px 0 0', color: '#666' }}>{inv.invoice_no.substr(4, 5)}</p>
+                    </div>
+                  ))}
+                </div>
+                <div style={{display:'flex', gap:'20px', marginTop:'10px', justifyContent:'center'}}>
+                  <span style={{display:'flex', alignItems:'center', gap:'5px'}}><div style={{width:'12px', height:'12px', background:'#0F3D2E'}}></div> Sales</span>
+                  <span style={{display:'flex', alignItems:'center', gap:'5px'}}><div style={{width:'12px', height:'12px', background:'#D4AF37'}}></div> Profit</span>
+                </div>
               </div>
             </div>
           )}
@@ -376,13 +402,10 @@ export default function Home() {
                   </select>
                   <input type="number" placeholder="Cost Price" value={invForm.cost} onChange={(e) => setInvForm({...invForm, cost: e.target.value})} style={styles.i} required />
                   <input type="number" placeholder="Sell Price" value={invForm.sell} onChange={(e) => setInvForm({...invForm, sell: e.target.value})} style={styles.i} required />
-                  
-                  {/* TAX SELECTION OPTION */}
                   <select value={invForm.taxRate} onChange={(e) => setInvForm({...invForm, taxRate: e.target.value})} style={styles.i}>
                     <option value="15">Tax 15%</option>
                     <option value="0">Tax 0% (Exempt)</option>
                   </select>
-
                   <select value={invForm.payment} onChange={(e) => setInvForm({...invForm, payment: e.target.value})} style={styles.i}><option>Cash</option><option>Bank Transfer</option><option>Tabby</option><option>Tamara</option><option>Credit</option></select>
                   <input type="date" value={invForm.bookingDate} onChange={(e) => setInvForm({...invForm, bookingDate: e.target.value})} style={styles.i} required />
                   <input type="number" placeholder="Paid Amount" value={invForm.paid} onChange={(e) => setInvForm({...invForm, paid: e.target.value})} style={styles.i} required />
@@ -442,6 +465,10 @@ export default function Home() {
 
           {page === 'customers' && (
             <div style={{ background: 'white', padding: '30px', borderRadius: '8px', borderTop: '4px solid #D4AF37' }}>
+              <div style={{display:'flex', justifyContent:'space-between', marginBottom:'20px'}}>
+                <h3>Customer List</h3>
+                <button onClick={() => exportCSV(data.customers, 'Customers.csv')} style={{...styles.btn, background: '#8e44ad', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
+              </div>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.th}>Name</th><th style={styles.th}>Phone</th><th style={styles.th}>Type</th><th style={styles.th}>Action</th></tr></thead>
                 <tbody>
@@ -542,33 +569,83 @@ export default function Home() {
             </div>
           )}
 
+          {/* ADVANCED FINANCIAL REPORTS */}
           {page === 'reports' && (
             <div style={styles.card}>
-              <h3>Financial Statement (Daily/Weekly/Monthly/Yearly)</h3>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '2px solid #eee', paddingBottom: '10px' }}>
+                <button onClick={() => setReportTab('pnl')} style={reportTab==='pnl'?styles.btnSm:styles.btnSmInactive}>P&L Statement</button>
+                <button onClick={() => setReportTab('sales')} style={reportTab==='sales'?styles.btnSm:styles.btnSmInactive}>Sales Report</button>
+                <button onClick={() => setReportTab('portals')} style={reportTab==='portals'?styles.btnSm:styles.btnSmInactive}>Portals Report</button>
+                <button onClick={() => setReportTab('salary')} style={reportTab==='salary'?styles.btnSm:styles.btnSmInactive}>Salary & Exp Report</button>
+              </div>
+
               <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
                 <label>From: <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} style={styles.i} /></label>
                 <label>To: <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} style={styles.i} /></label>
-                <button onClick={() => exportCSV(filteredInvoices.map(i => ({ InvNo: i.invoice_no, Customer: i.customers?.name, Date: i.invoice_date, Service: i.service_type, Total: i.total, Profit: i.profit, Status: i.status })), 'Sales_Report.csv')} style={{...styles.btn, background: '#27ae60', width: 'auto', padding: '10px 20px'}}>Export Sales Excel</button>
-                <button onClick={() => exportCSV(data.recharges.map(r => ({ Date: r.recharge_date, Company: r.portals?.name, Amount: r.amount, Desc: r.description })), 'Recharge_Report.csv')} style={{...styles.btn, background: '#2980b9', width: 'auto', padding: '10px 20px'}}>Export Recharge Excel</button>
-              </div>
-              
-              <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
-                <div style={{flex:1, background:'#f8f9fa', padding:'15px', minWidth:'150px'}}><h4>Sales</h4><h2>{filteredInvoices.filter(i=>!i.invoice_no.startsWith('REF-')).reduce((s,i)=>s+i.total,0).toFixed(0)}</h2></div>
-                <div style={{flex:1, background:'#f8f9fa', padding:'15px', minWidth:'150px'}}><h4>Profit</h4><h2>{filteredInvoices.filter(i=>!i.invoice_no.startsWith('REF-')).reduce((s,i)=>s+i.profit,0).toFixed(0)}</h2></div>
-                <div style={{flex:1, background:'#f8f9fa', padding:'15px', minWidth:'150px'}}><h4>Refunds</h4><h2>{filteredInvoices.filter(i=>i.invoice_no.startsWith('REF-')).reduce((s,i)=>s+i.refund_customer,0).toFixed(0)}</h2></div>
               </div>
 
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr style={{ background: '#f8f9fa' }}><th style={styles.th}>Date</th><th style={styles.th}>Invoice</th><th style={styles.th}>Customer</th><th style={styles.th}>Total</th><th style={styles.th}>Profit</th></tr></thead>
-                <tbody>
-                  {filteredInvoices.map(inv => (
-                    <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={styles.td}>{inv.invoice_date}</td><td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.customers?.name}</td>
-                      <td style={styles.td}>{inv.total} SAR</td><td style={{...styles.td, color:'green'}}>{inv.profit} SAR</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {reportTab === 'pnl' && (
+                <div>
+                  <h3>Complete P&L Statement (Profit & Loss)</h3>
+                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                    <div style={{flex:1, background:'#e8f8f5', padding:'15px', minWidth:'200px'}}><h4>Total Sales</h4><h2>{filteredInvoices.filter(i=>!i.invoice_no.startsWith('REF-')).reduce((s,i)=>s+i.total,0).toFixed(0)} SAR</h2></div>
+                    <div style={{flex:1, background:'#e8f8f5', padding:'15px', minWidth:'200px'}}><h4>Gross Profit</h4><h2>{filteredInvoices.filter(i=>!i.invoice_no.startsWith('REF-')).reduce((s,i)=>s+i.profit,0).toFixed(0)} SAR</h2></div>
+                    <div style={{flex:1, background:'#fdedec', padding:'15px', minWidth:'200px'}}><h4>Salaries Paid</h4><h2>-{filteredPayroll.reduce((s,p)=>s+p.amount,0).toFixed(0)} SAR</h2></div>
+                    <div style={{flex:1, background:'#fdedec', padding:'15px', minWidth:'200px'}}><h4>Office Expenses</h4><h2>-{filteredExpenses.reduce((s,e)=>s+e.amount,0).toFixed(0)} SAR</h2></div>
+                    <div style={{flex:1, background:'#0F3D2E', color:'#D4AF37', padding:'15px', minWidth:'200px'}}><h4>Net Profit</h4><h2>{(filteredInvoices.filter(i=>!i.invoice_no.startsWith('REF-')).reduce((s,i)=>s+i.profit,0) - filteredPayroll.reduce((s,p)=>s+p.amount,0) - filteredExpenses.reduce((s,e)=>s+e.amount,0)).toFixed(0)} SAR</h2></div>
+                  </div>
+                  <button onClick={() => exportCSV([{Sales: filteredInvoices.reduce((s,i)=>s+i.total,0), Profit: filteredInvoices.reduce((s,i)=>s+i.profit,0), Salaries: filteredPayroll.reduce((s,p)=>s+p.amount,0), Expenses: filteredExpenses.reduce((s,e)=>s+e.amount,0)}], 'PnL_Report.csv')} style={{...styles.btn, background: '#27ae60', width: 'auto', padding: '10px 20px', marginTop: '20px'}}>Export P&L Excel</button>
+                </div>
+              )}
+
+              {reportTab === 'sales' && (
+                <div>
+                  <h3>Sales Report</h3>
+                  <button onClick={() => exportCSV(filteredInvoices.map(i => ({ InvNo: i.invoice_no, Customer: i.customers?.name, Date: i.invoice_date, Service: i.service_type, Total: i.total, Profit: i.profit, Status: i.status })), 'Sales_Report.csv')} style={{...styles.btn, background: '#27ae60', width: 'auto', padding: '10px 20px', marginBottom: '20px'}}>Export Sales Excel</button>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead><tr style={{ background: '#f8f9fa' }}><th style={styles.th}>Date</th><th style={styles.th}>Invoice</th><th style={styles.th}>Customer</th><th style={styles.th}>Total</th><th style={styles.th}>Profit</th></tr></thead>
+                    <tbody>
+                      {filteredInvoices.map(inv => (
+                        <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
+                          <td style={styles.td}>{inv.invoice_date}</td><td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.customers?.name}</td>
+                          <td style={styles.td}>{inv.total} SAR</td><td style={{...styles.td, color:'green'}}>{inv.profit} SAR</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {reportTab === 'portals' && (
+                <div>
+                  <h3>Portals Recharge Report</h3>
+                  <button onClick={() => exportCSV(filteredRecharges.map(r => ({ Date: r.recharge_date, Company: r.portals?.name, Amount: r.amount, Desc: r.description })), 'Recharge_Report.csv')} style={{...styles.btn, background: '#2980b9', width: 'auto', padding: '10px 20px', marginBottom: '20px'}}>Export Recharge Excel</button>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead><tr style={{ background: '#f8f9fa' }}><th style={styles.th}>Date</th><th style={styles.th}>Company</th><th style={styles.th}>Amount</th></tr></thead>
+                    <tbody>
+                      {filteredRecharges.map(rec => (
+                        <tr key={rec.id} style={{ borderBottom: '1px solid #eee' }}>
+                          <td style={styles.td}>{rec.recharge_date}</td><td style={styles.td}>{rec.portals?.name}</td><td style={{...styles.td, color:'blue'}}>{rec.amount} SAR</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {reportTab === 'salary' && (
+                <div>
+                  <h3>Salary & Expense Report</h3>
+                  <button onClick={() => exportCSV([...filteredPayroll.map(p => ({ Type: 'Salary', Name: p.employees?.name, Amount: p.amount, Date: p.paid_date })), ...filteredExpenses.map(e => ({ Type: e.category, Name: e.description, Amount: e.amount, Date: e.expense_date }))], 'Salary_Expense_Report.csv')} style={{...styles.btn, background: '#e67e22', width: 'auto', padding: '10px 20px', marginBottom: '20px'}}>Export Salary & Exp Excel</button>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead><tr style={{ background: '#f8f9fa' }}><th style={styles.th}>Date</th><th style={styles.th}>Type</th><th style={styles.th}>Description</th><th style={styles.th}>Amount</th></tr></thead>
+                    <tbody>
+                      {filteredPayroll.map(p => (<tr key={p.id} style={{ borderBottom: '1px solid #eee' }}><td style={styles.td}>{p.paid_date}</td><td style={styles.td}>Salary</td><td style={styles.td}>{p.employees?.name}</td><td style={{...styles.td, color:'red'}}>-{p.amount} SAR</td></tr>))}
+                      {filteredExpenses.map(e => (<tr key={e.id} style={{ borderBottom: '1px solid #eee' }}><td style={styles.td}>{e.expense_date}</td><td style={styles.td}>{e.category}</td><td style={styles.td}>{e.description}</td><td style={{...styles.td, color:'red'}}>-{e.amount} SAR</td></tr>))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 
@@ -576,7 +653,6 @@ export default function Home() {
         </div>
       </main>
 
-      {/* INVOICE PREVIEW MODAL (Bilingual & Stylish) */}
       {previewInv && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
           <div style={{ background: 'white', padding: '20px', borderRadius: '8px', width: '800px', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -594,7 +670,7 @@ export default function Home() {
                 <div style={{textAlign:'right'}}>
                   <h2 style={{margin:0, color:'#0F3D2E'}}>TAX INVOICE</h2>
                   <h3 style={{margin:0, color:'#D4AF37'}}>فاتورة ضريبية</h3>
-                  <p>Inv No: {previewInv.invoice_no}<br/>Date: {previewInv.invoice_date}</p>
+                  <p>Invoice No / رقم الفاتورة: {previewInv.invoice_no}<br/>Date / التاريخ: {previewInv.invoice_date}</p>
                 </div>
               </div>
               <p><b>Customer / العميل:</b> {previewInv.customers?.name}</p>
@@ -607,11 +683,11 @@ export default function Home() {
                 </tr>
               </table>
               <div style={{marginTop:'20px', textAlign:'right'}}>
-                <p>Total Before VAT (الإجمالي قبل الضريبة): {previewInv.total_sell} SAR</p>
-                <p>VAT (الضريبة): {previewInv.vat} SAR</p>
-                <h3>Total After VAT (الإجمالي بعد الضريبة): {previewInv.total} SAR</h3>
-                <p style={{color:'green'}}>Paid (مدفوع): {previewInv.paid_amount} SAR</p>
-                <p style={{color:'red'}}>Due Amount (المبلغ المتبقي): {previewInv.due_amount} SAR</p>
+                <p>Total Before VAT / الإجمالي قبل الضريبة: {previewInv.total_sell} SAR</p>
+                <p>VAT / الضريبة: {previewInv.vat} SAR</p>
+                <h3>Total After VAT / الإجمالي بعد الضريبة: {previewInv.total} SAR</h3>
+                <p style={{color:'green'}}>Paid / مدفوع: {previewInv.paid_amount} SAR</p>
+                <p style={{color:'red'}}>Due Amount / المبلغ المتبقي: {previewInv.due_amount} SAR</p>
               </div>
             </div>
             <button onClick={() => downloadPDF(previewInv)} style={{ width: '100%', padding: '15px', background: '#D4AF37', color: '#0F3D2E', border: 'none', cursor: 'pointer', fontSize: '16px', marginTop: '20px', fontWeight:'bold' }}>Download PDF</button>
@@ -671,7 +747,8 @@ const styles = {
   card: { background: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' },
   i: { width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', marginBottom: '10px', boxSizing: 'border-box' },
   btn: { width: '100%', padding: '10px', background: '#0F3D2E', color: '#D4AF37', border: 'none', cursor: 'pointer', borderRadius: '4px', fontWeight: 'bold' },
-  btnSm: { background: '#0F3D2E', color: '#D4AF37', border: 'none', padding: '5px 10px', cursor: 'pointer', marginRight: '5px' },
+  btnSm: { background: '#0F3D2E', color: '#D4AF37', border: 'none', padding: '8px 15px', cursor: 'pointer', marginRight: '5px', borderRadius: '4px' },
+  btnSmInactive: { background: '#eee', color: '#333', border: 'none', padding: '8px 15px', cursor: 'pointer', marginRight: '5px', borderRadius: '4px' },
   th: { padding: '10px', textAlign: 'left', fontSize: '14px', border: '1px solid #ccc' },
   td: { padding: '10px', fontSize: '14px', border: '1px solid #ccc' }
 };
