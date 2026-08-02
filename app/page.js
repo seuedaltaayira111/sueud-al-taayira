@@ -13,10 +13,10 @@ export default function Home() {
   const [showOverduePopup, setShowOverduePopup] = useState(false);
   const router = useRouter();
 
-  const [data, setData] = useState({ invoices: [], portals: [], customers: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [] });
+  const [data, setData] = useState({ invoices: [], portals: [], customers: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [], audits: [] });
   const today = new Date().toISOString().split('T')[0];
   
-  const [invForm, setInvForm] = useState({ custId: 'new', custName: '', custPhone: '', portal: '', bookingDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', airline: '', qty: 1, cost: 0, sell: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
+  const [invForm, setInvForm] = useState({ custId: 'new', custName: '', custPhone: '', portal: '', bookingDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', airline: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
   const [refundForm, setRefundForm] = useState({ id: '', compRefund: 0, custRefund: 0 });
   const [settleForm, setSettleForm] = useState({ id: '', date: today, mode: 'Cash', tabbyNo: '', tamaraNo: '' });
   const [cashForm, setCashForm] = useState({ date: today, type: 'Cash-In', desc: '', amount: '' });
@@ -25,8 +25,8 @@ export default function Home() {
   const [toDate, setToDate] = useState('');
 
   const t = {
-    en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices List', refunds: 'Refund Invoices', customers: 'Customer List', portals: 'Portals & Recharge', hr: 'HR & Accounts', users: 'User Management', reports: 'Financial Reports', settings: 'Settings', logout: 'Logout' },
-    ar: { dash: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'قائمة الفواتير', refunds: 'فواتير الاسترجاع', customers: 'قائمة العملاء', portals: 'البوابات والرصيد', hr: 'الموارد البشرية والحسابات', users: 'إدارة المستخدمين', reports: 'التقارير المالية', settings: 'الإعدادات', logout: 'تسجيل الخروج' }
+    en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices List', refunds: 'Refund Invoices', customers: 'Customer List', portals: 'Portals & Recharge', hr: 'HR & Accounts', users: 'User Management', reports: 'Financial Reports', audit: 'Audit Logs', settings: 'Settings', logout: 'Logout' },
+    ar: { dash: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'قائمة الفواتير', refunds: 'فواتير الاسترجاع', customers: 'قائمة العملاء', portals: 'البوابات والرصيد', hr: 'الموارد البشرية والحسابات', users: 'إدارة المستخدمين', reports: 'التقارير المالية', audit: 'سجلات التدقيق', settings: 'الإعدادات', logout: 'تسجيل الخروج' }
   };
   const tr = t[lang];
 
@@ -37,6 +37,10 @@ export default function Home() {
       fetchAll();
     });
   }, [router]);
+
+  const logAction = async (action) => {
+    if (user) await supabase.from('audit_logs').insert([{ user_email: user.email, action }]);
+  };
 
   const fetchAll = async () => {
     const inv = await supabase.from('invoices').select(`*, customers(name), portals(name)`).order('created_at', { ascending: false });
@@ -50,10 +54,11 @@ export default function Home() {
     const exp = await supabase.from('expenses').select('*');
     const srv = await supabase.from('services').select('*');
     const cbk = await supabase.from('cashbook').select('*').order('trans_date', { ascending: false });
+    const aud = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false });
     
     const portalsData = por.data || [];
     const servicesData = srv.data || [];
-    setData({ invoices: inv.data || [], portals: portalsData, customers: cus.data || [], recharges: rec.data || [], settings: set.data || {}, employees: emp.data || [], payroll: pay.data || [], appUsers: usr.data || [], expenses: exp.data || [], services: servicesData, cashbook: cbk.data || [] });
+    setData({ invoices: inv.data || [], portals: portalsData, customers: cus.data || [], recharges: rec.data || [], settings: set.data || {}, employees: emp.data || [], payroll: pay.data || [], appUsers: usr.data || [], expenses: exp.data || [], services: servicesData, cashbook: cbk.data || [], audits: aud.data || [] });
     
     if (portalsData.length > 0) setInvForm(f => ({ ...f, portal: f.portal || portalsData[0].name }));
     if (servicesData.length > 0 && !servicesData.find(s => s.name === invForm.service)) setInvForm(f => ({ ...f, service: servicesData[0].name }));
@@ -69,7 +74,9 @@ export default function Home() {
     try {
       const qty = parseInt(invForm.qty) || 1;
       const cost = (parseFloat(invForm.cost) || 0) * qty;
-      const sell = (parseFloat(invForm.sell) || 0) * qty;
+      let sell = (parseFloat(invForm.sell) || 0) * qty;
+      const discount = parseFloat(invForm.discount) || 0;
+      sell = sell - discount; // Apply discount
       const taxRate = parseFloat(invForm.taxRate) || 0;
       const vat = sell * (taxRate / 100);
       const total = sell + vat;
@@ -96,7 +103,7 @@ export default function Home() {
       const invNo = `INV-${Date.now()}`;
       const { error: invErr } = await supabase.from('invoices').insert([{
         invoice_no: invNo, customer_id: cid, portal_id: portal.id, booking_date: invForm.bookingDate, invoice_date: today,
-        service_type: invForm.service, flight_type: invForm.flightType, flight_sub: invForm.flightSub, pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty: qty,
+        service_type: invForm.service, flight_type: invForm.flightType, flight_sub: invForm.flightSub, pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty: qty, discount: discount,
         total_cost: cost, total_sell: sell, profit, vat, total, paid_amount: paid, due_amount: due, payment_method: invForm.payment,
         credit_due_date: due > 0 ? invForm.creditDueDate : null,
         tabby_order_no: invForm.payment === 'Tabby' ? invForm.tabbyNo : null,
@@ -106,15 +113,12 @@ export default function Home() {
       if (invErr) throw invErr;
 
       await supabase.from('portals').update({ current_balance: (portal.current_balance || 0) - cost }).eq('id', portal.id);
-      
-      // Add to Cashbook if paid
       if (paid > 0) {
         const cbType = invForm.payment === 'Cash' ? 'Cash-In' : (invForm.payment === 'Bank Transfer' ? 'Bank-In' : null);
-        if (cbType) {
-          await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Payment for ${invNo}`, amount: paid }]);
-        }
+        if (cbType) await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Payment for ${invNo}`, amount: paid }]);
       }
-
+      
+      await logAction(`Created Invoice ${invNo} for ${invForm.custName}`);
       alert('Invoice Generated Successfully!');
       fetchAll();
       setPage('list');
@@ -133,11 +137,9 @@ export default function Home() {
       tabby_order_no: settleForm.mode === 'Tabby' ? settleForm.tabbyNo : null, tamara_order_no: settleForm.mode === 'Tamara' ? settleForm.tamaraNo : null
     }).eq('id', inv.id);
     
-    // Add settlement to Cashbook
     const cbType = settleForm.mode === 'Cash' ? 'Cash-In' : (settleForm.mode === 'Bank Transfer' ? 'Bank-In' : null);
-    if (cbType) {
-      await supabase.from('cashbook').insert([{ trans_date: settleForm.date, type: cbType, description: `Settlement for ${inv.invoice_no}`, amount: inv.due_amount }]);
-    }
+    if (cbType) await supabase.from('cashbook').insert([{ trans_date: settleForm.date, type: cbType, description: `Settlement for ${inv.invoice_no}`, amount: inv.due_amount }]);
+    await logAction(`Settled payment for ${inv.invoice_no}`);
 
     alert('Payment Settled Successfully!');
     setSettleForm({ id: '', date: today, mode: 'Cash', tabbyNo: '', tamaraNo: '' });
@@ -149,7 +151,6 @@ export default function Home() {
     const { data: invArr } = await supabase.from('invoices').select('*, portals(*)').eq('id', refundForm.id).limit(1);
     if (!invArr || invArr.length === 0) return alert('Invoice not found');
     const inv = invArr[0];
-    
     const compRef = parseFloat(refundForm.compRefund) || 0;
     const custRef = parseFloat(refundForm.custRefund) || 0;
 
@@ -159,13 +160,9 @@ export default function Home() {
       invoice_no: refNo, customer_id: inv.customer_id, portal_id: inv.portal_id, booking_date: today, invoice_date: today,
       service_type: `Refund for ${inv.invoice_no}`, total_sell: -custRef, total: -custRef, paid_amount: -custRef, status: 'refunded', refund_company: compRef, refund_customer: custRef
     }]);
-
     if (inv.portals) await supabase.from('portals').update({ current_balance: (inv.portals.current_balance || 0) + compRef }).eq('id', inv.portals.id);
-    
-    // Refund out from Cashbook
-    if (custRef > 0) {
-      await supabase.from('cashbook').insert([{ trans_date: today, type: 'Cash-Out', description: `Refund to customer for ${inv.invoice_no}`, amount: custRef }]);
-    }
+    if (custRef > 0) await supabase.from('cashbook').insert([{ trans_date: today, type: 'Cash-Out', description: `Refund for ${inv.invoice_no}`, amount: custRef }]);
+    await logAction(`Processed refund ${refNo} for ${inv.invoice_no}`);
 
     alert('Refund Processed!');
     setRefundForm({ id: '', compRefund: 0, custRefund: 0 });
@@ -175,6 +172,7 @@ export default function Home() {
   const handleAddCash = async (e) => {
     e.preventDefault();
     await supabase.from('cashbook').insert([{ trans_date: cashForm.date, type: cashForm.type, description: cashForm.desc, amount: parseFloat(cashForm.amount) }]);
+    await logAction(`Added cashbook entry: ${cashForm.desc}`);
     alert('Transaction Added!');
     setCashForm({ date: today, type: 'Cash-In', desc: '', amount: '' });
     fetchAll();
@@ -183,12 +181,14 @@ export default function Home() {
   const handleDelete = async (table, id) => {
     if (!confirm('Delete permanently?')) return;
     await supabase.from(table).delete().eq('id', id);
+    await logAction(`Deleted record ${id} from ${table}`);
     fetchAll();
   };
 
   const handleAddEntity = async (table, payload, msg) => {
     const { error } = await supabase.from(table).insert([payload]);
     if (error) return alert('Error: ' + error.message);
+    await logAction(`Added new ${msg} in ${table}`);
     alert(msg + ' Added!');
     fetchAll();
   };
@@ -211,11 +211,9 @@ export default function Home() {
       const { default: jsPDF } = await import('jspdf');
       const { default: QRCode } = await import('qrcode');
       const s = data.settings;
-      
       const enc = (tag, v) => String.fromCharCode(tag) + String.fromCharCode(v.length) + v;
       const tlv = enc(1, s.company_name_en||"S") + enc(2, s.vat_no||"V") + enc(3, new Date(inv.created_at).toISOString()) + enc(4, inv.total.toFixed(2)) + enc(5, inv.vat.toFixed(2));
       const qr = await QRCode.toDataURL(btoa(tlv));
-
       const isExempt = inv.vat === 0;
       const taxLabel = isExempt ? 'Exempt (معافاة)' : 'VAT 15% (ضريبة 15%)';
 
@@ -228,84 +226,44 @@ export default function Home() {
             <h1 style="margin:0;color:#0F3D2E;font-size:24px;">${s.company_name_en || 'Sueud Al Taiyyarah'}</h1>
             <h2 style="margin:0;color:#0F3D2E;font-size:20px;">${s.company_name_ar || 'صعود الطائرة'}</h2>
             <p style="font-size:12px;margin-top:10px;line-height:1.5;">
-              VAT / الرقم الضريبي: ${s.vat_no || ''}<br/>
-              CR / السجل التجاري: ${s.cr_no || ''}<br/>
-              Address / الموقع: ${s.address || ''}<br/>
-              Phone / هاتف: ${s.phone || ''}
+              VAT / الرقم الضريبي: ${s.vat_no || ''}<br/>CR / السجل التجاري: ${s.cr_no || ''}<br/>Address / الموقع: ${s.address || ''}<br/>Phone / هاتف: ${s.phone || ''}
             </p>
           </div>
           <div style="text-align:right;">
             <h1 style="color:#0F3D2E;margin:0;font-size:28px;">TAX INVOICE</h1>
             <h2 style="color:#D4AF37;margin:0;font-size:22px;">فاتورة ضريبية</h2>
-            <p style="font-size:14px;margin-top:10px;line-height:1.5;">
-              Invoice No / رقم الفاتورة: ${inv.invoice_no}<br/>
-              Date / التاريخ: ${inv.invoice_date}
-            </p>
+            <p style="font-size:14px;margin-top:10px;line-height:1.5;">Invoice No / رقم الفاتورة: ${inv.invoice_no}<br/>Date / التاريخ: ${inv.invoice_date}</p>
           </div>
         </div>
-
         <div style="margin-bottom:20px;border:1px solid #eee;padding:10px;background:#f9f9f9;">
-          <b>Customer / العميل:</b> ${inv.customers?.name || ''}<br/>
-          <b>Phone / الهاتف:</b> ${inv.customers?.phone || ''}
+          <b>Customer / العميل:</b> ${inv.customers?.name || ''}<br/><b>Phone / الهاتف:</b> ${inv.customers?.phone || ''}
         </div>
-
         <table style="width:100%;border-collapse:collapse;text-align:center;font-size:14px;">
-          <thead>
-            <tr style="background:#0F3D2E;color:#fff;">
-              <th style="padding:10px;border:1px solid #ddd;">Service / الخدمة</th>
-              <th style="padding:10px;border:1px solid #ddd;">Qty / الكمية</th>
-              <th style="padding:10px;border:1px solid #ddd;">PNR / رقم الحجز</th>
-              <th style="padding:10px;border:1px solid #ddd;">Details / التفاصيل</th>
-              <th style="padding:10px;border:1px solid #ddd;">Amount / المبلغ</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style="padding:10px;border:1px solid #ddd;">${inv.service_type}</td>
-              <td style="padding:10px;border:1px solid #ddd;">${inv.qty || 1}</td>
-              <td style="padding:10px;border:1px solid #ddd;">${inv.pnr || ''}</td>
-              <td style="padding:10px;border:1px solid #ddd;">${inv.sector || ''}</td>
-              <td style="padding:10px;border:1px solid #ddd;">${inv.total_sell.toFixed(2)} SAR</td>
-            </tr>
-          </tbody>
+          <thead><tr style="background:#0F3D2E;color:#fff;">
+            <th style="padding:10px;border:1px solid #ddd;">Service / الخدمة</th><th style="padding:10px;border:1px solid #ddd;">Qty / الكمية</th>
+            <th style="padding:10px;border:1px solid #ddd;">PNR / رقم الحجز</th><th style="padding:10px;border:1px solid #ddd;">Details / التفاصيل</th>
+            <th style="padding:10px;border:1px solid #ddd;">Amount / المبلغ</th>
+          </tr></thead>
+          <tbody><tr>
+            <td style="padding:10px;border:1px solid #ddd;">${inv.service_type}</td><td style="padding:10px;border:1px solid #ddd;">${inv.qty || 1}</td>
+            <td style="padding:10px;border:1px solid #ddd;">${inv.pnr || ''}</td><td style="padding:10px;border:1px solid #ddd;">${inv.sector || ''}</td>
+            <td style="padding:10px;border:1px solid #ddd;">${inv.total_sell.toFixed(2)} SAR</td>
+          </tr></tbody>
         </table>
-
         <div style="display:flex;justify-content:space-between;margin-top:30px;">
-          <div style="text-align:center;">
-            <img src="${qr}" width="120" height="120" />
-            <p style="font-size:10px;margin-top:5px;">Scan ZATCA / امسح الرمز</p>
-          </div>
+          <div style="text-align:center;"><img src="${qr}" width="120" height="120" /><p style="font-size:10px;margin-top:5px;">Scan ZATCA / امسح الرمز</p></div>
           <div style="text-align:right;width:300px;font-size:14px;">
-            <p style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:5px 0;">
-              <span>Total Before VAT / الإجمالي قبل الضريبة:</span>
-              <b>${inv.total_sell.toFixed(2)} SAR</b>
-            </p>
-            <p style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:5px 0;">
-              <span>${taxLabel}:</span>
-              <b>${inv.vat.toFixed(2)} SAR</b>
-            </p>
-            <p style="display:flex;justify-content:space-between;background:#f0f0f0;padding:10px;font-weight:bold;font-size:16px;border:1px solid #ddd;">
-              <span>Total After VAT / الإجمالي بعد الضريبة:</span>
-              <b>${inv.total.toFixed(2)} SAR</b>
-            </p>
-            <p style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:5px 0;color:#27ae60;">
-              <span>Paid / مدفوع:</span>
-              <b>${inv.paid_amount.toFixed(2)} SAR</b>
-            </p>
-            <p style="display:flex;justify-content:space-between;padding:5px 0;color:#e74c3c;font-weight:bold;font-size:16px;">
-              <span>Due Amount / المبلغ المتبقي:</span>
-              <b>${inv.due_amount.toFixed(2)} SAR</b>
-            </p>
+            <p style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:5px 0;"><span>Total Before VAT / الإجمالي قبل الضريبة:</span><b>${inv.total_sell.toFixed(2)} SAR</b></p>
+            ${inv.discount > 0 ? `<p style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:5px 0;color:#e74c3c;"><span>Discount / خصم:</span><b>- ${inv.discount.toFixed(2)} SAR</b></p>` : ''}
+            <p style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:5px 0;"><span>${taxLabel}:</span><b>${inv.vat.toFixed(2)} SAR</b></p>
+            <p style="display:flex;justify-content:space-between;background:#f0f0f0;padding:10px;font-weight:bold;font-size:16px;border:1px solid #ddd;"><span>Total After VAT / الإجمالي بعد الضريبة:</span><b>${inv.total.toFixed(2)} SAR</b></p>
+            <p style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:5px 0;color:#27ae60;"><span>Paid / مدفوع:</span><b>${inv.paid_amount.toFixed(2)} SAR</b></p>
+            <p style="display:flex;justify-content:space-between;padding:5px 0;color:#e74c3c;font-weight:bold;font-size:16px;"><span>Due Amount / المبلغ المتبقي:</span><b>${inv.due_amount.toFixed(2)} SAR</b></p>
           </div>
         </div>
-        
         <div style="margin-top:50px;display:flex;justify-content:space-between;">
-          <div style="text-align:center;border-top:1px solid #333;padding-top:5px;width:150px;font-size:12px;">
-            Received By / استلم بواسطة
-          </div>
-          <div style="text-align:center;border-top:1px solid #333;padding-top:5px;width:150px;font-size:12px;">
-            Customer Sign / توقيع العميل
-          </div>
+          <div style="text-align:center;border-top:1px solid #333;padding-top:5px;width:150px;font-size:12px;">Received By / استلم بواسطة</div>
+          <div style="text-align:center;border-top:1px solid #333;padding-top:5px;width:150px;font-size:12px;">Customer Sign / توقيع العميل</div>
         </div>
       `;
       document.body.appendChild(html);
@@ -315,6 +273,12 @@ export default function Home() {
       doc.save(`${inv.invoice_no}.pdf`);
       document.body.removeChild(html);
     } catch (err) { alert('PDF Error: ' + err.message); }
+  };
+
+  const shareWhatsApp = (inv) => {
+    const phone = inv.customers?.phone ? inv.customers.phone.replace(/\D/g, '') : '';
+    const msg = `Dear ${inv.customers?.name || 'Customer'},%0a%0aYour Invoice *${inv.invoice_no}* from *Sueud Al Taiyyarah*.%0aTotal: *${inv.total.toFixed(2)} SAR*%0aPaid: *${inv.paid_amount.toFixed(2)} SAR*%0aDue: *${inv.due_amount.toFixed(2)} SAR*%0a%0aThank you for choosing us!`;
+    window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
   };
 
   if (!user) return <div style={{ padding: 50, textAlign: 'center' }}>Loading ERP...</div>;
@@ -330,18 +294,32 @@ export default function Home() {
   const tProfit = activeInv.reduce((s,i) => s + i.profit, 0);
   const tExp = data.expenses.reduce((s,e) => s + e.amount, 0);
   const tSal = data.payroll.reduce((s,p) => s + p.amount, 0);
-  const tRecharges = data.recharges.reduce((s,r) => s + r.amount, 0);
   const netProfit = tProfit - tExp - tSal;
   const vatPayable = activeInv.reduce((s,i) => s + i.vat, 0);
   const totalOutstanding = outstandingInv.reduce((s,i) => s + i.due_amount, 0);
   
-  // Cashbook Calculations
   const cashIn = data.cashbook.filter(c => c.type === 'Cash-In').reduce((s,c) => s + c.amount, 0);
   const cashOut = data.cashbook.filter(c => c.type === 'Cash-Out').reduce((s,c) => s + c.amount, 0);
   const bankIn = data.cashbook.filter(c => c.type === 'Bank-In').reduce((s,c) => s + c.amount, 0);
   const bankOut = data.cashbook.filter(c => c.type === 'Bank-Out').reduce((s,c) => s + c.amount, 0);
   const cashBalance = cashIn - cashOut;
   const bankBalance = bankIn - bankOut;
+
+  // Service Analytics Calculation for Pie Chart
+  const serviceSales = {};
+  activeInv.forEach(inv => {
+    serviceSales[inv.service_type] = (serviceSales[inv.service_type] || 0) + inv.total;
+  });
+  const totalServiceSales = Object.values(serviceSales).reduce((s, v) => s + v, 0);
+  const pieColors = ['#0F3D2E', '#D4AF37', '#2980b9', '#e74c3c', '#8e44ad', '#e67e22'];
+  let pieGradient = 'conic-gradient(';
+  let accum = 0;
+  Object.entries(serviceSales).forEach(([service, amount], i) => {
+    const percent = (amount / totalServiceSales) * 100;
+    pieGradient += `${pieColors[i % pieColors.length]} ${accum}% ${accum + percent}%, `;
+    accum += percent;
+  });
+  pieGradient = pieGradient.slice(0, -2) + ')';
 
   const todayDate = new Date();
   const futureDate = new Date(); futureDate.setDate(todayDate.getDate() + 15);
@@ -371,6 +349,7 @@ export default function Home() {
     { id: 'hr', label: tr.hr },
     { id: 'users', label: tr.users },
     { id: 'reports', label: tr.reports },
+    { id: 'audit', label: tr.audit },
     { id: 'settings', label: tr.settings },
   ];
 
@@ -411,32 +390,37 @@ export default function Home() {
                 <div style={{...styles.card, borderTop: '4px solid #e74c3c'}}><h3>Outstanding</h3><h1 style={{color:'#e74c3c'}}>{totalOutstanding.toFixed(0)} SAR</h1></div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-                <div style={{...styles.card, borderLeft: '4px solid #e67e22'}}>
+              <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                {/* Pie Chart for Services */}
+                <div style={{...styles.card, flex: 1, minWidth: '300px'}}>
+                  <h3 style={{color:'#0F3D2E'}}>Sales by Service</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <div style={{ width: '150px', height: '150px', borderRadius: '50%', background: pieGradient }}></div>
+                    <div>
+                      {Object.entries(serviceSales).map(([service, amount], i) => (
+                        <div key={service} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
+                          <div style={{ width: '12px', height: '12px', background: pieColors[i % pieColors.length] }}></div>
+                          {service}: {amount.toFixed(0)} SAR
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                <div style={{...styles.card, flex: 1, minWidth: '300px', borderLeft: '4px solid #e67e22'}}>
                   <h3 style={{color:'#e67e22'}}>⚠️ Alerts</h3>
                   <p>📂 Pending Tickets: <b>{pendingTickets.length}</b></p>
                   <p>⚠️ Iqama Expiring: <b>{expiringIqama.length}</b></p>
                   <p>💰 Salary Due Today: <b>{salaryDueToday.length}</b></p>
                 </div>
-                <div style={{...styles.card, borderLeft: '4px solid #0F3D2E'}}>
-                  <h3 style={{color:'#0F3D2E'}}>📅 Today's Bookings ({todaysBookings.length})</h3>
-                  <div style={{maxHeight: '100px', overflowY: 'auto'}}>
-                    {todaysBookings.length === 0 ? <p>No bookings today.</p> : 
-                      todaysBookings.map(inv => <div key={inv.id} style={{borderBottom:'1px solid #eee', padding:'5px 0', fontSize:'14px'}}>{inv.customers?.name} - {inv.service_type}</div>)
-                    }
-                  </div>
-                </div>
               </div>
 
               <div style={{...styles.card, marginBottom: '20px'}}>
-                <h3 style={{color:'#0F3D2E'}}>Portal Current Balances</h3>
-                <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-                  {data.portals.map(p => (
-                    <div key={p.id} style={{ flex: 1, minWidth: '150px', background: '#f8f9fa', padding: '15px', borderRadius: '8px', textAlign: 'center' }}>
-                      <h4 style={{margin:'0 0 5px'}}>{p.name}</h4>
-                      <h2 style={{margin:0, color: p.current_balance < 0 ? '#e74c3c' : '#0F3D2E'}}>{p.current_balance || 0} SAR</h2>
-                    </div>
-                  ))}
+                <h3 style={{color:'#0F3D2E'}}>📅 Today's Bookings ({todaysBookings.length})</h3>
+                <div style={{maxHeight: '100px', overflowY: 'auto'}}>
+                  {todaysBookings.length === 0 ? <p>No bookings today.</p> : 
+                    todaysBookings.map(inv => <div key={inv.id} style={{borderBottom:'1px solid #eee', padding:'5px 0', fontSize:'14px'}}>{inv.customers?.name} - {inv.service_type}</div>)
+                  }
                 </div>
               </div>
 
@@ -512,6 +496,7 @@ export default function Home() {
                   <input type="number" placeholder="Quantity" value={invForm.qty} onChange={(e) => setInvForm({...invForm, qty: e.target.value})} style={styles.i} required />
                   <input type="number" placeholder="Cost Price (Per Unit)" value={invForm.cost} onChange={(e) => setInvForm({...invForm, cost: e.target.value})} style={styles.i} required />
                   <input type="number" placeholder="Sell Price (Per Unit)" value={invForm.sell} onChange={(e) => setInvForm({...invForm, sell: e.target.value})} style={styles.i} required />
+                  <input type="number" placeholder="Discount (SAR)" value={invForm.discount} onChange={(e) => setInvForm({...invForm, discount: e.target.value})} style={styles.i} />
                   <select value={invForm.taxRate} onChange={(e) => setInvForm({...invForm, taxRate: e.target.value})} style={styles.i}>
                     <option value="15">Tax 15%</option>
                     <option value="0">Tax 0% (Exempt)</option>
@@ -545,7 +530,7 @@ export default function Home() {
                       <td style={{...styles.td, color: inv.due_amount > 0 ? 'red' : 'green'}}>{inv.due_amount} SAR</td>
                       <td style={styles.td}>
                         <button onClick={() => setPreviewInv(inv)} style={styles.btnSm}>Preview</button>
-                        <button onClick={() => downloadPDF(inv)} style={{...styles.btnSm, background:'#8e44ad'}}>PDF</button>
+                        <button onClick={() => shareWhatsApp(inv)} style={{...styles.btnSm, background:'#25D366'}}>WhatsApp</button>
                         {inv.due_amount > 0 && <button onClick={() => setSettleForm({id: inv.id, date: today, mode: 'Cash', tabbyNo: '', tamaraNo: ''})} style={{...styles.btnSm, background:'#27ae60'}}>Settle</button>}
                         <button onClick={() => setRefundForm({id: inv.id, compRefund: 0, custRefund: 0})} style={{...styles.btnSm, background:'#e67e22'}}>Refund</button>
                         <button onClick={() => handleDelete('invoices', inv.id)} style={{...styles.btnSm, background:'#e74c3c'}}>Del</button>
@@ -650,7 +635,6 @@ export default function Home() {
             </div>
           )}
 
-          {/* HR & ACCOUNTS MODULE */}
           {page === 'hr' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
               <div style={styles.card}>
@@ -711,6 +695,22 @@ export default function Home() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* AUDIT LOG SECTION */}
+          {page === 'audit' && (
+            <div style={{ background: 'white', padding: '30px', borderRadius: '8px', borderTop: '4px solid #34495e' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr style={{ background: '#34495e', color: 'white' }}><th style={styles.th}>Date & Time</th><th style={styles.th}>User Email</th><th style={styles.th}>Activity / Action</th></tr></thead>
+                <tbody>
+                  {data.audits.map(a => (
+                    <tr key={a.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <td style={styles.td}>{new Date(a.created_at).toLocaleString()}</td><td style={styles.td}>{a.user_email}</td><td style={styles.td}>{a.action}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
 
@@ -897,13 +897,18 @@ export default function Home() {
               </table>
               <div style={{marginTop:'20px', textAlign:'right'}}>
                 <p>Total Before VAT / الإجمالي قبل الضريبة: {previewInv.total_sell} SAR</p>
+                {previewInv.discount > 0 && <p style={{color:'#e74c3c'}}>Discount / خصم: - {previewInv.discount} SAR</p>}
                 <p>VAT / الضريبة: {previewInv.vat} SAR</p>
                 <h3>Total After VAT / الإجمالي بعد الضريبة: {previewInv.total} SAR</h3>
                 <p style={{color:'green'}}>Paid / مدفوع: {previewInv.paid_amount} SAR</p>
                 <p style={{color:'red'}}>Due Amount / المبلغ المتبقي: {previewInv.due_amount} SAR</p>
               </div>
             </div>
-            <button onClick={() => downloadPDF(previewInv)} style={{ width: '100%', padding: '15px', background: '#D4AF37', color: '#0F3D2E', border: 'none', cursor: 'pointer', fontSize: '16px', marginTop: '20px', fontWeight:'bold' }}>Download PDF</button>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginTop: '20px' }}>
+              <button onClick={() => downloadPDF(previewInv)} style={{ padding: '15px', background: '#D4AF37', color: '#0F3D2E', border: 'none', cursor: 'pointer', fontSize: '16px', fontWeight:'bold' }}>Download PDF</button>
+              <button onClick={() => shareWhatsApp(previewInv)} style={{ padding: '15px', background: '#25D366', color: 'white', border: 'none', cursor: 'pointer', fontSize: '16px', fontWeight:'bold' }}>WhatsApp</button>
+              <button onClick={() => setPreviewInv(null)} style={{ padding: '15px', background: '#e74c3c', color: 'white', border: 'none', cursor: 'pointer', fontSize: '16px', fontWeight:'bold' }}>Close</button>
+            </div>
           </div>
         </div>
       )}
