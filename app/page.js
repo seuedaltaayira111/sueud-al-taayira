@@ -16,10 +16,11 @@ export default function Home() {
   const [data, setData] = useState({ invoices: [], portals: [], customers: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [], audits: [] });
   const today = new Date().toISOString().split('T')[0];
   
-  const [invForm, setInvForm] = useState({ custId: 'new', custName: '', custPhone: '', portal: '', bookingDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', airline: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
+  const [invForm, setInvForm] = useState({ custId: 'new', custName: '', custPhone: '', employeeId: '', portal: '', bookingDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', airline: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
   const [refundForm, setRefundForm] = useState({ id: '', compRefund: 0, custRefund: 0 });
   const [settleForm, setSettleForm] = useState({ id: '', date: today, mode: 'Cash', tabbyNo: '', tamaraNo: '' });
   const [cashForm, setCashForm] = useState({ date: today, type: 'Cash-In', desc: '', amount: '' });
+  const [walletForm, setWalletForm] = useState({ custId: '', amount: 0, type: 'Add' });
   const [reportTab, setReportTab] = useState('pnl');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
@@ -43,7 +44,7 @@ export default function Home() {
   };
 
   const fetchAll = async () => {
-    const inv = await supabase.from('invoices').select(`*, customers(name), portals(name)`).order('created_at', { ascending: false });
+    const inv = await supabase.from('invoices').select(`*, customers(name), portals(name), employees(name)`).order('created_at', { ascending: false });
     const por = await supabase.from('portals').select('*');
     const cus = await supabase.from('customers').select('*').order('name', { ascending: true });
     const rec = await supabase.from('recharges').select(`*, portals(name)`).order('recharge_date', { ascending: false });
@@ -76,7 +77,7 @@ export default function Home() {
       const cost = (parseFloat(invForm.cost) || 0) * qty;
       let sell = (parseFloat(invForm.sell) || 0) * qty;
       const discount = parseFloat(invForm.discount) || 0;
-      sell = sell - discount; // Apply discount
+      sell = sell - discount;
       const taxRate = parseFloat(invForm.taxRate) || 0;
       const vat = sell * (taxRate / 100);
       const total = sell + vat;
@@ -102,7 +103,8 @@ export default function Home() {
 
       const invNo = `INV-${Date.now()}`;
       const { error: invErr } = await supabase.from('invoices').insert([{
-        invoice_no: invNo, customer_id: cid, portal_id: portal.id, booking_date: invForm.bookingDate, invoice_date: today,
+        invoice_no: invNo, customer_id: cid, portal_id: portal.id, employee_id: invForm.employeeId || null,
+        booking_date: invForm.bookingDate, invoice_date: today,
         service_type: invForm.service, flight_type: invForm.flightType, flight_sub: invForm.flightSub, pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty: qty, discount: discount,
         total_cost: cost, total_sell: sell, profit, vat, total, paid_amount: paid, due_amount: due, payment_method: invForm.payment,
         credit_due_date: due > 0 ? invForm.creditDueDate : null,
@@ -117,8 +119,7 @@ export default function Home() {
         const cbType = invForm.payment === 'Cash' ? 'Cash-In' : (invForm.payment === 'Bank Transfer' ? 'Bank-In' : null);
         if (cbType) await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Payment for ${invNo}`, amount: paid }]);
       }
-      
-      await logAction(`Created Invoice ${invNo} for ${invForm.custName}`);
+      await logAction(`Created Invoice ${invNo}`);
       alert('Invoice Generated Successfully!');
       fetchAll();
       setPage('list');
@@ -162,7 +163,7 @@ export default function Home() {
     }]);
     if (inv.portals) await supabase.from('portals').update({ current_balance: (inv.portals.current_balance || 0) + compRef }).eq('id', inv.portals.id);
     if (custRef > 0) await supabase.from('cashbook').insert([{ trans_date: today, type: 'Cash-Out', description: `Refund for ${inv.invoice_no}`, amount: custRef }]);
-    await logAction(`Processed refund ${refNo} for ${inv.invoice_no}`);
+    await logAction(`Processed refund ${refNo}`);
 
     alert('Refund Processed!');
     setRefundForm({ id: '', compRefund: 0, custRefund: 0 });
@@ -175,6 +176,33 @@ export default function Home() {
     await logAction(`Added cashbook entry: ${cashForm.desc}`);
     alert('Transaction Added!');
     setCashForm({ date: today, type: 'Cash-In', desc: '', amount: '' });
+    fetchAll();
+  };
+
+  // CUSTOMER WALLET ADJUSTMENT
+  const handleWalletAdjust = async (e) => {
+    e.preventDefault();
+    const cust = data.customers.find(c => c.id === walletForm.custId);
+    if(!cust) return alert("Select Customer");
+    const amt = parseFloat(walletForm.amount) || 0;
+    const newBal = (cust.wallet_balance || 0) + (walletForm.type === 'Add' ? amt : -amt);
+    await supabase.from('customers').update({ wallet_balance: newBal }).eq('id', walletForm.custId);
+    await supabase.from('cashbook').insert([{ trans_date: today, type: walletForm.type === 'Add' ? 'Cash-In' : 'Cash-Out', description: `Wallet adjustment for ${cust.name}`, amount: amt }]);
+    await logAction(`Adjusted wallet for ${cust.name}`);
+    alert('Wallet Updated!');
+    setWalletForm({ custId: '', amount: 0, type: 'Add' });
+    fetchAll();
+  };
+
+  // DOCUMENT UPLOAD (PASSPORT/VISA)
+  const handleDocUpload = async (custId, file, docType) => {
+    if (!file) return;
+    const fileName = `doc_${Date.now()}.png`;
+    const { error } = await supabase.storage.from('documents').upload(fileName, file);
+    if (error) return alert('Error: ' + error.message);
+    const { data: urlData } = supabase.storage.from('documents').getPublicUrl(fileName);
+    await supabase.from('customers').update({ [docType]: urlData.publicUrl }).eq('id', custId);
+    alert('Document Uploaded!');
     fetchAll();
   };
 
@@ -225,9 +253,7 @@ export default function Home() {
             ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:80px;margin-bottom:10px;" />` : ''}
             <h1 style="margin:0;color:#0F3D2E;font-size:24px;">${s.company_name_en || 'Sueud Al Taiyyarah'}</h1>
             <h2 style="margin:0;color:#0F3D2E;font-size:20px;">${s.company_name_ar || 'صعود الطائرة'}</h2>
-            <p style="font-size:12px;margin-top:10px;line-height:1.5;">
-              VAT / الرقم الضريبي: ${s.vat_no || ''}<br/>CR / السجل التجاري: ${s.cr_no || ''}<br/>Address / الموقع: ${s.address || ''}<br/>Phone / هاتف: ${s.phone || ''}
-            </p>
+            <p style="font-size:12px;margin-top:10px;line-height:1.5;">VAT / الرقم الضريبي: ${s.vat_no || ''}<br/>CR / السجل التجاري: ${s.cr_no || ''}<br/>Address / الموقع: ${s.address || ''}<br/>Phone / هاتف: ${s.phone || ''}</p>
           </div>
           <div style="text-align:right;">
             <h1 style="color:#0F3D2E;margin:0;font-size:28px;">TAX INVOICE</h1>
@@ -235,20 +261,10 @@ export default function Home() {
             <p style="font-size:14px;margin-top:10px;line-height:1.5;">Invoice No / رقم الفاتورة: ${inv.invoice_no}<br/>Date / التاريخ: ${inv.invoice_date}</p>
           </div>
         </div>
-        <div style="margin-bottom:20px;border:1px solid #eee;padding:10px;background:#f9f9f9;">
-          <b>Customer / العميل:</b> ${inv.customers?.name || ''}<br/><b>Phone / الهاتف:</b> ${inv.customers?.phone || ''}
-        </div>
+        <div style="margin-bottom:20px;border:1px solid #eee;padding:10px;background:#f9f9f9;"><b>Customer / العميل:</b> ${inv.customers?.name || ''}<br/><b>Phone / الهاتف:</b> ${inv.customers?.phone || ''}</div>
         <table style="width:100%;border-collapse:collapse;text-align:center;font-size:14px;">
-          <thead><tr style="background:#0F3D2E;color:#fff;">
-            <th style="padding:10px;border:1px solid #ddd;">Service / الخدمة</th><th style="padding:10px;border:1px solid #ddd;">Qty / الكمية</th>
-            <th style="padding:10px;border:1px solid #ddd;">PNR / رقم الحجز</th><th style="padding:10px;border:1px solid #ddd;">Details / التفاصيل</th>
-            <th style="padding:10px;border:1px solid #ddd;">Amount / المبلغ</th>
-          </tr></thead>
-          <tbody><tr>
-            <td style="padding:10px;border:1px solid #ddd;">${inv.service_type}</td><td style="padding:10px;border:1px solid #ddd;">${inv.qty || 1}</td>
-            <td style="padding:10px;border:1px solid #ddd;">${inv.pnr || ''}</td><td style="padding:10px;border:1px solid #ddd;">${inv.sector || ''}</td>
-            <td style="padding:10px;border:1px solid #ddd;">${inv.total_sell.toFixed(2)} SAR</td>
-          </tr></tbody>
+          <thead><tr style="background:#0F3D2E;color:#fff;"><th style="padding:10px;border:1px solid #ddd;">Service / الخدمة</th><th style="padding:10px;border:1px solid #ddd;">Qty / الكمية</th><th style="padding:10px;border:1px solid #ddd;">PNR / رقم الحجز</th><th style="padding:10px;border:1px solid #ddd;">Details / التفاصيل</th><th style="padding:10px;border:1px solid #ddd;">Amount / المبلغ</th></tr></thead>
+          <tbody><tr><td style="padding:10px;border:1px solid #ddd;">${inv.service_type}</td><td style="padding:10px;border:1px solid #ddd;">${inv.qty || 1}</td><td style="padding:10px;border:1px solid #ddd;">${inv.pnr || ''}</td><td style="padding:10px;border:1px solid #ddd;">${inv.sector || ''}</td><td style="padding:10px;border:1px solid #ddd;">${inv.total_sell.toFixed(2)} SAR</td></tr></tbody>
         </table>
         <div style="display:flex;justify-content:space-between;margin-top:30px;">
           <div style="text-align:center;"><img src="${qr}" width="120" height="120" /><p style="font-size:10px;margin-top:5px;">Scan ZATCA / امسح الرمز</p></div>
@@ -261,10 +277,7 @@ export default function Home() {
             <p style="display:flex;justify-content:space-between;padding:5px 0;color:#e74c3c;font-weight:bold;font-size:16px;"><span>Due Amount / المبلغ المتبقي:</span><b>${inv.due_amount.toFixed(2)} SAR</b></p>
           </div>
         </div>
-        <div style="margin-top:50px;display:flex;justify-content:space-between;">
-          <div style="text-align:center;border-top:1px solid #333;padding-top:5px;width:150px;font-size:12px;">Received By / استلم بواسطة</div>
-          <div style="text-align:center;border-top:1px solid #333;padding-top:5px;width:150px;font-size:12px;">Customer Sign / توقيع العميل</div>
-        </div>
+        <div style="margin-top:50px;display:flex;justify-content:space-between;"><div style="text-align:center;border-top:1px solid #333;padding-top:5px;width:150px;font-size:12px;">Received By / استلم بواسطة</div><div style="text-align:center;border-top:1px solid #333;padding-top:5px;width:150px;font-size:12px;">Customer Sign / توقيع العميل</div></div>
       `;
       document.body.appendChild(html);
       const canvas = await html2canvas(html, { useCORS: true, allowTaint: true });
@@ -295,7 +308,6 @@ export default function Home() {
   const tExp = data.expenses.reduce((s,e) => s + e.amount, 0);
   const tSal = data.payroll.reduce((s,p) => s + p.amount, 0);
   const netProfit = tProfit - tExp - tSal;
-  const vatPayable = activeInv.reduce((s,i) => s + i.vat, 0);
   const totalOutstanding = outstandingInv.reduce((s,i) => s + i.due_amount, 0);
   
   const cashIn = data.cashbook.filter(c => c.type === 'Cash-In').reduce((s,c) => s + c.amount, 0);
@@ -305,11 +317,8 @@ export default function Home() {
   const cashBalance = cashIn - cashOut;
   const bankBalance = bankIn - bankOut;
 
-  // Service Analytics Calculation for Pie Chart
   const serviceSales = {};
-  activeInv.forEach(inv => {
-    serviceSales[inv.service_type] = (serviceSales[inv.service_type] || 0) + inv.total;
-  });
+  activeInv.forEach(inv => { serviceSales[inv.service_type] = (serviceSales[inv.service_type] || 0) + inv.total; });
   const totalServiceSales = Object.values(serviceSales).reduce((s, v) => s + v, 0);
   const pieColors = ['#0F3D2E', '#D4AF37', '#2980b9', '#e74c3c', '#8e44ad', '#e67e22'];
   let pieGradient = 'conic-gradient(';
@@ -391,7 +400,6 @@ export default function Home() {
               </div>
 
               <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
-                {/* Pie Chart for Services */}
                 <div style={{...styles.card, flex: 1, minWidth: '300px'}}>
                   <h3 style={{color:'#0F3D2E'}}>Sales by Service</h3>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
@@ -489,6 +497,10 @@ export default function Home() {
 
                 <h3 style={{color: '#0F3D2E'}}>Pricing & Payment</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
+                  <select value={invForm.employeeId} onChange={(e) => setInvForm({...invForm, employeeId: e.target.value})} style={styles.i}>
+                    <option value="">Select Sales Rep</option>
+                    {data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+                  </select>
                   <select value={invForm.portal} onChange={(e) => setInvForm({...invForm, portal: e.target.value})} style={styles.i} required>
                     <option value="">Select Portal</option>
                     {data.portals.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
@@ -519,18 +531,17 @@ export default function Home() {
           {page === 'list' && (
             <div style={{ background: 'white', padding: '30px', borderRadius: '8px', borderTop: '4px solid #D4AF37' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.th}>Inv No</th><th style={styles.th}>Customer</th><th style={styles.th}>Status</th><th style={styles.th}>Qty</th><th style={styles.th}>Profit</th><th style={styles.th}>Total</th><th style={styles.th}>Due</th><th style={styles.th}>Actions</th></tr></thead>
+                <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.th}>Inv No</th><th style={styles.th}>Customer</th><th style={styles.th}>Sales Rep</th><th style={styles.th}>Qty</th><th style={styles.th}>Profit</th><th style={styles.th}>Total</th><th style={styles.th}>Due</th><th style={styles.th}>Actions</th></tr></thead>
                 <tbody>
                   {activeInv.map(inv => (
-                    <tr key={inv.id} style={{ borderBottom: '1px solid #eee', backgroundColor: inv.due_amount > 0 ? '#fff3cd' : (inv.ticket_status !== 'Confirmed' ? '#e8f4fc' : 'transparent') }}>
+                    <tr key={inv.id} style={{ borderBottom: '1px solid #eee', backgroundColor: inv.due_amount > 0 ? '#fff3cd' : 'transparent' }}>
                       <td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.customers?.name || 'N/A'}</td>
-                      <td style={styles.td}>{inv.ticket_status || 'Confirmed'}</td>
+                      <td style={styles.td}>{inv.employees?.name || 'N/A'}</td>
                       <td style={styles.td}>{inv.qty || 1}</td>
                       <td style={{...styles.td, color:'green'}}>{inv.profit} SAR</td><td style={styles.td}>{inv.total} SAR</td>
                       <td style={{...styles.td, color: inv.due_amount > 0 ? 'red' : 'green'}}>{inv.due_amount} SAR</td>
                       <td style={styles.td}>
                         <button onClick={() => setPreviewInv(inv)} style={styles.btnSm}>Preview</button>
-                        <button onClick={() => shareWhatsApp(inv)} style={{...styles.btnSm, background:'#25D366'}}>WhatsApp</button>
                         {inv.due_amount > 0 && <button onClick={() => setSettleForm({id: inv.id, date: today, mode: 'Cash', tabbyNo: '', tamaraNo: ''})} style={{...styles.btnSm, background:'#27ae60'}}>Settle</button>}
                         <button onClick={() => setRefundForm({id: inv.id, compRefund: 0, custRefund: 0})} style={{...styles.btnSm, background:'#e67e22'}}>Refund</button>
                         <button onClick={() => handleDelete('invoices', inv.id)} style={{...styles.btnSm, background:'#e74c3c'}}>Del</button>
@@ -584,23 +595,53 @@ export default function Home() {
              </div>
           )}
 
+          {/* CUSTOMER CRM & DOCUMENT MANAGEMENT */}
           {page === 'customers' && (
-            <div style={{ background: 'white', padding: '30px', borderRadius: '8px', borderTop: '4px solid #D4AF37' }}>
-              <div style={{display:'flex', justifyContent:'space-between', marginBottom:'20px'}}>
-                <h3>Customer List</h3>
-                <button onClick={() => exportCSV(data.customers, 'Customers.csv')} style={{...styles.btn, background: '#8e44ad', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
+            <div style={{ display: 'grid', gap: '20px' }}>
+              <div style={styles.card}>
+                <h3>Customer Wallet & Documents</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px' }}>
+                  <select value={walletForm.custId} onChange={(e) => setWalletForm({...walletForm, custId: e.target.value})} style={styles.i} required>
+                    <option value="">Select Customer</option>
+                    {data.customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                  <select value={walletForm.type} onChange={(e) => setWalletForm({...walletForm, type: e.target.value})} style={styles.i}>
+                    <option value="Add">Add to Wallet (Advance)</option>
+                    <option value="Deduct">Deduct from Wallet</option>
+                  </select>
+                  <input type="number" placeholder="Amount" value={walletForm.amount} onChange={(e) => setWalletForm({...walletForm, amount: e.target.value})} style={styles.i} required />
+                </div>
+                <button onClick={handleWalletAdjust} style={{...styles.btn, width: 'auto', padding: '10px 20px', marginTop: '10px'}}>Update Wallet</button>
               </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.th}>Name</th><th style={styles.th}>Phone</th><th style={styles.th}>Type</th><th style={styles.th}>Action</th></tr></thead>
-                <tbody>
-                  {data.customers.map(c => (
-                    <tr key={c.id} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={styles.td}>{c.name}</td><td style={styles.td}>{c.phone}</td><td style={styles.td}>{c.type || 'Individual'}</td>
-                      <td style={styles.td}><button onClick={() => handleDelete('customers', c.id)} style={{background:'#e74c3c', color:'white', border:'none', padding:'2px 5px', cursor:'pointer'}}>Delete</button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+
+              <div style={{ background: 'white', padding: '30px', borderRadius: '8px', borderTop: '4px solid #D4AF37' }}>
+                <div style={{display:'flex', justifyContent:'space-between', marginBottom:'20px'}}>
+                  <h3>Customer List (CRM)</h3>
+                  <button onClick={() => exportCSV(data.customers, 'Customers.csv')} style={{...styles.btn, background: '#8e44ad', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}>
+                    <th style={styles.th}>Name</th><th style={styles.th}>Phone</th><th style={styles.th}>Wallet</th><th style={styles.th}>Passport</th><th style={styles.th}>Visa</th><th style={styles.th}>Action</th>
+                  </tr></thead>
+                  <tbody>
+                    {data.customers.map(c => (
+                      <tr key={c.id} style={{ borderBottom: '1px solid #eee' }}>
+                        <td style={styles.td}>{c.name}</td><td style={styles.td}>{c.phone}</td>
+                        <td style={{...styles.td, color: c.wallet_balance > 0 ? 'green' : '#333'}}>{c.wallet_balance || 0} SAR</td>
+                        <td style={styles.td}>
+                          {c.doc_passport ? <a href={c.doc_passport} target="_blank" style={{color:'#2980b9', marginRight:'5px'}}>View</a> : null}
+                          <input type="file" accept="image/*" onChange={(e) => handleDocUpload(c.id, e.target.files[0], 'doc_passport')} style={{fontSize:'10px'}} />
+                        </td>
+                        <td style={styles.td}>
+                          {c.doc_visa ? <a href={c.doc_visa} target="_blank" style={{color:'#2980b9', marginRight:'5px'}}>View</a> : null}
+                          <input type="file" accept="image/*" onChange={(e) => handleDocUpload(c.id, e.target.files[0], 'doc_visa')} style={{fontSize:'10px'}} />
+                        </td>
+                        <td style={styles.td}><button onClick={() => handleDelete('customers', c.id)} style={{background:'#e74c3c', color:'white', border:'none', padding:'2px 5px', cursor:'pointer'}}>Delete</button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
@@ -698,7 +739,6 @@ export default function Home() {
             </div>
           )}
 
-          {/* AUDIT LOG SECTION */}
           {page === 'audit' && (
             <div style={{ background: 'white', padding: '30px', borderRadius: '8px', borderTop: '4px solid #34495e' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -724,6 +764,7 @@ export default function Home() {
                 <button onClick={() => setReportTab('outstanding')} style={reportTab==='outstanding'?styles.btnSm:styles.btnSmInactive}>Outstanding Report</button>
                 <button onClick={() => setReportTab('vat')} style={reportTab==='vat'?styles.btnSm:styles.btnSmInactive}>ZATCA VAT Report</button>
                 <button onClick={() => setReportTab('cashbook')} style={reportTab==='cashbook'?styles.btnSm:styles.btnSmInactive}>Cashbook Report</button>
+                <button onClick={() => setReportTab('commission')} style={reportTab==='commission'?styles.btnSm:styles.btnSmInactive}>Commission Report</button>
               </div>
 
               <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -818,15 +859,9 @@ export default function Home() {
                 <div>
                   <h3>ZATCA VAT Return Report</h3>
                   <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-                    <div style={{flex:1, background:'#e8f8f5', padding:'15px', minWidth:'200px'}}>
-                      <h4>Output VAT (From Sales)</h4><h2>{filteredInvoices.filter(i=>!i.invoice_no.startsWith('REF-')).reduce((s,i)=>s+i.vat,0).toFixed(2)} SAR</h2>
-                    </div>
-                    <div style={{flex:1, background:'#fdedec', padding:'15px', minWidth:'200px'}}>
-                      <h4>Input VAT (From Expenses)</h4><h2>0.00 SAR</h2> <p style={{fontSize:'12px', color:'#888'}}>(Assuming 0 VAT on expenses)</p>
-                    </div>
-                    <div style={{flex:1, background:'#0F3D2E', color:'#D4AF37', padding:'15px', minWidth:'200px'}}>
-                      <h4>Net VAT Payable to Govt</h4><h2>{filteredInvoices.filter(i=>!i.invoice_no.startsWith('REF-')).reduce((s,i)=>s+i.vat,0).toFixed(2)} SAR</h2>
-                    </div>
+                    <div style={{flex:1, background:'#e8f8f5', padding:'15px', minWidth:'200px'}}><h4>Output VAT (From Sales)</h4><h2>{filteredInvoices.filter(i=>!i.invoice_no.startsWith('REF-')).reduce((s,i)=>s+i.vat,0).toFixed(2)} SAR</h2></div>
+                    <div style={{flex:1, background:'#fdedec', padding:'15px', minWidth:'200px'}}><h4>Input VAT (From Expenses)</h4><h2>0.00 SAR</h2> <p style={{fontSize:'12px', color:'#888'}}>(Assuming 0 VAT on expenses)</p></div>
+                    <div style={{flex:1, background:'#0F3D2E', color:'#D4AF37', padding:'15px', minWidth:'200px'}}><h4>Net VAT Payable to Govt</h4><h2>{filteredInvoices.filter(i=>!i.invoice_no.startsWith('REF-')).reduce((s,i)=>s+i.vat,0).toFixed(2)} SAR</h2></div>
                   </div>
                   <button onClick={() => exportCSV([{OutputVAT: filteredInvoices.reduce((s,i)=>s+i.vat,0), InputVAT: 0, NetVAT: filteredInvoices.reduce((s,i)=>s+i.vat,0)}], 'VAT_Report.csv')} style={{...styles.btn, background: '#8e44ad', width: 'auto', padding: '10px 20px', marginTop: '20px'}}>Export VAT Excel</button>
                 </div>
@@ -849,10 +884,41 @@ export default function Home() {
                   </table>
                 </div>
               )}
+
+              {/* COMMISSION REPORT */}
+              {reportTab === 'commission' && (
+                <div>
+                  <h3>Employee Commission Report</h3>
+                  <button onClick={() => exportCSV(data.employees.map(e => {
+                    const empSales = activeInv.filter(i => i.employee_id === e.id);
+                    const empProfit = empSales.reduce((s,i) => s + i.profit, 0);
+                    const comm = (empProfit * (e.commission_pct || 0)) / 100;
+                    return { Name: e.name, Role: e.role, SalesCount: empSales.length, TotalProfit: empProfit, CommissionPct: e.commission_pct, CommissionEarned: comm };
+                  }), 'Commission_Report.csv')} style={{...styles.btn, background: '#8e44ad', width: 'auto', padding: '10px 20px', marginBottom: '20px'}}>Export Commission Excel</button>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead><tr style={{ background: '#f8f9fa' }}><th style={styles.th}>Employee</th><th style={styles.th}>Sales Count</th><th style={styles.th}>Total Profit</th><th style={styles.th}>Commission %</th><th style={styles.th}>Commission Earned</th></tr></thead>
+                    <tbody>
+                      {data.employees.map(e => {
+                        const empSales = activeInv.filter(i => i.employee_id === e.id);
+                        const empProfit = empSales.reduce((s,i) => s + i.profit, 0);
+                        const comm = (empProfit * (e.commission_pct || 0)) / 100;
+                        return (
+                          <tr key={e.id} style={{ borderBottom: '1px solid #eee' }}>
+                            <td style={styles.td}>{e.name}</td><td style={styles.td}>{empSales.length}</td>
+                            <td style={{...styles.td, color:'green'}}>{empProfit.toFixed(0)} SAR</td>
+                            <td style={styles.td}>{e.commission_pct || 0}%</td>
+                            <td style={{...styles.td, color:'#8e44ad', fontWeight:'bold'}}>{comm.toFixed(0)} SAR</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 
-          {page === 'settings' && <SettingsPage data={data.settings} fetchAll={fetchAll} services={data.services} handleDelete={handleDelete} handleAddEntity={handleAddEntity} />}
+          {page === 'settings' && <SettingsPage data={data.settings} fetchAll={fetchAll} services={data.services} handleDelete={handleDelete} handleAddEntity={handleAddEntity} exportCSV={exportCSV} />}
         </div>
       </main>
 
@@ -916,7 +982,7 @@ export default function Home() {
   );
 }
 
-function SettingsPage({ data, fetchAll, services, handleDelete, handleAddEntity }) {
+function SettingsPage({ data, fetchAll, services, handleDelete, handleAddEntity, exportCSV }) {
   const [form, setForm] = useState(data);
   const [uploading, setUploading] = useState(false);
 
