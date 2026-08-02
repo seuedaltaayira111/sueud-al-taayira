@@ -10,7 +10,7 @@ export default function Home() {
   const [lang, setLang] = useState('en');
   const [page, setPage] = useState('dashboard');
   const [previewInv, setPreviewInv] = useState(null);
-  const [editingId, setEditingId] = useState(null); // For Edit Invoice
+  const [editingId, setEditingId] = useState(null);
   const [showOverduePopup, setShowOverduePopup] = useState(false);
   const router = useRouter();
 
@@ -88,8 +88,19 @@ export default function Home() {
 
       let cid;
       if (invForm.custId === 'new') {
-        const { data: nC } = await supabase.from('customers').insert([{ name: invForm.custName, phone: invForm.custPhone, type: invForm.custType }]).select().single();
-        cid = nC.id;
+        // Check for duplicate before inserting
+        const exists = data.customers.find(c => c.name.toLowerCase() === invForm.custName.toLowerCase() || (c.phone && c.phone === invForm.custPhone));
+        if (exists) {
+          alert("Customer already exists! Selecting existing customer.");
+          cid = exists.id;
+        } else {
+          const { data: nC, error: custErr } = await supabase.from('customers').insert([{ name: invForm.custName, phone: invForm.custPhone, type: invForm.custType }]).select().single();
+          if (custErr) {
+            if(custErr.message.includes('duplicate')) throw new Error("Customer already exists! Please select from dropdown.");
+            throw custErr;
+          }
+          cid = nC.id;
+        }
       } else { cid = invForm.custId; }
 
       const { data: pArr } = await supabase.from('portals').select('*').eq('name', invForm.portal).limit(1);
@@ -106,7 +117,7 @@ export default function Home() {
         customer_id: cid, portal_id: portal.id, employee_id: invForm.employeeId || null,
         booking_date: invForm.bookingDate, invoice_date: invForm.invoiceDate,
         service_type: invForm.service, flight_type: invForm.flightType, flight_sub: invForm.flightSub, pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty: qty, discount: discount,
-        passenger_names: invForm.passengerNames || null, // ADDED PASSENGER NAMES
+        passenger_names: invForm.passengerNames || null,
         total_cost: cost, total_sell: sell, profit, vat, total, paid_amount: paid, due_amount: due, payment_method: invForm.payment,
         credit_due_date: due > 0 ? invForm.creditDueDate : null,
         tabby_order_no: invForm.payment === 'Tabby' ? invForm.tabbyNo : null,
@@ -115,14 +126,12 @@ export default function Home() {
       };
 
       if (editingId) {
-        // EDIT MODE
         const { error: editErr } = await supabase.from('invoices').update(payload).eq('id', editingId);
         if (editErr) throw editErr;
         await logAction(`Updated Invoice ID ${editingId}`);
         alert('Invoice Updated Successfully!');
         setEditingId(null);
       } else {
-        // CREATE MODE
         const invNo = `INV-${Date.now()}`;
         const { error: invErr } = await supabase.from('invoices').insert([{ invoice_no: invNo, ...payload }]);
         if (invErr) throw invErr;
@@ -341,6 +350,7 @@ export default function Home() {
   const tSal = data.payroll.reduce((s,p) => s + p.amount, 0);
   const netProfit = tProfit - tExp - tSal;
   const totalOutstanding = outstandingInv.reduce((s,i) => s + i.due_amount, 0);
+  const tRecharges = data.recharges.reduce((s,r) => s + r.amount, 0);
   
   const cashIn = data.cashbook.filter(c => c.type === 'Cash-In').reduce((s,c) => s + c.amount, 0);
   const cashOut = data.cashbook.filter(c => c.type === 'Cash-Out').reduce((s,c) => s + c.amount, 0);
@@ -380,7 +390,6 @@ export default function Home() {
   const filteredExpenses = data.expenses.filter(e => filterByDate(e, 'expense_date'));
   const filteredCashbook = data.cashbook.filter(c => filterByDate(c, 'trans_date'));
 
-  // Customer/Company Report Logic
   const customerReport = {};
   activeInv.forEach(inv => {
     const cName = inv.customers?.name || 'N/A';
@@ -405,10 +414,12 @@ export default function Home() {
     { id: 'settings', label: tr.settings },
   ];
 
-  // Dynamic check for Passenger Names
   const selectedCust = data.customers.find(c => c.id === invForm.custId);
   const currentCustType = invForm.custId === 'new' ? invForm.custType : selectedCust?.type;
   const showPassengerBox = currentCustType === 'Group' || currentCustType === 'Company' || currentCustType === 'Corporate';
+  
+  // Live Duplicate Check
+  const isDuplicate = invForm.custId === 'new' && invForm.custName && data.customers.find(c => c.name.toLowerCase() === invForm.custName.toLowerCase() || (c.phone && c.phone === invForm.custPhone));
 
   return (
     <div style={{ display: 'flex', height: '100vh', fontFamily: 'Arial', backgroundColor: '#F5F7F2', direction: lang === 'ar' ? 'rtl' : 'ltr' }}>
@@ -445,6 +456,7 @@ export default function Home() {
                 <div style={{...styles.card, borderTop: '4px solid #f39c12'}}><h3>Cash Balance</h3><h1 style={{color:'#f39c12'}}>{cashBalance.toFixed(0)} SAR</h1></div>
                 <div style={{...styles.card, borderTop: '4px solid #2980b9'}}><h3>Bank Balance</h3><h1 style={{color:'#2980b9'}}>{bankBalance.toFixed(0)} SAR</h1></div>
                 <div style={{...styles.card, borderTop: '4px solid #e74c3c'}}><h3>Outstanding</h3><h1 style={{color:'#e74c3c'}}>{totalOutstanding.toFixed(0)} SAR</h1></div>
+                <div style={{...styles.card, borderTop: '4px solid #8e44ad'}}><h3>Total Recharges</h3><h1 style={{color:'#8e44ad'}}>{tRecharges.toFixed(0)} SAR</h1></div>
               </div>
 
               <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
@@ -468,6 +480,19 @@ export default function Home() {
                   <p>📂 Pending Tickets: <b>{pendingTickets.length}</b></p>
                   <p>⚠️ Iqama Expiring: <b>{expiringIqama.length}</b></p>
                   <p>💰 Salary Due Today: <b>{salaryDueToday.length}</b></p>
+                </div>
+              </div>
+
+              {/* PORTAL BALANCES ON DASHBOARD */}
+              <div style={{...styles.card, marginBottom: '20px'}}>
+                <h3 style={{color:'#0F3D2E'}}>Portal Current Balances</h3>
+                <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+                  {data.portals.map(p => (
+                    <div key={p.id} style={{ flex: 1, minWidth: '150px', background: '#f8f9fa', padding: '15px', borderRadius: '8px', textAlign: 'center' }}>
+                      <h4 style={{margin:'0 0 5px'}}>{p.name}</h4>
+                      <h2 style={{margin:0, color: p.current_balance < 0 ? '#e74c3c' : '#0F3D2E'}}>{p.current_balance || 0} SAR</h2>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -512,7 +537,13 @@ export default function Home() {
                   </>}
                 </div>
 
-                {/* PASSENGER NAMES FOR GROUP/COMPANY */}
+                {/* LIVE DUPLICATE WARNING */}
+                {isDuplicate && (
+                  <div style={{ background: '#ffebee', color: '#c0392b', padding: '10px', borderRadius: '5px', marginBottom: '20px', border: '1px solid #e74c3c' }}>
+                    ⚠️ <b>Customer already exists!</b> Please select "{isDuplicate.name}" from the dropdown instead of creating a new one.
+                  </div>
+                )}
+
                 {showPassengerBox && (
                   <div style={{ marginBottom: '20px' }}>
                     <label style={styles.label}>Passenger Names (One per line)</label>
@@ -760,6 +791,7 @@ export default function Home() {
                         <td style={styles.td}>
                           <input type="file" accept="image/*" onChange={(e) => handleDocUpload(c.id, e.target.files[0], 'doc_passport')} style={{fontSize:'10px', marginBottom:'5px'}} />
                           <input type="file" accept="image/*" onChange={(e) => handleDocUpload(c.id, e.target.files[0], 'doc_visa')} style={{fontSize:'10px'}} />
+                          <button onClick={() => handleDelete('customers', c.id)} style={{background:'#e74c3c', color:'white', border:'none', padding:'2px 5px', cursor:'pointer', marginTop:'5px'}}>Delete</button>
                         </td>
                       </tr>
                     ))}
@@ -1032,7 +1064,6 @@ export default function Home() {
                 </div>
               )}
 
-              {/* CUSTOMER / COMPANY REPORT */}
               {reportTab === 'customer' && (
                 <div>
                   <h3>Customer & Company Report</h3>
