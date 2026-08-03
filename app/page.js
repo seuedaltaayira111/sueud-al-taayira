@@ -21,13 +21,14 @@ export default function Home() {
   const [settleForm, setSettleForm] = useState({ id: '', date: today, mode: 'Cash', tabbyNo: '', tamaraNo: '' });
   const [refundForm, setRefundForm] = useState({ id: '', compRefund: 0, custRefund: 0, mode: 'Cash' });
   const [cashForm, setCashForm] = useState({ date: today, type: 'Cash-In', desc: '', amount: '' });
+  const [transferForm, setTransferForm] = useState({ from: 'Cash', to: 'Bank', amount: '', date: today });
   const [reportTab, setReportTab] = useState('pnl');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
   const t = {
-    en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices List', refunds: 'Refund Invoices', customers: 'Customer List', portals: 'Portals & Recharge', hr: 'HR & Accounts', invest: 'Investments', users: 'User Management', reports: 'Financial Reports', audit: 'Audit Logs', settings: 'Settings', logout: 'Logout' },
-    ar: { dash: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'قائمة الفواتير', refunds: 'فواتير الاسترجاع', customers: 'قائمة العملاء', portals: 'البوابات والرصيد', hr: 'الموارد البشرية والحسابات', invest: 'الاستثمارات', users: 'إدارة المستخدمين', reports: 'التقارير المالية', audit: 'سجلات التدقيق', settings: 'الإعدادات', logout: 'تسجيل الخروج' }
+    en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices List', refunds: 'Refund Invoices', customers: 'Customer List', portals: 'Portals & Recharge', bank: 'Bank & Cash', hr: 'HR & Accounts', invest: 'Investments', users: 'User Management', reports: 'Financial Reports', audit: 'Audit Logs', settings: 'Settings', logout: 'Logout' },
+    ar: { dash: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'قائمة الفواتير', refunds: 'فواتير الاسترجاع', customers: 'قائمة العملاء', portals: 'البوابات والرصيد', bank: 'البنك والكاش', hr: 'الموارد البشرية والحسابات', invest: 'الاستثمارات', users: 'إدارة المستخدمين', reports: 'التقارير المالية', audit: 'سجلات التدقيق', settings: 'الإعدادات', logout: 'تسجيل الخروج' }
   };
   const tr = t[lang];
 
@@ -340,6 +341,24 @@ export default function Home() {
     setCashForm({ date: today, type: 'Cash-In', desc: '', amount: '' });
   };
 
+  // FUND TRANSFER (Cash to Bank / Bank to Cash)
+  const handleTransfer = async (e) => {
+    e.preventDefault();
+    const amt = parseFloat(transferForm.amount);
+    if (amt <= 0) return alert("Invalid amount");
+    
+    const outType = transferForm.from === 'Cash' ? 'Cash-Out' : 'Bank-Out';
+    const inType = transferForm.to === 'Bank' ? 'Bank-In' : 'Cash-In';
+    
+    const { data: outEntry } = await supabase.from('cashbook').insert([{ trans_date: transferForm.date, type: outType, description: `Transfer to ${transferForm.to}`, amount: amt }]).select().single();
+    const { data: inEntry } = await supabase.from('cashbook').insert([{ trans_date: transferForm.date, type: inType, description: `Transfer from ${transferForm.from}`, amount: amt }]).select().single();
+    
+    await logAction(`Transferred ${amt} from ${transferForm.from} to ${transferForm.to}`);
+    setData(prev => ({ ...prev, cashbook: [inEntry, outEntry, ...prev.cashbook] }));
+    alert('Fund Transferred!');
+    setTransferForm({ from: 'Cash', to: 'Bank', amount: '', date: today });
+  };
+
   const exportCSV = (csvData, filename) => {
     if (!csvData || csvData.length === 0) return alert('No data to export');
     const headers = Object.keys(csvData[0]);
@@ -370,9 +389,9 @@ export default function Home() {
         <div style="display:flex;justify-content:space-between;border-bottom:4px solid #D4AF37;padding-bottom:20px;margin-bottom:20px;">
           <div style="max-width:350px;">
             ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:120px;margin-bottom:10px;" />` : ''}
-            <h1 style="margin:0;color:#0F3D2E;font-size:24px;">Sueud Al Taayira</h1>
-            <h2 style="margin:0;color:#0F3D2E;font-size:20px;">صعود الطائرة للسفر والسياحة</h2>
-            <p style="font-size:12px;margin-top:10px;line-height:1.5;">VAT / الرقم الضريبي: ${s.vat_no || ''}<br/>CR / السجل التجاري: ${s.cr_no || ''}<br/>Phone / هاتف: ${s.phone || ''}</p>
+            <h1 style="margin:0;color:#0F3D2E;font-size:24px;">${s.company_name_en || 'Sueud Al Taayira'}</h1>
+            <h2 style="margin:0;color:#0F3D2E;font-size:20px;">${s.company_name_ar || 'صعود الطائرة'}</h2>
+            <p style="font-size:12px;margin-top:10px;line-height:1.5;">VAT: ${s.vat_no || ''}<br/>CR: ${s.cr_no || ''}<br/>License: ${s.license_no || ''}<br/>IATA: ${s.iata_no || ''}<br/>Phone: ${s.phone || ''}</p>
           </div>
           <div style="text-align:right;">
             <h1 style="color:#0F3D2E;margin:0;font-size:28px;">TAX INVOICE</h1>
@@ -451,7 +470,7 @@ export default function Home() {
   const menu = [
     { id: 'dashboard', label: tr.dash }, { id: 'create', label: tr.create }, { id: 'list', label: tr.list },
     { id: 'refunds', label: tr.refunds }, { id: 'customers', label: tr.customers }, { id: 'portals', label: tr.portals },
-    { id: 'invest', label: tr.invest }, { id: 'hr', label: tr.hr }, { id: 'users', label: tr.users },
+    { id: 'bank', label: tr.bank }, { id: 'invest', label: tr.invest }, { id: 'hr', label: tr.hr }, { id: 'users', label: tr.users },
     { id: 'reports', label: tr.reports }, { id: 'audit', label: tr.audit }, { id: 'settings', label: tr.settings },
   ];
 
@@ -588,7 +607,6 @@ export default function Home() {
                 </div>
               )}
 
-              {/* INTERLINKED REFUND FORM */}
               {refundForm.id && (
                 <div style={{ marginTop: '20px', padding: '15px', border: '2px solid #e67e22', borderRadius: '8px' }}>
                   <h3>Process Partial Refund</h3>
@@ -640,7 +658,6 @@ export default function Home() {
             </div>
           )}
 
-          {/* INTERLINKED PORTALS & RECHARGE */}
           {page === 'portals' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
@@ -690,7 +707,56 @@ export default function Home() {
             </div>
           )}
 
-          {/* INTERLINKED INVESTMENTS */}
+          {/* BANK & CASH SYSTEM */}
+          {page === 'bank' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+                <div style={styles.card}>
+                  <h3>Fund Transfer</h3>
+                  <form onSubmit={handleTransfer} style={{display:'flex', flexDirection:'column', gap:'10px'}}>
+                    <select value={transferForm.from} onChange={(e) => setTransferForm({...transferForm, from: e.target.value, to: e.target.value === 'Cash' ? 'Bank' : 'Cash'})} style={styles.i}><option value="Cash">From Cash</option><option value="Bank">From Bank</option></select>
+                    <select value={transferForm.to} onChange={(e) => setTransferForm({...transferForm, to: e.target.value, from: e.target.value === 'Cash' ? 'Bank' : 'Cash'})} style={styles.i}><option value="Bank">To Bank</option><option value="Cash">To Cash</option></select>
+                    <input type="number" placeholder="Amount" value={transferForm.amount} onChange={(e) => setTransferForm({...transferForm, amount: e.target.value})} style={styles.i} required />
+                    <input type="date" value={transferForm.date} onChange={(e) => setTransferForm({...transferForm, date: e.target.value})} style={styles.i} required />
+                    <button type="submit" style={styles.btn}>Transfer</button>
+                  </form>
+                </div>
+                <div style={styles.card}>
+                  <h3>Manual Entry (Cash/Bank)</h3>
+                  <form onSubmit={handleAddCash} style={{display:'flex', flexDirection:'column', gap:'10px'}}>
+                    <input type="date" value={cashForm.date} onChange={(e) => setCashForm({...cashForm, date: e.target.value})} style={styles.i} required />
+                    <select value={cashForm.type} onChange={(e) => setCashForm({...cashForm, type: e.target.value})} style={styles.i}><option>Cash-In</option><option>Cash-Out</option><option>Bank-In</option><option>Bank-Out</option></select>
+                    <input placeholder="Description" value={cashForm.desc} onChange={(e) => setCashForm({...cashForm, desc: e.target.value})} style={styles.i} required />
+                    <input type="number" placeholder="Amount" value={cashForm.amount} onChange={(e) => setCashForm({...cashForm, amount: e.target.value})} style={styles.i} required />
+                    <button type="submit" style={styles.btn}>Add Entry</button>
+                  </form>
+                </div>
+                <div style={styles.card}>
+                  <h3>Balances</h3>
+                  <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: '120px', background: '#f8f9fa', padding: '15px', borderRadius: '8px', textAlign: 'center' }}><h4>Cash</h4><h2 style={{color:'#f39c12'}}>{cashBalance.toFixed(0)} SAR</h2></div>
+                    <div style={{ flex: 1, minWidth: '120px', background: '#f8f9fa', padding: '15px', borderRadius: '8px', textAlign: 'center' }}><h4>Bank</h4><h2 style={{color:'#2980b9'}}>{bankBalance.toFixed(0)} SAR</h2></div>
+                  </div>
+                </div>
+              </div>
+              <div style={styles.card}>
+                <h3>Cash & Bank Ledger</h3>
+                <button onClick={() => exportCSV(filteredCashbook.map(c => ({ Date: c.trans_date, Type: c.type, Desc: c.description, Amount: c.amount })), 'Cashbook_Report.csv')} style={{...styles.btn, background: '#2980b9', width: 'auto', padding: '10px 20px', marginBottom: '20px'}}>Export Excel</button>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr style={{ background: '#f8f9fa' }}><th style={styles.th}>Date</th><th style={styles.th}>Type</th><th style={styles.th}>Description</th><th style={styles.th}>Amount</th></tr></thead>
+                  <tbody>
+                    {filteredCashbook.map(c => (
+                      <tr key={c.id} style={{ borderBottom: '1px solid #eee' }}>
+                        <td style={styles.td}>{c.trans_date}</td><td style={styles.td}>{c.type}</td><td style={styles.td}>{c.description}</td>
+                        <td style={{...styles.td, color: c.type.includes('In') ? 'green' : 'red'}}>{c.type.includes('In') ? '+' : '-'}{c.amount} SAR</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {page === 'invest' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
               <div style={styles.card}>
@@ -725,7 +791,6 @@ export default function Home() {
             </div>
           )}
 
-          {/* INTERLINKED HR & ACCOUNTS */}
           {page === 'hr' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
               <div style={styles.card}>
@@ -894,7 +959,8 @@ export default function Home() {
               <button onClick={() => setPreviewInv(null)} style={{ background: '#e74c3c', color: 'white', border: 'none', padding: '5px 10px', cursor: 'pointer' }}>X</button>
             </div>
             <div style={{ border: '1px solid #eee', padding: '20px' }}>
-              <h2 style={{margin:0, color:'#0F3D2E'}}>Sueud Al Taayira</h2>
+              {data.settings.logo_url && <img src={data.settings.logo_url} style={{height:'80px', marginBottom:'10px'}} />}
+              <h2 style={{margin:0, color:'#0F3D2E'}}>{data.settings.company_name_en || 'Sueud Al Taayira'}</h2>
               <p>Inv No: {previewInv.invoice_no} | Date: {previewInv.invoice_date}</p>
               <p>Customer: {previewInv.customers?.name}</p>
               <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px', textAlign: 'center' }}>
@@ -936,10 +1002,16 @@ function SettingsPage({ data, fetchAll, services, handleDelete, handleAddEntity 
   return (
     <div style={{ display: 'grid', gap: '30px' }}>
       <form onSubmit={handleSave} style={{ background: 'white', padding: '30px', borderRadius: '8px', borderTop: '4px solid #D4AF37', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+        <input placeholder="Company Name (EN)" value={form.company_name_en || ''} onChange={(e) => setForm({...form, company_name_en: e.target.value})} style={styles.i} />
+        <input placeholder="Company Name (AR)" value={form.company_name_ar || ''} onChange={(e) => setForm({...form, company_name_ar: e.target.value})} style={styles.i} />
         <input placeholder="VAT Number" value={form.vat_no || ''} onChange={(e) => setForm({...form, vat_no: e.target.value})} style={styles.i} />
         <input placeholder="CR Number" value={form.cr_no || ''} onChange={(e) => setForm({...form, cr_no: e.target.value})} style={styles.i} />
-        <input placeholder="Phone" value={form.phone || ''} onChange={(e) => setForm({...form, phone: e.target.value})} style={styles.i} />
+        <input placeholder="License Number" value={form.license_no || ''} onChange={(e) => setForm({...form, license_no: e.target.value})} style={styles.i} />
+        <input placeholder="Tourist License No" value={form.tourist_license_no || ''} onChange={(e) => setForm({...form, tourist_license_no: e.target.value})} style={styles.i} />
+        <input placeholder="IATA Number" value={form.iata_no || ''} onChange={(e) => setForm({...form, iata_no: e.target.value})} style={styles.i} />
+        <input placeholder="Phone Number" value={form.phone || ''} onChange={(e) => setForm({...form, phone: e.target.value})} style={styles.i} />
         <input placeholder="Address" value={form.address || ''} onChange={(e) => setForm({...form, address: e.target.value})} style={styles.i} />
+        
         <div style={{ gridColumn: 'span 2', border: '1px solid #D4AF37', padding: '15px', borderRadius: '8px' }}>
           <label><b>Upload Logo:</b></label><br/>
           {form.logo_url && <img src={form.logo_url} style={{height:'60px', marginTop:'10px', marginBottom:'10px'}} />}
