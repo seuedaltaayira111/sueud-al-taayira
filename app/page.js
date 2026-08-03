@@ -1,10 +1,3 @@
-माफ़ कीजिएगा! लेकिन कोड खराब नहीं हुआ है। पिछले reply में message लम्बा होने के कारण (token limit) मुझे बाकी के sections (Portals, Bank, HR etc.) को हटाना पड़ा था और मैंने वहाँ placeholder लगा दिया था। 
-
-चिंता ना करें, मैंने आपका **पूरा कोड (सारे sections के साथ)** दोबारा तैयार किया है। इसमें कोई भी section missing नहीं है और ना ही कोई placeholder है। सारे के सारे features (Dashboard, Create, List, Refunds, Customers, Portals, Bank, HR, Invest, Reports, Audit, Settings) इसमें मौजूद हैं।
-
-आप बस यह पूरा कोड copy करें और अपनी `page.jsx` फाइल में paste कर दें:
-
-```jsx
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -1053,4 +1046,3 @@ const styles = {
   btn: { background: '#0F3D2E', color: '#D4AF37', border: 'none', padding: '12px', width: '100%', cursor: 'pointer', borderRadius: '4px', fontWeight: 'bold' },
   btnSm: { background: '#0F3D2E', color: 'white', border: 'none', padding: '5px 8px', cursor: 'pointer', borderRadius: '4px', fontSize: '12px', marginRight: '5px' }
 };
-```
