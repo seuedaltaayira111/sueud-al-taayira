@@ -11,7 +11,6 @@ export default function Home() {
   const [page, setPage] = useState('dashboard');
   const [previewInv, setPreviewInv] = useState(null);
   const [editingId, setEditingId] = useState(null);
-  const [showOverduePopup, setShowOverduePopup] = useState(false);
   const router = useRouter();
 
   const [data, setData] = useState({ invoices: [], portals: [], customers: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [], audits: [], investments: [] });
@@ -20,9 +19,8 @@ export default function Home() {
   const [invForm, setInvForm] = useState({ custId: 'new', custName: '', custPhone: '', custType: 'Individual', passengerNames: '', employeeId: '', portal: '', bookingDate: today, invoiceDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
   const [investForm, setInvestForm] = useState({ name: '', amount: '', date: today, desc: '', mode: 'Cash' });
   const [settleForm, setSettleForm] = useState({ id: '', date: today, mode: 'Cash', tabbyNo: '', tamaraNo: '' });
-  const [refundForm, setRefundForm] = useState({ id: '', compRefund: 0, custRefund: 0 });
+  const [refundForm, setRefundForm] = useState({ id: '', compRefund: 0, custRefund: 0, mode: 'Cash' });
   const [cashForm, setCashForm] = useState({ date: today, type: 'Cash-In', desc: '', amount: '' });
-  const [walletForm, setWalletForm] = useState({ custId: '', amount: 0, type: 'Add' });
   const [reportTab, setReportTab] = useState('pnl');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
@@ -66,9 +64,6 @@ export default function Home() {
     
     if (portalsData.length > 0) setInvForm(f => ({ ...f, portal: f.portal || portalsData[0].name }));
     if (servicesData.length > 0 && !servicesData.find(s => s.name === invForm.service)) setInvForm(f => ({ ...f, service: servicesData[0].name }));
-
-    const overdue = (inv.data || []).filter(i => i.due_amount > 0 && i.credit_due_date && new Date(i.credit_due_date) < new Date(today));
-    if (overdue.length > 0) setShowOverduePopup(true);
   };
 
   const handleLogout = () => { supabase.auth.signOut(); router.push('/login'); };
@@ -90,12 +85,8 @@ export default function Home() {
 
       let cid;
       if (invForm.custId === 'new') {
-        const exists = data.customers.find(c => c.name.toLowerCase() === invForm.custName.toLowerCase() || (c.phone && c.phone === invForm.custPhone));
-        if (exists) { cid = exists.id; } 
-        else {
-          const { data: nC } = await supabase.from('customers').insert([{ name: invForm.custName, phone: invForm.custPhone, type: invForm.custType }]).select().single();
-          cid = nC.id;
-        }
+        const { data: nC } = await supabase.from('customers').insert([{ name: invForm.custName, phone: invForm.custPhone, type: invForm.custType }]).select().single();
+        cid = nC.id;
       } else { cid = invForm.custId; }
 
       const pArr = data.portals.filter(p => p.name === invForm.portal);
@@ -104,7 +95,6 @@ export default function Home() {
 
       let desc = '';
       if (invForm.service === 'Flight') desc = `${invForm.flightSub} (${invForm.flightType}) - ${invForm.airline} - ${invForm.flightJourney} - ${invForm.flightSector}`;
-      else if (invForm.service === 'Hotel') desc = `${invForm.hotelName} - ${invForm.destination}`;
       else desc = invForm.service;
 
       const payload = {
@@ -139,7 +129,6 @@ export default function Home() {
           }
         }
 
-        // SPEED FIX: Instant UI Update
         setData(prev => ({
           ...prev,
           invoices: [newInv, ...prev.invoices],
@@ -195,6 +184,7 @@ export default function Home() {
     setSettleForm({ id: '', date: today, mode: 'Cash', tabbyNo: '', tamaraNo: '' });
   };
 
+  // INTERLINKED REFUND: Portal balance auto-add & Cash/Bank deduct
   const handleRefund = async (e) => {
     e.preventDefault();
     const invArr = data.invoices.filter(i => i.id === refundForm.id);
@@ -210,20 +200,28 @@ export default function Home() {
       service_type: `Refund for ${inv.invoice_no}`, total_sell: -custRef, total: -custRef, paid_amount: -custRef, status: 'refunded', refund_company: compRef, refund_customer: custRef
     }]).select(`*, customers(name, type), portals(name), employees(name)`).single();
 
+    let newPortalBal = inv.portals?.current_balance || 0;
+    if (inv.portal_id) {
+      newPortalBal += compRef;
+      await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', inv.portal_id);
+    }
+
     let newCashEntry = null;
     if (custRef > 0) {
-      const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: today, type: 'Cash-Out', description: `Refund for ${inv.invoice_no}`, amount: custRef }]).select().single();
+      const cbType = refundForm.mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
+      const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Refund to customer for ${inv.invoice_no}`, amount: custRef }]).select().single();
       newCashEntry = nC;
     }
     await logAction(`Processed refund ${refNo}`);
 
     setData(prev => ({
       ...prev,
-      invoices: [newRefInv, prev.invoices.map(i => i.id === inv.id ? upInv : i)].flat(), // Add refund inv and update original
+      invoices: [newRefInv, prev.invoices.map(i => i.id === inv.id ? upInv : i)].flat(),
+      portals: prev.portals.map(p => p.id === inv.portal_id ? { ...p, current_balance: newPortalBal } : p),
       cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook
     }));
-    alert('Refund Processed!');
-    setRefundForm({ id: '', compRefund: 0, custRefund: 0 });
+    alert('Refund Processed! Portal balance updated.');
+    setRefundForm({ id: '', compRefund: 0, custRefund: 0, mode: 'Cash' });
   };
 
   const handleRecharge = async (e) => {
@@ -257,7 +255,6 @@ export default function Home() {
     const newBal = (p.current_balance || 0) - rec.amount;
     await supabase.from('portals').update({ current_balance: newBal }).eq('id', p.id);
 
-    // Also remove corresponding cashbook entry (best effort match)
     const cbEntry = data.cashbook.find(c => c.description === `Recharge for ${p.name}` && c.amount === rec.amount);
     if (cbEntry) await supabase.from('cashbook').delete().eq('id', cbEntry.id);
 
@@ -423,7 +420,6 @@ export default function Home() {
   const activeInv = data.invoices.filter(i => !i.invoice_no.startsWith('REF-'));
   const refundInv = data.invoices.filter(i => i.invoice_no.startsWith('REF-'));
   const outstandingInv = activeInv.filter(i => i.due_amount > 0);
-  const overdueInv = outstandingInv.filter(i => i.credit_due_date && new Date(i.credit_due_date) < new Date(today));
   
   const cashIn = data.cashbook.filter(c => c.type === 'Cash-In').reduce((s,c) => s + c.amount, 0);
   const cashOut = data.cashbook.filter(c => c.type === 'Cash-Out').reduce((s,c) => s + c.amount, 0);
@@ -571,7 +567,7 @@ export default function Home() {
                         <button onClick={() => setPreviewInv(inv)} style={styles.btnSm}>Preview</button>
                         <button onClick={() => handleEditClick(inv)} style={{...styles.btnSm, background:'#2980b9'}}>Edit</button>
                         {inv.due_amount > 0 && <button onClick={() => setSettleForm({id: inv.id, date: today, mode: 'Cash', tabbyNo: '', tamaraNo: ''})} style={{...styles.btnSm, background:'#27ae60'}}>Settle</button>}
-                        <button onClick={() => setRefundForm({id: inv.id, compRefund: 0, custRefund: 0})} style={{...styles.btnSm, background:'#e67e22'}}>Refund</button>
+                        <button onClick={() => setRefundForm({id: inv.id, compRefund: 0, custRefund: 0, mode: 'Cash'})} style={{...styles.btnSm, background:'#e67e22'}}>Refund</button>
                         <button onClick={() => handleDelete('invoices', inv.id)} style={{...styles.btnSm, background:'#e74c3c'}}>Del</button>
                       </td>
                     </tr>
@@ -592,12 +588,15 @@ export default function Home() {
                 </div>
               )}
 
+              {/* INTERLINKED REFUND FORM */}
               {refundForm.id && (
                 <div style={{ marginTop: '20px', padding: '15px', border: '2px solid #e67e22', borderRadius: '8px' }}>
                   <h3>Process Partial Refund</h3>
-                  <form onSubmit={handleRefund} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px' }}>
+                  <p style={{fontSize:'12px', color:'#666'}}>Company refund will auto-add to Portal balance. Customer refund will deduct from Cash/Bank.</p>
+                  <form onSubmit={handleRefund} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '15px' }}>
                     <input type="number" placeholder="Refund from Company" value={refundForm.compRefund} onChange={(e) => setRefundForm({...refundForm, compRefund: e.target.value})} required style={styles.i} />
                     <input type="number" placeholder="Refund to Customer" value={refundForm.custRefund} onChange={(e) => setRefundForm({...refundForm, custRefund: e.target.value})} required style={styles.i} />
+                    <select value={refundForm.mode} onChange={(e) => setRefundForm({...refundForm, mode: e.target.value})} style={styles.i}><option value="Cash">Pay Cust via Cash</option><option value="Bank Transfer">Pay Cust via Bank</option></select>
                     <button type="submit" style={{ background: '#e67e22', color: 'white', border: 'none', cursor: 'pointer' }}>Confirm Refund</button>
                   </form>
                 </div>
@@ -641,6 +640,7 @@ export default function Home() {
             </div>
           )}
 
+          {/* INTERLINKED PORTALS & RECHARGE */}
           {page === 'portals' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
@@ -690,6 +690,7 @@ export default function Home() {
             </div>
           )}
 
+          {/* INTERLINKED INVESTMENTS */}
           {page === 'invest' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
               <div style={styles.card}>
@@ -724,6 +725,7 @@ export default function Home() {
             </div>
           )}
 
+          {/* INTERLINKED HR & ACCOUNTS */}
           {page === 'hr' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
               <div style={styles.card}>
@@ -799,7 +801,7 @@ export default function Home() {
           {page === 'reports' && (
             <div style={styles.card}>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '2px solid #eee', paddingBottom: '10px', flexWrap:'wrap' }}>
-                <button onClick={() => setReportTab('pnl')} style={reportTab==='pnl'?styles.btnSm:styles.btnSmInactive}>P&L</button>
+                <button onClick={() => setReportTab('pnl')} style={reportTab==='pnl'?styles.btnSm:styles.btnSmInactive}>Consolidated P&L</button>
                 <button onClick={() => setReportTab('sales')} style={reportTab==='sales'?styles.btnSm:styles.btnSmInactive}>Sales</button>
                 <button onClick={() => setReportTab('portals')} style={reportTab==='portals'?styles.btnSm:styles.btnSmInactive}>Portals</button>
                 <button onClick={() => setReportTab('salary')} style={reportTab==='salary'?styles.btnSm:styles.btnSmInactive}>Salary & Exp</button>
@@ -815,7 +817,7 @@ export default function Home() {
 
               {reportTab === 'pnl' && (
                 <div>
-                  <h3>Complete P&L Statement</h3>
+                  <h3>Complete P&L Statement (Profit & Loss)</h3>
                   <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
                     <div style={{flex:1, background:'#e8f8f5', padding:'15px', minWidth:'200px'}}><h4>Total Sales</h4><h2>{filteredInvoices.filter(i=>!i.invoice_no.startsWith('REF-')).reduce((s,i)=>s+i.total,0).toFixed(0)} SAR</h2></div>
                     <div style={{flex:1, background:'#e8f8f5', padding:'15px', minWidth:'200px'}}><h4>Gross Profit</h4><h2>{filteredInvoices.filter(i=>!i.invoice_no.startsWith('REF-')).reduce((s,i)=>s+i.profit,0).toFixed(0)} SAR</h2></div>
@@ -883,13 +885,6 @@ export default function Home() {
           {page === 'settings' && <SettingsPage data={data.settings} fetchAll={fetchAll} services={data.services} handleDelete={handleDelete} handleAddEntity={handleAddEntity} />}
         </div>
       </main>
-
-      {showOverduePopup && (
-        <div style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#e74c3c', color: 'white', padding: '20px 30px', borderRadius: '8px', boxShadow: '0 10px 20px rgba(0,0,0,0.3)', zIndex: 2000, display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div><h3 style={{margin:0}}>⚠️ Overdue Payments Alert!</h3><p style={{margin:'5px 0 0'}}>You have {overdueInv.length} overdue credit invoices.</p></div>
-          <button onClick={() => setShowOverduePopup(false)} style={{ background: 'white', color: '#e74c3c', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Dismiss</button>
-        </div>
-      )}
 
       {previewInv && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
