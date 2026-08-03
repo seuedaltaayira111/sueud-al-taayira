@@ -14,12 +14,13 @@ export default function Home() {
   const [showOverduePopup, setShowOverduePopup] = useState(false);
   const router = useRouter();
 
-  const [data, setData] = useState({ invoices: [], portals: [], customers: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [], audits: [] });
+  const [data, setData] = useState({ invoices: [], portals: [], customers: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [], audits: [], investments: [] });
   const today = new Date().toISOString().split('T')[0];
   
-  const [invForm, setInvForm] = useState({ custId: 'new', custName: '', custPhone: '', custType: 'Individual', passengerNames: '', employeeId: '', portal: '', bookingDate: today, invoiceDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', airline: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
-  const [refundForm, setRefundForm] = useState({ id: '', compRefund: 0, custRefund: 0 });
+  const [invForm, setInvForm] = useState({ custId: 'new', custName: '', custPhone: '', custType: 'Individual', passengerNames: '', employeeId: '', portal: '', bookingDate: today, invoiceDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
+  const [investForm, setInvestForm] = useState({ name: '', amount: '', date: today, desc: '' });
   const [settleForm, setSettleForm] = useState({ id: '', date: today, mode: 'Cash', tabbyNo: '', tamaraNo: '' });
+  const [refundForm, setRefundForm] = useState({ id: '', compRefund: 0, custRefund: 0 });
   const [cashForm, setCashForm] = useState({ date: today, type: 'Cash-In', desc: '', amount: '' });
   const [walletForm, setWalletForm] = useState({ custId: '', amount: 0, type: 'Add' });
   const [reportTab, setReportTab] = useState('pnl');
@@ -27,8 +28,8 @@ export default function Home() {
   const [toDate, setToDate] = useState('');
 
   const t = {
-    en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices List', refunds: 'Refund Invoices', customers: 'Customer List', portals: 'Portals & Recharge', hr: 'HR & Accounts', users: 'User Management', reports: 'Financial Reports', audit: 'Audit Logs', settings: 'Settings', logout: 'Logout' },
-    ar: { dash: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'قائمة الفواتير', refunds: 'فواتير الاسترجاع', customers: 'قائمة العملاء', portals: 'البوابات والرصيد', hr: 'الموارد البشرية والحسابات', users: 'إدارة المستخدمين', reports: 'التقارير المالية', audit: 'سجلات التدقيق', settings: 'الإعدادات', logout: 'تسجيل الخروج' }
+    en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices List', refunds: 'Refund Invoices', customers: 'Customer List', portals: 'Portals & Recharge', hr: 'HR & Accounts', invest: 'Investments', users: 'User Management', reports: 'Financial Reports', audit: 'Audit Logs', settings: 'Settings', logout: 'Logout' },
+    ar: { dash: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'قائمة الفواتير', refunds: 'فواتير الاسترجاع', customers: 'قائمة العملاء', portals: 'البوابات والرصيد', hr: 'الموارد البشرية والحسابات', invest: 'الاستثمارات', users: 'إدارة المستخدمين', reports: 'التقارير المالية', audit: 'سجلات التدقيق', settings: 'الإعدادات', logout: 'تسجيل الخروج' }
   };
   const tr = t[lang];
 
@@ -44,23 +45,25 @@ export default function Home() {
     if (user) await supabase.from('audit_logs').insert([{ user_email: user.email, action }]);
   };
 
+  // SPEED FIX: Added .limit(50) to large tables
   const fetchAll = async () => {
-    const inv = await supabase.from('invoices').select(`*, customers(name, type), portals(name), employees(name)`).order('created_at', { ascending: false });
+    const inv = await supabase.from('invoices').select(`*, customers(name, type), portals(name), employees(name)`).order('created_at', { ascending: false }).limit(50);
     const por = await supabase.from('portals').select('*');
-    const cus = await supabase.from('customers').select('*').order('name', { ascending: true });
-    const rec = await supabase.from('recharges').select(`*, portals(name)`).order('recharge_date', { ascending: false });
+    const cus = await supabase.from('customers').select('*').order('name', { ascending: true }).limit(100);
+    const rec = await supabase.from('recharges').select(`*, portals(name)`).order('recharge_date', { ascending: false }).limit(50);
     const set = await supabase.from('settings').select('*').eq('id', 1).maybeSingle();
     const emp = await supabase.from('employees').select('*');
-    const pay = await supabase.from('payroll').select(`*, employees(name)`);
+    const pay = await supabase.from('payroll').select(`*, employees(name)`).limit(50);
     const usr = await supabase.from('app_users').select('*');
-    const exp = await supabase.from('expenses').select('*');
+    const exp = await supabase.from('expenses').select('*').limit(50);
     const srv = await supabase.from('services').select('*');
-    const cbk = await supabase.from('cashbook').select('*').order('trans_date', { ascending: false });
-    const aud = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false });
+    const cbk = await supabase.from('cashbook').select('*').order('trans_date', { ascending: false }).limit(50);
+    const aud = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(50);
+    const invstmnt = await supabase.from('investments').select('*').order('invest_date', { ascending: false }).limit(50);
     
     const portalsData = por.data || [];
     const servicesData = srv.data || [];
-    setData({ invoices: inv.data || [], portals: portalsData, customers: cus.data || [], recharges: rec.data || [], settings: set.data || {}, employees: emp.data || [], payroll: pay.data || [], appUsers: usr.data || [], expenses: exp.data || [], services: servicesData, cashbook: cbk.data || [], audits: aud.data || [] });
+    setData({ invoices: inv.data || [], portals: portalsData, customers: cus.data || [], recharges: rec.data || [], settings: set.data || {}, employees: emp.data || [], payroll: pay.data || [], appUsers: usr.data || [], expenses: exp.data || [], services: servicesData, cashbook: cbk.data || [], audits: aud.data || [], investments: invstmnt.data || [] });
     
     if (portalsData.length > 0) setInvForm(f => ({ ...f, portal: f.portal || portalsData[0].name }));
     if (servicesData.length > 0 && !servicesData.find(s => s.name === invForm.service)) setInvForm(f => ({ ...f, service: servicesData[0].name }));
@@ -94,10 +97,7 @@ export default function Home() {
           cid = exists.id;
         } else {
           const { data: nC, error: custErr } = await supabase.from('customers').insert([{ name: invForm.custName, phone: invForm.custPhone, type: invForm.custType }]).select().single();
-          if (custErr) {
-            if(custErr.message.includes('duplicate')) throw new Error("Customer already exists! Please select from dropdown.");
-            throw custErr;
-          }
+          if (custErr) throw custErr;
           cid = nC.id;
         }
       } else { cid = invForm.custId; }
@@ -117,6 +117,7 @@ export default function Home() {
         booking_date: invForm.bookingDate, invoice_date: invForm.invoiceDate,
         service_type: invForm.service, flight_type: invForm.flightType, flight_sub: invForm.flightSub, pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty: qty, discount: discount,
         passenger_names: invForm.passengerNames || null,
+        airline: invForm.airline || null, flight_journey: invForm.flightJourney || null, flight_sector: invForm.flightSector || null, // EDIT FIX
         total_cost: cost, total_sell: sell, profit, vat, total, paid_amount: paid, due_amount: due, payment_method: invForm.payment,
         credit_due_date: due > 0 ? invForm.creditDueDate : null,
         tabby_order_no: invForm.payment === 'Tabby' ? invForm.tabbyNo : null,
@@ -135,7 +136,6 @@ export default function Home() {
         const { error: invErr } = await supabase.from('invoices').insert([{ invoice_no: invNo, ...payload }]);
         if (invErr) throw invErr;
         
-        // FIXED: Portal balance deduct hoga jab ticket issue hoga (Cost Price se)
         await supabase.from('portals').update({ current_balance: (portal.current_balance || 0) - cost }).eq('id', portal.id);
         if (paid > 0) {
           const cbType = invForm.payment === 'Cash' ? 'Cash-In' : (invForm.payment === 'Bank Transfer' ? 'Bank-In' : null);
@@ -146,18 +146,20 @@ export default function Home() {
       }
       
       fetchAll();
-      setInvForm({ custId: 'new', custName: '', custPhone: '', custType: 'Individual', passengerNames: '', employeeId: '', portal: data.portals[0]?.name || '', bookingDate: today, invoiceDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', airline: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
+      setInvForm({ custId: 'new', custName: '', custPhone: '', custType: 'Individual', passengerNames: '', employeeId: '', portal: data.portals[0]?.name || '', bookingDate: today, invoiceDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
       setPage('list');
     } catch (err) { alert('Error: ' + err.message); }
   };
 
+  // EDIT FIX: Properly mapping all fields
   const handleEditClick = (inv) => {
     setEditingId(inv.id);
     setInvForm({
       custId: inv.customer_id, custName: '', custPhone: '', custType: inv.customers?.type || 'Individual', passengerNames: inv.passenger_names || '',
       employeeId: inv.employee_id || '', portal: inv.portals?.name || '', bookingDate: inv.booking_date || today, invoiceDate: inv.invoice_date || today,
-      service: inv.service_type, flightType: inv.flight_type || 'Domestic', flightSub: inv.flight_sub || 'New Booking', flightJourney: 'Single', flightSector: inv.sector || '', 
-      destination: '', hotelName: '', visaType: 'Tourist', pnr: inv.pnr || '', ticketNo: inv.ticket_no || '', airline: '', 
+      service: inv.service_type, flightType: inv.flight_type || 'Domestic', flightSub: inv.flight_sub || 'New Booking', 
+      flightJourney: inv.flight_journey || 'Single', flightSector: inv.flight_sector || '', airline: inv.airline || '', 
+      destination: '', hotelName: '', visaType: 'Tourist', pnr: inv.pnr || '', ticketNo: inv.ticket_no || '', 
       qty: inv.qty || 1, cost: inv.total_cost || 0, sell: inv.total_sell || 0, discount: inv.discount || 0, taxRate: inv.vat > 0 ? '15' : '0', 
       payment: inv.payment_method || 'Cash', paid: inv.paid_amount || 0, creditDueDate: inv.credit_due_date || '', 
       tabbyNo: inv.tabby_order_no || '', tamaraNo: inv.tamara_order_no || '', ticketStatus: inv.ticket_status || 'Confirmed'
@@ -206,6 +208,52 @@ export default function Home() {
 
     alert('Refund Processed!');
     setRefundForm({ id: '', compRefund: 0, custRefund: 0 });
+    fetchAll();
+  };
+
+  const handleRecharge = async (e) => {
+    e.preventDefault();
+    const portalName = e.target.portal.value;
+    const amount = parseFloat(e.target.amt.value);
+    const date = e.target.date.value;
+    const desc = e.target.desc.value;
+    
+    const p = data.portals.find(p => p.name === portalName);
+    if (!p) return alert("Select a valid portal");
+    
+    const { error: recErr } = await supabase.from('recharges').insert([{ portal_id: p.id, amount: amount, recharge_date: date, description: desc }]);
+    if (recErr) return alert("Error saving recharge: " + recErr.message);
+    
+    const newBalance = (p.current_balance || 0) + amount;
+    const { error: balErr } = await supabase.from('portals').update({ current_balance: newBalance }).eq('id', p.id);
+    if (balErr) return alert("Error updating balance: " + balErr.message);
+    
+    await logAction(`Recharged ${amount} to ${portalName}`);
+    alert('Recharge Added Successfully!');
+    fetchAll();
+    e.target.reset();
+  };
+
+  // RECHARGE DELETE & DEDUCT FIX
+  const handleDeleteRecharge = async (rec) => {
+    if (!confirm('Delete this recharge? Portal balance will be reduced.')) return;
+    await supabase.from('recharges').delete().eq('id', rec.id);
+    const p = data.portals.find(p => p.id === rec.portal_id);
+    if (p) {
+      const newBalance = (p.current_balance || 0) - rec.amount;
+      await supabase.from('portals').update({ current_balance: newBalance }).eq('id', p.id);
+    }
+    await logAction(`Deleted recharge of ${rec.amount} for ${p?.name}`);
+    alert('Recharge Deleted & Balance Updated!');
+    fetchAll();
+  };
+
+  const handleAddInvestment = async (e) => {
+    e.preventDefault();
+    await supabase.from('investments').insert([{ investor_name: investForm.name, amount: parseFloat(investForm.amount), invest_date: investForm.date, description: investForm.desc }]);
+    await logAction(`Added investment from ${investForm.name}`);
+    alert('Investment Added!');
+    setInvestForm({ name: '', amount: '', date: today, desc: '' });
     fetchAll();
   };
 
@@ -258,41 +306,6 @@ export default function Home() {
     fetchAll();
   };
 
-  // FIXED: DEDICATED RECHARGE FUNCTION WITH HISTORY UPDATE
-  const handleRecharge = async (e) => {
-    e.preventDefault();
-    const portalName = e.target.portal.value;
-    const amount = parseFloat(e.target.amt.value);
-    const date = e.target.date.value;
-    const desc = e.target.desc.value;
-    
-    const p = data.portals.find(p => p.name === portalName);
-    if (!p) return alert("Select a valid portal");
-    
-    // 1. Insert Recharge Record (For History & Report)
-    const { error: recErr } = await supabase.from('recharges').insert([{ 
-      portal_id: p.id, 
-      amount: amount, 
-      recharge_date: date, 
-      description: desc 
-    }]);
-    
-    if (recErr) return alert("Error saving recharge: " + recErr.message);
-    
-    // 2. Update Portal Balance (ADD amount)
-    const newBalance = (p.current_balance || 0) + amount;
-    const { error: balErr } = await supabase.from('portals')
-      .update({ current_balance: newBalance })
-      .eq('id', p.id);
-      
-    if (balErr) return alert("Error updating balance: " + balErr.message);
-    
-    await logAction(`Recharged ${amount} to ${portalName}`);
-    alert('Recharge Added Successfully! Balance Updated.');
-    fetchAll(); // Fetch all to update history list
-    e.target.reset();
-  };
-
   const exportCSV = (csvData, filename) => {
     if (!csvData || csvData.length === 0) return alert('No data to export');
     const headers = Object.keys(csvData[0]);
@@ -305,6 +318,7 @@ export default function Home() {
     link.click();
   };
 
+  // PDF FIX: Larger Logo & Detailed Table
   const downloadPDF = async (inv) => {
     try {
       const { default: html2canvas } = await import('html2canvas');
@@ -322,9 +336,9 @@ export default function Home() {
       html.innerHTML = `
         <div style="display:flex;justify-content:space-between;border-bottom:4px solid #D4AF37;padding-bottom:20px;margin-bottom:20px;">
           <div style="max-width:350px;">
-            ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:80px;margin-bottom:10px;" />` : ''}
-            <h1 style="margin:0;color:#0F3D2E;font-size:24px;">${s.company_name_en || 'Sueud Al Taiyyarah'}</h1>
-            <h2 style="margin:0;color:#0F3D2E;font-size:20px;">${s.company_name_ar || 'صعود الطائرة'}</h2>
+            ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:120px;margin-bottom:10px;" />` : ''}
+            <h1 style="margin:0;color:#0F3D2E;font-size:24px;">Sueud Al Taayira</h1>
+            <h2 style="margin:0;color:#0F3D2E;font-size:20px;">صعود الطائرة للسفر والسياحة</h2>
             <p style="font-size:12px;margin-top:10px;line-height:1.5;">VAT / الرقم الضريبي: ${s.vat_no || ''}<br/>CR / السجل التجاري: ${s.cr_no || ''}<br/>Address / الموقع: ${s.address || ''}<br/>Phone / هاتف: ${s.phone || ''}</p>
           </div>
           <div style="text-align:right;">
@@ -333,15 +347,42 @@ export default function Home() {
             <p style="font-size:14px;margin-top:10px;line-height:1.5;">Invoice No / رقم الفاتورة: ${inv.invoice_no}<br/>Date / التاريخ: ${inv.invoice_date}</p>
           </div>
         </div>
-        <div style="margin-bottom:20px;border:1px solid #eee;padding:10px;background:#f9f9f9;">
-          <b>Customer / العميل:</b> ${inv.customers?.name || ''} (${inv.customers?.type || 'Individual'})<br/>
-          <b>Phone / الهاتف:</b> ${inv.customers?.phone || ''}
-          ${inv.passenger_names ? `<br/><b>Passengers / المسافرون:</b><br/><span style="font-size:12px;white-space:pre-wrap;">${inv.passenger_names}</span>` : ''}
+        <div style="margin-bottom:20px;border:1px solid #eee;padding:15px;background:#f9f9f9;border-radius:8px;">
+          <table style="width:100%;font-size:12px;">
+            <tr>
+              <td><b>Customer / العميل:</b> ${inv.customers?.name || ''} (${inv.customers?.type || 'Individual'})</td>
+              <td><b>Phone / الهاتف:</b> ${inv.customers?.phone || ''}</td>
+              <td><b>Sales Rep / موظف المبيعات:</b> ${inv.employees?.name || 'N/A'}</td>
+            </tr>
+          </table>
+          ${inv.passenger_names ? `<div style="margin-top:10px;font-size:12px;"><b>Passengers / المسافرون:</b><br/><span style="white-space:pre-wrap;">${inv.passenger_names}</span></div>` : ''}
         </div>
-        <table style="width:100%;border-collapse:collapse;text-align:center;font-size:14px;">
-          <thead><tr style="background:#0F3D2E;color:#fff;"><th style="padding:10px;border:1px solid #ddd;">Service / الخدمة</th><th style="padding:10px;border:1px solid #ddd;">Qty / الكمية</th><th style="padding:10px;border:1px solid #ddd;">PNR / رقم الحجز</th><th style="padding:10px;border:1px solid #ddd;">Details / التفاصيل</th><th style="padding:10px;border:1px solid #ddd;">Amount / المبلغ</th></tr></thead>
-          <tbody><tr><td style="padding:10px;border:1px solid #ddd;">${inv.service_type}</td><td style="padding:10px;border:1px solid #ddd;">${inv.qty || 1}</td><td style="padding:10px;border:1px solid #ddd;">${inv.pnr || ''}</td><td style="padding:10px;border:1px solid #ddd;">${inv.sector || ''}</td><td style="padding:10px;border:1px solid #ddd;">${inv.total_sell.toFixed(2)} SAR</td></tr></tbody>
+        
+        <table style="width:100%;border-collapse:collapse;text-align:center;font-size:12px;margin-bottom:20px;">
+          <thead><tr style="background:#0F3D2E;color:#fff;">
+            <th style="padding:8px;border:1px solid #ddd;">Service / الخدمة</th>
+            <th style="padding:8px;border:1px solid #ddd;">Flight Type / نوع الرحلة</th>
+            <th style="padding:8px;border:1px solid #ddd;">Journey / الرحلة</th>
+            <th style="padding:8px;border:1px solid #ddd;">Airline / شركة الطيران</th>
+            <th style="padding:8px;border:1px solid #ddd;">Sector / القطاع</th>
+            <th style="padding:8px;border:1px solid #ddd;">PNR / رقم الحجز</th>
+            <th style="padding:8px;border:1px solid #ddd;">Ticket No / رقم التذكرة</th>
+            <th style="padding:8px;border:1px solid #ddd;">Qty / الكمية</th>
+            <th style="padding:8px;border:1px solid #ddd;">Amount / المبلغ</th>
+          </tr></thead>
+          <tbody><tr>
+            <td style="padding:8px;border:1px solid #ddd;">${inv.service_type}</td>
+            <td style="padding:8px;border:1px solid #ddd;">${inv.flight_type || 'N/A'}</td>
+            <td style="padding:8px;border:1px solid #ddd;">${inv.flight_journey || 'N/A'}</td>
+            <td style="padding:8px;border:1px solid #ddd;">${inv.airline || 'N/A'}</td>
+            <td style="padding:8px;border:1px solid #ddd;">${inv.flight_sector || 'N/A'}</td>
+            <td style="padding:8px;border:1px solid #ddd;">${inv.pnr || 'N/A'}</td>
+            <td style="padding:8px;border:1px solid #ddd;">${inv.ticket_no || 'N/A'}</td>
+            <td style="padding:8px;border:1px solid #ddd;">${inv.qty || 1}</td>
+            <td style="padding:8px;border:1px solid #ddd;">${inv.total_sell.toFixed(2)} SAR</td>
+          </tr></tbody>
         </table>
+
         <div style="display:flex;justify-content:space-between;margin-top:30px;">
           <div style="text-align:center;"><img src="${qr}" width="120" height="120" /><p style="font-size:10px;margin-top:5px;">Scan ZATCA / امسح الرمز</p></div>
           <div style="text-align:right;width:300px;font-size:14px;">
@@ -349,7 +390,7 @@ export default function Home() {
             ${inv.discount > 0 ? `<p style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:5px 0;color:#e74c3c;"><span>Discount / خصم:</span><b>- ${inv.discount.toFixed(2)} SAR</b></p>` : ''}
             <p style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:5px 0;"><span>${taxLabel}:</span><b>${inv.vat.toFixed(2)} SAR</b></p>
             <p style="display:flex;justify-content:space-between;background:#f0f0f0;padding:10px;font-weight:bold;font-size:16px;border:1px solid #ddd;"><span>Total After VAT / الإجمالي بعد الضريبة:</span><b>${inv.total.toFixed(2)} SAR</b></p>
-            <p style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:5px 0;color:#27ae60;"><span>Paid / مدفوع:</span><b>${inv.paid_amount.toFixed(2)} SAR</b></p>
+            <p style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:5px 0;color:#27ae60;"><span>Paid / مدفوع (${inv.payment_method || 'N/A'}):</span><b>${inv.paid_amount.toFixed(2)} SAR</b></p>
             <p style="display:flex;justify-content:space-between;padding:5px 0;color:#e74c3c;font-weight:bold;font-size:16px;"><span>Due Amount / المبلغ المتبقي:</span><b>${inv.due_amount.toFixed(2)} SAR</b></p>
           </div>
         </div>
@@ -366,7 +407,7 @@ export default function Home() {
 
   const shareWhatsApp = (inv) => {
     const phone = inv.customers?.phone ? inv.customers.phone.replace(/\D/g, '') : '';
-    const msg = `Dear ${inv.customers?.name || 'Customer'},%0a%0aYour Invoice *${inv.invoice_no}* from *Sueud Al Taiyyarah*.%0aTotal: *${inv.total.toFixed(2)} SAR*%0aPaid: *${inv.paid_amount.toFixed(2)} SAR*%0aDue: *${inv.due_amount.toFixed(2)} SAR*%0a%0aThank you for choosing us!`;
+    const msg = `Dear ${inv.customers?.name || 'Customer'},%0a%0aYour Invoice *${inv.invoice_no}* from *Sueud Al Taayira*.%0aTotal: *${inv.total.toFixed(2)} SAR*%0aPaid: *${inv.paid_amount.toFixed(2)} SAR*%0aDue: *${inv.due_amount.toFixed(2)} SAR*%0a%0aThank you for choosing us!`;
     window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
   };
 
@@ -386,6 +427,7 @@ export default function Home() {
   const netProfit = tProfit - tExp - tSal;
   const totalOutstanding = outstandingInv.reduce((s,i) => s + i.due_amount, 0);
   const tRecharges = data.recharges.reduce((s,r) => s + r.amount, 0);
+  const tInvestments = data.investments.reduce((s,i) => s + i.amount, 0);
   
   const cashIn = data.cashbook.filter(c => c.type === 'Cash-In').reduce((s,c) => s + c.amount, 0);
   const cashOut = data.cashbook.filter(c => c.type === 'Cash-Out').reduce((s,c) => s + c.amount, 0);
@@ -424,6 +466,7 @@ export default function Home() {
   const filteredPayroll = data.payroll.filter(p => filterByDate(p, 'paid_date'));
   const filteredExpenses = data.expenses.filter(e => filterByDate(e, 'expense_date'));
   const filteredCashbook = data.cashbook.filter(c => filterByDate(c, 'trans_date'));
+  const filteredInvestments = data.investments.filter(i => filterByDate(i, 'invest_date'));
 
   const customerReport = {};
   activeInv.forEach(inv => {
@@ -442,6 +485,7 @@ export default function Home() {
     { id: 'refunds', label: tr.refunds },
     { id: 'customers', label: tr.customers },
     { id: 'portals', label: tr.portals },
+    { id: 'invest', label: tr.invest },
     { id: 'hr', label: tr.hr },
     { id: 'users', label: tr.users },
     { id: 'reports', label: tr.reports },
@@ -460,7 +504,7 @@ export default function Home() {
       <aside style={{ width: '260px', backgroundColor: '#0F3D2E', color: '#D4AF37', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '20px', textAlign: 'center', borderBottom: '2px solid #D4AF37' }}>
           {data.settings.logo_url && <img src={data.settings.logo_url} style={{height:'40px', marginBottom:'10px'}} />}
-          <h2 style={{ margin: 0 }}>{lang === 'en' ? 'Sueud Al Taiyyarah' : 'صعود الطائرة'}</h2>
+          <h2 style={{ margin: 0 }}>{lang === 'en' ? 'Sueud Al Taayira' : 'صعود الطائرة'}</h2>
         </div>
         <nav style={{ flex: 1, overflowY: 'auto' }}>
           {menu.map(m => (
@@ -490,7 +534,7 @@ export default function Home() {
                 <div style={{...styles.card, borderTop: '4px solid #f39c12'}}><h3>Cash Balance</h3><h1 style={{color:'#f39c12'}}>{cashBalance.toFixed(0)} SAR</h1></div>
                 <div style={{...styles.card, borderTop: '4px solid #2980b9'}}><h3>Bank Balance</h3><h1 style={{color:'#2980b9'}}>{bankBalance.toFixed(0)} SAR</h1></div>
                 <div style={{...styles.card, borderTop: '4px solid #e74c3c'}}><h3>Outstanding</h3><h1 style={{color:'#e74c3c'}}>{totalOutstanding.toFixed(0)} SAR</h1></div>
-                <div style={{...styles.card, borderTop: '4px solid #8e44ad'}}><h3>Total Recharges</h3><h1 style={{color:'#8e44ad'}}>{tRecharges.toFixed(0)} SAR</h1></div>
+                <div style={{...styles.card, borderTop: '4px solid #8e44ad'}}><h3>Investments</h3><h1 style={{color:'#8e44ad'}}>{tInvestments.toFixed(0)} SAR</h1></div>
               </div>
 
               <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
@@ -526,15 +570,6 @@ export default function Home() {
                       <h2 style={{margin:0, color: p.current_balance < 0 ? '#e74c3c' : '#0F3D2E'}}>{p.current_balance || 0} SAR</h2>
                     </div>
                   ))}
-                </div>
-              </div>
-
-              <div style={{...styles.card, marginBottom: '20px'}}>
-                <h3 style={{color:'#0F3D2E'}}>📅 Today's Bookings ({todaysBookings.length})</h3>
-                <div style={{maxHeight: '100px', overflowY: 'auto'}}>
-                  {todaysBookings.length === 0 ? <p>No bookings today.</p> : 
-                    todaysBookings.map(inv => <div key={inv.id} style={{borderBottom:'1px solid #eee', padding:'5px 0', fontSize:'14px'}}>{inv.customers?.name} - {inv.service_type}</div>)
-                  }
                 </div>
               </div>
             </div>
@@ -712,7 +747,7 @@ export default function Home() {
                   {invForm.payment === 'Credit' && <div><label style={styles.label}>Credit Due Date</label><input type="date" value={invForm.creditDueDate} onChange={(e) => setInvForm({...invForm, creditDueDate: e.target.value})} style={styles.i} required /></div>}
                 </div>
                 <button type="submit" style={{ background: '#D4AF37', color: '#0F3D2E', border: 'none', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', padding: '15px', width: '100%' }}>{editingId ? 'Update Invoice' : 'Generate Invoice'}</button>
-                {editingId && <button type="button" onClick={() => { setEditingId(null); setInvForm({ custId: 'new', custName: '', custPhone: '', custType: 'Individual', passengerNames: '', portal: data.portals[0]?.name || '', bookingDate: today, invoiceDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', airline: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' }); setPage('list'); }} style={{ background: '#e74c3c', color: 'white', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '15px', width: '100%', marginTop: '10px' }}>Cancel Edit</button>}
+                {editingId && <button type="button" onClick={() => { setEditingId(null); setInvForm({ custId: 'new', custName: '', custPhone: '', custType: 'Individual', passengerNames: '', portal: data.portals[0]?.name || '', bookingDate: today, invoiceDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', visaType: 'Tourist', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' }); setPage('list'); }} style={{ background: '#e74c3c', color: 'white', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '15px', width: '100%', marginTop: '10px' }}>Cancel Edit</button>}
               </form>
             </div>
           )}
@@ -833,7 +868,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* PORTAL & RECHARGE SECTION WITH HISTORY LIST */}
+          {/* PORTAL & RECHARGE WITH DELETE */}
           {page === 'portals' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
@@ -867,7 +902,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* RECHARGE HISTORY LIST (FIXED) */}
               <div style={styles.card}>
                 <h3 style={{color:'#0F3D2E'}}>Recharge History (All Portals)</h3>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -877,11 +911,12 @@ export default function Home() {
                       <th style={styles.th}>Portal / Company</th>
                       <th style={styles.th}>Amount</th>
                       <th style={styles.th}>Description</th>
+                      <th style={styles.th}>Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {data.recharges.length === 0 ? (
-                      <tr><td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>No recharges yet.</td></tr>
+                      <tr><td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>No recharges yet.</td></tr>
                     ) : (
                       data.recharges.map(r => (
                         <tr key={r.id} style={{ borderBottom: '1px solid #eee' }}>
@@ -889,9 +924,44 @@ export default function Home() {
                           <td style={styles.td}>{r.portals?.name || 'N/A'}</td>
                           <td style={{ ...styles.td, color: 'green', fontWeight: 'bold' }}>+{r.amount} SAR</td>
                           <td style={styles.td}>{r.description || 'N/A'}</td>
+                          <td style={styles.td}><button onClick={() => handleDeleteRecharge(r)} style={{background:'#e74c3c', color:'white', border:'none', padding:'2px 5px', cursor:'pointer'}}>Delete</button></td>
                         </tr>
                       ))
                     )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* INVESTMENTS MODULE */}
+          {page === 'invest' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
+              <div style={styles.card}>
+                <h3>Add Investment (Sponsor)</h3>
+                <form onSubmit={handleAddInvestment} style={{display:'flex', flexDirection:'column', gap:'10px'}}>
+                  <input placeholder="Sponsor Name" value={investForm.name} onChange={(e) => setInvestForm({...investForm, name: e.target.value})} style={styles.i} required />
+                  <input type="number" placeholder="Amount Invested" value={investForm.amount} onChange={(e) => setInvestForm({...investForm, amount: e.target.value})} style={styles.i} required />
+                  <input type="date" value={investForm.date} onChange={(e) => setInvestForm({...investForm, date: e.target.value})} style={styles.i} required />
+                  <input placeholder="Description" value={investForm.desc} onChange={(e) => setInvestForm({...investForm, desc: e.target.value})} style={styles.i} />
+                  <button type="submit" style={styles.btn}>Add Investment</button>
+                </form>
+              </div>
+              <div style={styles.card}>
+                <div style={{display:'flex', justifyContent:'space-between', marginBottom:'20px'}}>
+                  <h3>Investment History</h3>
+                  <button onClick={() => exportCSV(data.investments, 'Investments.csv')} style={{...styles.btn, background: '#8e44ad', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr style={{ background: '#f8f9fa' }}><th style={styles.th}>Date</th><th style={styles.th}>Sponsor</th><th style={styles.th}>Amount</th><th style={styles.th}>Desc</th></tr></thead>
+                  <tbody>
+                    {data.investments.map(inv => (
+                      <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
+                        <td style={styles.td}>{inv.invest_date}</td><td style={styles.td}>{inv.investor_name}</td>
+                        <td style={{...styles.td, color:'green', fontWeight:'bold'}}>{inv.amount} SAR</td>
+                        <td style={styles.td}>{inv.description}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -988,6 +1058,7 @@ export default function Home() {
                 <button onClick={() => setReportTab('cashbook')} style={reportTab==='cashbook'?styles.btnSm:styles.btnSmInactive}>Cashbook Report</button>
                 <button onClick={() => setReportTab('commission')} style={reportTab==='commission'?styles.btnSm:styles.btnSmInactive}>Commission Report</button>
                 <button onClick={() => setReportTab('customer')} style={reportTab==='customer'?styles.btnSm:styles.btnSmInactive}>Customer Report</button>
+                <button onClick={() => setReportTab('invest')} style={reportTab==='invest'?styles.btnSm:styles.btnSmInactive}>Investment Report</button>
               </div>
 
               <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -1026,7 +1097,6 @@ export default function Home() {
                 </div>
               )}
 
-              {/* PORTAL REPORT FIXED */}
               {reportTab === 'portals' && (
                 <div>
                   <h3>Portals Recharge Report</h3>
@@ -1154,6 +1224,25 @@ export default function Home() {
                   </table>
                 </div>
               )}
+
+              {reportTab === 'invest' && (
+                <div>
+                  <h3>Sponsor Investment Report</h3>
+                  <button onClick={() => exportCSV(filteredInvestments.map(i => ({ Date: i.invest_date, Sponsor: i.investor_name, Amount: i.amount, Desc: i.description })), 'Investment_Report.csv')} style={{...styles.btn, background: '#8e44ad', width: 'auto', padding: '10px 20px', marginBottom: '20px'}}>Export Investment Excel</button>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead><tr style={{ background: '#f8f9fa' }}><th style={styles.th}>Date</th><th style={styles.th}>Sponsor Name</th><th style={styles.th}>Amount</th><th style={styles.th}>Description</th></tr></thead>
+                    <tbody>
+                      {filteredInvestments.map(inv => (
+                        <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
+                          <td style={styles.td}>{inv.invest_date}</td><td style={styles.td}>{inv.investor_name}</td>
+                          <td style={{...styles.td, color:'green'}}>{inv.amount} SAR</td>
+                          <td style={styles.td}>{inv.description}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 
@@ -1182,8 +1271,8 @@ export default function Home() {
               <div style={{display:'flex', justifyContent:'space-between', borderBottom:'2px solid #D4AF37', paddingBottom:'10px'}}>
                 <div>
                   {data.settings.logo_url && <img src={data.settings.logo_url} style={{height:'60px'}} />}
-                  <h2 style={{margin:0, color:'#0F3D2E'}}>{data.settings.company_name_en}</h2>
-                  <h3 style={{margin:0, color:'#0F3D2E'}}>{data.settings.company_name_ar}</h3>
+                  <h2 style={{margin:0, color:'#0F3D2E'}}>Sueud Al Taayira</h2>
+                  <h3 style={{margin:0, color:'#0F3D2E'}}>صعود الطائرة للسفر والسياحة</h3>
                 </div>
                 <div style={{textAlign:'right'}}>
                   <h2 style={{margin:0, color:'#0F3D2E'}}>TAX INVOICE</h2>
@@ -1195,10 +1284,10 @@ export default function Home() {
               {previewInv.passenger_names && <p style={{whiteSpace: 'pre-wrap'}}><b>Passengers / المسافرون:</b><br/>{previewInv.passenger_names}</p>}
               <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px', textAlign: 'center' }}>
                 <tr style={{ background: '#0F3D2E', color: 'white' }}>
-                  <th style={styles.th}>Service / الخدمة</th><th style={styles.th}>Qty / الكمية</th><th style={styles.th}>PNR / رقم الحجز</th><th style={styles.th}>Amount / المبلغ</th>
+                  <th style={styles.th}>Service / الخدمة</th><th style={styles.th}>Flight Type / نوع الرحلة</th><th style={styles.th}>Journey / الرحلة</th><th style={styles.th}>Airline / شركة الطيران</th><th style={styles.th}>Sector / القطاع</th><th style={styles.th}>Qty / الكمية</th><th style={styles.th}>Amount / المبلغ</th>
                 </tr>
                 <tr>
-                  <td style={styles.td}>{previewInv.service_type}</td><td style={styles.td}>{previewInv.qty || 1}</td><td style={styles.td}>{previewInv.pnr}</td><td style={styles.td}>{previewInv.total_sell} SAR</td>
+                  <td style={styles.td}>{previewInv.service_type}</td><td style={styles.td}>{previewInv.flight_type || 'N/A'}</td><td style={styles.td}>{previewInv.flight_journey || 'N/A'}</td><td style={styles.td}>{previewInv.airline || 'N/A'}</td><td style={styles.td}>{previewInv.flight_sector || 'N/A'}</td><td style={styles.td}>{previewInv.qty || 1}</td><td style={styles.td}>{previewInv.total_sell} SAR</td>
                 </tr>
               </table>
               <div style={{marginTop:'20px', textAlign:'right'}}>
@@ -1248,8 +1337,8 @@ function SettingsPage({ data, fetchAll, services, handleDelete, handleAddEntity,
   return (
     <div style={{ display: 'grid', gap: '30px' }}>
       <form onSubmit={handleSave} style={{ background: 'white', padding: '30px', borderRadius: '8px', borderTop: '4px solid #D4AF37', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-        <input placeholder="Company Name (EN)" value={form.company_name_en || ''} onChange={(e) => setForm({...form, company_name_en: e.target.value})} style={styles.i} />
-        <input placeholder="Company Name (AR)" value={form.company_name_ar || ''} onChange={(e) => setForm({...form, company_name_ar: e.target.value})} style={styles.i} />
+        <input placeholder="Company Name (EN)" value="Sueud Al Taayira" readOnly style={styles.i} />
+        <input placeholder="Company Name (AR)" value="صعود الطائرة للسفر والسياحة" readOnly style={styles.i} />
         <input placeholder="VAT Number (الرقم الضريبي)" value={form.vat_no || ''} onChange={(e) => setForm({...form, vat_no: e.target.value})} style={styles.i} />
         <input placeholder="CR Number (السجل التجاري)" value={form.cr_no || ''} onChange={(e) => setForm({...form, cr_no: e.target.value})} style={styles.i} />
         <input placeholder="License No (رقم الترخيص)" value={form.license_no || ''} onChange={(e) => setForm({...form, license_no: e.target.value})} style={styles.i} />
