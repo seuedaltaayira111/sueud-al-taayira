@@ -15,8 +15,12 @@ export default function Home() {
 
   const [toast, setToast] = useState(null);
   const [modal, setModal] = useState({ type: null, data: null });
-  const [chatOpen, setChatOpen] = useState(false);
   const [passForm, setPassForm] = useState({ newPass: '' });
+
+  // Chatbot State
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([{ sender: 'bot', text: 'مرحباً! أنا مساعدك في نظام ERP. كيف يمكنني مساعدتك اليوم؟' }]);
+  const [chatInput, setChatInput] = useState('');
 
   const [search, setSearch] = useState('');
   const [tblPage, setTblPage] = useState(1);
@@ -33,7 +37,7 @@ export default function Home() {
   const [transferForm, setTransferForm] = useState({ from: 'Cash', to: 'Bank', amount: '', date: today });
   const [repDate, setRepDate] = useState({ from: '', to: '' });
   const [reportTab, setReportTab] = useState('sales');
-  const [setForm, setSetForm] = useState({ company_name_en: '', company_name_ar: '', vat_no: '', cr_no: '', iata_no: '', phone: '', logo_url: '', invoice_footer: 'Thank you for your business!' });
+  const [setForm, setSetForm] = useState({ company_name_en: 'SUEUD AL TAIYYARAH', company_name_ar: 'صعود الطائرة للسفر و السياحة', vat_no: '', cr_no: '', iata_no: '', phone: '', logo_url: '', invoice_footer: 'Thank you for choosing us!' });
   const [userForm, setUserForm] = useState({ email: '', username: '', role: 'Sales', is_admin: false, can_access_invoices: true, can_access_bank: false, can_access_hr: false, can_access_reports: false, can_access_settings: false });
   const [empForm, setEmpForm] = useState({ name: '', role: 'Sales' });
   const [srvForm, setSrvForm] = useState({ name: '' });
@@ -43,10 +47,9 @@ export default function Home() {
   const [pkgForm, setPkgForm] = useState({ name: '', price: '', desc: '' });
   const [brnForm, setBrnForm] = useState({ name: '', location: '', phone: '' });
 
-  // Translations
   const t = {
-    en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices List', refunds: 'Refund Invoices', customers: 'Customer List', portals: 'Portals & Recharge', bank: 'Bank & Cash', invest: 'Investments', hr: 'HR & Accounts', users: 'User Management', reports: 'Financial Reports', audit: 'Audit Logs', settings: 'Settings & Templates', vendors: 'Vendors (B2B)', packages: 'Tour Packages', branches: 'Branches', logout: 'Logout', search: 'Search...', ownerProfile: 'Owner Profile', username: 'Username', role: 'Role', addCustomField: 'Add Custom Invoice Field', changePass: 'Change Password', chatHelp: 'AI Help Assistant' },
-    ar: { dash: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'قائمة الفواتير', refunds: 'فواتير الاسترجاع', customers: 'قائمة العملاء', portals: 'البوابات والرصيد', bank: 'البنك والكاش', invest: 'الاستثمارات', hr: 'الموارد البشرية', users: 'إدارة المستخدمين', reports: 'التقارير المالية', audit: 'سجلات التدقيق', settings: 'الإعدادات والقوالب', vendors: 'الموردون', packages: 'باقات سياحية', branches: 'الفروع', logout: 'تسجيل الخروج', search: 'بحث...', ownerProfile: 'ملف المالك', username: 'اسم المستخدم', role: 'الدور', addCustomField: 'إضافة حقل مخصص للفاتورة', changePass: 'تغيير كلمة المرور', chatHelp: 'مساعد الذكاء الاصطناعي' }
+    en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices List', refunds: 'Refund Invoices', customers: 'Customer List', portals: 'Portals & Recharge', bank: 'Bank & Cash', invest: 'Investments', hr: 'HR & Accounts', users: 'User Management', reports: 'Financial Reports', audit: 'Audit Logs', settings: 'Settings', vendors: 'Vendors (B2B)', packages: 'Tour Packages', branches: 'Branches', logout: 'Logout', search: 'Search...', ownerProfile: 'Owner Profile', changePass: 'Change Password' },
+    ar: { dash: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'قائمة الفواتير', refunds: 'فواتير الاسترجاع', customers: 'قائمة العملاء', portals: 'البوابات والرصيد', bank: 'البنك والكاش', invest: 'الاستثمارات', hr: 'الموارد البشرية', users: 'إدارة المستخدمين', reports: 'التقارير المالية', audit: 'سجلات التدقيق', settings: 'الإعدادات', vendors: 'الموردون', packages: 'باقات سياحية', branches: 'الفروع', logout: 'تسجيل الخروج', search: 'بحث...', ownerProfile: 'ملف المالك', changePass: 'تغيير كلمة المرور' }
   };
   const tr = t[lang];
 
@@ -106,9 +109,41 @@ export default function Home() {
 
   const handleUpdateOwnerProfile = async (e) => {
     e.preventDefault();
-    const { error } = await supabase.from('app_users').update({ email: userProfile.email, username: userProfile.username }).eq('id', userProfile.id);
-    if (error) return showToast('Error updating profile');
-    showToast('Owner Profile Updated!');
+    try {
+      if (userProfile.email !== user.email) {
+        const { error: authError } = await supabase.auth.updateUser({ email: userProfile.email });
+        if (authError) throw authError;
+      }
+      const { error: dbError } = await supabase.from('app_users').update({ email: userProfile.email, username: userProfile.username }).eq('id', userProfile.id);
+      if (dbError) throw dbError;
+      showToast('Profile Updated! Email change may require confirmation.');
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+
+  // --- AI CHATBOT LOGIC ---
+  const handleSendMessage = () => {
+    if (!chatInput.trim()) return;
+    const userMsg = { sender: 'user', text: chatInput };
+    setChatMessages(prev => [...prev, userMsg]);
+    const text = chatInput.toLowerCase();
+    let botReply = "I am sorry, I didn't understand that. I can help with Invoices, Reports, or Users. (عذراً، لم أفهم ذلك. يمكنني المساعدة في الفواتير، التقارير، أو المستخدمين)";
+    
+    if (text.includes('invoice') || text.includes('فاتورة') || text.includes('create')) {
+      botReply = "To create an invoice, go to 'Create Invoice'. You can add Flight, Hotel, or Visa details. The system will automatically calculate VAT and update your portal balance! (لإنشاء فاتورة، انتقل إلى 'إنشاء فاتورة'. يمكنك إضافة رحلة طيران أو فندق أو تأشيرة. سيقوم النظام تلقائياً بحساب ضريبة القيمة المضافة وتحديث رصيد البوابة الخاص بك!)";
+    } else if (text.includes('report') || text.includes('تقرير') || text.includes('excel')) {
+      botReply = "You can download Excel reports for Sales, Refunds, and Cashbook from the 'Financial Reports' section. Just select a date range! (يمكنك تنزيل تقارير Excel للمبيعات والاسترداد والدفع النقدي من قسم 'التقارير المالية'. ما عليك سوى تحديد نطاق التاريخ!)";
+    } else if (text.includes('user') || text.includes('مستخدم') || text.includes('permission')) {
+      botReply = "Admins can add new users with custom permissions in 'User Management'. You can grant access to specific modules like Bank or HR. (يمكن للمسؤولين إضافة مستخدمين جدد بأذونات مخصصة في 'إدارة المستخدمين'. يمكنك منح الوصول إلى وحدات محددة مثل البنك أو الموارد البشرية.)";
+    } else if (text.includes('refund') || text.includes('استرجاع')) {
+      botReply = "To process a refund, go to 'Invoices List', find the invoice, and click 'Refund'. It will automatically adjust the portal and cash balances. (لإجراء استرداد، انتقل إلى 'قائمة الفواتير'، وابحث عن الفاتورة، وانقر على 'استرداد'. سيقوم تلقائياً بتعديل أرصدة البوابة والنقدية.)";
+    } else if (text.includes('hello') || text.includes('hi') || text.includes('مرحبا')) {
+      botReply = `Hello ${userProfile.role}! How can I assist you with the ERP today? (مرحباً ${userProfile.role}! كيف يمكنني مساعدتك في نظام ERP اليوم؟)`;
+    }
+    
+    setTimeout(() => {
+      setChatMessages(prev => [...prev, { sender: 'bot', text: botReply }]);
+    }, 600);
+    setChatInput('');
   };
 
   // --- INVOICE HANDLERS ---
@@ -264,38 +299,14 @@ export default function Home() {
     setModal({ type: null, data: null });
   };
 
-  // --- PORTALS, VENDORS, PACKAGES, BRANCHES ---
-  const handleAddPortal = async (e) => {
-    e.preventDefault();
-    const { data: newItem } = await supabase.from('portals').insert([{ name: portalForm.name, current_balance: parseFloat(portalForm.balance) || 0 }]).select().single();
-    setData(prev => ({ ...prev, portals: [...prev.portals, newItem] }));
-    showToast('Portal Added!');
-    setPortalForm({ name: '', balance: 0 });
-  };
-
-  const handleAddVendor = async (e) => {
-    e.preventDefault();
-    const { data: newItem } = await supabase.from('vendors').insert([{ name: vendorForm.name, phone: vendorForm.phone, balance: parseFloat(vendorForm.balance) || 0 }]).select().single();
-    setData(prev => ({ ...prev, vendors: [...prev.vendors, newItem] }));
-    showToast('Vendor Added!');
-    setVendorForm({ name: '', phone: '', balance: 0 });
-  };
-
-  const handleAddPackage = async (e) => {
-    e.preventDefault();
-    const { data: newItem } = await supabase.from('packages').insert([{ name: pkgForm.name, price: parseFloat(pkgForm.price), description: pkgForm.desc }]).select().single();
-    setData(prev => ({ ...prev, packages: [...prev.packages, newItem] }));
-    showToast('Package Added!');
-    setPkgForm({ name: '', price: '', desc: '' });
-  };
-
-  const handleAddBranch = async (e) => {
-    e.preventDefault();
-    const { data: newItem } = await supabase.from('branches').insert([{ name: brnForm.name, location: brnForm.location, phone: brnForm.phone }]).select().single();
-    setData(prev => ({ ...prev, branches: [...prev.branches, newItem] }));
-    showToast('Branch Added!');
-    setBrnForm({ name: '', location: '', phone: '' });
-  };
+  // --- ENTITY HANDLERS ---
+  const handleAddPortal = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('portals').insert([{ name: portalForm.name, current_balance: parseFloat(portalForm.balance) || 0 }]).select().single(); setData(prev => ({ ...prev, portals: [...prev.portals, newItem] })); showToast('Portal Added!'); setPortalForm({ name: '', balance: 0 }); };
+  const handleAddVendor = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('vendors').insert([{ name: vendorForm.name, phone: vendorForm.phone, balance: parseFloat(vendorForm.balance) || 0 }]).select().single(); setData(prev => ({ ...prev, vendors: [...prev.vendors, newItem] })); showToast('Vendor Added!'); setVendorForm({ name: '', phone: '', balance: 0 }); };
+  const handleAddPackage = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('packages').insert([{ name: pkgForm.name, price: parseFloat(pkgForm.price), description: pkgForm.desc }]).select().single(); setData(prev => ({ ...prev, packages: [...prev.packages, newItem] })); showToast('Package Added!'); setPkgForm({ name: '', price: '', desc: '' }); };
+  const handleAddBranch = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('branches').insert([{ name: brnForm.name, location: brnForm.location, phone: brnForm.phone }]).select().single(); setData(prev => ({ ...prev, branches: [...prev.branches, newItem] })); showToast('Branch Added!'); setBrnForm({ name: '', location: '', phone: '' }); };
+  const handleAddEmployee = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('employees').insert([{ name: empForm.name, role: empForm.role }]).select().single(); setData(prev => ({ ...prev, employees: [newItem, ...prev.employees] })); showToast('Employee Added!'); setEmpForm({ name: '', role: 'Sales' }); };
+  const handleAddService = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('services').insert([{ name: srvForm.name }]).select().single(); setData(prev => ({ ...prev, services: [newItem, ...prev.services] })); showToast('Service Added!'); setSrvForm({ name: '' }); };
+  const handleAddCustomField = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('custom_fields').insert([{ name: customFieldForm.name }]).select().single(); setData(prev => ({ ...prev, customFields: [...prev.customFields, newItem] })); showToast('Custom Field Added!'); setCustomFieldForm({ name: '' }); };
 
   const handleRecharge = async (e) => {
     e.preventDefault();
@@ -313,30 +324,21 @@ export default function Home() {
     e.target.reset();
   };
 
-  // --- BANK & FUND TRANSFER ---
   const handleTransfer = async (e) => {
     e.preventDefault();
     const amt = parseFloat(transferForm.amount);
     if (amt <= 0 || transferForm.from === transferForm.to) return showToast("Invalid transfer");
-    
     const entries = [];
     if (transferForm.from === 'Cash') entries.push({ trans_date: transferForm.date, type: 'Cash-Out', description: `Transfer to ${transferForm.to}`, amount: amt });
     if (transferForm.from === 'Bank') entries.push({ trans_date: transferForm.date, type: 'Bank-Out', description: `Transfer to ${transferForm.to}`, amount: amt });
-    if (transferForm.from === 'Investor') entries.push({ trans_date: transferForm.date, type: 'Investment-In', description: `Capital from Investor to ${transferForm.to}`, amount: amt });
-    
     if (transferForm.to === 'Cash') entries.push({ trans_date: transferForm.date, type: 'Cash-In', description: `Transfer from ${transferForm.from}`, amount: amt });
     if (transferForm.to === 'Bank') entries.push({ trans_date: transferForm.date, type: 'Bank-In', description: `Transfer from ${transferForm.from}`, amount: amt });
-    if (transferForm.to === 'Investor') entries.push({ trans_date: transferForm.date, type: 'Investment-Out', description: `Withdrawal to Investor from ${transferForm.from}`, amount: amt });
-
-    const results = await Promise.all(entries.map(en => supabase.from('cashbook').insert([en]).select().single()));
-    const newEntries = results.map(r => r.data).filter(Boolean);
-    await logAction(`Transferred ${amt} from ${transferForm.from} to ${transferForm.to}`);
-    setData(prev => ({ ...prev, cashbook: [...newEntries, ...prev.cashbook] }));
+    await Promise.all(entries.map(en => supabase.from('cashbook').insert([en])));
+    await fetchAll();
     showToast('Fund Transferred Successfully!');
     setTransferForm({ from: 'Cash', to: 'Bank', amount: '', date: today });
   };
 
-  // --- HR & SETTINGS ---
   const handlePaySalary = async (e) => {
     e.preventDefault();
     const empId = e.target.emp.value;
@@ -374,6 +376,14 @@ export default function Home() {
     setInvestForm({ name: '', amount: '', date: today, desc: '', mode: 'Cash' });
   };
 
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+    const { data: newUser } = await supabase.from('app_users').insert([{ email: userForm.email, username: userForm.username, role: userForm.role, ...userForm }]).select().single();
+    setData(prev => ({ ...prev, appUsers: [newUser, ...prev.appUsers] }));
+    showToast('User Added with Custom Permissions!');
+    setUserForm({ email: '', username: '', role: 'Sales', is_admin: false, can_access_invoices: true, can_access_bank: false, can_access_hr: false, can_access_reports: false, can_access_settings: false });
+  };
+
   const handleLogoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -382,7 +392,7 @@ export default function Home() {
     if (error) return showToast('Upload Error: Check Storage Bucket');
     const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName);
     setSetForm(prev => ({ ...prev, logo_url: urlData.publicUrl }));
-    showToast('Logo Uploaded! Click Save Settings.');
+    showToast('Logo Uploaded!');
   };
 
   const handleSaveSettings = async (e) => {
@@ -393,38 +403,6 @@ export default function Home() {
     showToast('Settings Saved Successfully!');
   };
 
-  const handleAddUser = async (e) => {
-    e.preventDefault();
-    const { data: newUser } = await supabase.from('app_users').insert([{ email: userForm.email, username: userForm.username, role: userForm.role, ...userForm }]).select().single();
-    setData(prev => ({ ...prev, appUsers: [newUser, ...prev.appUsers] }));
-    showToast('User Added with Custom Permissions!');
-    setUserForm({ email: '', username: '', role: 'Sales', is_admin: false, can_access_invoices: true, can_access_bank: false, can_access_hr: false, can_access_reports: false, can_access_settings: false });
-  };
-
-  const handleAddEmployee = async (e) => {
-    e.preventDefault();
-    const { data: newItem } = await supabase.from('employees').insert([{ name: empForm.name, role: empForm.role }]).select().single();
-    setData(prev => ({ ...prev, employees: [newItem, ...prev.employees] }));
-    showToast('Employee Added!');
-    setEmpForm({ name: '', role: 'Sales' });
-  };
-
-  const handleAddService = async (e) => {
-    e.preventDefault();
-    const { data: newItem } = await supabase.from('services').insert([{ name: srvForm.name }]).select().single();
-    setData(prev => ({ ...prev, services: [newItem, ...prev.services] }));
-    showToast('Service Added!');
-    setSrvForm({ name: '' });
-  };
-
-  const handleAddCustomField = async (e) => {
-    e.preventDefault();
-    const { data: newItem } = await supabase.from('custom_fields').insert([{ name: customFieldForm.name }]).select().single();
-    setData(prev => ({ ...prev, customFields: [...prev.customFields, newItem] }));
-    showToast('Custom Field Added!');
-    setCustomFieldForm({ name: '' });
-  };
-
   const handleDelete = async (table, id) => {
     if (!confirm('Delete permanently?')) return;
     await supabase.from(table).delete().eq('id', id);
@@ -432,7 +410,6 @@ export default function Home() {
     showToast('Deleted Successfully!');
   };
 
-  // --- REPORTS & EXPORT ---
   const filterData = (arr, dateKey) => {
     if (!repDate.from || !repDate.to) return arr;
     return arr.filter(i => (i[dateKey] || i.created_at?.split('T')[0]) >= repDate.from && (i[dateKey] || i.created_at?.split('T')[0]) <= repDate.to);
@@ -457,42 +434,42 @@ export default function Home() {
     const taxLabel = isExempt ? 'Exempt (معافاة)' : 'VAT 15% (ضريبة 15%)';
     return `
       <div style="width:800px;padding:40px;font-family:'Segoe UI',Tahoma,Arial;background:#fff;color:#333;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #0F3D2E;padding-bottom:20px;margin-bottom:30px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1E3A8A;padding-bottom:20px;margin-bottom:30px;">
           <div style="display:flex;align-items:center;gap:20px;">
             ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:140px;width:auto;object-fit:contain;" />` : ''}
             <div>
-              <h1 style="margin:0;color:#0F3D2E;font-size:32px;font-weight:bold;">${s.company_name_en || 'Sueud Al Taayira'}</h1>
-              <h2 style="margin:0;color:#D4AF37;font-size:24px;">${s.company_name_ar || 'صعود الطائرة للسفر و السياحة'}</h2>
+              <h1 style="margin:0;color:#1E3A8A;font-size:32px;font-weight:bold;">${s.company_name_en || 'SUEUD AL TAIYYARAH'}</h1>
+              <h2 style="margin:0;color:#D97706;font-size:24px;">${s.company_name_ar || 'صعود الطائرة للسفر و السياحة'}</h2>
               <p style="font-size:12px;margin-top:10px;line-height:1.6;color:#555;">VAT: ${s.vat_no || ''} | CR: ${s.cr_no || ''}<br/>IATA: ${s.iata_no || ''} | Ph: ${s.phone || ''}</p>
             </div>
           </div>
-          <div style="text-align:right;background:#0F3D2E;color:#fff;padding:15px 20px;border-radius:8px;">
+          <div style="text-align:right;background:#1E3A8A;color:#fff;padding:15px 20px;border-radius:8px;">
             <h1 style="margin:0;font-size:24px;">TAX INVOICE</h1>
-            <h2 style="margin:0;color:#D4AF37;font-size:18px;">فاتورة ضريبية</h2>
+            <h2 style="margin:0;color:#FBBF24;font-size:18px;">فاتورة ضريبية</h2>
             <p style="font-size:13px;margin-top:10px;color:#eee;">Inv No: <b>${inv.invoice_no}</b><br/>Date: ${inv.invoice_date}</p>
           </div>
         </div>
-        <div style="margin-bottom:30px;display:flex;justify-content:space-between;background:#f9f9f9;padding:15px;border-radius:8px;border-left:5px solid #D4AF37;">
-          <div><h3 style="margin:0 0 5px;color:#0F3D2E;font-size:14px;">BILL TO:</h3><p style="margin:0;font-size:16px;font-weight:bold;">${inv.customers?.name || ''}</p><p style="margin:0;font-size:12px;color:#666;">${inv.customers?.phone || ''}</p></div>
-          <div style="text-align:right;"><p style="margin:0;font-size:12px;"><b>Sales Rep:</b> ${inv.employees?.name || 'N/A'}</p><p style="margin:0;font-size:12px;"><b>Status:</b> <span style="color:${inv.due_amount>0?'#e74c3c':'#27ae60'};font-weight:bold;">${inv.due_amount>0?'UNPAID':'PAID'}</span></p></div>
+        <div style="margin-bottom:30px;display:flex;justify-content:space-between;background:#f8fafc;padding:15px;border-radius:8px;border-left:5px solid #FBBF24;">
+          <div><h3 style="margin:0 0 5px;color:#1E3A8A;font-size:14px;">BILL TO:</h3><p style="margin:0;font-size:16px;font-weight:bold;">${inv.customers?.name || ''}</p><p style="margin:0;font-size:12px;color:#666;">${inv.customers?.phone || ''}</p></div>
+          <div style="text-align:right;"><p style="margin:0;font-size:12px;"><b>Sales Rep:</b> ${inv.employees?.name || 'N/A'}</p><p style="margin:0;font-size:12px;"><b>Status:</b> <span style="color:${inv.due_amount>0?'#EF4444':'#059669'};font-weight:bold;">${inv.due_amount>0?'UNPAID':'PAID'}</span></p></div>
         </div>
         ${inv.passenger_names ? `<div style="margin-bottom:20px;padding:10px;background:#fff;border:1px dashed #ddd;"><b style="font-size:12px;">Passengers:</b><br/><span style="font-size:12px;white-space:pre-wrap;">${inv.passenger_names}</span></div>` : ''}
         <table style="width:100%;border-collapse:collapse;text-align:center;margin-bottom:30px;">
-          <thead><tr style="background:#0F3D2E;color:#fff;"><th style="padding:12px;border:1px solid #0a2d21;width:40%;">Service / Sector</th><th style="padding:12px;border:1px solid #0a2d21;">PNR</th><th style="padding:12px;border:1px solid #0a2d21;">Qty</th><th style="padding:12px;border:1px solid #0a2d21;">Total</th></tr></thead>
+          <thead><tr style="background:#1E3A8A;color:#fff;"><th style="padding:12px;border:1px solid #1e3a8a;width:40%;">Service / Sector</th><th style="padding:12px;border:1px solid #1e3a8a;">PNR</th><th style="padding:12px;border:1px solid #1e3a8a;">Qty</th><th style="padding:12px;border:1px solid #1e3a8a;">Total</th></tr></thead>
           <tbody><tr style="background:#fff;"><td style="padding:12px;border:1px solid #ddd;text-align:left;font-size:13px;"><b>${inv.service_type}</b><br/><span style="font-size:11px;color:#666;">${inv.sector || ''}</span></td><td style="padding:12px;border:1px solid #ddd;font-size:12px;">${inv.pnr || 'N/A'}</td><td style="padding:12px;border:1px solid #ddd;font-size:12px;">${inv.qty || 1}</td><td style="padding:12px;border:1px solid #ddd;font-size:14px;font-weight:bold;">${inv.total_sell.toFixed(2)} SAR</td></tr></tbody>
         </table>
         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-          <div style="text-align:center;background:#f9f9f9;padding:10px;border-radius:8px;border:1px solid #eee;"><p style="margin:0 0 5px;font-size:10px;color:#666;">Scan for ZATCA Verification</p><img src="${inv.qrCode || ''}" width="120" height="120" /></div>
+          <div style="text-align:center;background:#f8fafc;padding:10px;border-radius:8px;border:1px solid #eee;"><p style="margin:0 0 5px;font-size:10px;color:#666;">Scan for ZATCA Verification</p><img src="${inv.qrCode || ''}" width="120" height="120" /></div>
           <div style="width:320px;font-size:14px;">
             <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>Before VAT:</span><b>${inv.total_sell.toFixed(2)} SAR</b></div>
-            ${inv.discount > 0 ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;color:#e74c3c;"><span>Discount:</span><b>- ${inv.discount.toFixed(2)} SAR</b></div>` : ''}
+            ${inv.discount > 0 ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;color:#EF4444;"><span>Discount:</span><b>- ${inv.discount.toFixed(2)} SAR</b></div>` : ''}
             <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>${taxLabel}:</span><b>${inv.vat.toFixed(2)} SAR</b></div>
-            <div style="display:flex;justify-content:space-between;background:#0F3D2E;color:#D4AF37;padding:12px;font-weight:bold;font-size:18px;border-radius:4px;margin-top:5px;"><span>TOTAL:</span><b>${inv.total.toFixed(2)} SAR</b></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;color:#27ae60;margin-top:10px;"><span>Paid (${inv.payment_method}):</span><b>${inv.paid_amount.toFixed(2)} SAR</b></div>
-            <div style="display:flex;justify-content:space-between;padding:12px 0;color:#e74c3c;font-weight:bold;font-size:16px;"><span>BALANCE DUE:</span><b>${inv.due_amount.toFixed(2)} SAR</b></div>
+            <div style="display:flex;justify-content:space-between;background:#1E3A8A;color:#FBBF24;padding:12px;font-weight:bold;font-size:18px;border-radius:4px;margin-top:5px;"><span>TOTAL:</span><b>${inv.total.toFixed(2)} SAR</b></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;color:#059669;margin-top:10px;"><span>Paid (${inv.payment_method}):</span><b>${inv.paid_amount.toFixed(2)} SAR</b></div>
+            <div style="display:flex;justify-content:space-between;padding:12px 0;color:#EF4444;font-weight:bold;font-size:16px;"><span>BALANCE DUE:</span><b>${inv.due_amount.toFixed(2)} SAR</b></div>
           </div>
         </div>
-        <div style="margin-top:50px;border-top:2px solid #D4AF37;padding-top:15px;text-align:center;"><p style="margin:0;font-size:12px;color:#666;">${s.invoice_footer || 'Thank you for your business!'}</p></div>
+        <div style="margin-top:50px;border-top:2px solid #FBBF24;padding-top:15px;text-align:center;"><p style="margin:0;font-size:12px;color:#666;">${s.invoice_footer || 'Thank you for choosing us!'}</p></div>
       </div>
     `;
   };
@@ -569,41 +546,48 @@ export default function Home() {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', fontFamily: 'Segoe UI, sans-serif', background: '#F0F2F5', direction: lang === 'ar' ? 'rtl' : 'ltr' }}>
+    <div style={{ display: 'flex', height: '100vh', fontFamily: "'Poppins', sans-serif", background: '#F1F5F9', direction: lang === 'ar' ? 'rtl' : 'ltr' }}>
       
       {toast && (
-        <div style={{ position: 'fixed', top: '20px', right: '20px', background: 'linear-gradient(135deg, #0F3D2E, #145A38)', color: '#D4AF37', padding: '15px 25px', borderRadius: '8px', zIndex: 9999, boxShadow: '0 4px 15px rgba(0,0,0,0.2)', fontWeight: 'bold' }}>{toast}</div>
+        <div style={{ position: 'fixed', top: '20px', right: '20px', background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: '#FBBF24', padding: '15px 25px', borderRadius: '12px', zIndex: 9999, boxShadow: '0 5px 15px rgba(0,0,0,0.2)', fontWeight: '600' }}>{toast}</div>
       )}
 
-      {/* Chatbot UI */}
+      {/* AI Chatbot UI */}
       <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 999 }}>
         {chatOpen && (
-          <div style={{ width: '320px', height: '450px', background: 'white', borderRadius: '16px', marginBottom: '15px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
-            <div style={{ background: 'linear-gradient(90deg, #0F3D2E, #145A38)', color: '#D4AF37', padding: '15px', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between' }}>{tr.chatHelp}<button onClick={() => setChatOpen(false)} style={{ background: 'none', border: 'none', color: '#D4AF37', cursor: 'pointer' }}>✖</button></div>
-            <div style={{ flex: 1, padding: '15px', fontSize: '13px', overflowY: 'auto', background: '#f9f9f9' }}>
-              <p style={{ background: '#e8e8e8', padding: '12px', borderRadius: '10px', marginBottom: '10px' }}>Hello {userProfile.role}! How can I assist you today?</p>
+          <div style={{ width: '380px', height: '500px', background: 'white', borderRadius: '20px', marginBottom: '15px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 15px 40px rgba(0,0,0,0.2)' }}>
+            <div style={{ background: 'linear-gradient(90deg, #1E3A8A, #2563EB)', color: 'white', padding: '20px', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              ERP AI Assistant (مساعد)
+              <button onClick={() => setChatOpen(false)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '20px' }}>✖</button>
             </div>
-            <div style={{ padding: '10px', borderTop: '1px solid #eee', display: 'flex' }}>
-              <input placeholder="Ask anything..." style={{ flex: 1, border: '1px solid #ddd', borderRadius: '20px', padding: '10px 15px' }} />
-              <button style={{ background: '#0F3D2E', color: '#D4AF37', border: 'none', padding: '0 20px', cursor: 'pointer', marginLeft: '10px', borderRadius: '20px' }}>Send</button>
+            <div style={{ flex: 1, padding: '20px', fontSize: '14px', overflowY: 'auto', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              {chatMessages.map((msg, idx) => (
+                <div key={idx} style={{ alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start', background: msg.sender === 'user' ? '#2563EB' : 'white', color: msg.sender === 'user' ? 'white' : '#1E293B', padding: '12px 18px', borderRadius: msg.sender === 'user' ? '20px 20px 0 20px' : '20px 20px 20px 0', maxWidth: '80%', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+                  {msg.text}
+                </div>
+              ))}
+            </div>
+            <div style={{ padding: '15px', borderTop: '1px solid #e2e8f0', display: 'flex', background: 'white' }}>
+              <input placeholder="Type your message..." value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} style={{ flex: 1, border: '1px solid #cbd5e1', borderRadius: '25px', padding: '12px 20px', outline: 'none' }} />
+              <button onClick={handleSendMessage} style={{ background: '#FBBF24', color: '#1E3A8A', border: 'none', padding: '0 25px', cursor: 'pointer', marginLeft: '10px', borderRadius: '25px', fontWeight: 'bold' }}>Send</button>
             </div>
           </div>
         )}
-        <button onClick={() => setChatOpen(!chatOpen)} style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'linear-gradient(135deg, #D4AF37, #f1c40f)', color: '#0F3D2E', border: 'none', fontSize: '28px', cursor: 'pointer', boxShadow: '0 5px 15px rgba(212, 175, 55, 0.4)' }}>💬</button>
+        <button onClick={() => setChatOpen(!chatOpen)} style={{ width: '65px', height: '65px', borderRadius: '50%', background: 'linear-gradient(135deg, #FBBF24, #D97706)', color: '#1E3A8A', border: 'none', fontSize: '30px', cursor: 'pointer', boxShadow: '0 10px 20px rgba(251, 191, 36, 0.4)' }}>💬</button>
       </div>
 
       {modal.type && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '20px' }} onClick={() => setModal({type: null, data: null})}>
           <div style={{ background: 'white', padding: '30px', borderRadius: '16px', width: '100%', maxWidth: '850px', maxHeight: '95vh', overflowY: 'auto', boxShadow: '0 15px 40px rgba(0,0,0,0.2)' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', borderBottom: '2px solid #D4AF37', paddingBottom: '10px' }}>
-              <h2 style={{ color: '#0F3D2E', margin: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', borderBottom: '2px solid #FBBF24', paddingBottom: '10px' }}>
+              <h2 style={{ color: '#1E3A8A', margin: 0 }}>
                 {modal.type === 'settle' && 'Settle Credit Payment'}
                 {modal.type === 'refund' && 'Process Refund'}
                 {modal.type === 'preview' && 'Invoice Preview'}
                 {modal.type === 'ledger' && 'Customer Ledger'}
                 {modal.type === 'password' && tr.changePass}
               </h2>
-              <button onClick={() => setModal({type: null, data: null})} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#e74c3c' }}>✖</button>
+              <button onClick={() => setModal({type: null, data: null})} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#EF4444' }}>✖</button>
             </div>
 
             {modal.type === 'password' && (
@@ -622,7 +606,7 @@ export default function Home() {
                   <input type="date" value={settleForm.date} onChange={(e) => setSettleForm({...settleForm, date: e.target.value})} required style={styles.input} />
                   <select value={settleForm.mode} onChange={(e) => setSettleForm({...settleForm, mode: e.target.value})} style={styles.input}><option>Cash</option><option>Bank Transfer</option><option>Tabby</option><option>Tamara</option></select>
                 </div>
-                <button type="submit" style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #27ae60, #2ecc71)'}}>Confirm Settlement</button>
+                <button type="submit" style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #059669, #10B981)'}}>Confirm Settlement</button>
               </form>
             )}
 
@@ -635,15 +619,15 @@ export default function Home() {
                   <input type="number" placeholder="Customer Refund Amount" onChange={(e) => setRefundForm({...refundForm, custRefund: e.target.value})} required style={styles.input} />
                   <select value={refundForm.mode} onChange={(e) => setRefundForm({...refundForm, mode: e.target.value})} style={styles.input}><option value="Cash">Pay Cust via Cash</option><option value="Bank Transfer">Pay Cust via Bank</option></select>
                 </div>
-                <button type="submit" style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #e67e22, #f39c12)'}}>Confirm Refund</button>
+                <button type="submit" style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #D97706, #FBBF24)'}}>Confirm Refund</button>
               </form>
             )}
 
             {modal.type === 'preview' && (
               <div>
-                <div style={{ background: '#f9f9f9', padding: '10px', borderRadius: '8px', marginBottom: '15px', border: '1px solid #eee' }} dangerouslySetInnerHTML={{ __html: getInvoiceHTML(modal.data, data.settings) }} />
+                <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', marginBottom: '15px', border: '1px solid #eee' }} dangerouslySetInnerHTML={{ __html: getInvoiceHTML(modal.data, data.settings) }} />
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={() => downloadPDF(modal.data)} style={{ flex: 1, background: 'linear-gradient(90deg, #0F3D2E, #145A38)', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Download PDF</button>
+                  <button onClick={() => downloadPDF(modal.data)} style={{ flex: 1, background: 'linear-gradient(90deg, #1E3A8A, #2563EB)', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Download PDF</button>
                   <a href={`https://wa.me/${modal.data.customers?.phone || ''}?text=Dear%20${modal.data.customers?.name || ''},%20your%20invoice%20${modal.data.invoice_no}%20of%20${modal.data.total}%20SAR%20is%20ready.`} target="_blank" style={{ flex: 1, background: '#25D366', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', cursor: 'pointer', textAlign: 'center', textDecoration: 'none', fontWeight: 'bold' }}>Send WhatsApp</a>
                 </div>
               </div>
@@ -653,10 +637,10 @@ export default function Home() {
               <div>
                 <h3>{modal.data.name} - {modal.data.phone}</h3>
                 <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '15px' }}>
-                  <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.td}>Date</th><th style={styles.td}>Inv No</th><th style={styles.td}>Total</th><th style={styles.td}>Paid</th><th style={styles.td}>Due</th></tr></thead>
+                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.td}>Date</th><th style={styles.td}>Inv No</th><th style={styles.td}>Total</th><th style={styles.td}>Paid</th><th style={styles.td}>Due</th></tr></thead>
                   <tbody>
                     {data.invoices.filter(inv => inv.customer_id === modal.data.id).map(inv => (
-                      <tr key={inv.id}><td style={styles.td}>{inv.invoice_date}</td><td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.total}</td><td style={{...styles.td, color:'#27ae60'}}>{inv.paid_amount}</td><td style={{...styles.td, color:'#e74c3c'}}>{inv.due_amount}</td></tr>
+                      <tr key={inv.id}><td style={styles.td}>{inv.invoice_date}</td><td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.total}</td><td style={{...styles.td, color:'#059669'}}>{inv.paid_amount}</td><td style={{...styles.td, color:'#EF4444'}}>{inv.due_amount}</td></tr>
                     ))}
                   </tbody>
                 </table>
@@ -666,63 +650,63 @@ export default function Home() {
         </div>
       )}
 
-      <aside style={{ width: '260px', background: 'linear-gradient(180deg, #0F3D2E 0%, #0a2d21 100%)', color: '#D4AF37', display: 'flex', flexDirection: 'column', boxShadow: '2px 0 15px rgba(0,0,0,0.1)' }}>
-        <div style={{ padding: '20px', textAlign: 'center', borderBottom: '2px solid #D4AF37' }}>
+      <aside style={{ width: '280px', background: 'linear-gradient(180deg, #0F172A 0%, #1E3A8A 100%)', color: '#FBBF24', display: 'flex', flexDirection: 'column', boxShadow: '5px 0 15px rgba(0,0,0,0.1)' }}>
+        <div style={{ padding: '30px 20px', textAlign: 'center', borderBottom: '1px solid rgba(251, 191, 36, 0.3)' }}>
           {data.settings.logo_url && <img src={data.settings.logo_url} style={{height:'50px', marginBottom:'10px'}} />}
-          <h2 style={{ margin: 0, fontSize: '18px' }}>{lang === 'en' ? 'SUEUD AL TAIYYARAH' : 'صعود الطائرة'}</h2>
+          {/* ARABIC NAME ONLY INSIDE ERP */}
+          <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', letterSpacing: '0.5px', fontFamily: "'Tajawal', sans-serif" }}>صعود الطائرة للسفر و السياحة</h2>
         </div>
-        <nav style={{ flex: 1, overflowY: 'auto', padding: '10px 0' }}>
+        <nav style={{ flex: 1, overflowY: 'auto', padding: '20px 0' }}>
           {menu.map(m => (
-            <button key={m.id} onClick={() => { setPage(m.id); setEditingId(null); }} style={{ width: '100%', textAlign: 'left', padding: '15px 25px', background: page === m.id ? 'linear-gradient(90deg, #D4AF37, #f1c40f)' : 'transparent', border: 'none', color: page === m.id ? '#0F3D2E' : '#D4AF37', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s', fontSize: '14px' }}>{m.label}</button>
+            <button key={m.id} onClick={() => { setPage(m.id); setEditingId(null); }} style={{ width: '100%', textAlign: 'left', padding: '15px 30px', background: page === m.id ? 'linear-gradient(90deg, #FBBF24, #D97706)' : 'transparent', border: 'none', color: page === m.id ? '#0F172A' : '#FBBF24', cursor: 'pointer', fontWeight: '600', transition: 'all 0.3s', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {m.label}
+            </button>
           ))}
         </nav>
         <div style={{ padding: '20px' }}>
-          <button onClick={() => setLang(lang === 'en' ? 'ar' : 'en')} style={{ width: '100%', padding: '10px', background: 'transparent', color: '#D4AF37', border: '1px solid #D4AF37', cursor: 'pointer', marginBottom: '10px', borderRadius: '6px', fontWeight: 'bold' }}>{lang === 'en' ? 'العربية' : 'English'}</button>
-          <button onClick={handleLogout} style={{ width: '100%', padding: '10px', background: 'linear-gradient(90deg, #8B0000, #c0392b)', color: '#FFF', border: 'none', cursor: 'pointer', borderRadius: '6px', fontWeight: 'bold' }}>{tr.logout}</button>
+          <button onClick={() => setLang(lang === 'en' ? 'ar' : 'en')} style={{ width: '100%', padding: '12px', background: 'transparent', color: '#FBBF24', border: '1px solid #FBBF24', cursor: 'pointer', marginBottom: '10px', borderRadius: '8px', fontWeight: '600' }}>{lang === 'en' ? 'العربية' : 'English'}</button>
+          <button onClick={handleLogout} style={{ width: '100%', padding: '12px', background: 'linear-gradient(90deg, #991B1B, #EF4444)', color: '#FFF', border: 'none', cursor: 'pointer', borderRadius: '8px', fontWeight: '600' }}>{tr.logout}</button>
         </div>
       </aside>
 
       <main style={{ flex: 1, overflowY: 'auto' }}>
-        <header style={{ background: 'white', padding: '15px 30px', borderBottom: '2px solid #D4AF37', display:'flex', justifyContent:'space-between', alignItems:'center', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
-          <h2 style={{ margin: 0, color: '#0F3D2E' }}>{editingId && page === 'create' ? 'Edit Invoice' : menu.find(m=>m.id===page)?.label}</h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <button onClick={() => setModal({type: 'password', data: null})} style={{ background: '#f0f0f0', color: '#333', border: 'none', padding: '8px 15px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>🔑 {tr.changePass}</button>
-            <div style={{ fontSize: '12px', color: '#666', textAlign: 'right' }}>
-              <b>{userProfile.username || user.email}</b><br/>{userProfile.role}
+        <header style={{ background: 'white', padding: '20px 40px', borderBottom: '1px solid #e2e8f0', display:'flex', justifyContent:'space-between', alignItems:'center', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
+          <h2 style={{ margin: 0, color: '#0F172A', fontSize: '24px', fontWeight: '700' }}>{menu.find(m=>m.id===page)?.label}</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <button onClick={() => setModal({ type: 'password' })} style={{ background: '#f1f5f9', color: '#1E293B', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>🔑 {tr.changePass}</button>
+            <div style={{ fontSize: '14px', color: '#64748B', textAlign: 'right', fontWeight: '500' }}>
+              <b style={{color: '#0F172A'}}>{userProfile.username || user.email}</b><br/><span style={{color: '#FBBF24', background: '#1E3A8A', padding: '2px 8px', borderRadius: '4px', fontSize: '12px'}}>{userProfile.role}</span>
             </div>
           </div>
         </header>
 
-        <div style={{ padding: '30px' }}>
+        <div style={{ padding: '40px' }}>
           
           {page === 'dashboard' && (
             <div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '20px' }}>
-                <div style={{...styles.card, borderTop: '4px solid #0F3D2E'}}><h3>Total Sales</h3><h1 style={{color:'#0F3D2E'}}>{tSales.toFixed(0)} SAR</h1></div>
-                <div style={{...styles.card, borderTop: '4px solid #27ae60'}}><h3>Gross Profit</h3><h1 style={{color:'#27ae60'}}>{tProfit.toFixed(0)} SAR</h1></div>
-                <div style={{...styles.card, borderTop: '4px solid #f39c12'}}><h3>Cash Balance</h3><h1 style={{color:'#f39c12'}}>{cashBalance.toFixed(0)} SAR</h1></div>
-                <div style={{...styles.card, borderTop: '4px solid #2980b9'}}><h3>Bank Balance</h3><h1 style={{color:'#2980b9'}}>{bankBalance.toFixed(0)} SAR</h1></div>
-                <div style={{...styles.card, borderTop: '4px solid #e74c3c'}}><h3>Outstanding</h3><h1 style={{color:'#e74c3c'}}>{totalOutstanding.toFixed(0)} SAR</h1></div>
-                <div style={{...styles.card, borderTop: '4px solid #8e44ad'}}><h3>Investments</h3><h1 style={{color:'#8e44ad'}}>{tInvestments.toFixed(0)} SAR</h1></div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '25px', marginBottom: '30px' }}>
+                <div style={{...styles.card, background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white'}}><h3 style={{margin:0, opacity:0.8, fontSize:'16px'}}>Total Sales</h3><h1 style={{margin:'10px 0 0', fontSize:'32px', fontWeight:'800'}}>{tSales.toFixed(0)} SAR</h1></div>
+                <div style={{...styles.card, background: 'linear-gradient(135deg, #059669, #10B981)', color: 'white'}}><h3 style={{margin:0, opacity:0.8, fontSize:'16px'}}>Gross Profit</h3><h1 style={{margin:'10px 0 0', fontSize:'32px', fontWeight:'800'}}>{tProfit.toFixed(0)} SAR</h1></div>
+                <div style={{...styles.card, background: 'linear-gradient(135deg, #D97706, #FBBF24)', color: 'white'}}><h3 style={{margin:0, opacity:0.8, fontSize:'16px'}}>Cash Balance</h3><h1 style={{margin:'10px 0 0', fontSize:'32px', fontWeight:'800'}}>{cashBalance.toFixed(0)} SAR</h1></div>
+                <div style={{...styles.card, background: 'linear-gradient(135deg, #7C3AED, #A78BFA)', color: 'white'}}><h3 style={{margin:0, opacity:0.8, fontSize:'16px'}}>Bank Balance</h3><h1 style={{margin:'10px 0 0', fontSize:'32px', fontWeight:'800'}}>{bankBalance.toFixed(0)} SAR</h1></div>
               </div>
-              <div style={{...styles.card, marginBottom: '20px'}}>
-                <h3 style={{color:'#0F3D2E', marginBottom:'20px'}}>Recent Sales Trend</h3>
-                <div style={{ display: 'flex', alignItems: 'flex-end', height: '200px', gap: '20px', padding: '10px 0' }}>
-                  {activeInv.slice(0, 5).reverse().map((inv, idx) => (
-                    <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
-                      <div style={{ background: 'linear-gradient(180deg, #0F3D2E, #145A38)', width: '100%', height: `${(inv.total / Math.max(...activeInv.slice(0,5).map(i=>i.total), 1)) * 100}%`, borderRadius: '6px 6px 0 0' }}></div>
-                      <small style={{ marginTop: '5px', textAlign: 'center', color: '#666' }}>{inv.invoice_no.split('-')[1]}</small>
-                    </div>
-                  ))}
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '25px' }}>
+                <div style={styles.card}>
+                  <h3 style={{color:'#0F172A', marginBottom:'20px', fontSize:'18px'}}>Recent Invoices</h3>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead><tr style={{ background: '#f8fafc', color: '#1E3A8A' }}><th style={styles.td}>Invoice No</th><th style={styles.td}>Customer</th><th style={styles.td}>Total</th></tr></thead>
+                    <tbody>
+                      {activeInv.slice(0, 5).map(inv => <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0' }}><td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.customers?.name || 'N/A'}</td><td style={styles.td}><b>{inv.total} SAR</b></td></tr>)}
+                    </tbody>
+                  </table>
                 </div>
-              </div>
-              <div style={{...styles.card, marginBottom: '20px'}}>
-                <h3 style={{color:'#0F3D2E'}}>Portal Current Balances</h3>
-                <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+                <div style={styles.card}>
+                  <h3 style={{color:'#0F172A', marginBottom:'20px', fontSize:'18px'}}>Portal Balances</h3>
                   {data.portals.map(p => (
-                    <div key={p.id} style={{ flex: 1, minWidth: '150px', background: '#f8f9fa', padding: '15px', borderRadius: '8px', textAlign: 'center', border: '1px solid #eee' }}>
-                      <h4 style={{margin:'0 0 5px'}}>{p.name}</h4>
-                      <h2 style={{margin:0, color: p.current_balance < 0 ? '#e74c3c' : '#0F3D2E'}}>{p.current_balance || 0} SAR</h2>
+                    <div key={p.id} style={{ background: '#f8fafc', padding: '15px', borderRadius: '12px', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: '600', color: '#1E293B' }}>{p.name}</span>
+                      <span style={{ fontSize: '18px', fontWeight: '800', color: p.current_balance < 0 ? '#EF4444' : '#1E3A8A' }}>{p.current_balance || 0} SAR</span>
                     </div>
                   ))}
                 </div>
@@ -731,9 +715,9 @@ export default function Home() {
           )}
 
           {page === 'create' && (
-             <div style={{ background: 'white', padding: '30px', borderRadius: '12px', borderTop: '4px solid #D4AF37', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+             <div style={styles.card}>
                <form onSubmit={handleCreateInvoice}>
-                 <h3 style={{color: '#0F3D2E', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>Customer Details</h3>
+                 <h3 style={{color: '#1E3A8A', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>Customer Details</h3>
                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
                    <div><label style={styles.label}>Select Customer</label><select value={invForm.custId} onChange={(e) => setInvForm({...invForm, custId: e.target.value})} style={styles.input} disabled={editingId}><option value="new">+ New Customer</option>{data.customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.type})</option>)}</select></div>
                    {invForm.custId === 'new' && <>
@@ -746,7 +730,7 @@ export default function Home() {
                    <div style={{ marginBottom: '20px' }}><label style={styles.label}>Passenger Names</label><textarea placeholder="One per line" value={invForm.passengerNames} onChange={(e) => setInvForm({...invForm, passengerNames: e.target.value})} style={{...styles.input, height: '80px'}} /></div>
                  ) : null}
 
-                 <h3 style={{color: '#0F3D2E', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>Service Details</h3>
+                 <h3 style={{color: '#1E3A8A', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>Service Details</h3>
                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
                    <div><label style={styles.label}>Service</label><select value={invForm.service} onChange={(e) => setInvForm({...invForm, service: e.target.value})} style={styles.input}>{data.services.map(s => <option key={s.id}>{s.name}</option>)}</select></div>
                    {invForm.service === 'Flight' && <>
@@ -768,7 +752,6 @@ export default function Home() {
                      <div><label style={styles.label}>Visa Type</label><select value={invForm.visaType} onChange={(e) => setInvForm({...invForm, visaType: e.target.value})} style={styles.input}><option>Tourist</option><option>Business</option><option>Visit</option><option>Work</option></select></div>
                      <div><label style={styles.label}>Destination</label><input placeholder="Schengen" value={invForm.destination} onChange={(e) => setInvForm({...invForm, destination: e.target.value})} style={styles.input} required /></div>
                    </>}
-                   {/* RENDERING CUSTOM FIELDS DYNAMICALLY */}
                    {data.customFields.map(f => (
                      <div key={f.id}>
                        <label style={styles.label}>{f.name}</label>
@@ -777,7 +760,7 @@ export default function Home() {
                    ))}
                  </div>
 
-                 <h3 style={{color: '#0F3D2E', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>Pricing & Payment</h3>
+                 <h3 style={{color: '#1E3A8A', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>Pricing & Payment</h3>
                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
                    <div><label style={styles.label}>Sales Rep</label><select value={invForm.employeeId} onChange={(e) => setInvForm({...invForm, employeeId: e.target.value})} style={styles.input}><option value="">Select</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
                    <div><label style={styles.label}>Portal</label><select value={invForm.portal} onChange={(e) => setInvForm({...invForm, portal: e.target.value})} style={styles.input} required><option value="">Select</option>{data.portals.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}</select></div>
@@ -791,55 +774,55 @@ export default function Home() {
                    <div><label style={styles.label}>Invoice Date</label><input type="date" value={invForm.invoiceDate} onChange={(e) => setInvForm({...invForm, invoiceDate: e.target.value})} style={styles.input} required /></div>
                    <div><label style={styles.label}>Paid Amount</label><input type="number" value={invForm.paid} onChange={(e) => setInvForm({...invForm, paid: e.target.value})} style={styles.input} required /></div>
                  </div>
-                 <button type="submit" style={{ background: 'linear-gradient(90deg, #0F3D2E, #145A38)', color: '#D4AF37', border: 'none', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', padding: '15px', width: '100%', borderRadius: '8px' }}>{editingId ? 'Update Invoice' : 'Generate Invoice'}</button>
-                 {editingId && <button type="button" onClick={() => { setEditingId(null); setPage('list'); }} style={{ background: '#e74c3c', color: 'white', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '15px', width: '100%', marginTop: '10px', borderRadius: '8px' }}>Cancel</button>}
+                 <button type="submit" style={{ background: 'linear-gradient(90deg, #1E3A8A, #2563EB)', color: '#FBBF24', border: 'none', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', padding: '15px', width: '100%', borderRadius: '8px' }}>{editingId ? 'Update Invoice' : 'Generate Invoice'}</button>
+                 {editingId && <button type="button" onClick={() => { setEditingId(null); setPage('list'); }} style={{ background: '#EF4444', color: 'white', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '15px', width: '100%', marginTop: '10px', borderRadius: '8px' }}>Cancel</button>}
                </form>
              </div>
           )}
 
           {page === 'list' && (
-            <div style={{ background: 'white', padding: '30px', borderRadius: '12px', borderTop: '4px solid #D4AF37', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+            <div style={styles.card}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
                 <input placeholder={tr.search} value={search} onChange={(e) => { setSearch(e.target.value); setTblPage(1); }} style={{...styles.input, padding: '12px', width: '70%'}} />
-                <button onClick={() => exportCSV(activeInv, 'Sales_Invoices.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #8e44ad, #9b59b6)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
+                <button onClick={() => exportCSV(activeInv, 'Sales_Invoices.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
               </div>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.th}>Inv No</th><th style={styles.th}>Customer</th><th style={styles.th}>Qty</th><th style={styles.th}>Profit</th><th style={styles.th}>Total</th><th style={styles.th}>Actions</th></tr></thead>
+                <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.th}>Inv No</th><th style={styles.th}>Customer</th><th style={styles.th}>Qty</th><th style={styles.th}>Profit</th><th style={styles.th}>Total</th><th style={styles.th}>Actions</th></tr></thead>
                 <tbody>
                   {paginatedInv.map(inv => (
-                    <tr key={inv.id} style={{ borderBottom: '1px solid #eee', backgroundColor: inv.due_amount > 0 ? '#fff3cd' : 'transparent' }}>
+                    <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: inv.due_amount > 0 ? '#fff3cd' : 'transparent' }}>
                       <td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.customers?.name || 'N/A'}</td>
                       <td style={styles.td}>{inv.qty || 1}</td><td style={{...styles.td, color:'green'}}>{inv.profit} SAR</td><td style={styles.td}>{inv.total} SAR</td>
                       <td style={styles.td}>
                         <button onClick={() => setModal({type: 'preview', data: inv})} style={styles.btnSm}>Preview</button>
-                        <button onClick={() => handleEditClick(inv)} style={{...styles.btnSm, background:'#2980b9'}}>Edit</button>
-                        {inv.due_amount > 0 && <button onClick={() => { setSettleForm({id: inv.id, date: today, mode: 'Cash', tabbyNo: '', tamaraNo: ''}); setModal({type:'settle', data: inv}); }} style={{...styles.btnSm, background:'#27ae60'}}>Settle</button>}
-                        <button onClick={() => { setRefundForm({id: inv.id, compRefund: 0, custRefund: 0, mode: 'Cash'}); setModal({type:'refund', data: inv}); }} style={{...styles.btnSm, background:'#e67e22'}}>Refund</button>
-                        <button onClick={() => handleDelete('invoices', inv.id)} style={{...styles.btnSm, background:'#e74c3c'}}>Del</button>
+                        <button onClick={() => handleEditClick(inv)} style={{...styles.btnSm, background:'#2563EB'}}>Edit</button>
+                        {inv.due_amount > 0 && <button onClick={() => { setSettleForm({id: inv.id, date: today, mode: 'Cash', tabbyNo: '', tamaraNo: ''}); setModal({type:'settle', data: inv}); }} style={{...styles.btnSm, background:'#059669'}}>Settle</button>}
+                        <button onClick={() => { setRefundForm({id: inv.id, compRefund: 0, custRefund: 0, mode: 'Cash'}); setModal({type:'refund', data: inv}); }} style={{...styles.btnSm, background:'#D97706'}}>Refund</button>
+                        <button onClick={() => handleDelete('invoices', inv.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
-                <button onClick={() => setTblPage(p => Math.max(p - 1, 1))} disabled={tblPage === 1} style={{ padding: '8px 16px', cursor: 'pointer', background: tblPage === 1 ? '#ccc' : '#0F3D2E', color: 'white', border: 'none', borderRadius: '6px' }}>Previous</button>
+                <button onClick={() => setTblPage(p => Math.max(p - 1, 1))} disabled={tblPage === 1} style={{ padding: '8px 16px', cursor: 'pointer', background: tblPage === 1 ? '#ccc' : '#1E3A8A', color: 'white', border: 'none', borderRadius: '6px' }}>Previous</button>
                 <span>Page {tblPage} of {totalPages || 1}</span>
-                <button onClick={() => setTblPage(p => Math.min(p + 1, totalPages))} disabled={tblPage === totalPages || totalPages === 0} style={{ padding: '8px 16px', cursor: 'pointer', background: tblPage === totalPages ? '#ccc' : '#0F3D2E', color: 'white', border: 'none', borderRadius: '6px' }}>Next</button>
+                <button onClick={() => setTblPage(p => Math.min(p + 1, totalPages))} disabled={tblPage === totalPages || totalPages === 0} style={{ padding: '8px 16px', cursor: 'pointer', background: tblPage === totalPages ? '#ccc' : '#1E3A8A', color: 'white', border: 'none', borderRadius: '6px' }}>Next</button>
               </div>
             </div>
           )}
 
           {page === 'refunds' && (
-             <div style={{ background: 'white', padding: '30px', borderRadius: '12px', borderTop: '4px solid #e74c3c', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+             <div style={styles.card}>
                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
                  <h3 style={{margin: 0}}>All Refunds</h3>
-                 <button onClick={() => exportCSV(refundInv, 'Refunds.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #8e44ad, #9b59b6)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
+                 <button onClick={() => exportCSV(refundInv, 'Refunds.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
                </div>
                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                 <thead><tr style={{ background: '#e74c3c', color: 'white' }}><th style={styles.th}>Refund No</th><th style={styles.th}>Original Inv</th><th style={styles.th}>Cust Refund</th><th style={styles.th}>Comp Refund</th></tr></thead>
+                 <thead><tr style={{ background: '#EF4444', color: 'white' }}><th style={styles.th}>Refund No</th><th style={styles.th}>Original Inv</th><th style={styles.th}>Cust Refund</th><th style={styles.th}>Comp Refund</th></tr></thead>
                  <tbody>
                    {refundInv.map(inv => (
-                     <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
+                     <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                        <td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.service_type}</td>
                        <td style={{...styles.td, color:'red'}}>{inv.refund_customer} SAR</td><td style={{...styles.td, color:'green'}}>{inv.refund_company} SAR</td>
                      </tr>
@@ -850,20 +833,20 @@ export default function Home() {
           )}
 
           {page === 'customers' && (
-            <div style={{ background: 'white', padding: '30px', borderRadius: '12px', borderTop: '4px solid #D4AF37', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+            <div style={styles.card}>
               <div style={{display:'flex', justifyContent:'space-between', marginBottom:'20px'}}>
                 <h3 style={{margin: 0}}>Customer List (CRM)</h3>
-                <button onClick={() => exportCSV(data.customers, 'Customers.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #8e44ad, #9b59b6)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
+                <button onClick={() => exportCSV(data.customers, 'Customers.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
               </div>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.th}>Name</th><th style={styles.th}>Type</th><th style={styles.th}>Phone</th><th style={styles.th}>Action</th></tr></thead>
+                <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.th}>Name</th><th style={styles.th}>Type</th><th style={styles.th}>Phone</th><th style={styles.th}>Action</th></tr></thead>
                 <tbody>
                   {data.customers.map(c => (
-                    <tr key={c.id} style={{ borderBottom: '1px solid #eee' }}>
+                    <tr key={c.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                       <td style={styles.td}>{c.name}</td><td style={styles.td}>{c.type || 'Individual'}</td><td style={styles.td}>{c.phone}</td>
                       <td style={styles.td}>
-                        <button onClick={() => setModal({type: 'ledger', data: c})} style={{...styles.btnSm, background:'#2980b9'}}>Ledger</button>
-                        <button onClick={() => handleDelete('customers', c.id)} style={{...styles.btnSm, background:'#e74c3c'}}>Del</button>
+                        <button onClick={() => setModal({type: 'ledger', data: c})} style={{...styles.btnSm, background:'#2563EB'}}>Ledger</button>
+                        <button onClick={() => handleDelete('customers', c.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button>
                       </td>
                     </tr>
                   ))}
@@ -873,18 +856,18 @@ export default function Home() {
           )}
 
           {page === 'portals' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '25px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #0F3D2E', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-                  <h3 style={{color:'#0F3D2E'}}>Add New Portal</h3>
+                <div style={styles.card}>
+                  <h3 style={{color:'#1E3A8A'}}>Add New Portal</h3>
                   <form onSubmit={handleAddPortal} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <input placeholder="Portal Name (e.g. Flyadeal)" value={portalForm.name} onChange={(e) => setPortalForm({...portalForm, name: e.target.value})} style={styles.input} required />
                     <input type="number" placeholder="Initial Balance" value={portalForm.balance} onChange={(e) => setPortalForm({...portalForm, balance: e.target.value})} style={styles.input} required />
                     <button type="submit" style={styles.btnPrimary}>Add Portal</button>
                   </form>
                 </div>
-                <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #D4AF37', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-                  <h3 style={{color:'#0F3D2E'}}>Add Recharge</h3>
+                <div style={styles.card}>
+                  <h3 style={{color:'#1E3A8A'}}>Add Recharge</h3>
                   <form onSubmit={handleRecharge} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <select name="portal" style={styles.input} required><option value="">Select Portal</option>{data.portals.map(p => <option key={p.id}>{p.name}</option>)}</select>
                     <input type="number" name="amt" placeholder="Amount" style={styles.input} required />
@@ -895,25 +878,25 @@ export default function Home() {
                   </form>
                 </div>
               </div>
-              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #0F3D2E', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+              <div style={styles.card}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                  <h3 style={{color:'#0F3D2E', margin: 0}}>Portal Balances & History</h3>
-                  <button onClick={() => exportCSV(data.recharges, 'Portals_Recharges.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #8e44ad, #9b59b6)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
+                  <h3 style={{color:'#1E3A8A', margin: 0}}>Portal Balances & History</h3>
+                  <button onClick={() => exportCSV(data.recharges, 'Portals_Recharges.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
                 </div>
                 <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
                   {data.portals.map(p => (
-                    <div key={p.id} style={{ flex: 1, minWidth: '120px', background: '#f8f9fa', padding: '10px', borderRadius: '8px', textAlign: 'center', border: '1px solid #eee' }}>
-                      <h4>{p.name}</h4><h2 style={{color: p.current_balance < 0 ? 'red' : '#0F3D2E'}}>{p.current_balance || 0}</h2>
+                    <div key={p.id} style={{ flex: 1, minWidth: '120px', background: '#f8fafc', padding: '10px', borderRadius: '8px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                      <h4>{p.name}</h4><h2 style={{color: p.current_balance < 0 ? 'red' : '#1E3A8A'}}>{p.current_balance || 0}</h2>
                     </div>
                   ))}
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                  <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.td}>Date</th><th style={styles.td}>Portal</th><th style={styles.td}>Amount</th><th style={styles.td}>Action</th></tr></thead>
+                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.td}>Date</th><th style={styles.td}>Portal</th><th style={styles.td}>Amount</th><th style={styles.td}>Action</th></tr></thead>
                   <tbody>
                     {data.recharges.map(r => (
-                      <tr key={r.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <tr key={r.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                         <td style={styles.td}>{r.recharge_date}</td><td style={styles.td}>{r.portals?.name}</td><td style={styles.td}>{r.amount} SAR</td>
-                        <td style={styles.td}><button onClick={() => handleDelete('recharges', r.id)} style={{...styles.btnSm, background:'#e74c3c'}}>Del</button></td>
+                        <td style={styles.td}><button onClick={() => handleDelete('recharges', r.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
                       </tr>
                     ))}
                   </tbody>
@@ -923,9 +906,9 @@ export default function Home() {
           )}
 
           {page === 'vendors' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
-              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #0F3D2E', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-                <h3 style={{color:'#0F3D2E'}}>Add B2B Vendor</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '25px' }}>
+              <div style={styles.card}>
+                <h3 style={{color:'#1E3A8A'}}>Add B2B Vendor</h3>
                 <form onSubmit={handleAddVendor} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <input placeholder="Vendor Name" value={vendorForm.name} onChange={(e) => setVendorForm({...vendorForm, name: e.target.value})} style={styles.input} required />
                   <input placeholder="Phone" value={vendorForm.phone} onChange={(e) => setVendorForm({...vendorForm, phone: e.target.value})} style={styles.input} />
@@ -933,18 +916,18 @@ export default function Home() {
                   <button type="submit" style={styles.btnPrimary}>Add Vendor</button>
                 </form>
               </div>
-              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #D4AF37', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+              <div style={styles.card}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                  <h3 style={{color:'#0F3D2E', margin: 0}}>Vendors List</h3>
-                  <button onClick={() => exportCSV(data.vendors, 'Vendors.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #8e44ad, #9b59b6)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
+                  <h3 style={{color:'#1E3A8A', margin: 0}}>Vendors List</h3>
+                  <button onClick={() => exportCSV(data.vendors, 'Vendors.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                  <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.td}>Name</th><th style={styles.td}>Phone</th><th style={styles.td}>Balance</th><th style={styles.td}>Action</th></tr></thead>
+                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.td}>Name</th><th style={styles.td}>Phone</th><th style={styles.td}>Balance</th><th style={styles.td}>Action</th></tr></thead>
                   <tbody>
                     {data.vendors.map(v => (
-                      <tr key={v.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <tr key={v.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                         <td style={styles.td}>{v.name}</td><td style={styles.td}>{v.phone}</td><td style={styles.td}>{v.balance} SAR</td>
-                        <td style={styles.td}><button onClick={() => handleDelete('vendors', v.id)} style={{...styles.btnSm, background:'#e74c3c'}}>Del</button></td>
+                        <td style={styles.td}><button onClick={() => handleDelete('vendors', v.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
                       </tr>
                     ))}
                   </tbody>
@@ -954,9 +937,9 @@ export default function Home() {
           )}
 
           {page === 'packages' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
-              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #0F3D2E', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-                <h3 style={{color:'#0F3D2E'}}>Add Tour Package</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '25px' }}>
+              <div style={styles.card}>
+                <h3 style={{color:'#1E3A8A'}}>Add Tour Package</h3>
                 <form onSubmit={handleAddPackage} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <input placeholder="Package Name (e.g. Umrah)" value={pkgForm.name} onChange={(e) => setPkgForm({...pkgForm, name: e.target.value})} style={styles.input} required />
                   <input type="number" placeholder="Price (SAR)" value={pkgForm.price} onChange={(e) => setPkgForm({...pkgForm, price: e.target.value})} style={styles.input} required />
@@ -964,15 +947,15 @@ export default function Home() {
                   <button type="submit" style={styles.btnPrimary}>Add Package</button>
                 </form>
               </div>
-              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #D4AF37', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-                <h3 style={{color:'#0F3D2E', marginBottom:'20px'}}>Available Packages</h3>
+              <div style={styles.card}>
+                <h3 style={{color:'#1E3A8A', marginBottom:'20px'}}>Available Packages</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
                   {data.packages.map(p => (
-                    <div key={p.id} style={{ background: '#f8f9fa', padding: '20px', borderRadius: '12px', border: '1px solid #eee' }}>
-                      <h4 style={{ margin: '0 0 10px', color: '#0F3D2E' }}>{p.name}</h4>
-                      <p style={{ margin: '0 0 5px', fontSize: '14px', color: '#666' }}>{p.description}</p>
-                      <h3 style={{ margin: '10px 0', color: '#27ae60' }}>{p.price} SAR</h3>
-                      <button onClick={() => handleDelete('packages', p.id)} style={{...styles.btnSm, background:'#e74c3c'}}>Delete</button>
+                    <div key={p.id} style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                      <h4 style={{ margin: '0 0 10px', color: '#1E3A8A' }}>{p.name}</h4>
+                      <p style={{ margin: '0 0 5px', fontSize: '14px', color: '#64748b' }}>{p.description}</p>
+                      <h3 style={{ margin: '10px 0', color: '#059669' }}>{p.price} SAR</h3>
+                      <button onClick={() => handleDelete('packages', p.id)} style={{...styles.btnSm, background:'#EF4444'}}>Delete</button>
                     </div>
                   ))}
                 </div>
@@ -981,9 +964,9 @@ export default function Home() {
           )}
 
           {page === 'branches' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
-              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #0F3D2E', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-                <h3 style={{color:'#0F3D2E'}}>Add Branch</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '25px' }}>
+              <div style={styles.card}>
+                <h3 style={{color:'#1E3A8A'}}>Add Branch</h3>
                 <form onSubmit={handleAddBranch} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <input placeholder="Branch Name" value={brnForm.name} onChange={(e) => setBrnForm({...brnForm, name: e.target.value})} style={styles.input} required />
                   <input placeholder="Location" value={brnForm.location} onChange={(e) => setBrnForm({...brnForm, location: e.target.value})} style={styles.input} required />
@@ -991,12 +974,12 @@ export default function Home() {
                   <button type="submit" style={styles.btnPrimary}>Add Branch</button>
                 </form>
               </div>
-              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #D4AF37', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-                <h3 style={{color:'#0F3D2E', marginBottom:'20px'}}>Branches List</h3>
+              <div style={styles.card}>
+                <h3 style={{color:'#1E3A8A', marginBottom:'20px'}}>Branches List</h3>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.th}>Name</th><th style={styles.th}>Location</th><th style={styles.th}>Phone</th><th style={styles.th}>Action</th></tr></thead>
+                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.th}>Name</th><th style={styles.th}>Location</th><th style={styles.th}>Phone</th><th style={styles.th}>Action</th></tr></thead>
                   <tbody>
-                    {data.branches.map(b => <tr key={b.id} style={{ borderBottom: '1px solid #eee' }}><td style={styles.td}>{b.name}</td><td style={styles.td}>{b.location}</td><td style={styles.td}>{b.phone}</td><td style={styles.td}><button onClick={() => handleDelete('branches', b.id)} style={{...styles.btnSm, background:'#e74c3c'}}>Del</button></td></tr>)}
+                    {data.branches.map(b => <tr key={b.id} style={{ borderBottom: '1px solid #e2e8f0' }}><td style={styles.td}>{b.name}</td><td style={styles.td}>{b.location}</td><td style={styles.td}>{b.phone}</td><td style={styles.td}><button onClick={() => handleDelete('branches', b.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td></tr>)}
                   </tbody>
                 </table>
               </div>
@@ -1004,17 +987,17 @@ export default function Home() {
           )}
 
           {page === 'bank' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '25px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #f39c12', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-                  <h3 style={{color:'#0F3D2E'}}>Cash/Bank Balances</h3>
+                <div style={styles.card}>
+                  <h3 style={{color:'#1E3A8A'}}>Cash/Bank Balances</h3>
                   <div style={{ fontSize: '24px', margin: '20px 0' }}>
-                    <p>Cash: <b style={{color:'#f39c12'}}>{cashBalance.toFixed(0)} SAR</b></p>
-                    <p>Bank: <b style={{color:'#2980b9'}}>{bankBalance.toFixed(0)} SAR</b></p>
+                    <p>Cash: <b style={{color:'#D97706'}}>{cashBalance.toFixed(0)} SAR</b></p>
+                    <p>Bank: <b style={{color:'#7C3AED'}}>{bankBalance.toFixed(0)} SAR</b></p>
                   </div>
                 </div>
-                <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #2980b9', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-                  <h3 style={{color:'#0F3D2E'}}>Fund Transfer</h3>
+                <div style={styles.card}>
+                  <h3 style={{color:'#1E3A8A'}}>Fund Transfer</h3>
                   <form onSubmit={handleTransfer} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                       <div>
@@ -1032,18 +1015,18 @@ export default function Home() {
                   </form>
                 </div>
               </div>
-              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #0F3D2E', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+              <div style={styles.card}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                  <h3 style={{color:'#0F3D2E', margin: 0}}>Recent Transactions</h3>
-                  <button onClick={() => exportCSV(data.cashbook, 'Cashbook.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #8e44ad, #9b59b6)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
+                  <h3 style={{color:'#1E3A8A', margin: 0}}>Recent Transactions</h3>
+                  <button onClick={() => exportCSV(data.cashbook, 'Cashbook.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                  <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.td}>Date</th><th style={styles.td}>Type</th><th style={styles.td}>Desc</th><th style={styles.td}>Amount</th><th style={styles.td}>Action</th></tr></thead>
+                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.td}>Date</th><th style={styles.td}>Type</th><th style={styles.td}>Desc</th><th style={styles.td}>Amount</th><th style={styles.td}>Action</th></tr></thead>
                   <tbody>
                     {data.cashbook.map(c => (
-                      <tr key={c.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <tr key={c.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                         <td style={styles.td}>{c.trans_date}</td><td style={styles.td}>{c.type}</td><td style={styles.td}>{c.description}</td><td style={styles.td}>{c.amount} SAR</td>
-                        <td style={styles.td}><button onClick={() => handleDelete('cashbook', c.id)} style={{...styles.btnSm, background:'#e74c3c'}}>Del</button></td>
+                        <td style={styles.td}><button onClick={() => handleDelete('cashbook', c.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
                       </tr>
                     ))}
                   </tbody>
@@ -1053,9 +1036,9 @@ export default function Home() {
           )}
 
           {page === 'invest' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
-              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #8e44ad', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-                <h3 style={{color:'#0F3D2E'}}>Add Investment</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '25px' }}>
+              <div style={styles.card}>
+                <h3 style={{color:'#1E3A8A'}}>Add Investment</h3>
                 <form onSubmit={handleAddInvestment} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <input placeholder="Investor Name" value={investForm.name} onChange={(e) => setInvestForm({...investForm, name: e.target.value})} style={styles.input} required />
                   <input type="number" placeholder="Amount" value={investForm.amount} onChange={(e) => setInvestForm({...investForm, amount: e.target.value})} style={styles.input} required />
@@ -1065,18 +1048,18 @@ export default function Home() {
                   <button type="submit" style={styles.btnPrimary}>Add Investment</button>
                 </form>
               </div>
-              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #0F3D2E', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+              <div style={styles.card}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                  <h3 style={{color:'#0F3D2E', margin: 0}}>Investment History</h3>
-                  <button onClick={() => exportCSV(data.investments, 'Investments.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #8e44ad, #9b59b6)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
+                  <h3 style={{color:'#1E3A8A', margin: 0}}>Investment History</h3>
+                  <button onClick={() => exportCSV(data.investments, 'Investments.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                  <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.td}>Date</th><th style={styles.td}>Investor</th><th style={styles.td}>Amount</th><th style={styles.td}>Mode</th><th style={styles.td}>Action</th></tr></thead>
+                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.td}>Date</th><th style={styles.td}>Investor</th><th style={styles.td}>Amount</th><th style={styles.td}>Mode</th><th style={styles.td}>Action</th></tr></thead>
                   <tbody>
                     {data.investments.map(i => (
-                      <tr key={i.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <tr key={i.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                         <td style={styles.td}>{i.invest_date}</td><td style={styles.td}>{i.investor_name}</td><td style={styles.td}>{i.amount} SAR</td><td style={styles.td}>{i.payment_mode}</td>
-                        <td style={styles.td}><button onClick={() => handleDelete('investments', i.id)} style={{...styles.btnSm, background:'#e74c3c'}}>Del</button></td>
+                        <td style={styles.td}><button onClick={() => handleDelete('investments', i.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
                       </tr>
                     ))}
                   </tbody>
@@ -1086,9 +1069,9 @@ export default function Home() {
           )}
 
           {page === 'hr' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
-              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #D4AF37', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-                <h3 style={{color:'#0F3D2E'}}>Pay Salary</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '25px' }}>
+              <div style={styles.card}>
+                <h3 style={{color:'#1E3A8A'}}>Pay Salary</h3>
                 <form onSubmit={handlePaySalary} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <select name="emp" style={styles.input} required><option value="">Select Employee</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select>
                   <input type="number" name="amt" placeholder="Amount" style={styles.input} required />
@@ -1097,26 +1080,26 @@ export default function Home() {
                   <button type="submit" style={styles.btnPrimary}>Pay Salary</button>
                 </form>
               </div>
-              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #0F3D2E', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+              <div style={styles.card}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                  <h3 style={{color:'#0F3D2E', margin: 0}}>Payroll History</h3>
-                  <button onClick={() => exportCSV(data.payroll, 'Payroll.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #8e44ad, #9b59b6)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
+                  <h3 style={{color:'#1E3A8A', margin: 0}}>Payroll History</h3>
+                  <button onClick={() => exportCSV(data.payroll, 'Payroll.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                  <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.td}>Employee</th><th style={styles.td}>Month</th><th style={styles.td}>Amount</th><th style={styles.td}>Mode</th><th style={styles.td}>Action</th></tr></thead>
+                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.td}>Employee</th><th style={styles.td}>Month</th><th style={styles.td}>Amount</th><th style={styles.td}>Mode</th><th style={styles.td}>Action</th></tr></thead>
                   <tbody>
                     {data.payroll.map(p => (
-                      <tr key={p.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <tr key={p.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                         <td style={styles.td}>{p.employees?.name}</td><td style={styles.td}>{p.month}</td><td style={styles.td}>{p.amount} SAR</td><td style={styles.td}>{p.payment_mode}</td>
-                        <td style={styles.td}><button onClick={() => handleDelete('payroll', p.id)} style={{...styles.btnSm, background:'#e74c3c'}}>Del</button></td>
+                        <td style={styles.td}><button onClick={() => handleDelete('payroll', p.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
               
-              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #e74c3c', gridColumn: 'span 2', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-                <h3 style={{color:'#0F3D2E'}}>Add Expense</h3>
+              <div style={{...styles.card, gridColumn: 'span 2'}}>
+                <h3 style={{color:'#1E3A8A'}}>Add Expense</h3>
                 <form onSubmit={handleAddExpense} style={{ display: 'flex', gap: '10px' }}>
                   <input name="cat" placeholder="Category (Rent, Electricity)" style={styles.input} required />
                   <input name="desc" placeholder="Description" style={styles.input} required />
@@ -1127,9 +1110,9 @@ export default function Home() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', marginTop: '15px' }}>
                   <tbody>
                     {data.expenses.map(ex => (
-                      <tr key={ex.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <tr key={ex.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                         <td style={styles.td}>{ex.category}</td><td style={styles.td}>{ex.description}</td><td style={styles.td}>{ex.amount} SAR</td>
-                        <td style={styles.td}><button onClick={() => handleDelete('expenses', ex.id)} style={{...styles.btnSm, background:'#e74c3c'}}>Del</button></td>
+                        <td style={styles.td}><button onClick={() => handleDelete('expenses', ex.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
                       </tr>
                     ))}
                   </tbody>
@@ -1139,11 +1122,11 @@ export default function Home() {
           )}
 
           {page === 'users' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #D4AF37', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-                <h3 style={{color: '#0F3D2E', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>{tr.ownerProfile}</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '25px' }}>
+              <div style={styles.card}>
+                <h3 style={{color: '#1E3A8A', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px'}}>{tr.ownerProfile}</h3>
                 <form onSubmit={handleUpdateOwnerProfile}>
-                  <label style={styles.label}>{tr.username}</label>
+                  <label style={styles.label}>Username</label>
                   <input value={userProfile.username || ''} onChange={(e) => setUserProfile({...userProfile, username: e.target.value})} style={styles.input} />
                   <label style={styles.label}>Email</label>
                   <input value={userProfile.email || ''} onChange={(e) => setUserProfile({...userProfile, email: e.target.value})} style={styles.input} />
@@ -1151,19 +1134,19 @@ export default function Home() {
                 </form>
               </div>
 
-              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #0F3D2E', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-                <h3 style={{color: '#0F3D2E', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>Add New System User</h3>
+              <div style={styles.card}>
+                <h3 style={{color: '#1E3A8A', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px'}}>Add New System User</h3>
                 <form onSubmit={handleAddUser}>
-                  <label style={styles.label}>{tr.username}</label>
+                  <label style={styles.label}>Username</label>
                   <input value={userForm.username} onChange={(e) => setUserForm({...userForm, username: e.target.value})} style={styles.input} required />
                   <label style={styles.label}>Email</label>
                   <input type="email" value={userForm.email} onChange={(e) => setUserForm({...userForm, email: e.target.value})} style={styles.input} required />
-                  <label style={styles.label}>{tr.role}</label>
+                  <label style={styles.label}>Role</label>
                   <select value={userForm.role} onChange={(e) => setUserForm({...userForm, role: e.target.value})} style={styles.input}>
                     <option>Owner</option><option>Manager</option><option>Accountant</option><option>Sales</option>
                   </select>
                   
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', background: '#f9f9f9', padding: '15px', borderRadius: '8px', marginTop: '10px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', background: '#f8fafc', padding: '15px', borderRadius: '8px', marginTop: '10px' }}>
                     <label style={{...styles.label, display:'flex', alignItems:'center', gap:'10px'}}><input type="checkbox" checked={userForm.is_admin} onChange={(e) => setUserForm({...userForm, is_admin: e.target.checked})} /> Admin (Full Access)</label>
                     <label style={{...styles.label, display:'flex', alignItems:'center', gap:'10px'}}><input type="checkbox" checked={userForm.can_access_invoices} onChange={(e) => setUserForm({...userForm, can_access_invoices: e.target.checked})} /> Access Invoices & Sales</label>
                     <label style={{...styles.label, display:'flex', alignItems:'center', gap:'10px'}}><input type="checkbox" checked={userForm.can_access_bank} onChange={(e) => setUserForm({...userForm, can_access_bank: e.target.checked})} /> Access Bank & Cash</label>
@@ -1176,15 +1159,15 @@ export default function Home() {
                 </form>
               </div>
 
-              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #e74c3c', gridColumn: 'span 2', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-                <h3 style={{color: '#0F3D2E', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>System Users List</h3>
+              <div style={{...styles.card, gridColumn: 'span 2'}}>
+                <h3 style={{color: '#1E3A8A', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px'}}>System Users List</h3>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.th}>Username</th><th style={styles.th}>Email</th><th style={styles.th}>Role</th><th style={styles.th}>Action</th></tr></thead>
+                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.th}>Username</th><th style={styles.th}>Email</th><th style={styles.th}>Role</th><th style={styles.th}>Action</th></tr></thead>
                   <tbody>
                     {data.appUsers.map(u => (
-                      <tr key={u.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <tr key={u.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                         <td style={styles.td}>{u.username || 'N/A'}</td><td style={styles.td}>{u.email}</td><td style={styles.td}>{u.role}</td>
-                        <td style={styles.td}><button onClick={() => handleDelete('app_users', u.id)} style={{...styles.btnSm, background:'#e74c3c'}}>Del</button></td>
+                        <td style={styles.td}><button onClick={() => handleDelete('app_users', u.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
                       </tr>
                     ))}
                   </tbody>
@@ -1194,23 +1177,23 @@ export default function Home() {
           )}
 
           {page === 'reports' && (
-            <div style={{ background: 'white', padding: '30px', borderRadius: '12px', borderTop: '4px solid #D4AF37', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-              <h3 style={{color: '#0F3D2E', marginBottom:'20px'}}>Financial Statements & Reports</h3>
+            <div style={styles.card}>
+              <h3 style={{color: '#1E3A8A', marginBottom:'20px'}}>Financial Statements & Reports</h3>
               <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
                 <input type="date" value={repDate.from} onChange={(e) => setRepDate({...repDate, from: e.target.value})} style={styles.input} />
                 <input type="date" value={repDate.to} onChange={(e) => setRepDate({...repDate, to: e.target.value})} style={styles.input} />
               </div>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
                 {['sales', 'refunds', 'recharges', 'cashbook', 'investments', 'payroll', 'expenses'].map(tab => (
-                  <button key={tab} onClick={() => setReportTab(tab)} style={{...styles.btnPrimary, width:'auto', padding:'8px 15px', background: reportTab === tab ? 'linear-gradient(90deg, #0F3D2E, #145A38)' : '#ccc', color: reportTab === tab ? '#D4AF37' : '#333'}}>{tab}</button>
+                  <button key={tab} onClick={() => setReportTab(tab)} style={{...styles.btnPrimary, width:'auto', padding:'8px 15px', background: reportTab === tab ? 'linear-gradient(90deg, #1E3A8A, #2563EB)' : '#ccc', color: reportTab === tab ? '#FBBF24' : '#333'}}>{tab}</button>
                 ))}
-                <button onClick={() => exportCSV(currentReportData(), `${reportTab}_report.csv`)} style={{...styles.btnPrimary, width:'auto', padding:'8px 15px', background: 'linear-gradient(90deg, #8e44ad, #9b59b6)'}}>Export {reportTab} Excel</button>
+                <button onClick={() => exportCSV(currentReportData(), `${reportTab}_report.csv`)} style={{...styles.btnPrimary, width:'auto', padding:'8px 15px', background: 'linear-gradient(90deg, #7C3AED, #A78BFA)'}}>Export {reportTab} Excel</button>
               </div>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}>{currentReportData().length > 0 && Object.keys(currentReportData()[0]).filter(k => k !== 'id').map(k => <th key={k} style={styles.td}>{k}</th>)}</tr></thead>
+                <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}>{currentReportData().length > 0 && Object.keys(currentReportData()[0]).filter(k => k !== 'id').map(k => <th key={k} style={styles.td}>{k}</th>)}</tr></thead>
                 <tbody>
                   {currentReportData().map((row, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
+                    <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
                       {Object.entries(row).filter(([k]) => k !== 'id').map(([k, val]) => <td key={k} style={styles.td}>{typeof val === 'object' ? val?.name || '' : String(val)}</td>)}
                     </tr>
                   ))}
@@ -1221,15 +1204,15 @@ export default function Home() {
           )}
 
           {page === 'audit' && (
-             <div style={{ background: 'white', padding: '30px', borderRadius: '12px', borderTop: '4px solid #0F3D2E', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-               <h3 style={{color: '#0F3D2E'}}>Audit Logs</h3>
+             <div style={styles.card}>
+               <h3 style={{color: '#1E3A8A'}}>Audit Logs</h3>
                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                 <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.th}>Date</th><th style={styles.th}>User</th><th style={styles.th}>Action</th><th style={styles.th}>Delete</th></tr></thead>
+                 <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.th}>Date</th><th style={styles.th}>User</th><th style={styles.th}>Action</th><th style={styles.th}>Delete</th></tr></thead>
                  <tbody>
                    {data.audits.map(a => (
-                     <tr key={a.id} style={{ borderBottom: '1px solid #eee' }}>
+                     <tr key={a.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                        <td style={styles.td}>{new Date(a.created_at).toLocaleString()}</td><td style={styles.td}>{a.user_email}</td><td style={styles.td}>{a.action}</td>
-                       <td style={styles.td}><button onClick={() => handleDelete('audit_logs', a.id)} style={{...styles.btnSm, background:'#e74c3c'}}>Del</button></td>
+                       <td style={styles.td}><button onClick={() => handleDelete('audit_logs', a.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
                      </tr>
                    ))}
                  </tbody>
@@ -1238,16 +1221,16 @@ export default function Home() {
           )}
 
           {page === 'settings' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #D4AF37', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-                <h3 style={{color: '#0F3D2E', marginBottom:'20px'}}>Company Settings & Invoice Config</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '25px' }}>
+              <div style={styles.card}>
+                <h3 style={{color: '#1E3A8A', marginBottom:'20px'}}>Company Settings & Invoice Config</h3>
                 <form onSubmit={handleSaveSettings}>
                   <label style={styles.label}>Upload Logo (Will show on Invoice)</label>
                   <input type="file" accept="image/*" onChange={handleLogoUpload} style={{...styles.input, padding:'5px', marginBottom:'10px'}} />
                   {setForm.logo_url && <img src={setForm.logo_url} style={{height: '80px', marginBottom:'10px', background:'#eee', padding:'5px', borderRadius: '8px'}} />}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                    <div><label style={styles.label}>Company Name (EN)</label><input value={setForm.company_name_en || ''} onChange={(e) => setSetForm({...setForm, company_name_en: e.target.value})} style={styles.input} /></div>
-                    <div><label style={styles.label}>Company Name (AR)</label><input value={setForm.company_name_ar || ''} onChange={(e) => setSetForm({...setForm, company_name_ar: e.target.value})} style={styles.input} /></div>
+                    <div><label style={styles.label}>Company Name (EN) - For Invoice</label><input value={setForm.company_name_en || ''} onChange={(e) => setSetForm({...setForm, company_name_en: e.target.value})} style={styles.input} /></div>
+                    <div><label style={styles.label}>Company Name (AR) - For Invoice</label><input value={setForm.company_name_ar || ''} onChange={(e) => setSetForm({...setForm, company_name_ar: e.target.value})} style={styles.input} /></div>
                     <div><label style={styles.label}>VAT Number</label><input value={setForm.vat_no || ''} onChange={(e) => setSetForm({...setForm, vat_no: e.target.value})} style={styles.input} /></div>
                     <div><label style={styles.label}>CR Number</label><input value={setForm.cr_no || ''} onChange={(e) => setSetForm({...setForm, cr_no: e.target.value})} style={styles.input} /></div>
                     <div><label style={styles.label}>IATA Number</label><input value={setForm.iata_no || ''} onChange={(e) => setSetForm({...setForm, iata_no: e.target.value})} style={styles.input} /></div>
@@ -1258,9 +1241,9 @@ export default function Home() {
                 </form>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #2980b9', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-                  <h3 style={{color: '#0F3D2E'}}>Add Employee / Sales Rep</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
+                <div style={styles.card}>
+                  <h3 style={{color: '#1E3A8A'}}>Add Employee / Sales Rep</h3>
                   <form onSubmit={handleAddEmployee} style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                     <input placeholder="Employee Name" value={empForm.name} onChange={(e) => setEmpForm({...empForm, name: e.target.value})} style={styles.input} required />
                     <select value={empForm.role} onChange={(e) => setEmpForm({...empForm, role: e.target.value})} style={styles.input}><option>Sales</option><option>Manager</option><option>Accountant</option></select>
@@ -1271,8 +1254,8 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #27ae60', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-                  <h3 style={{color: '#0F3D2E'}}>Add Service Type</h3>
+                <div style={styles.card}>
+                  <h3 style={{color: '#1E3A8A'}}>Add Service Type</h3>
                   <form onSubmit={handleAddService} style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                     <input placeholder="e.g. Flight, Hotel, Visa" value={srvForm.name} onChange={(e) => setSrvForm({...srvForm, name: e.target.value})} style={styles.input} required />
                     <button type="submit" style={{...styles.btnPrimary, width: 'auto', padding: '10px 20px'}}>Add</button>
@@ -1282,8 +1265,8 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #8e44ad', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-                  <h3 style={{color: '#0F3D2E'}}>{tr.addCustomField}</h3>
+                <div style={styles.card}>
+                  <h3 style={{color: '#1E3A8A'}}>Add Custom Invoice Field</h3>
                   <p style={{fontSize: '12px', color: '#666'}}>Add new fields to your Invoice Form for future needs.</p>
                   <form onSubmit={handleAddCustomField} style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                     <input placeholder="e.g. Insurance No, Baggage Info" value={customFieldForm.name} onChange={(e) => setCustomFieldForm({name: e.target.value})} style={styles.input} required />
@@ -1304,13 +1287,13 @@ export default function Home() {
 }
 
 const styles = {
-  card: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' },
-  th: { padding: '12px 15px', textAlign: 'left', fontSize: '14px' },
-  td: { padding: '12px 15px', fontSize: '14px' },
+  card: { background: 'white', padding: '30px', borderRadius: '16px', boxShadow: '0 5px 20px rgba(0,0,0,0.05)', marginBottom: '20px' },
+  th: { padding: '15px', textAlign: 'left', fontSize: '14px', fontWeight: '600' },
+  td: { padding: '15px', fontSize: '14px' },
   label: { fontSize: '12px', color: '#555', marginBottom: '5px', display: 'block' },
-  input: { width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box', outline: 'none', transition: 'border 0.2s' },
-  btnPrimary: { width: '100%', padding: '12px', background: 'linear-gradient(90deg, #0F3D2E, #145A38)', color: '#D4AF37', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px' },
-  btnSm: { background: '#0F3D2E', color: 'white', border: 'none', padding: '5px 8px', cursor: 'pointer', borderRadius: '4px', fontSize: '12px', marginRight: '5px' },
-  tag: { background: '#eee', padding: '5px 10px', borderRadius: '15px', fontSize: '12px', margin: '5px', display: 'inline-block' },
+  input: { width: '100%', padding: '14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '15px', boxSizing: 'border-box', outline: 'none', marginBottom: '15px', transition: 'border 0.2s' },
+  btnPrimary: { width: '100%', padding: '15px', background: 'linear-gradient(90deg, #1E3A8A, #2563EB)', color: '#FBBF24', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '700', fontSize: '16px' },
+  btnSm: { color: 'white', border: 'none', padding: '8px 15px', cursor: 'pointer', borderRadius: '6px', fontSize: '13px', fontWeight: '600' },
+  tag: { background: '#f1f5f9', padding: '5px 10px', borderRadius: '15px', fontSize: '12px', margin: '5px', display: 'inline-block', border: '1px solid #cbd5e1' },
   tagBtn: { background: 'none', border: 'none', color: 'red', cursor: 'pointer', fontWeight: 'bold' }
 };
