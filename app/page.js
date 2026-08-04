@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export default function Home() {
   const [user, setUser] = useState(null);
-  const [userProfile, setUserProfile] = useState({ email: '', username: '', role: 'Owner', is_admin: true, can_access_invoices: true, can_access_bank: true, can_access_hr: true, can_access_reports: true, can_access_settings: true });
+  const [userProfile, setUserProfile] = useState({ email: 'atallahalanazi@sueudaltaayira.com', username: 'Atallah', role: 'Owner', is_admin: true, can_access_invoices: true, can_access_bank: true, can_access_hr: true, can_access_reports: true, can_access_settings: true });
   const [lang, setLang] = useState('en');
   const [page, setPage] = useState('dashboard');
   const [editingId, setEditingId] = useState(null);
@@ -46,6 +46,8 @@ export default function Home() {
   const [customFieldForm, setCustomFieldForm] = useState({ name: '' });
   const [pkgForm, setPkgForm] = useState({ name: '', price: '', desc: '' });
   const [brnForm, setBrnForm] = useState({ name: '', location: '', phone: '' });
+  const [payrollForm, setPayrollForm] = useState({ emp: '', amt: '', month: '', mode: 'Cash' });
+  const [expenseForm, setExpenseForm] = useState({ cat: '', amt: '', desc: '', mode: 'Cash' });
 
   const t = {
     en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices List', refunds: 'Refund Invoices', customers: 'Customer List', portals: 'Portals & Recharge', bank: 'Bank & Cash', invest: 'Investments', hr: 'HR & Accounts', users: 'User Management', reports: 'Financial Reports', audit: 'Audit Logs', settings: 'Settings', vendors: 'Vendors (B2B)', packages: 'Tour Packages', branches: 'Branches', logout: 'Logout', search: 'Search...', ownerProfile: 'Owner Profile', changePass: 'Change Password' },
@@ -120,117 +122,57 @@ export default function Home() {
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
-  // --- AI CHATBOT LOGIC ---
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
     const userMsg = { sender: 'user', text: chatInput };
     setChatMessages(prev => [...prev, userMsg]);
     const text = chatInput.toLowerCase();
-    let botReply = "I am sorry, I didn't understand that. I can help with Invoices, Reports, or Users. (عذراً، لم أفهم ذلك. يمكنني المساعدة في الفواتير، التقارير، أو المستخدمين)";
-    
-    if (text.includes('invoice') || text.includes('فاتورة') || text.includes('create')) {
-      botReply = "To create an invoice, go to 'Create Invoice'. You can add Flight, Hotel, or Visa details. The system will automatically calculate VAT and update your portal balance! (لإنشاء فاتورة، انتقل إلى 'إنشاء فاتورة'. يمكنك إضافة رحلة طيران أو فندق أو تأشيرة. سيقوم النظام تلقائياً بحساب ضريبة القيمة المضافة وتحديث رصيد البوابة الخاص بك!)";
-    } else if (text.includes('report') || text.includes('تقرير') || text.includes('excel')) {
-      botReply = "You can download Excel reports for Sales, Refunds, and Cashbook from the 'Financial Reports' section. Just select a date range! (يمكنك تنزيل تقارير Excel للمبيعات والاسترداد والدفع النقدي من قسم 'التقارير المالية'. ما عليك سوى تحديد نطاق التاريخ!)";
-    } else if (text.includes('user') || text.includes('مستخدم') || text.includes('permission')) {
-      botReply = "Admins can add new users with custom permissions in 'User Management'. You can grant access to specific modules like Bank or HR. (يمكن للمسؤولين إضافة مستخدمين جدد بأذونات مخصصة في 'إدارة المستخدمين'. يمكنك منح الوصول إلى وحدات محددة مثل البنك أو الموارد البشرية.)";
-    } else if (text.includes('refund') || text.includes('استرجاع')) {
-      botReply = "To process a refund, go to 'Invoices List', find the invoice, and click 'Refund'. It will automatically adjust the portal and cash balances. (لإجراء استرداد، انتقل إلى 'قائمة الفواتير'، وابحث عن الفاتورة، وانقر على 'استرداد'. سيقوم تلقائياً بتعديل أرصدة البوابة والنقدية.)";
-    } else if (text.includes('hello') || text.includes('hi') || text.includes('مرحبا')) {
-      botReply = `Hello ${userProfile.role}! How can I assist you with the ERP today? (مرحباً ${userProfile.role}! كيف يمكنني مساعدتك في نظام ERP اليوم؟)`;
-    }
-    
-    setTimeout(() => {
-      setChatMessages(prev => [...prev, { sender: 'bot', text: botReply }]);
-    }, 600);
+    let botReply = "I can help with Invoices, Reports, or Users. (يمكنني المساعدة في الفواتير، التقارير، أو المستخدمين)";
+    if (text.includes('invoice') || text.includes('فاتورة')) botReply = "Go to 'Create Invoice' to add Flight/Hotel details. It auto-calculates VAT!";
+    else if (text.includes('report') || text.includes('تقرير')) botReply = "Download Excel reports from 'Financial Reports'. Select a date range!";
+    else if (text.includes('refund') || text.includes('استرجاع')) botReply = "To refund, go to 'Invoices List' and click 'Refund'. Cash/Bank will auto-adjust.";
+    setTimeout(() => setChatMessages(prev => [...prev, { sender: 'bot', text: botReply }]), 600);
     setChatInput('');
   };
 
-  // --- INVOICE HANDLERS ---
   const handleCreateInvoice = async (e) => {
     e.preventDefault();
     try {
       const qty = parseInt(invForm.qty) || 1;
       const cost = (parseFloat(invForm.cost) || 0) * qty;
-      let sell = (parseFloat(invForm.sell) || 0) * qty;
-      const discount = parseFloat(invForm.discount) || 0;
-      sell = sell - discount;
-      const taxRate = parseFloat(invForm.taxRate) || 0;
-      const vat = sell * (taxRate / 100);
+      let sell = (parseFloat(invForm.sell) || 0) * qty - (parseFloat(invForm.discount) || 0);
+      const vat = sell * ((parseFloat(invForm.taxRate) || 0) / 100);
       const total = sell + vat;
       const paid = parseFloat(invForm.paid) || 0;
       const due = total - paid;
-      const profit = sell - cost;
-
-      let cid;
-      if (invForm.custId === 'new') {
-        const { data: nC } = await supabase.from('customers').insert([{ name: invForm.custName, phone: invForm.custPhone, type: invForm.custType }]).select().single();
-        cid = nC.id;
-      } else { cid = invForm.custId; }
-
-      const portal = data.portals.find(p => p.name === invForm.portal);
-      if (!portal) throw new Error("Select Portal");
-
-      let desc = '';
-      if (invForm.service === 'Flight') desc = `${invForm.flightSub} (${invForm.flightType}) - ${invForm.airline} - ${invForm.flightJourney} - ${invForm.flightSector}`;
-      else if (invForm.service === 'Hotel') desc = `${invForm.hotelName} - ${invForm.destination} (${invForm.checkIn} to ${invForm.checkOut})`;
-      else if (invForm.service === 'Visa') desc = `${invForm.visaType} Visa - ${invForm.destination}`;
-      else desc = invForm.service;
-
-      const payload = {
-        customer_id: cid, portal_id: portal.id, employee_id: invForm.employeeId || null,
-        booking_date: invForm.bookingDate, invoice_date: invForm.invoiceDate,
-        service_type: invForm.service, flight_type: invForm.flightType, flight_sub: invForm.flightSub, pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty: qty, discount: discount,
-        passenger_names: invForm.passengerNames || null, airline: invForm.airline || null, flight_journey: invForm.flightJourney || null, flight_sector: invForm.flightSector || null,
-        total_cost: cost, total_sell: sell, profit, vat, total, paid_amount: paid, due_amount: due, payment_method: invForm.payment,
-        credit_due_date: due > 0 ? invForm.creditDueDate : null, tabby_order_no: invForm.payment === 'Tabby' ? invForm.tabbyNo : null, tamara_order_no: invForm.payment === 'Tamara' ? invForm.tamaraNo : null, ticket_status: invForm.ticketStatus
-      };
-
+      let cid = invForm.custId;
+      if (invForm.custId === 'new') { const { data: nC } = await supabase.from('customers').insert([{ name: invForm.custName, phone: invForm.custPhone, type: invForm.custType }]).select().single(); cid = nC.id; }
+      const portal = data.portals.find(p => p.name === invForm.portal); if (!portal) throw new Error("Select Portal");
+      
+      let desc = invForm.service === 'Flight' ? `${invForm.airline} - ${invForm.flightSector}` : invForm.service;
+      const payload = { customer_id: cid, portal_id: portal.id, service_type: invForm.service, pnr: invForm.pnr, sector: desc, total_cost: cost, total_sell: sell, profit: sell - cost, vat, total, paid_amount: paid, due_amount: due, payment_method: invForm.payment, invoice_date: invForm.invoiceDate };
+      
       if (editingId) {
-        const { data: upInv } = await supabase.from('invoices').update(payload).eq('id', editingId).select(`*, customers(name, type, phone), portals(name), employees(name)`).single();
+        const { data: upInv } = await supabase.from('invoices').update(payload).eq('id', editingId).select(`*, customers(name), portals(name)`).single();
         setData(prev => ({ ...prev, invoices: prev.invoices.map(i => i.id === editingId ? upInv : i) }));
-        await logAction(`Updated Invoice ID ${editingId}`);
         setEditingId(null);
-        showToast('Invoice Updated Successfully!');
+        showToast('Invoice Updated!');
       } else {
         const invNo = `INV-${Date.now()}`;
-        const { data: newInv } = await supabase.from('invoices').insert([{ invoice_no: invNo, ...payload }]).select(`*, customers(name, type, phone), portals(name), employees(name)`).single();
-        
+        const { data: newInv } = await supabase.from('invoices').insert([{ invoice_no: invNo, ...payload }]).select(`*, customers(name), portals(name)`).single();
         const newPortalBal = (portal.current_balance || 0) - cost;
         await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', portal.id);
-        await logAction(`Created Invoice ${invNo}`);
-
-        let newCashEntry = null;
-        if (paid > 0) {
-          const cbType = invForm.payment === 'Cash' ? 'Cash-In' : (invForm.payment === 'Bank Transfer' ? 'Bank-In' : null);
-          if (cbType) {
-            const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: invForm.invoiceDate, type: cbType, description: `Payment for ${invNo}`, amount: paid }]).select().single();
-            newCashEntry = nC;
-          }
-        }
-
-        setData(prev => ({
-          ...prev,
-          invoices: [newInv, ...prev.invoices],
-          portals: prev.portals.map(p => p.id === portal.id ? { ...p, current_balance: newPortalBal } : p),
-          cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook
-        }));
-        showToast('Invoice Generated Successfully!');
+        if (paid > 0) { const cbType = invForm.payment === 'Cash' ? 'Cash-In' : 'Bank-In'; await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Payment for ${invNo}`, amount: paid }]); }
+        setData(prev => ({ ...prev, invoices: [newInv, ...prev.invoices], portals: prev.portals.map(p => p.id === portal.id ? { ...p, current_balance: newPortalBal } : p) }));
+        showToast('Invoice Generated!');
       }
-      setInvForm({ custId: 'new', custName: '', custPhone: '', custType: 'Individual', passengerNames: '', employeeId: '', portal: data.portals[0]?.name || '', bookingDate: today, invoiceDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
       setPage('list');
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
   const handleEditClick = (inv) => {
     setEditingId(inv.id);
-    setInvForm({
-      custId: inv.customer_id, custName: '', custPhone: '', custType: inv.customers?.type || 'Individual', passengerNames: inv.passenger_names || '',
-      employeeId: inv.employee_id || '', portal: inv.portals?.name || '', bookingDate: inv.booking_date || today, invoiceDate: inv.invoice_date || today,
-      service: inv.service_type, flightType: inv.flight_type || 'Domestic', flightSub: inv.flight_sub || 'New Booking', flightJourney: inv.flight_journey || 'Single', flightSector: inv.flight_sector || '', airline: inv.airline || '', 
-      destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', pnr: inv.pnr || '', ticketNo: inv.ticket_no || '', qty: inv.qty || 1, cost: inv.total_cost || 0, sell: inv.total_sell || 0, discount: inv.discount || 0, taxRate: inv.vat > 0 ? '15' : '0', 
-      payment: inv.payment_method || 'Cash', paid: inv.paid_amount || 0, creditDueDate: inv.credit_due_date || '', tabbyNo: inv.tabby_order_no || '', tamaraNo: inv.tamara_order_no || '', ticketStatus: inv.ticket_status || 'Confirmed'
-    });
+    setInvForm({ custId: inv.customer_id, custName: '', custPhone: '', portal: inv.portals?.name, service: inv.service_type, flightSector: inv.sector, pnr: inv.pnr, cost: inv.total_cost, sell: inv.total_sell, paid: inv.paid_amount });
     setPage('create');
   };
 
@@ -239,25 +181,11 @@ export default function Home() {
     const inv = data.invoices.find(i => i.id === settleForm.id);
     if (!inv) return showToast('Not found');
     const newPaid = inv.paid_amount + inv.due_amount;
-    
-    const { data: upInv } = await supabase.from('invoices').update({ 
-      paid_amount: newPaid, due_amount: 0, settlement_date: settleForm.date, payment_method: settleForm.mode
-    }).eq('id', inv.id).select(`*, customers(name, type, phone), portals(name), employees(name)`).single();
-    
-    let newCashEntry = null;
-    const cbType = settleForm.mode === 'Cash' ? 'Cash-In' : (settleForm.mode === 'Bank Transfer' ? 'Bank-In' : null);
-    if (cbType) {
-      const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: settleForm.date, type: cbType, description: `Settlement for ${inv.invoice_no}`, amount: inv.due_amount }]).select().single();
-      newCashEntry = nC;
-    }
-    await logAction(`Settled payment for ${inv.invoice_no}`);
-
-    setData(prev => ({
-      ...prev,
-      invoices: prev.invoices.map(i => i.id === inv.id ? upInv : i),
-      cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook
-    }));
-    showToast('Payment Settled Successfully!');
+    const { data: upInv } = await supabase.from('invoices').update({ paid_amount: newPaid, due_amount: 0, settlement_date: settleForm.date, payment_method: settleForm.mode }).eq('id', inv.id).select(`*, customers(name), portals(name)`).single();
+    const cbType = settleForm.mode === 'Cash' ? 'Cash-In' : 'Bank-In';
+    const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: settleForm.date, type: cbType, description: `Settlement for ${inv.invoice_no}`, amount: inv.due_amount }]).select().single();
+    setData(prev => ({ ...prev, invoices: prev.invoices.map(i => i.id === inv.id ? upInv : i), cashbook: [nC, ...prev.cashbook] }));
+    showToast('Payment Settled!');
     setModal({ type: null, data: null });
   };
 
@@ -267,46 +195,25 @@ export default function Home() {
     if (!inv) return showToast('Not found');
     const compRef = parseFloat(refundForm.compRefund) || 0;
     const custRef = parseFloat(refundForm.custRefund) || 0;
-
-    const { data: upInv } = await supabase.from('invoices').update({ status: 'refunded', refund_company: compRef, refund_customer: custRef }).eq('id', inv.id).select(`*, customers(name, type, phone), portals(name), employees(name)`).single();
+    const { data: upInv } = await supabase.from('invoices').update({ status: 'refunded', refund_company: compRef, refund_customer: custRef }).eq('id', inv.id).select(`*, customers(name), portals(name)`).single();
     const refNo = `REF-${Date.now()}`;
-    const { data: newRefInv } = await supabase.from('invoices').insert([{
-      invoice_no: refNo, customer_id: inv.customer_id, portal_id: inv.portal_id, booking_date: today, invoice_date: today,
-      service_type: `Refund for ${inv.invoice_no}`, total_sell: -custRef, total: -custRef, paid_amount: -custRef, status: 'refunded', refund_company: compRef, refund_customer: custRef
-    }]).select(`*, customers(name, type, phone), portals(name), employees(name)`).single();
-
+    const { data: newRefInv } = await supabase.from('invoices').insert([{ invoice_no: refNo, customer_id: inv.customer_id, portal_id: inv.portal_id, service_type: `Refund for ${inv.invoice_no}`, total_sell: -custRef, total: -custRef, paid_amount: -custRef, status: 'refunded', refund_company: compRef, refund_customer: custRef }]).select(`*, customers(name), portals(name)`).single();
     let newPortalBal = inv.portals?.current_balance || 0;
-    if (inv.portal_id) {
-      newPortalBal += compRef;
-      await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', inv.portal_id);
-    }
-
+    if (inv.portal_id) { newPortalBal += compRef; await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', inv.portal_id); }
     let newCashEntry = null;
-    if (custRef > 0) {
-      const cbType = refundForm.mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
-      const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Refund to customer for ${inv.invoice_no}`, amount: custRef }]).select().single();
-      newCashEntry = nC;
-    }
-    await logAction(`Processed refund ${refNo}`);
-
-    setData(prev => ({
-      ...prev,
-      invoices: [newRefInv, prev.invoices.map(i => i.id === inv.id ? upInv : i)].flat(),
-      portals: prev.portals.map(p => p.id === inv.portal_id ? { ...p, current_balance: newPortalBal } : p),
-      cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook
-    }));
-    showToast('Refund Processed! Portal balance updated.');
+    if (custRef > 0) { const cbType = refundForm.mode === 'Cash' ? 'Cash-Out' : 'Bank-Out'; const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Refund to customer for ${inv.invoice_no}`, amount: custRef }]).select().single(); newCashEntry = nC; }
+    setData(prev => ({ ...prev, invoices: [newRefInv, prev.invoices.map(i => i.id === inv.id ? upInv : i)].flat(), portals: prev.portals.map(p => p.id === inv.portal_id ? { ...p, current_balance: newPortalBal } : p), cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook }));
+    showToast('Refund Processed!');
     setModal({ type: null, data: null });
   };
 
-  // --- ENTITY HANDLERS ---
-  const handleAddPortal = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('portals').insert([{ name: portalForm.name, current_balance: parseFloat(portalForm.balance) || 0 }]).select().single(); setData(prev => ({ ...prev, portals: [...prev.portals, newItem] })); showToast('Portal Added!'); setPortalForm({ name: '', balance: 0 }); };
-  const handleAddVendor = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('vendors').insert([{ name: vendorForm.name, phone: vendorForm.phone, balance: parseFloat(vendorForm.balance) || 0 }]).select().single(); setData(prev => ({ ...prev, vendors: [...prev.vendors, newItem] })); showToast('Vendor Added!'); setVendorForm({ name: '', phone: '', balance: 0 }); };
-  const handleAddPackage = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('packages').insert([{ name: pkgForm.name, price: parseFloat(pkgForm.price), description: pkgForm.desc }]).select().single(); setData(prev => ({ ...prev, packages: [...prev.packages, newItem] })); showToast('Package Added!'); setPkgForm({ name: '', price: '', desc: '' }); };
-  const handleAddBranch = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('branches').insert([{ name: brnForm.name, location: brnForm.location, phone: brnForm.phone }]).select().single(); setData(prev => ({ ...prev, branches: [...prev.branches, newItem] })); showToast('Branch Added!'); setBrnForm({ name: '', location: '', phone: '' }); };
-  const handleAddEmployee = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('employees').insert([{ name: empForm.name, role: empForm.role }]).select().single(); setData(prev => ({ ...prev, employees: [newItem, ...prev.employees] })); showToast('Employee Added!'); setEmpForm({ name: '', role: 'Sales' }); };
-  const handleAddService = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('services').insert([{ name: srvForm.name }]).select().single(); setData(prev => ({ ...prev, services: [newItem, ...prev.services] })); showToast('Service Added!'); setSrvForm({ name: '' }); };
-  const handleAddCustomField = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('custom_fields').insert([{ name: customFieldForm.name }]).select().single(); setData(prev => ({ ...prev, customFields: [...prev.customFields, newItem] })); showToast('Custom Field Added!'); setCustomFieldForm({ name: '' }); };
+  const handleAddEntity = async (table, payload, formSetter, msg) => {
+    const { data: newItem, error } = await supabase.from(table).insert([payload]).select().single();
+    if (error) return showToast('Error: ' + error.message);
+    setData(prev => ({ ...prev, [table]: [newItem, ...prev[table]] }));
+    showToast(msg);
+    if (formSetter) formSetter({});
+  };
 
   const handleRecharge = async (e) => {
     e.preventDefault();
@@ -318,9 +225,8 @@ export default function Home() {
     await supabase.from('portals').update({ current_balance: newBal }).eq('id', p.id);
     const cbType = mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
     const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: e.target.date.value, type: cbType, description: `Recharge for ${p.name}`, amount }]).select().single();
-    await logAction(`Recharged ${amount} to ${p.name}`);
     setData(prev => ({ ...prev, recharges: [newRec, ...prev.recharges], portals: prev.portals.map(por => por.id === p.id ? { ...por, current_balance: newBal } : por), cashbook: [nC, ...prev.cashbook] }));
-    showToast('Recharged! Balance Updated.');
+    showToast('Recharged!');
     e.target.reset();
   };
 
@@ -335,80 +241,43 @@ export default function Home() {
     if (transferForm.to === 'Bank') entries.push({ trans_date: transferForm.date, type: 'Bank-In', description: `Transfer from ${transferForm.from}`, amount: amt });
     await Promise.all(entries.map(en => supabase.from('cashbook').insert([en])));
     await fetchAll();
-    showToast('Fund Transferred Successfully!');
+    showToast('Fund Transferred!');
     setTransferForm({ from: 'Cash', to: 'Bank', amount: '', date: today });
   };
 
   const handlePaySalary = async (e) => {
     e.preventDefault();
-    const empId = e.target.emp.value;
-    const amount = parseFloat(e.target.amt.value);
-    const mode = e.target.mode.value;
-    const emp = data.employees.find(em => em.id === empId);
-    const { data: newPay } = await supabase.from('payroll').insert([{ employee_id: empId, amount, month: e.target.month.value, payment_mode: mode }]).select('*, employees(name)').single();
-    const cbType = mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
-    const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Salary to ${emp.name}`, amount }]).select().single();
+    const emp = data.employees.find(em => em.id === payrollForm.emp);
+    if (!emp) return showToast('Select Employee');
+    const { data: newPay } = await supabase.from('payroll').insert([{ employee_id: payrollForm.emp, amount: parseFloat(payrollForm.amt), month: payrollForm.month, payment_mode: payrollForm.mode }]).select('*, employees(name)').single();
+    const cbType = payrollForm.mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
+    const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Salary to ${emp.name}`, amount: parseFloat(payrollForm.amt) }]).select().single();
     setData(prev => ({ ...prev, payroll: [newPay, ...prev.payroll], cashbook: [nC, ...prev.cashbook] }));
     showToast('Salary Paid!');
-    e.target.reset();
+    setPayrollForm({ emp: '', amt: '', month: '', mode: 'Cash' });
   };
 
   const handleAddExpense = async (e) => {
     e.preventDefault();
-    const mode = e.target.mode.value;
-    const { data: newExp } = await supabase.from('expenses').insert([{ category: e.target.cat.value, amount: parseFloat(e.target.amt.value), description: e.target.desc.value, payment_mode: mode }]).select().single();
-    const cbType = mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
-    const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Expense: ${e.target.cat.value}`, amount: parseFloat(e.target.amt.value) }]).select().single();
+    const { data: newExp } = await supabase.from('expenses').insert([{ category: expenseForm.cat, amount: parseFloat(expenseForm.amt), description: expenseForm.desc, payment_mode: expenseForm.mode }]).select().single();
+    const cbType = expenseForm.mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
+    const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Expense: ${expenseForm.cat}`, amount: parseFloat(expenseForm.amt) }]).select().single();
     setData(prev => ({ ...prev, expenses: [newExp, ...prev.expenses], cashbook: [nC, ...prev.cashbook] }));
     showToast('Expense Added!');
-    e.target.reset();
+    setExpenseForm({ cat: '', amt: '', desc: '', mode: 'Cash' });
   };
 
   const handleAddInvestment = async (e) => {
     e.preventDefault();
-    const mode = investForm.mode;
-    const { data: newInv } = await supabase.from('investments').insert([{ investor_name: investForm.name, amount: parseFloat(investForm.amount), invest_date: investForm.date, description: investForm.desc, payment_mode: mode }]).select().single();
-    const cbType = mode === 'Cash' ? 'Cash-In' : 'Bank-In';
+    const { data: newInv } = await supabase.from('investments').insert([{ investor_name: investForm.name, amount: parseFloat(investForm.amount), invest_date: investForm.date, description: investForm.desc, payment_mode: investForm.mode }]).select().single();
+    const cbType = investForm.mode === 'Cash' ? 'Cash-In' : 'Bank-In';
     const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: investForm.date, type: cbType, description: `Investment by ${investForm.name}`, amount: parseFloat(investForm.amount) }]).select().single();
-    await logAction(`Added investment from ${investForm.name}`);
     setData(prev => ({ ...prev, investments: [newInv, ...prev.investments], cashbook: [nC, ...prev.cashbook] }));
     showToast('Investment Added!');
     setInvestForm({ name: '', amount: '', date: today, desc: '', mode: 'Cash' });
   };
 
-  const handleAddUser = async (e) => {
-    e.preventDefault();
-    const { data: newUser } = await supabase.from('app_users').insert([{ email: userForm.email, username: userForm.username, role: userForm.role, ...userForm }]).select().single();
-    setData(prev => ({ ...prev, appUsers: [newUser, ...prev.appUsers] }));
-    showToast('User Added with Custom Permissions!');
-    setUserForm({ email: '', username: '', role: 'Sales', is_admin: false, can_access_invoices: true, can_access_bank: false, can_access_hr: false, can_access_reports: false, can_access_settings: false });
-  };
-
-  const handleLogoUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const fileName = `logo-${Date.now()}.${file.name.split('.').pop()}`;
-    const { error } = await supabase.storage.from('logos').upload(fileName, file);
-    if (error) return showToast('Upload Error: Check Storage Bucket');
-    const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName);
-    setSetForm(prev => ({ ...prev, logo_url: urlData.publicUrl }));
-    showToast('Logo Uploaded!');
-  };
-
-  const handleSaveSettings = async (e) => {
-    e.preventDefault();
-    const { error } = await supabase.from('settings').upsert([{ id: 1, ...setForm }]).eq('id', 1);
-    if (error) return showToast('Error saving settings');
-    setData(prev => ({ ...prev, settings: setForm }));
-    showToast('Settings Saved Successfully!');
-  };
-
-  const handleDelete = async (table, id) => {
-    if (!confirm('Delete permanently?')) return;
-    await supabase.from(table).delete().eq('id', id);
-    setData(prev => ({ ...prev, [table]: prev[table].filter(item => item.id !== id) }));
-    showToast('Deleted Successfully!');
-  };
+  const handleDelete = async (table, id) => { if (!confirm('Delete permanently?')) return; await supabase.from(table).delete().eq('id', id); setData(prev => ({ ...prev, [table]: prev[table].filter(item => item.id !== id) })); showToast('Deleted!'); };
 
   const filterData = (arr, dateKey) => {
     if (!repDate.from || !repDate.to) return arr;
@@ -428,7 +297,6 @@ export default function Home() {
     showToast('Exported Successfully!');
   };
 
-  // --- BEAUTIFUL INVOICE HTML ---
   const getInvoiceHTML = (inv, s) => {
     const isExempt = inv.vat === 0;
     const taxLabel = isExempt ? 'Exempt (معافاة)' : 'VAT 15% (ضريبة 15%)';
@@ -453,7 +321,6 @@ export default function Home() {
           <div><h3 style="margin:0 0 5px;color:#1E3A8A;font-size:14px;">BILL TO:</h3><p style="margin:0;font-size:16px;font-weight:bold;">${inv.customers?.name || ''}</p><p style="margin:0;font-size:12px;color:#666;">${inv.customers?.phone || ''}</p></div>
           <div style="text-align:right;"><p style="margin:0;font-size:12px;"><b>Sales Rep:</b> ${inv.employees?.name || 'N/A'}</p><p style="margin:0;font-size:12px;"><b>Status:</b> <span style="color:${inv.due_amount>0?'#EF4444':'#059669'};font-weight:bold;">${inv.due_amount>0?'UNPAID':'PAID'}</span></p></div>
         </div>
-        ${inv.passenger_names ? `<div style="margin-bottom:20px;padding:10px;background:#fff;border:1px dashed #ddd;"><b style="font-size:12px;">Passengers:</b><br/><span style="font-size:12px;white-space:pre-wrap;">${inv.passenger_names}</span></div>` : ''}
         <table style="width:100%;border-collapse:collapse;text-align:center;margin-bottom:30px;">
           <thead><tr style="background:#1E3A8A;color:#fff;"><th style="padding:12px;border:1px solid #1e3a8a;width:40%;">Service / Sector</th><th style="padding:12px;border:1px solid #1e3a8a;">PNR</th><th style="padding:12px;border:1px solid #1e3a8a;">Qty</th><th style="padding:12px;border:1px solid #1e3a8a;">Total</th></tr></thead>
           <tbody><tr style="background:#fff;"><td style="padding:12px;border:1px solid #ddd;text-align:left;font-size:13px;"><b>${inv.service_type}</b><br/><span style="font-size:11px;color:#666;">${inv.sector || ''}</span></td><td style="padding:12px;border:1px solid #ddd;font-size:12px;">${inv.pnr || 'N/A'}</td><td style="padding:12px;border:1px solid #ddd;font-size:12px;">${inv.qty || 1}</td><td style="padding:12px;border:1px solid #ddd;font-size:14px;font-weight:bold;">${inv.total_sell.toFixed(2)} SAR</td></tr></tbody>
@@ -501,17 +368,13 @@ export default function Home() {
 
   const activeInv = data.invoices.filter(i => !i.invoice_no.startsWith('REF-'));
   const refundInv = data.invoices.filter(i => i.invoice_no.startsWith('REF-'));
-  const outstandingInv = activeInv.filter(i => i.due_amount > 0);
-  
   const cashBalance = data.cashbook.filter(c => c.type === 'Cash-In').reduce((s,c) => s + c.amount, 0) - data.cashbook.filter(c => c.type === 'Cash-Out').reduce((s,c) => s + c.amount, 0);
   const bankBalance = data.cashbook.filter(c => c.type === 'Bank-In').reduce((s,c) => s + c.amount, 0) - data.cashbook.filter(c => c.type === 'Bank-Out').reduce((s,c) => s + c.amount, 0);
-
   const tSales = activeInv.reduce((s,i) => s + i.total, 0);
   const tProfit = activeInv.reduce((s,i) => s + i.profit, 0);
-  const totalOutstanding = outstandingInv.reduce((s,i) => s + i.due_amount, 0);
-  const tInvestments = data.investments.reduce((s,i) => s + i.amount, 0);
+  const totalOutstanding = activeInv.filter(i=>i.due_amount>0).reduce((s,i)=>s+i.due_amount,0);
 
-  const filteredInvoices = activeInv.filter(inv => inv.invoice_no.toLowerCase().includes(search.toLowerCase()) || inv.customers?.name.toLowerCase().includes(search.toLowerCase()) || inv.customers?.phone.includes(search));
+  const filteredInvoices = activeInv.filter(inv => inv.invoice_no.toLowerCase().includes(search.toLowerCase()) || inv.customers?.name.toLowerCase().includes(search.toLowerCase()));
   const paginatedInv = filteredInvoices.slice((tblPage - 1) * itemsPerPage, tblPage * itemsPerPage);
   const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
 
@@ -548,11 +411,8 @@ export default function Home() {
   return (
     <div style={{ display: 'flex', height: '100vh', fontFamily: "'Poppins', sans-serif", background: '#F1F5F9', direction: lang === 'ar' ? 'rtl' : 'ltr' }}>
       
-      {toast && (
-        <div style={{ position: 'fixed', top: '20px', right: '20px', background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: '#FBBF24', padding: '15px 25px', borderRadius: '12px', zIndex: 9999, boxShadow: '0 5px 15px rgba(0,0,0,0.2)', fontWeight: '600' }}>{toast}</div>
-      )}
+      {toast && <div style={{ position: 'fixed', top: '20px', right: '20px', background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: '#FBBF24', padding: '15px 25px', borderRadius: '12px', zIndex: 9999, boxShadow: '0 5px 15px rgba(0,0,0,0.2)', fontWeight: '600' }}>{toast}</div>}
 
-      {/* AI Chatbot UI */}
       <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 999 }}>
         {chatOpen && (
           <div style={{ width: '380px', height: '500px', background: 'white', borderRadius: '20px', marginBottom: '15px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 15px 40px rgba(0,0,0,0.2)' }}>
@@ -562,13 +422,11 @@ export default function Home() {
             </div>
             <div style={{ flex: 1, padding: '20px', fontSize: '14px', overflowY: 'auto', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '15px' }}>
               {chatMessages.map((msg, idx) => (
-                <div key={idx} style={{ alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start', background: msg.sender === 'user' ? '#2563EB' : 'white', color: msg.sender === 'user' ? 'white' : '#1E293B', padding: '12px 18px', borderRadius: msg.sender === 'user' ? '20px 20px 0 20px' : '20px 20px 20px 0', maxWidth: '80%', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
-                  {msg.text}
-                </div>
+                <div key={idx} style={{ alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start', background: msg.sender === 'user' ? '#2563EB' : 'white', color: msg.sender === 'user' ? 'white' : '#1E293B', padding: '12px 18px', borderRadius: msg.sender === 'user' ? '20px 20px 0 20px' : '20px 20px 20px 0', maxWidth: '80%', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>{msg.text}</div>
               ))}
             </div>
             <div style={{ padding: '15px', borderTop: '1px solid #e2e8f0', display: 'flex', background: 'white' }}>
-              <input placeholder="Type your message..." value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} style={{ flex: 1, border: '1px solid #cbd5e1', borderRadius: '25px', padding: '12px 20px', outline: 'none' }} />
+              <input placeholder="Type message..." value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} style={{ flex: 1, border: '1px solid #cbd5e1', borderRadius: '25px', padding: '12px 20px', outline: 'none' }} />
               <button onClick={handleSendMessage} style={{ background: '#FBBF24', color: '#1E3A8A', border: 'none', padding: '0 25px', cursor: 'pointer', marginLeft: '10px', borderRadius: '25px', fontWeight: 'bold' }}>Send</button>
             </div>
           </div>
@@ -652,15 +510,11 @@ export default function Home() {
 
       <aside style={{ width: '280px', background: 'linear-gradient(180deg, #0F172A 0%, #1E3A8A 100%)', color: '#FBBF24', display: 'flex', flexDirection: 'column', boxShadow: '5px 0 15px rgba(0,0,0,0.1)' }}>
         <div style={{ padding: '30px 20px', textAlign: 'center', borderBottom: '1px solid rgba(251, 191, 36, 0.3)' }}>
-          {data.settings.logo_url && <img src={data.settings.logo_url} style={{height:'50px', marginBottom:'10px'}} />}
-          {/* ARABIC NAME ONLY INSIDE ERP */}
-          <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', letterSpacing: '0.5px', fontFamily: "'Tajawal', sans-serif" }}>صعود الطائرة للسفر و السياحة</h2>
+          <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', fontFamily: "'Tajawal', sans-serif" }}>صعود الطائرة للسفر و السياحة</h2>
         </div>
         <nav style={{ flex: 1, overflowY: 'auto', padding: '20px 0' }}>
           {menu.map(m => (
-            <button key={m.id} onClick={() => { setPage(m.id); setEditingId(null); }} style={{ width: '100%', textAlign: 'left', padding: '15px 30px', background: page === m.id ? 'linear-gradient(90deg, #FBBF24, #D97706)' : 'transparent', border: 'none', color: page === m.id ? '#0F172A' : '#FBBF24', cursor: 'pointer', fontWeight: '600', transition: 'all 0.3s', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              {m.label}
-            </button>
+            <button key={m.id} onClick={() => { setPage(m.id); setEditingId(null); }} style={{ width: '100%', textAlign: 'left', padding: '15px 30px', background: page === m.id ? 'linear-gradient(90deg, #FBBF24, #D97706)' : 'transparent', border: 'none', color: page === m.id ? '#0F172A' : '#FBBF24', cursor: 'pointer', fontWeight: '600', fontSize: '15px' }}>{m.label}</button>
           ))}
         </nav>
         <div style={{ padding: '20px' }}>
@@ -689,16 +543,14 @@ export default function Home() {
                 <div style={{...styles.card, background: 'linear-gradient(135deg, #059669, #10B981)', color: 'white'}}><h3 style={{margin:0, opacity:0.8, fontSize:'16px'}}>Gross Profit</h3><h1 style={{margin:'10px 0 0', fontSize:'32px', fontWeight:'800'}}>{tProfit.toFixed(0)} SAR</h1></div>
                 <div style={{...styles.card, background: 'linear-gradient(135deg, #D97706, #FBBF24)', color: 'white'}}><h3 style={{margin:0, opacity:0.8, fontSize:'16px'}}>Cash Balance</h3><h1 style={{margin:'10px 0 0', fontSize:'32px', fontWeight:'800'}}>{cashBalance.toFixed(0)} SAR</h1></div>
                 <div style={{...styles.card, background: 'linear-gradient(135deg, #7C3AED, #A78BFA)', color: 'white'}}><h3 style={{margin:0, opacity:0.8, fontSize:'16px'}}>Bank Balance</h3><h1 style={{margin:'10px 0 0', fontSize:'32px', fontWeight:'800'}}>{bankBalance.toFixed(0)} SAR</h1></div>
+                <div style={{...styles.card, background: 'linear-gradient(135deg, #EF4444, #F87171)', color: 'white'}}><h3 style={{margin:0, opacity:0.8, fontSize:'16px'}}>Outstanding</h3><h1 style={{margin:'10px 0 0', fontSize:'32px', fontWeight:'800'}}>{totalOutstanding.toFixed(0)} SAR</h1></div>
               </div>
-              
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '25px' }}>
                 <div style={styles.card}>
                   <h3 style={{color:'#0F172A', marginBottom:'20px', fontSize:'18px'}}>Recent Invoices</h3>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead><tr style={{ background: '#f8fafc', color: '#1E3A8A' }}><th style={styles.td}>Invoice No</th><th style={styles.td}>Customer</th><th style={styles.td}>Total</th></tr></thead>
-                    <tbody>
-                      {activeInv.slice(0, 5).map(inv => <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0' }}><td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.customers?.name || 'N/A'}</td><td style={styles.td}><b>{inv.total} SAR</b></td></tr>)}
-                    </tbody>
+                    <tbody>{activeInv.slice(0, 5).map(inv => <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0' }}><td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.customers?.name || 'N/A'}</td><td style={styles.td}><b>{inv.total} SAR</b></td></tr>)}</tbody>
                   </table>
                 </div>
                 <div style={styles.card}>
@@ -715,69 +567,43 @@ export default function Home() {
           )}
 
           {page === 'create' && (
-             <div style={styles.card}>
-               <form onSubmit={handleCreateInvoice}>
-                 <h3 style={{color: '#1E3A8A', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>Customer Details</h3>
-                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
-                   <div><label style={styles.label}>Select Customer</label><select value={invForm.custId} onChange={(e) => setInvForm({...invForm, custId: e.target.value})} style={styles.input} disabled={editingId}><option value="new">+ New Customer</option>{data.customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.type})</option>)}</select></div>
-                   {invForm.custId === 'new' && <>
-                     <div><label style={styles.label}>Name</label><input placeholder="Enter Name" value={invForm.custName} onChange={(e) => setInvForm({...invForm, custName: e.target.value})} required style={styles.input} /></div>
-                     <div><label style={styles.label}>Phone</label><input placeholder="Enter Phone" value={invForm.custPhone} onChange={(e) => setInvForm({...invForm, custPhone: e.target.value})} required style={styles.input} /></div>
-                     <div><label style={styles.label}>Type</label><select value={invForm.custType} onChange={(e) => setInvForm({...invForm, custType: e.target.value})} style={styles.input}><option>Individual</option><option>Group</option><option>Company</option></select></div>
-                   </>}
-                 </div>
-                 {invForm.custType === 'Group' || invForm.custType === 'Company' ? (
-                   <div style={{ marginBottom: '20px' }}><label style={styles.label}>Passenger Names</label><textarea placeholder="One per line" value={invForm.passengerNames} onChange={(e) => setInvForm({...invForm, passengerNames: e.target.value})} style={{...styles.input, height: '80px'}} /></div>
-                 ) : null}
-
-                 <h3 style={{color: '#1E3A8A', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>Service Details</h3>
-                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
-                   <div><label style={styles.label}>Service</label><select value={invForm.service} onChange={(e) => setInvForm({...invForm, service: e.target.value})} style={styles.input}>{data.services.map(s => <option key={s.id}>{s.name}</option>)}</select></div>
-                   {invForm.service === 'Flight' && <>
-                     <div><label style={styles.label}>Flight Type</label><select value={invForm.flightType} onChange={(e) => setInvForm({...invForm, flightType: e.target.value})} style={styles.input}><option>Domestic</option><option>International</option></select></div>
-                     <div><label style={styles.label}>Booking Type</label><select value={invForm.flightSub} onChange={(e) => setInvForm({...invForm, flightSub: e.target.value})} style={styles.input}><option>New Booking</option><option>Reissue</option><option>Extra Baggage</option></select></div>
-                     <div><label style={styles.label}>Journey</label><select value={invForm.flightJourney} onChange={(e) => setInvForm({...invForm, flightJourney: e.target.value})} style={styles.input}><option>Single</option><option>Roundtrip</option></select></div>
-                     <div><label style={styles.label}>Airline</label><input placeholder="Flynas" value={invForm.airline} onChange={(e) => setInvForm({...invForm, airline: e.target.value})} style={styles.input} required /></div>
-                     <div><label style={styles.label}>Sector</label><input placeholder="JED - RUH" value={invForm.flightSector} onChange={(e) => setInvForm({...invForm, flightSector: e.target.value})} style={styles.input} required /></div>
-                     <div><label style={styles.label}>PNR</label><input placeholder="PNR" value={invForm.pnr} onChange={(e) => setInvForm({...invForm, pnr: e.target.value})} style={styles.input} required /></div>
-                     <div><label style={styles.label}>Ticket No</label><input placeholder="Ticket No" value={invForm.ticketNo} onChange={(e) => setInvForm({...invForm, ticketNo: e.target.value})} style={styles.input} /></div>
-                   </>}
-                   {invForm.service === 'Hotel' && <>
-                     <div><label style={styles.label}>Hotel Name</label><input placeholder="Hotel Name" value={invForm.hotelName} onChange={(e) => setInvForm({...invForm, hotelName: e.target.value})} style={styles.input} required /></div>
-                     <div><label style={styles.label}>Destination</label><input placeholder="Dubai" value={invForm.destination} onChange={(e) => setInvForm({...invForm, destination: e.target.value})} style={styles.input} required /></div>
-                     <div><label style={styles.label}>Check-in</label><input type="date" value={invForm.checkIn} onChange={(e) => setInvForm({...invForm, checkIn: e.target.value})} style={styles.input} required /></div>
-                     <div><label style={styles.label}>Check-out</label><input type="date" value={invForm.checkOut} onChange={(e) => setInvForm({...invForm, checkOut: e.target.value})} style={styles.input} required /></div>
-                   </>}
-                   {invForm.service === 'Visa' && <>
-                     <div><label style={styles.label}>Visa Type</label><select value={invForm.visaType} onChange={(e) => setInvForm({...invForm, visaType: e.target.value})} style={styles.input}><option>Tourist</option><option>Business</option><option>Visit</option><option>Work</option></select></div>
-                     <div><label style={styles.label}>Destination</label><input placeholder="Schengen" value={invForm.destination} onChange={(e) => setInvForm({...invForm, destination: e.target.value})} style={styles.input} required /></div>
-                   </>}
-                   {data.customFields.map(f => (
-                     <div key={f.id}>
-                       <label style={styles.label}>{f.name}</label>
-                       <input placeholder={f.name} style={styles.input} />
-                     </div>
-                   ))}
-                 </div>
-
-                 <h3 style={{color: '#1E3A8A', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>Pricing & Payment</h3>
-                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
-                   <div><label style={styles.label}>Sales Rep</label><select value={invForm.employeeId} onChange={(e) => setInvForm({...invForm, employeeId: e.target.value})} style={styles.input}><option value="">Select</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
-                   <div><label style={styles.label}>Portal</label><select value={invForm.portal} onChange={(e) => setInvForm({...invForm, portal: e.target.value})} style={styles.input} required><option value="">Select</option>{data.portals.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}</select></div>
-                   <div><label style={styles.label}>Qty</label><input type="number" value={invForm.qty} onChange={(e) => setInvForm({...invForm, qty: e.target.value})} style={styles.input} required /></div>
-                   <div><label style={styles.label}>Cost Price</label><input type="number" value={invForm.cost} onChange={(e) => setInvForm({...invForm, cost: e.target.value})} style={styles.input} required /></div>
-                   <div><label style={styles.label}>Sell Price</label><input type="number" value={invForm.sell} onChange={(e) => setInvForm({...invForm, sell: e.target.value})} style={styles.input} required /></div>
-                   <div><label style={styles.label}>Discount</label><input type="number" value={invForm.discount} onChange={(e) => setInvForm({...invForm, discount: e.target.value})} style={styles.input} /></div>
-                   <div><label style={styles.label}>Tax</label><select value={invForm.taxRate} onChange={(e) => setInvForm({...invForm, taxRate: e.target.value})} style={styles.input}><option value="15">15%</option><option value="0">0%</option></select></div>
-                   <div><label style={styles.label}>Payment</label><select value={invForm.payment} onChange={(e) => setInvForm({...invForm, payment: e.target.value})} style={styles.input}><option>Cash</option><option>Bank Transfer</option><option>Tabby</option><option>Tamara</option><option>Credit</option></select></div>
-                   <div><label style={styles.label}>Booking Date</label><input type="date" value={invForm.bookingDate} onChange={(e) => setInvForm({...invForm, bookingDate: e.target.value})} style={styles.input} required /></div>
-                   <div><label style={styles.label}>Invoice Date</label><input type="date" value={invForm.invoiceDate} onChange={(e) => setInvForm({...invForm, invoiceDate: e.target.value})} style={styles.input} required /></div>
-                   <div><label style={styles.label}>Paid Amount</label><input type="number" value={invForm.paid} onChange={(e) => setInvForm({...invForm, paid: e.target.value})} style={styles.input} required /></div>
-                 </div>
-                 <button type="submit" style={{ background: 'linear-gradient(90deg, #1E3A8A, #2563EB)', color: '#FBBF24', border: 'none', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', padding: '15px', width: '100%', borderRadius: '8px' }}>{editingId ? 'Update Invoice' : 'Generate Invoice'}</button>
-                 {editingId && <button type="button" onClick={() => { setEditingId(null); setPage('list'); }} style={{ background: '#EF4444', color: 'white', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '15px', width: '100%', marginTop: '10px', borderRadius: '8px' }}>Cancel</button>}
-               </form>
-             </div>
+            <div style={styles.card}>
+              <form onSubmit={handleCreateInvoice}>
+                <h3 style={{color: '#1E3A8A', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>Customer Details</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
+                  <div><label style={styles.label}>Select Customer</label><select value={invForm.custId} onChange={(e) => setInvForm({...invForm, custId: e.target.value})} style={styles.input} disabled={editingId}><option value="new">+ New Customer</option>{data.customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.type})</option>)}</select></div>
+                  {invForm.custId === 'new' && <>
+                    <div><label style={styles.label}>Name</label><input placeholder="Enter Name" value={invForm.custName} onChange={(e) => setInvForm({...invForm, custName: e.target.value})} required style={styles.input} /></div>
+                    <div><label style={styles.label}>Phone</label><input placeholder="Enter Phone" value={invForm.custPhone} onChange={(e) => setInvForm({...invForm, custPhone: e.target.value})} required style={styles.input} /></div>
+                  </>}
+                </div>
+                <h3 style={{color: '#1E3A8A', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>Service Details</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
+                  <div><label style={styles.label}>Service</label><select value={invForm.service} onChange={(e) => setInvForm({...invForm, service: e.target.value})} style={styles.input}>{data.services.map(s => <option key={s.id}>{s.name}</option>)}</select></div>
+                  {invForm.service === 'Flight' && <>
+                    <div><label style={styles.label}>Flight Type</label><select value={invForm.flightType} onChange={(e) => setInvForm({...invForm, flightType: e.target.value})} style={styles.input}><option>Domestic</option><option>International</option></select></div>
+                    <div><label style={styles.label}>Airline</label><input placeholder="Flynas" value={invForm.airline} onChange={(e) => setInvForm({...invForm, airline: e.target.value})} style={styles.input} required /></div>
+                    <div><label style={styles.label}>Sector</label><input placeholder="JED - RUH" value={invForm.flightSector} onChange={(e) => setInvForm({...invForm, flightSector: e.target.value})} style={styles.input} required /></div>
+                    <div><label style={styles.label}>PNR</label><input placeholder="PNR" value={invForm.pnr} onChange={(e) => setInvForm({...invForm, pnr: e.target.value})} style={styles.input} required /></div>
+                  </>}
+                  {invForm.service === 'Hotel' && <>
+                    <div><label style={styles.label}>Hotel Name</label><input placeholder="Hotel Name" value={invForm.hotelName} onChange={(e) => setInvForm({...invForm, hotelName: e.target.value})} style={styles.input} required /></div>
+                    <div><label style={styles.label}>Destination</label><input placeholder="Dubai" value={invForm.destination} onChange={(e) => setInvForm({...invForm, destination: e.target.value})} style={styles.input} required /></div>
+                  </>}
+                  {data.customFields.map(f => (
+                    <div key={f.id}><label style={styles.label}>{f.name}</label><input placeholder={f.name} style={styles.input} /></div>
+                  ))}
+                </div>
+                <h3 style={{color: '#1E3A8A', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>Pricing & Payment</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
+                  <div><label style={styles.label}>Portal</label><select value={invForm.portal} onChange={(e) => setInvForm({...invForm, portal: e.target.value})} style={styles.input} required><option value="">Select</option>{data.portals.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}</select></div>
+                  <div><label style={styles.label}>Cost Price</label><input type="number" value={invForm.cost} onChange={(e) => setInvForm({...invForm, cost: e.target.value})} style={styles.input} required /></div>
+                  <div><label style={styles.label}>Sell Price</label><input type="number" value={invForm.sell} onChange={(e) => setInvForm({...invForm, sell: e.target.value})} style={styles.input} required /></div>
+                  <div><label style={styles.label}>Paid Amount</label><input type="number" value={invForm.paid} onChange={(e) => setInvForm({...invForm, paid: e.target.value})} style={styles.input} required /></div>
+                </div>
+                <button type="submit" style={{ background: 'linear-gradient(90deg, #1E3A8A, #2563EB)', color: '#FBBF24', border: 'none', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', padding: '15px', width: '100%', borderRadius: '8px' }}>{editingId ? 'Update Invoice' : 'Generate Invoice'}</button>
+              </form>
+            </div>
           )}
 
           {page === 'list' && (
@@ -787,16 +613,15 @@ export default function Home() {
                 <button onClick={() => exportCSV(activeInv, 'Sales_Invoices.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
               </div>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.th}>Inv No</th><th style={styles.th}>Customer</th><th style={styles.th}>Qty</th><th style={styles.th}>Profit</th><th style={styles.th}>Total</th><th style={styles.th}>Actions</th></tr></thead>
+                <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.th}>Inv No</th><th style={styles.th}>Customer</th><th style={styles.th}>Total</th><th style={styles.th}>Actions</th></tr></thead>
                 <tbody>
                   {paginatedInv.map(inv => (
                     <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: inv.due_amount > 0 ? '#fff3cd' : 'transparent' }}>
-                      <td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.customers?.name || 'N/A'}</td>
-                      <td style={styles.td}>{inv.qty || 1}</td><td style={{...styles.td, color:'green'}}>{inv.profit} SAR</td><td style={styles.td}>{inv.total} SAR</td>
+                      <td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.customers?.name || 'N/A'}</td><td style={styles.td}>{inv.total} SAR</td>
                       <td style={styles.td}>
                         <button onClick={() => setModal({type: 'preview', data: inv})} style={styles.btnSm}>Preview</button>
                         <button onClick={() => handleEditClick(inv)} style={{...styles.btnSm, background:'#2563EB'}}>Edit</button>
-                        {inv.due_amount > 0 && <button onClick={() => { setSettleForm({id: inv.id, date: today, mode: 'Cash', tabbyNo: '', tamaraNo: ''}); setModal({type:'settle', data: inv}); }} style={{...styles.btnSm, background:'#059669'}}>Settle</button>}
+                        {inv.due_amount > 0 && <button onClick={() => { setSettleForm({id: inv.id, date: today, mode: 'Cash'}); setModal({type:'settle', data: inv}); }} style={{...styles.btnSm, background:'#059669'}}>Settle</button>}
                         <button onClick={() => { setRefundForm({id: inv.id, compRefund: 0, custRefund: 0, mode: 'Cash'}); setModal({type:'refund', data: inv}); }} style={{...styles.btnSm, background:'#D97706'}}>Refund</button>
                         <button onClick={() => handleDelete('invoices', inv.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button>
                       </td>
@@ -804,32 +629,20 @@ export default function Home() {
                   ))}
                 </tbody>
               </table>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
-                <button onClick={() => setTblPage(p => Math.max(p - 1, 1))} disabled={tblPage === 1} style={{ padding: '8px 16px', cursor: 'pointer', background: tblPage === 1 ? '#ccc' : '#1E3A8A', color: 'white', border: 'none', borderRadius: '6px' }}>Previous</button>
-                <span>Page {tblPage} of {totalPages || 1}</span>
-                <button onClick={() => setTblPage(p => Math.min(p + 1, totalPages))} disabled={tblPage === totalPages || totalPages === 0} style={{ padding: '8px 16px', cursor: 'pointer', background: tblPage === totalPages ? '#ccc' : '#1E3A8A', color: 'white', border: 'none', borderRadius: '6px' }}>Next</button>
-              </div>
             </div>
           )}
 
           {page === 'refunds' && (
-             <div style={styles.card}>
-               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                 <h3 style={{margin: 0}}>All Refunds</h3>
-                 <button onClick={() => exportCSV(refundInv, 'Refunds.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
-               </div>
-               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                 <thead><tr style={{ background: '#EF4444', color: 'white' }}><th style={styles.th}>Refund No</th><th style={styles.th}>Original Inv</th><th style={styles.th}>Cust Refund</th><th style={styles.th}>Comp Refund</th></tr></thead>
-                 <tbody>
-                   {refundInv.map(inv => (
-                     <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                       <td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.service_type}</td>
-                       <td style={{...styles.td, color:'red'}}>{inv.refund_customer} SAR</td><td style={{...styles.td, color:'green'}}>{inv.refund_company} SAR</td>
-                     </tr>
-                   ))}
-                 </tbody>
-               </table>
-             </div>
+            <div style={styles.card}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+                <h3 style={{margin: 0}}>All Refunds</h3>
+                <button onClick={() => exportCSV(refundInv, 'Refunds.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr style={{ background: '#EF4444', color: 'white' }}><th style={styles.th}>Refund No</th><th style={styles.th}>Original Inv</th><th style={styles.th}>Cust Refund</th><th style={styles.th}>Comp Refund</th></tr></thead>
+                <tbody>{refundInv.map(inv => <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0' }}><td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.service_type}</td><td style={{...styles.td, color:'red'}}>{inv.refund_customer} SAR</td><td style={{...styles.td, color:'green'}}>{inv.refund_company} SAR</td></tr>)}</tbody>
+              </table>
+            </div>
           )}
 
           {page === 'customers' && (
@@ -839,18 +652,8 @@ export default function Home() {
                 <button onClick={() => exportCSV(data.customers, 'Customers.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
               </div>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.th}>Name</th><th style={styles.th}>Type</th><th style={styles.th}>Phone</th><th style={styles.th}>Action</th></tr></thead>
-                <tbody>
-                  {data.customers.map(c => (
-                    <tr key={c.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={styles.td}>{c.name}</td><td style={styles.td}>{c.type || 'Individual'}</td><td style={styles.td}>{c.phone}</td>
-                      <td style={styles.td}>
-                        <button onClick={() => setModal({type: 'ledger', data: c})} style={{...styles.btnSm, background:'#2563EB'}}>Ledger</button>
-                        <button onClick={() => handleDelete('customers', c.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
+                <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.th}>Name</th><th style={styles.th}>Phone</th><th style={styles.th}>Action</th></tr></thead>
+                <tbody>{data.customers.map(c => <tr key={c.id} style={{ borderBottom: '1px solid #e2e8f0' }}><td style={styles.td}>{c.name}</td><td style={styles.td}>{c.phone}</td><td style={styles.td}><button onClick={() => setModal({type: 'ledger', data: c})} style={{...styles.btnSm, background:'#2563EB'}}>Ledger</button><button onClick={() => handleDelete('customers', c.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td></tr>)}</tbody>
               </table>
             </div>
           )}
@@ -859,20 +662,19 @@ export default function Home() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '25px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <div style={styles.card}>
-                  <h3 style={{color:'#1E3A8A'}}>Add New Portal</h3>
-                  <form onSubmit={handleAddPortal} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <input placeholder="Portal Name (e.g. Flyadeal)" value={portalForm.name} onChange={(e) => setPortalForm({...portalForm, name: e.target.value})} style={styles.input} required />
-                    <input type="number" placeholder="Initial Balance" value={portalForm.balance} onChange={(e) => setPortalForm({...portalForm, balance: e.target.value})} style={styles.input} required />
+                  <h3 style={{color:'#1E3A8A'}}>Add Portal</h3>
+                  <form onSubmit={(e) => { e.preventDefault(); handleAddEntity('portals', { name: portalForm.name, current_balance: parseFloat(portalForm.balance) || 0 }, setPortalForm, 'Portal Added!'); }} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <input placeholder="Portal Name" value={portalForm.name} onChange={(e) => setPortalForm({...portalForm, name: e.target.value})} style={styles.input} required />
+                    <input type="number" placeholder="Balance" value={portalForm.balance} onChange={(e) => setPortalForm({...portalForm, balance: e.target.value})} style={styles.input} required />
                     <button type="submit" style={styles.btnPrimary}>Add Portal</button>
                   </form>
                 </div>
                 <div style={styles.card}>
-                  <h3 style={{color:'#1E3A8A'}}>Add Recharge</h3>
+                  <h3 style={{color:'#1E3A8A'}}>Recharge</h3>
                   <form onSubmit={handleRecharge} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <select name="portal" style={styles.input} required><option value="">Select Portal</option>{data.portals.map(p => <option key={p.id}>{p.name}</option>)}</select>
                     <input type="number" name="amt" placeholder="Amount" style={styles.input} required />
                     <input type="date" name="date" defaultValue={today} style={styles.input} required />
-                    <input name="desc" placeholder="Description" style={styles.input} />
                     <select name="mode" style={styles.input}><option>Cash</option><option>Bank Transfer</option></select>
                     <button type="submit" style={styles.btnPrimary}>Recharge</button>
                   </form>
@@ -880,26 +682,15 @@ export default function Home() {
               </div>
               <div style={styles.card}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                  <h3 style={{color:'#1E3A8A', margin: 0}}>Portal Balances & History</h3>
-                  <button onClick={() => exportCSV(data.recharges, 'Portals_Recharges.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
+                  <h3>Portal Balances</h3>
+                  <button onClick={() => exportCSV(data.recharges, 'Portals_Recharges.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Excel</button>
                 </div>
                 <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
-                  {data.portals.map(p => (
-                    <div key={p.id} style={{ flex: 1, minWidth: '120px', background: '#f8fafc', padding: '10px', borderRadius: '8px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                      <h4>{p.name}</h4><h2 style={{color: p.current_balance < 0 ? 'red' : '#1E3A8A'}}>{p.current_balance || 0}</h2>
-                    </div>
-                  ))}
+                  {data.portals.map(p => <div key={p.id} style={{ flex: 1, minWidth: '120px', background: '#f8fafc', padding: '10px', borderRadius: '8px', textAlign: 'center', border: '1px solid #e2e8f0' }}><h4>{p.name}</h4><h2 style={{color: p.current_balance < 0 ? 'red' : '#1E3A8A'}}>{p.current_balance || 0}</h2></div>)}
                 </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.td}>Date</th><th style={styles.td}>Portal</th><th style={styles.td}>Amount</th><th style={styles.td}>Action</th></tr></thead>
-                  <tbody>
-                    {data.recharges.map(r => (
-                      <tr key={r.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={styles.td}>{r.recharge_date}</td><td style={styles.td}>{r.portals?.name}</td><td style={styles.td}>{r.amount} SAR</td>
-                        <td style={styles.td}><button onClick={() => handleDelete('recharges', r.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.td}>Date</th><th style={styles.td}>Amount</th><th style={styles.td}>Action</th></tr></thead>
+                  <tbody>{data.recharges.map(r => <tr key={r.id} style={{ borderBottom: '1px solid #e2e8f0' }}><td style={styles.td}>{r.recharge_date}</td><td style={styles.td}>{r.amount} SAR</td><td style={styles.td}><button onClick={() => handleDelete('recharges', r.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td></tr>)}</tbody>
                 </table>
               </div>
             </div>
@@ -908,29 +699,18 @@ export default function Home() {
           {page === 'vendors' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '25px' }}>
               <div style={styles.card}>
-                <h3 style={{color:'#1E3A8A'}}>Add B2B Vendor</h3>
-                <form onSubmit={handleAddVendor} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <input placeholder="Vendor Name" value={vendorForm.name} onChange={(e) => setVendorForm({...vendorForm, name: e.target.value})} style={styles.input} required />
+                <h3 style={{color:'#1E3A8A'}}>Add Vendor</h3>
+                <form onSubmit={(e) => { e.preventDefault(); handleAddEntity('vendors', { name: vendorForm.name, phone: vendorForm.phone, balance: parseFloat(vendorForm.balance) || 0 }, setVendorForm, 'Vendor Added!'); }} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <input placeholder="Name" value={vendorForm.name} onChange={(e) => setVendorForm({...vendorForm, name: e.target.value})} style={styles.input} required />
                   <input placeholder="Phone" value={vendorForm.phone} onChange={(e) => setVendorForm({...vendorForm, phone: e.target.value})} style={styles.input} />
-                  <input type="number" placeholder="Initial Balance" value={vendorForm.balance} onChange={(e) => setVendorForm({...vendorForm, balance: e.target.value})} style={styles.input} required />
                   <button type="submit" style={styles.btnPrimary}>Add Vendor</button>
                 </form>
               </div>
               <div style={styles.card}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                  <h3 style={{color:'#1E3A8A', margin: 0}}>Vendors List</h3>
-                  <button onClick={() => exportCSV(data.vendors, 'Vendors.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
-                </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.td}>Name</th><th style={styles.td}>Phone</th><th style={styles.td}>Balance</th><th style={styles.td}>Action</th></tr></thead>
-                  <tbody>
-                    {data.vendors.map(v => (
-                      <tr key={v.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={styles.td}>{v.name}</td><td style={styles.td}>{v.phone}</td><td style={styles.td}>{v.balance} SAR</td>
-                        <td style={styles.td}><button onClick={() => handleDelete('vendors', v.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
+                <h3 style={{color:'#1E3A8A', marginBottom:'20px'}}>Vendors List</h3>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.th}>Name</th><th style={styles.th}>Phone</th><th style={styles.th}>Action</th></tr></thead>
+                  <tbody>{data.vendors.map(v => <tr key={v.id} style={{ borderBottom: '1px solid #e2e8f0' }}><td style={styles.td}>{v.name}</td><td style={styles.td}>{v.phone}</td><td style={styles.td}><button onClick={() => handleDelete('vendors', v.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td></tr>)}</tbody>
                 </table>
               </div>
             </div>
@@ -939,25 +719,17 @@ export default function Home() {
           {page === 'packages' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '25px' }}>
               <div style={styles.card}>
-                <h3 style={{color:'#1E3A8A'}}>Add Tour Package</h3>
-                <form onSubmit={handleAddPackage} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <input placeholder="Package Name (e.g. Umrah)" value={pkgForm.name} onChange={(e) => setPkgForm({...pkgForm, name: e.target.value})} style={styles.input} required />
-                  <input type="number" placeholder="Price (SAR)" value={pkgForm.price} onChange={(e) => setPkgForm({...pkgForm, price: e.target.value})} style={styles.input} required />
-                  <textarea placeholder="Description" value={pkgForm.desc} onChange={(e) => setPkgForm({...pkgForm, desc: e.target.value})} style={{...styles.input, height: '80px'}} />
+                <h3 style={{color:'#1E3A8A'}}>Add Package</h3>
+                <form onSubmit={(e) => { e.preventDefault(); handleAddEntity('packages', { name: pkgForm.name, price: parseFloat(pkgForm.price), description: pkgForm.desc }, setPkgForm, 'Package Added!'); }} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <input placeholder="Name" value={pkgForm.name} onChange={(e) => setPkgForm({...pkgForm, name: e.target.value})} style={styles.input} required />
+                  <input type="number" placeholder="Price" value={pkgForm.price} onChange={(e) => setPkgForm({...pkgForm, price: e.target.value})} style={styles.input} required />
                   <button type="submit" style={styles.btnPrimary}>Add Package</button>
                 </form>
               </div>
               <div style={styles.card}>
-                <h3 style={{color:'#1E3A8A', marginBottom:'20px'}}>Available Packages</h3>
+                <h3 style={{color:'#1E3A8A', marginBottom:'20px'}}>Packages</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                  {data.packages.map(p => (
-                    <div key={p.id} style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                      <h4 style={{ margin: '0 0 10px', color: '#1E3A8A' }}>{p.name}</h4>
-                      <p style={{ margin: '0 0 5px', fontSize: '14px', color: '#64748b' }}>{p.description}</p>
-                      <h3 style={{ margin: '10px 0', color: '#059669' }}>{p.price} SAR</h3>
-                      <button onClick={() => handleDelete('packages', p.id)} style={{...styles.btnSm, background:'#EF4444'}}>Delete</button>
-                    </div>
-                  ))}
+                  {data.packages.map(p => <div key={p.id} style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}><h4 style={{ margin: '0 0 10px', color: '#1E3A8A' }}>{p.name}</h4><h3 style={{ margin: '10px 0', color: '#059669' }}>{p.price} SAR</h3><button onClick={() => handleDelete('packages', p.id)} style={{...styles.btnSm, background:'#EF4444'}}>Delete</button></div>)}
                 </div>
               </div>
             </div>
@@ -967,20 +739,17 @@ export default function Home() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '25px' }}>
               <div style={styles.card}>
                 <h3 style={{color:'#1E3A8A'}}>Add Branch</h3>
-                <form onSubmit={handleAddBranch} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <input placeholder="Branch Name" value={brnForm.name} onChange={(e) => setBrnForm({...brnForm, name: e.target.value})} style={styles.input} required />
+                <form onSubmit={(e) => { e.preventDefault(); handleAddEntity('branches', { name: brnForm.name, location: brnForm.location, phone: brnForm.phone }, setBrnForm, 'Branch Added!'); }} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <input placeholder="Name" value={brnForm.name} onChange={(e) => setBrnForm({...brnForm, name: e.target.value})} style={styles.input} required />
                   <input placeholder="Location" value={brnForm.location} onChange={(e) => setBrnForm({...brnForm, location: e.target.value})} style={styles.input} required />
-                  <input placeholder="Phone" value={brnForm.phone} onChange={(e) => setBrnForm({...brnForm, phone: e.target.value})} style={styles.input} required />
                   <button type="submit" style={styles.btnPrimary}>Add Branch</button>
                 </form>
               </div>
               <div style={styles.card}>
-                <h3 style={{color:'#1E3A8A', marginBottom:'20px'}}>Branches List</h3>
+                <h3 style={{color:'#1E3A8A', marginBottom:'20px'}}>Branches</h3>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.th}>Name</th><th style={styles.th}>Location</th><th style={styles.th}>Phone</th><th style={styles.th}>Action</th></tr></thead>
-                  <tbody>
-                    {data.branches.map(b => <tr key={b.id} style={{ borderBottom: '1px solid #e2e8f0' }}><td style={styles.td}>{b.name}</td><td style={styles.td}>{b.location}</td><td style={styles.td}>{b.phone}</td><td style={styles.td}><button onClick={() => handleDelete('branches', b.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td></tr>)}
-                  </tbody>
+                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.th}>Name</th><th style={styles.th}>Location</th><th style={styles.th}>Action</th></tr></thead>
+                  <tbody>{data.branches.map(b => <tr key={b.id} style={{ borderBottom: '1px solid #e2e8f0' }}><td style={styles.td}>{b.name}</td><td style={styles.td}>{b.location}</td><td style={styles.td}><button onClick={() => handleDelete('branches', b.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td></tr>)}</tbody>
                 </table>
               </div>
             </div>
@@ -990,46 +759,28 @@ export default function Home() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '25px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <div style={styles.card}>
-                  <h3 style={{color:'#1E3A8A'}}>Cash/Bank Balances</h3>
-                  <div style={{ fontSize: '24px', margin: '20px 0' }}>
-                    <p>Cash: <b style={{color:'#D97706'}}>{cashBalance.toFixed(0)} SAR</b></p>
-                    <p>Bank: <b style={{color:'#7C3AED'}}>{bankBalance.toFixed(0)} SAR</b></p>
-                  </div>
+                  <h3 style={{color:'#1E3A8A'}}>Balances</h3>
+                  <p>Cash: <b style={{color:'#D97706'}}>{cashBalance.toFixed(0)} SAR</b></p>
+                  <p>Bank: <b style={{color:'#7C3AED'}}>{bankBalance.toFixed(0)} SAR</b></p>
                 </div>
                 <div style={styles.card}>
                   <h3 style={{color:'#1E3A8A'}}>Fund Transfer</h3>
                   <form onSubmit={handleTransfer} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                      <div>
-                        <label style={styles.label}>From</label>
-                        <select value={transferForm.from} onChange={(e) => setTransferForm({...transferForm, from: e.target.value})} style={styles.input}><option>Cash</option><option>Bank</option><option>Investor</option></select>
-                      </div>
-                      <div>
-                        <label style={styles.label}>To</label>
-                        <select value={transferForm.to} onChange={(e) => setTransferForm({...transferForm, to: e.target.value})} style={styles.input}><option>Cash</option><option>Bank</option><option>Investor</option></select>
-                      </div>
-                    </div>
+                    <select value={transferForm.from} onChange={(e) => setTransferForm({...transferForm, from: e.target.value})} style={styles.input}><option>Cash</option><option>Bank</option><option>Investor</option></select>
+                    <select value={transferForm.to} onChange={(e) => setTransferForm({...transferForm, to: e.target.value})} style={styles.input}><option>Bank</option><option>Cash</option><option>Investor</option></select>
                     <input type="number" placeholder="Amount" value={transferForm.amount} onChange={(e) => setTransferForm({...transferForm, amount: e.target.value})} style={styles.input} required />
-                    <input type="date" value={transferForm.date} onChange={(e) => setTransferForm({...transferForm, date: e.target.value})} style={styles.input} required />
                     <button type="submit" style={styles.btnPrimary}>Transfer</button>
                   </form>
                 </div>
               </div>
               <div style={styles.card}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                  <h3 style={{color:'#1E3A8A', margin: 0}}>Recent Transactions</h3>
-                  <button onClick={() => exportCSV(data.cashbook, 'Cashbook.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
+                  <h3>Transactions</h3>
+                  <button onClick={() => exportCSV(data.cashbook, 'Cashbook.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Excel</button>
                 </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.td}>Date</th><th style={styles.td}>Type</th><th style={styles.td}>Desc</th><th style={styles.td}>Amount</th><th style={styles.td}>Action</th></tr></thead>
-                  <tbody>
-                    {data.cashbook.map(c => (
-                      <tr key={c.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={styles.td}>{c.trans_date}</td><td style={styles.td}>{c.type}</td><td style={styles.td}>{c.description}</td><td style={styles.td}>{c.amount} SAR</td>
-                        <td style={styles.td}><button onClick={() => handleDelete('cashbook', c.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.td}>Date</th><th style={styles.td}>Type</th><th style={styles.td}>Amount</th><th style={styles.td}>Action</th></tr></thead>
+                  <tbody>{data.cashbook.map(c => <tr key={c.id} style={{ borderBottom: '1px solid #e2e8f0' }}><td style={styles.td}>{c.trans_date}</td><td style={styles.td}>{c.type}</td><td style={styles.td}>{c.amount} SAR</td><td style={styles.td}><button onClick={() => handleDelete('cashbook', c.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td></tr>)}</tbody>
                 </table>
               </div>
             </div>
@@ -1042,27 +793,17 @@ export default function Home() {
                 <form onSubmit={handleAddInvestment} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <input placeholder="Investor Name" value={investForm.name} onChange={(e) => setInvestForm({...investForm, name: e.target.value})} style={styles.input} required />
                   <input type="number" placeholder="Amount" value={investForm.amount} onChange={(e) => setInvestForm({...investForm, amount: e.target.value})} style={styles.input} required />
-                  <input type="date" value={investForm.date} onChange={(e) => setInvestForm({...investForm, date: e.target.value})} style={styles.input} required />
-                  <input placeholder="Description" value={investForm.desc} onChange={(e) => setInvestForm({...investForm, desc: e.target.value})} style={styles.input} />
-                  <select value={investForm.mode} onChange={(e) => setInvestForm({...investForm, mode: e.target.value})} style={styles.input}><option>Cash</option><option>Bank Transfer</option></select>
-                  <button type="submit" style={styles.btnPrimary}>Add Investment</button>
+                  <button type="submit" style={styles.btnPrimary}>Add</button>
                 </form>
               </div>
               <div style={styles.card}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                  <h3 style={{color:'#1E3A8A', margin: 0}}>Investment History</h3>
-                  <button onClick={() => exportCSV(data.investments, 'Investments.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
+                  <h3>History</h3>
+                  <button onClick={() => exportCSV(data.investments, 'Investments.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Excel</button>
                 </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.td}>Date</th><th style={styles.td}>Investor</th><th style={styles.td}>Amount</th><th style={styles.td}>Mode</th><th style={styles.td}>Action</th></tr></thead>
-                  <tbody>
-                    {data.investments.map(i => (
-                      <tr key={i.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={styles.td}>{i.invest_date}</td><td style={styles.td}>{i.investor_name}</td><td style={styles.td}>{i.amount} SAR</td><td style={styles.td}>{i.payment_mode}</td>
-                        <td style={styles.td}><button onClick={() => handleDelete('investments', i.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.td}>Date</th><th style={styles.td}>Investor</th><th style={styles.td}>Amount</th><th style={styles.td}>Action</th></tr></thead>
+                  <tbody>{data.investments.map(i => <tr key={i.id} style={{ borderBottom: '1px solid #e2e8f0' }}><td style={styles.td}>{i.invest_date}</td><td style={styles.td}>{i.investor_name}</td><td style={styles.td}>{i.amount} SAR</td><td style={styles.td}><button onClick={() => handleDelete('investments', i.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td></tr>)}</tbody>
                 </table>
               </div>
             </div>
@@ -1070,53 +811,47 @@ export default function Home() {
 
           {page === 'hr' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '25px' }}>
-              <div style={styles.card}>
-                <h3 style={{color:'#1E3A8A'}}>Pay Salary</h3>
-                <form onSubmit={handlePaySalary} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <select name="emp" style={styles.input} required><option value="">Select Employee</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select>
-                  <input type="number" name="amt" placeholder="Amount" style={styles.input} required />
-                  <input type="month" name="month" style={styles.input} required />
-                  <select name="mode" style={styles.input}><option>Cash</option><option>Bank Transfer</option></select>
-                  <button type="submit" style={styles.btnPrimary}>Pay Salary</button>
-                </form>
-              </div>
-              <div style={styles.card}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                  <h3 style={{color:'#1E3A8A', margin: 0}}>Payroll History</h3>
-                  <button onClick={() => exportCSV(data.payroll, 'Payroll.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={styles.card}>
+                  <h3 style={{color:'#1E3A8A'}}>Pay Salary</h3>
+                  <form onSubmit={handlePaySalary} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <select value={payrollForm.emp} onChange={(e) => setPayrollForm({...payrollForm, emp: e.target.value})} style={styles.input} required><option value="">Select Employee</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select>
+                    <input type="number" placeholder="Amount" value={payrollForm.amt} onChange={(e) => setPayrollForm({...payrollForm, amt: e.target.value})} style={styles.input} required />
+                    <input type="month" value={payrollForm.month} onChange={(e) => setPayrollForm({...payrollForm, month: e.target.value})} style={styles.input} required />
+                    <select value={payrollForm.mode} onChange={(e) => setPayrollForm({...payrollForm, mode: e.target.value})} style={styles.input}><option>Cash</option><option>Bank Transfer</option></select>
+                    <button type="submit" style={styles.btnPrimary}>Pay Salary</button>
+                  </form>
                 </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.td}>Employee</th><th style={styles.td}>Month</th><th style={styles.td}>Amount</th><th style={styles.td}>Mode</th><th style={styles.td}>Action</th></tr></thead>
-                  <tbody>
-                    {data.payroll.map(p => (
-                      <tr key={p.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={styles.td}>{p.employees?.name}</td><td style={styles.td}>{p.month}</td><td style={styles.td}>{p.amount} SAR</td><td style={styles.td}>{p.payment_mode}</td>
-                        <td style={styles.td}><button onClick={() => handleDelete('payroll', p.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div style={styles.card}>
+                  <h3 style={{color:'#1E3A8A'}}>Add Employee</h3>
+                  <form onSubmit={(e) => { e.preventDefault(); handleAddEntity('employees', { name: empForm.name, role: empForm.role }, setEmpForm, 'Employee Added!'); }} style={{ display: 'flex', gap: '10px' }}>
+                    <input placeholder="Name" value={empForm.name} onChange={(e) => setEmpForm({...empForm, name: e.target.value})} style={styles.input} required />
+                    <button type="submit" style={{...styles.btnPrimary, width: 'auto', padding: '0 20px'}}>Add</button>
+                  </form>
+                </div>
               </div>
-              
-              <div style={{...styles.card, gridColumn: 'span 2'}}>
-                <h3 style={{color:'#1E3A8A'}}>Add Expense</h3>
-                <form onSubmit={handleAddExpense} style={{ display: 'flex', gap: '10px' }}>
-                  <input name="cat" placeholder="Category (Rent, Electricity)" style={styles.input} required />
-                  <input name="desc" placeholder="Description" style={styles.input} required />
-                  <input type="number" name="amt" placeholder="Amount" style={styles.input} required />
-                  <select name="mode" style={styles.input}><option>Cash</option><option>Bank Transfer</option></select>
-                  <button type="submit" style={{...styles.btnPrimary, width: 'auto', padding: '10px 20px'}}>Add Expense</button>
-                </form>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', marginTop: '15px' }}>
-                  <tbody>
-                    {data.expenses.map(ex => (
-                      <tr key={ex.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={styles.td}>{ex.category}</td><td style={styles.td}>{ex.description}</td><td style={styles.td}>{ex.amount} SAR</td>
-                        <td style={styles.td}><button onClick={() => handleDelete('expenses', ex.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
+                <div style={styles.card}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+                    <h3>Payroll History</h3>
+                    <button onClick={() => exportCSV(data.payroll, 'Payroll.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Excel</button>
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.td}>Employee</th><th style={styles.td}>Amount</th><th style={styles.td}>Action</th></tr></thead>
+                    <tbody>{data.payroll.map(p => <tr key={p.id} style={{ borderBottom: '1px solid #e2e8f0' }}><td style={styles.td}>{p.employees?.name}</td><td style={styles.td}>{p.amount} SAR</td><td style={styles.td}><button onClick={() => handleDelete('payroll', p.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td></tr>)}</tbody>
+                  </table>
+                </div>
+                <div style={styles.card}>
+                  <h3 style={{color:'#1E3A8A'}}>Add Expense</h3>
+                  <form onSubmit={handleAddExpense} style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                    <input placeholder="Category" value={expenseForm.cat} onChange={(e) => setExpenseForm({...expenseForm, cat: e.target.value})} style={styles.input} required />
+                    <input type="number" placeholder="Amount" value={expenseForm.amt} onChange={(e) => setExpenseForm({...expenseForm, amt: e.target.value})} style={styles.input} required />
+                    <button type="submit" style={{...styles.btnPrimary, width: 'auto', padding: '10px 20px'}}>Add</button>
+                  </form>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <tbody>{data.expenses.map(ex => <tr key={ex.id} style={{ borderBottom: '1px solid #e2e8f0' }}><td style={styles.td}>{ex.category}</td><td style={styles.td}>{ex.amount} SAR</td><td style={styles.td}><button onClick={() => handleDelete('expenses', ex.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td></tr>)}</tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
@@ -1124,53 +859,30 @@ export default function Home() {
           {page === 'users' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '25px' }}>
               <div style={styles.card}>
-                <h3 style={{color: '#1E3A8A', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px'}}>{tr.ownerProfile}</h3>
+                <h3 style={{color: '#1E3A8A', marginBottom:'20px'}}>{tr.ownerProfile}</h3>
                 <form onSubmit={handleUpdateOwnerProfile}>
-                  <label style={styles.label}>Username</label>
-                  <input value={userProfile.username || ''} onChange={(e) => setUserProfile({...userProfile, username: e.target.value})} style={styles.input} />
-                  <label style={styles.label}>Email</label>
-                  <input value={userProfile.email || ''} onChange={(e) => setUserProfile({...userProfile, email: e.target.value})} style={styles.input} />
-                  <button type="submit" style={{...styles.btnPrimary, marginTop: '15px'}}>Update Owner Data</button>
+                  <input value={userProfile.username || ''} onChange={(e) => setUserProfile({...userProfile, username: e.target.value})} style={styles.input} placeholder="Username" />
+                  <input value={userProfile.email || ''} onChange={(e) => setUserProfile({...userProfile, email: e.target.value})} style={styles.input} placeholder="Email" />
+                  <button type="submit" style={styles.btnPrimary}>Update Profile</button>
                 </form>
               </div>
-
               <div style={styles.card}>
-                <h3 style={{color: '#1E3A8A', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px'}}>Add New System User</h3>
-                <form onSubmit={handleAddUser}>
-                  <label style={styles.label}>Username</label>
-                  <input value={userForm.username} onChange={(e) => setUserForm({...userForm, username: e.target.value})} style={styles.input} required />
-                  <label style={styles.label}>Email</label>
-                  <input type="email" value={userForm.email} onChange={(e) => setUserForm({...userForm, email: e.target.value})} style={styles.input} required />
-                  <label style={styles.label}>Role</label>
-                  <select value={userForm.role} onChange={(e) => setUserForm({...userForm, role: e.target.value})} style={styles.input}>
-                    <option>Owner</option><option>Manager</option><option>Accountant</option><option>Sales</option>
-                  </select>
-                  
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', background: '#f8fafc', padding: '15px', borderRadius: '8px', marginTop: '10px' }}>
-                    <label style={{...styles.label, display:'flex', alignItems:'center', gap:'10px'}}><input type="checkbox" checked={userForm.is_admin} onChange={(e) => setUserForm({...userForm, is_admin: e.target.checked})} /> Admin (Full Access)</label>
-                    <label style={{...styles.label, display:'flex', alignItems:'center', gap:'10px'}}><input type="checkbox" checked={userForm.can_access_invoices} onChange={(e) => setUserForm({...userForm, can_access_invoices: e.target.checked})} /> Access Invoices & Sales</label>
-                    <label style={{...styles.label, display:'flex', alignItems:'center', gap:'10px'}}><input type="checkbox" checked={userForm.can_access_bank} onChange={(e) => setUserForm({...userForm, can_access_bank: e.target.checked})} /> Access Bank & Cash</label>
-                    <label style={{...styles.label, display:'flex', alignItems:'center', gap:'10px'}}><input type="checkbox" checked={userForm.can_access_hr} onChange={(e) => setUserForm({...userForm, can_access_hr: e.target.checked})} /> Access HR & Payroll</label>
-                    <label style={{...styles.label, display:'flex', alignItems:'center', gap:'10px'}}><input type="checkbox" checked={userForm.can_access_reports} onChange={(e) => setUserForm({...userForm, can_access_reports: e.target.checked})} /> Access Reports</label>
-                    <label style={{...styles.label, display:'flex', alignItems:'center', gap:'10px'}}><input type="checkbox" checked={userForm.can_access_settings} onChange={(e) => setUserForm({...userForm, can_access_settings: e.target.checked})} /> Access Settings</label>
+                <h3 style={{color: '#1E3A8A', marginBottom:'20px'}}>Add System User</h3>
+                <form onSubmit={(e) => { e.preventDefault(); handleAddEntity('app_users', userForm, setUserForm, 'User Added!'); }}>
+                  <input value={userForm.username} onChange={(e) => setUserForm({...userForm, username: e.target.value})} style={styles.input} placeholder="Username" required />
+                  <input type="email" value={userForm.email} onChange={(e) => setUserForm({...userForm, email: e.target.value})} style={styles.input} placeholder="Email" required />
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                    <label style={{fontSize:'14px', display:'flex', alignItems:'center', gap:'5px'}}><input type="checkbox" checked={userForm.can_access_invoices} onChange={(e) => setUserForm({...userForm, can_access_invoices: e.target.checked})} /> Invoices</label>
+                    <label style={{fontSize:'14px', display:'flex', alignItems:'center', gap:'5px'}}><input type="checkbox" checked={userForm.can_access_bank} onChange={(e) => setUserForm({...userForm, can_access_bank: e.target.checked})} /> Bank</label>
+                    <label style={{fontSize:'14px', display:'flex', alignItems:'center', gap:'5px'}}><input type="checkbox" checked={userForm.is_admin} onChange={(e) => setUserForm({...userForm, is_admin: e.target.checked})} /> Admin</label>
                   </div>
-
-                  <button type="submit" style={{...styles.btnPrimary, marginTop: '15px'}}>Add User</button>
+                  <button type="submit" style={styles.btnPrimary}>Add User</button>
                 </form>
               </div>
-
               <div style={{...styles.card, gridColumn: 'span 2'}}>
-                <h3 style={{color: '#1E3A8A', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px'}}>System Users List</h3>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.th}>Username</th><th style={styles.th}>Email</th><th style={styles.th}>Role</th><th style={styles.th}>Action</th></tr></thead>
-                  <tbody>
-                    {data.appUsers.map(u => (
-                      <tr key={u.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={styles.td}>{u.username || 'N/A'}</td><td style={styles.td}>{u.email}</td><td style={styles.td}>{u.role}</td>
-                        <td style={styles.td}><button onClick={() => handleDelete('app_users', u.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
+                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.th}>Username</th><th style={styles.th}>Email</th><th style={styles.th}>Action</th></tr></thead>
+                  <tbody>{data.appUsers.map(u => <tr key={u.id} style={{ borderBottom: '1px solid #e2e8f0' }}><td style={styles.td}>{u.username}</td><td style={styles.td}>{u.email}</td><td style={styles.td}><button onClick={() => handleDelete('app_users', u.id)} style={{...styles.btnSm, background:'#EF4444'}}>Delete</button></td></tr>)}</tbody>
                 </table>
               </div>
             </div>
@@ -1178,16 +890,16 @@ export default function Home() {
 
           {page === 'reports' && (
             <div style={styles.card}>
-              <h3 style={{color: '#1E3A8A', marginBottom:'20px'}}>Financial Statements & Reports</h3>
+              <h3 style={{color: '#1E3A8A', marginBottom:'20px'}}>Financial Reports</h3>
               <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
                 <input type="date" value={repDate.from} onChange={(e) => setRepDate({...repDate, from: e.target.value})} style={styles.input} />
                 <input type="date" value={repDate.to} onChange={(e) => setRepDate({...repDate, to: e.target.value})} style={styles.input} />
               </div>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
-                {['sales', 'refunds', 'recharges', 'cashbook', 'investments', 'payroll', 'expenses'].map(tab => (
+                {['sales', 'refunds', 'cashbook', 'investments', 'payroll', 'expenses'].map(tab => (
                   <button key={tab} onClick={() => setReportTab(tab)} style={{...styles.btnPrimary, width:'auto', padding:'8px 15px', background: reportTab === tab ? 'linear-gradient(90deg, #1E3A8A, #2563EB)' : '#ccc', color: reportTab === tab ? '#FBBF24' : '#333'}}>{tab}</button>
                 ))}
-                <button onClick={() => exportCSV(currentReportData(), `${reportTab}_report.csv`)} style={{...styles.btnPrimary, width:'auto', padding:'8px 15px', background: 'linear-gradient(90deg, #7C3AED, #A78BFA)'}}>Export {reportTab} Excel</button>
+                <button onClick={() => exportCSV(currentReportData(), `${reportTab}_report.csv`)} style={{...styles.btnPrimary, width:'auto', padding:'8px 15px', background: 'linear-gradient(90deg, #7C3AED, #A78BFA)'}}>Export Excel</button>
               </div>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                 <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}>{currentReportData().length > 0 && Object.keys(currentReportData()[0]).filter(k => k !== 'id').map(k => <th key={k} style={styles.td}>{k}</th>)}</tr></thead>
@@ -1204,78 +916,43 @@ export default function Home() {
           )}
 
           {page === 'audit' && (
-             <div style={styles.card}>
-               <h3 style={{color: '#1E3A8A'}}>Audit Logs</h3>
-               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                 <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.th}>Date</th><th style={styles.th}>User</th><th style={styles.th}>Action</th><th style={styles.th}>Delete</th></tr></thead>
-                 <tbody>
-                   {data.audits.map(a => (
-                     <tr key={a.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                       <td style={styles.td}>{new Date(a.created_at).toLocaleString()}</td><td style={styles.td}>{a.user_email}</td><td style={styles.td}>{a.action}</td>
-                       <td style={styles.td}><button onClick={() => handleDelete('audit_logs', a.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
-                     </tr>
-                   ))}
-                 </tbody>
-               </table>
-             </div>
+            <div style={styles.card}>
+              <h3 style={{color: '#1E3A8A'}}>Audit Logs</h3>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.th}>Date</th><th style={styles.th}>User</th><th style={styles.th}>Action</th><th style={styles.th}>Delete</th></tr></thead>
+                <tbody>
+                  {data.audits.map(a => (
+                    <tr key={a.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={styles.td}>{new Date(a.created_at).toLocaleString()}</td><td style={styles.td}>{a.user_email}</td><td style={styles.td}>{a.action}</td>
+                      <td style={styles.td}><button onClick={() => handleDelete('audit_logs', a.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
 
           {page === 'settings' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '25px' }}>
               <div style={styles.card}>
-                <h3 style={{color: '#1E3A8A', marginBottom:'20px'}}>Company Settings & Invoice Config</h3>
-                <form onSubmit={handleSaveSettings}>
-                  <label style={styles.label}>Upload Logo (Will show on Invoice)</label>
-                  <input type="file" accept="image/*" onChange={handleLogoUpload} style={{...styles.input, padding:'5px', marginBottom:'10px'}} />
-                  {setForm.logo_url && <img src={setForm.logo_url} style={{height: '80px', marginBottom:'10px', background:'#eee', padding:'5px', borderRadius: '8px'}} />}
+                <h3 style={{color: '#1E3A8A', marginBottom:'20px'}}>Company Settings</h3>
+                <form onSubmit={async (e) => { e.preventDefault(); await supabase.from('settings').upsert([{ id: 1, ...setForm }]); showToast('Settings Saved!'); }}>
+                  <label style={styles.label}>Upload Logo</label>
+                  <input type="file" accept="image/*" onChange={async (e) => { const file = e.target.files[0]; if (!file) return; const fn = `logo-${Date.now()}.${file.name.split('.').pop()}`; await supabase.storage.from('logos').upload(fn, file); const { data: url } = supabase.storage.from('logos').getPublicUrl(fn); setSetForm(p => ({...p, logo_url: url.publicUrl})); }} style={{...styles.input, padding:'5px', marginBottom:'10px'}} />
+                  {setForm.logo_url && <img src={setForm.logo_url} style={{height: '80px', marginBottom:'10px'}} />}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                    <div><label style={styles.label}>Company Name (EN) - For Invoice</label><input value={setForm.company_name_en || ''} onChange={(e) => setSetForm({...setForm, company_name_en: e.target.value})} style={styles.input} /></div>
-                    <div><label style={styles.label}>Company Name (AR) - For Invoice</label><input value={setForm.company_name_ar || ''} onChange={(e) => setSetForm({...setForm, company_name_ar: e.target.value})} style={styles.input} /></div>
-                    <div><label style={styles.label}>VAT Number</label><input value={setForm.vat_no || ''} onChange={(e) => setSetForm({...setForm, vat_no: e.target.value})} style={styles.input} /></div>
-                    <div><label style={styles.label}>CR Number</label><input value={setForm.cr_no || ''} onChange={(e) => setSetForm({...setForm, cr_no: e.target.value})} style={styles.input} /></div>
-                    <div><label style={styles.label}>IATA Number</label><input value={setForm.iata_no || ''} onChange={(e) => setSetForm({...setForm, iata_no: e.target.value})} style={styles.input} /></div>
-                    <div><label style={styles.label}>Phone Number</label><input value={setForm.phone || ''} onChange={(e) => setSetForm({...setForm, phone: e.target.value})} style={styles.input} /></div>
-                    <div style={{ gridColumn: 'span 2' }}><label style={styles.label}>Invoice Footer Text</label><input value={setForm.invoice_footer || ''} onChange={(e) => setSetForm({...setForm, invoice_footer: e.target.value})} style={styles.input} /></div>
+                    <input value={setForm.company_name_en || ''} onChange={(e) => setSetForm({...setForm, company_name_en: e.target.value})} style={styles.input} placeholder="Name (EN) for Invoice" />
+                    <input value={setForm.company_name_ar || ''} onChange={(e) => setSetForm({...setForm, company_name_ar: e.target.value})} style={styles.input} placeholder="Name (AR) for Invoice" />
                   </div>
-                  <button type="submit" style={{...styles.btnPrimary, width:'auto', padding:'12px 30px', marginTop:'20px'}}>Save Settings</button>
+                  <button type="submit" style={styles.btnPrimary}>Save Settings</button>
                 </form>
               </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
-                <div style={styles.card}>
-                  <h3 style={{color: '#1E3A8A'}}>Add Employee / Sales Rep</h3>
-                  <form onSubmit={handleAddEmployee} style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                    <input placeholder="Employee Name" value={empForm.name} onChange={(e) => setEmpForm({...empForm, name: e.target.value})} style={styles.input} required />
-                    <select value={empForm.role} onChange={(e) => setEmpForm({...empForm, role: e.target.value})} style={styles.input}><option>Sales</option><option>Manager</option><option>Accountant</option></select>
-                    <button type="submit" style={{...styles.btnPrimary, width: 'auto', padding: '10px 20px'}}>Add</button>
-                  </form>
-                  <div style={{ marginTop: '10px' }}>
-                    {data.employees.map(e => <span key={e.id} style={styles.tag}>{e.name} ({e.role}) <button onClick={() => handleDelete('employees', e.id)} style={styles.tagBtn}>x</button></span>)}
-                  </div>
-                </div>
-
-                <div style={styles.card}>
-                  <h3 style={{color: '#1E3A8A'}}>Add Service Type</h3>
-                  <form onSubmit={handleAddService} style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                    <input placeholder="e.g. Flight, Hotel, Visa" value={srvForm.name} onChange={(e) => setSrvForm({...srvForm, name: e.target.value})} style={styles.input} required />
-                    <button type="submit" style={{...styles.btnPrimary, width: 'auto', padding: '10px 20px'}}>Add</button>
-                  </form>
-                  <div style={{ marginTop: '10px' }}>
-                    {data.services.map(s => <span key={s.id} style={styles.tag}>{s.name} <button onClick={() => handleDelete('services', s.id)} style={styles.tagBtn}>x</button></span>)}
-                  </div>
-                </div>
-
-                <div style={styles.card}>
-                  <h3 style={{color: '#1E3A8A'}}>Add Custom Invoice Field</h3>
-                  <p style={{fontSize: '12px', color: '#666'}}>Add new fields to your Invoice Form for future needs.</p>
-                  <form onSubmit={handleAddCustomField} style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                    <input placeholder="e.g. Insurance No, Baggage Info" value={customFieldForm.name} onChange={(e) => setCustomFieldForm({name: e.target.value})} style={styles.input} required />
-                    <button type="submit" style={{...styles.btnPrimary, width: 'auto', padding: '10px 20px'}}>Add</button>
-                  </form>
-                  <div style={{ marginTop: '10px' }}>
-                    {data.customFields.map(f => <span key={f.id} style={styles.tag}>{f.name} <button onClick={() => handleDelete('custom_fields', f.id)} style={styles.tagBtn}>x</button></span>)}
-                  </div>
-                </div>
+              <div style={styles.card}>
+                <h3 style={{color: '#1E3A8A'}}>Add Service</h3>
+                <form onSubmit={(e) => { e.preventDefault(); handleAddEntity('services', { name: srvForm.name }, setSrvForm, 'Service Added!'); }} style={{ display: 'flex', gap: '10px' }}>
+                  <input placeholder="Service Name" value={srvForm.name} onChange={(e) => setSrvForm({...srvForm, name: e.target.value})} style={styles.input} required />
+                  <button type="submit" style={{...styles.btnPrimary, width: 'auto', padding: '0 20px'}}>Add</button>
+                </form>
               </div>
             </div>
           )}
@@ -1291,9 +968,7 @@ const styles = {
   th: { padding: '15px', textAlign: 'left', fontSize: '14px', fontWeight: '600' },
   td: { padding: '15px', fontSize: '14px' },
   label: { fontSize: '12px', color: '#555', marginBottom: '5px', display: 'block' },
-  input: { width: '100%', padding: '14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '15px', boxSizing: 'border-box', outline: 'none', marginBottom: '15px', transition: 'border 0.2s' },
+  input: { width: '100%', padding: '14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '15px', boxSizing: 'border-box', outline: 'none', marginBottom: '15px' },
   btnPrimary: { width: '100%', padding: '15px', background: 'linear-gradient(90deg, #1E3A8A, #2563EB)', color: '#FBBF24', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '700', fontSize: '16px' },
-  btnSm: { color: 'white', border: 'none', padding: '8px 15px', cursor: 'pointer', borderRadius: '6px', fontSize: '13px', fontWeight: '600' },
-  tag: { background: '#f1f5f9', padding: '5px 10px', borderRadius: '15px', fontSize: '12px', margin: '5px', display: 'inline-block', border: '1px solid #cbd5e1' },
-  tagBtn: { background: 'none', border: 'none', color: 'red', cursor: 'pointer', fontWeight: 'bold' }
+  btnSm: { color: 'white', border: 'none', padding: '8px 15px', cursor: 'pointer', borderRadius: '6px', fontSize: '13px', fontWeight: '600' }
 };
