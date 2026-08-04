@@ -22,7 +22,7 @@ export default function Home() {
   const [tblPage, setTblPage] = useState(1);
   const itemsPerPage = 10;
 
-  const [data, setData] = useState({ invoices: [], portals: [], customers: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [], audits: [], investments: [], vendors: [], customFields: [] });
+  const [data, setData] = useState({ invoices: [], portals: [], customers: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [], audits: [], investments: [], vendors: [], customFields: [], packages: [], branches: [] });
   const today = new Date().toISOString().split('T')[0];
   
   // Forms State
@@ -40,11 +40,13 @@ export default function Home() {
   const [portalForm, setPortalForm] = useState({ name: '', balance: 0 });
   const [vendorForm, setVendorForm] = useState({ name: '', phone: '', balance: 0 });
   const [customFieldForm, setCustomFieldForm] = useState({ name: '' });
+  const [pkgForm, setPkgForm] = useState({ name: '', price: '', desc: '' });
+  const [brnForm, setBrnForm] = useState({ name: '', location: '', phone: '' });
 
   // Translations
   const t = {
-    en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices List', refunds: 'Refund Invoices', customers: 'Customer List', portals: 'Portals & Recharge', bank: 'Bank & Cash', invest: 'Investments', hr: 'HR & Accounts', users: 'User Management', reports: 'Financial Reports', audit: 'Audit Logs', settings: 'Settings & Templates', vendors: 'Vendors (B2B)', logout: 'Logout', search: 'Search...', ownerProfile: 'Owner Profile', username: 'Username', role: 'Role', addCustomField: 'Add Custom Invoice Field', changePass: 'Change Password', chatHelp: 'AI Help Assistant' },
-    ar: { dash: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'قائمة الفواتير', refunds: 'فواتير الاسترجاع', customers: 'قائمة العملاء', portals: 'البوابات والرصيد', bank: 'البنك والكاش', invest: 'الاستثمارات', hr: 'الموارد البشرية', users: 'إدارة المستخدمين', reports: 'التقارير المالية', audit: 'سجلات التدقيق', settings: 'الإعدادات والقوالب', vendors: 'الموردون', logout: 'تسجيل الخروج', search: 'بحث...', ownerProfile: 'ملف المالك', username: 'اسم المستخدم', role: 'الدور', addCustomField: 'إضافة حقل مخصص للفاتورة', changePass: 'تغيير كلمة المرور', chatHelp: 'مساعد الذكاء الاصطناعي' }
+    en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices List', refunds: 'Refund Invoices', customers: 'Customer List', portals: 'Portals & Recharge', bank: 'Bank & Cash', invest: 'Investments', hr: 'HR & Accounts', users: 'User Management', reports: 'Financial Reports', audit: 'Audit Logs', settings: 'Settings & Templates', vendors: 'Vendors (B2B)', packages: 'Tour Packages', branches: 'Branches', logout: 'Logout', search: 'Search...', ownerProfile: 'Owner Profile', username: 'Username', role: 'Role', addCustomField: 'Add Custom Invoice Field', changePass: 'Change Password', chatHelp: 'AI Help Assistant' },
+    ar: { dash: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'قائمة الفواتير', refunds: 'فواتير الاسترجاع', customers: 'قائمة العملاء', portals: 'البوابات والرصيد', bank: 'البنك والكاش', invest: 'الاستثمارات', hr: 'الموارد البشرية', users: 'إدارة المستخدمين', reports: 'التقارير المالية', audit: 'سجلات التدقيق', settings: 'الإعدادات والقوالب', vendors: 'الموردون', packages: 'باقات سياحية', branches: 'الفروع', logout: 'تسجيل الخروج', search: 'بحث...', ownerProfile: 'ملف المالك', username: 'اسم المستخدم', role: 'الدور', addCustomField: 'إضافة حقل مخصص للفاتورة', changePass: 'تغيير كلمة المرور', chatHelp: 'مساعد الذكاء الاصطناعي' }
   };
   const tr = t[lang];
 
@@ -78,11 +80,13 @@ export default function Home() {
     const invstmnt = await supabase.from('investments').select('*').order('invest_date', { ascending: false });
     const vnd = await supabase.from('vendors').select('*');
     const cf = await supabase.from('custom_fields').select('*');
+    const pkgs = await supabase.from('packages').select('*');
+    const brns = await supabase.from('branches').select('*');
     
     const portalsData = por.data || [];
     const servicesData = srv.data || [];
     const settingsData = set.data || {};
-    setData({ invoices: inv.data || [], portals: portalsData, customers: cus.data || [], recharges: rec.data || [], settings: settingsData, employees: emp.data || [], payroll: pay.data || [], appUsers: usr.data || [], expenses: exp.data || [], services: servicesData, cashbook: cbk.data || [], audits: aud.data || [], investments: invstmnt.data || [], vendors: vnd.data || [], customFields: cf.data || [] });
+    setData({ invoices: inv.data || [], portals: portalsData, customers: cus.data || [], recharges: rec.data || [], settings: settingsData, employees: emp.data || [], payroll: pay.data || [], appUsers: usr.data || [], expenses: exp.data || [], services: servicesData, cashbook: cbk.data || [], audits: aud.data || [], investments: invstmnt.data || [], vendors: vnd.data || [], customFields: cf.data || [], packages: pkgs.data || [], branches: brns.data || [] });
     
     if (portalsData.length > 0) setInvForm(f => ({ ...f, portal: f.portal || portalsData[0].name }));
     if (servicesData.length > 0) setInvForm(f => ({ ...f, service: f.service || servicesData[0].name }));
@@ -260,7 +264,7 @@ export default function Home() {
     setModal({ type: null, data: null });
   };
 
-  // --- PORTALS & VENDORS ---
+  // --- PORTALS, VENDORS, PACKAGES, BRANCHES ---
   const handleAddPortal = async (e) => {
     e.preventDefault();
     const { data: newItem } = await supabase.from('portals').insert([{ name: portalForm.name, current_balance: parseFloat(portalForm.balance) || 0 }]).select().single();
@@ -277,6 +281,22 @@ export default function Home() {
     setVendorForm({ name: '', phone: '', balance: 0 });
   };
 
+  const handleAddPackage = async (e) => {
+    e.preventDefault();
+    const { data: newItem } = await supabase.from('packages').insert([{ name: pkgForm.name, price: parseFloat(pkgForm.price), description: pkgForm.desc }]).select().single();
+    setData(prev => ({ ...prev, packages: [...prev.packages, newItem] }));
+    showToast('Package Added!');
+    setPkgForm({ name: '', price: '', desc: '' });
+  };
+
+  const handleAddBranch = async (e) => {
+    e.preventDefault();
+    const { data: newItem } = await supabase.from('branches').insert([{ name: brnForm.name, location: brnForm.location, phone: brnForm.phone }]).select().single();
+    setData(prev => ({ ...prev, branches: [...prev.branches, newItem] }));
+    showToast('Branch Added!');
+    setBrnForm({ name: '', location: '', phone: '' });
+  };
+
   const handleRecharge = async (e) => {
     e.preventDefault();
     const p = data.portals.find(p => p.name === e.target.portal.value);
@@ -291,16 +311,6 @@ export default function Home() {
     setData(prev => ({ ...prev, recharges: [newRec, ...prev.recharges], portals: prev.portals.map(por => por.id === p.id ? { ...por, current_balance: newBal } : por), cashbook: [nC, ...prev.cashbook] }));
     showToast('Recharged! Balance Updated.');
     e.target.reset();
-  };
-
-  const handleDeleteRecharge = async (rec) => {
-    if (!confirm('Delete recharge? Balance will reduce.')) return;
-    await supabase.from('recharges').delete().eq('id', rec.id);
-    const p = data.portals.find(p => p.id === rec.portal_id);
-    const newBal = (p.current_balance || 0) - rec.amount;
-    await supabase.from('portals').update({ current_balance: newBal }).eq('id', p.id);
-    setData(prev => ({ ...prev, recharges: prev.recharges.filter(r => r.id !== rec.id), portals: prev.portals.map(por => por.id === rec.portal_id ? { ...por, current_balance: newBal } : por) }));
-    showToast('Recharge Deleted!');
   };
 
   // --- BANK & FUND TRANSFER ---
@@ -536,6 +546,8 @@ export default function Home() {
     { id: 'customers', label: tr.customers, show: userProfile.is_admin || userProfile.can_access_invoices },
     { id: 'portals', label: tr.portals, show: userProfile.is_admin || userProfile.can_access_invoices },
     { id: 'vendors', label: tr.vendors, show: userProfile.is_admin || userProfile.can_access_invoices },
+    { id: 'packages', label: tr.packages, show: userProfile.is_admin || userProfile.can_access_invoices },
+    { id: 'branches', label: tr.branches, show: userProfile.is_admin || userProfile.can_access_settings },
     { id: 'bank', label: tr.bank, show: userProfile.is_admin || userProfile.can_access_bank },
     { id: 'invest', label: tr.invest, show: userProfile.is_admin || userProfile.can_access_bank },
     { id: 'hr', label: tr.hr, show: userProfile.is_admin || userProfile.can_access_hr },
@@ -901,7 +913,7 @@ export default function Home() {
                     {data.recharges.map(r => (
                       <tr key={r.id} style={{ borderBottom: '1px solid #eee' }}>
                         <td style={styles.td}>{r.recharge_date}</td><td style={styles.td}>{r.portals?.name}</td><td style={styles.td}>{r.amount} SAR</td>
-                        <td style={styles.td}><button onClick={() => handleDeleteRecharge(r)} style={{...styles.btnSm, background:'#e74c3c'}}>Del</button></td>
+                        <td style={styles.td}><button onClick={() => handleDelete('recharges', r.id)} style={{...styles.btnSm, background:'#e74c3c'}}>Del</button></td>
                       </tr>
                     ))}
                   </tbody>
@@ -935,6 +947,56 @@ export default function Home() {
                         <td style={styles.td}><button onClick={() => handleDelete('vendors', v.id)} style={{...styles.btnSm, background:'#e74c3c'}}>Del</button></td>
                       </tr>
                     ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {page === 'packages' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
+              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #0F3D2E', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+                <h3 style={{color:'#0F3D2E'}}>Add Tour Package</h3>
+                <form onSubmit={handleAddPackage} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <input placeholder="Package Name (e.g. Umrah)" value={pkgForm.name} onChange={(e) => setPkgForm({...pkgForm, name: e.target.value})} style={styles.input} required />
+                  <input type="number" placeholder="Price (SAR)" value={pkgForm.price} onChange={(e) => setPkgForm({...pkgForm, price: e.target.value})} style={styles.input} required />
+                  <textarea placeholder="Description" value={pkgForm.desc} onChange={(e) => setPkgForm({...pkgForm, desc: e.target.value})} style={{...styles.input, height: '80px'}} />
+                  <button type="submit" style={styles.btnPrimary}>Add Package</button>
+                </form>
+              </div>
+              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #D4AF37', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+                <h3 style={{color:'#0F3D2E', marginBottom:'20px'}}>Available Packages</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                  {data.packages.map(p => (
+                    <div key={p.id} style={{ background: '#f8f9fa', padding: '20px', borderRadius: '12px', border: '1px solid #eee' }}>
+                      <h4 style={{ margin: '0 0 10px', color: '#0F3D2E' }}>{p.name}</h4>
+                      <p style={{ margin: '0 0 5px', fontSize: '14px', color: '#666' }}>{p.description}</p>
+                      <h3 style={{ margin: '10px 0', color: '#27ae60' }}>{p.price} SAR</h3>
+                      <button onClick={() => handleDelete('packages', p.id)} style={{...styles.btnSm, background:'#e74c3c'}}>Delete</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {page === 'branches' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
+              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #0F3D2E', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+                <h3 style={{color:'#0F3D2E'}}>Add Branch</h3>
+                <form onSubmit={handleAddBranch} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <input placeholder="Branch Name" value={brnForm.name} onChange={(e) => setBrnForm({...brnForm, name: e.target.value})} style={styles.input} required />
+                  <input placeholder="Location" value={brnForm.location} onChange={(e) => setBrnForm({...brnForm, location: e.target.value})} style={styles.input} required />
+                  <input placeholder="Phone" value={brnForm.phone} onChange={(e) => setBrnForm({...brnForm, phone: e.target.value})} style={styles.input} required />
+                  <button type="submit" style={styles.btnPrimary}>Add Branch</button>
+                </form>
+              </div>
+              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #D4AF37', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+                <h3 style={{color:'#0F3D2E', marginBottom:'20px'}}>Branches List</h3>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr style={{ background: '#0F3D2E', color: '#D4AF37' }}><th style={styles.th}>Name</th><th style={styles.th}>Location</th><th style={styles.th}>Phone</th><th style={styles.th}>Action</th></tr></thead>
+                  <tbody>
+                    {data.branches.map(b => <tr key={b.id} style={{ borderBottom: '1px solid #eee' }}><td style={styles.td}>{b.name}</td><td style={styles.td}>{b.location}</td><td style={styles.td}>{b.phone}</td><td style={styles.td}><button onClick={() => handleDelete('branches', b.id)} style={{...styles.btnSm, background:'#e74c3c'}}>Del</button></td></tr>)}
                   </tbody>
                 </table>
               </div>
@@ -1076,7 +1138,6 @@ export default function Home() {
             </div>
           )}
 
-          {/* USERS WITH CUSTOM PERMISSIONS */}
           {page === 'users' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               <div style={{ background: 'white', padding: '20px', borderRadius: '12px', borderTop: '4px solid #D4AF37', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
@@ -1097,6 +1158,10 @@ export default function Home() {
                   <input value={userForm.username} onChange={(e) => setUserForm({...userForm, username: e.target.value})} style={styles.input} required />
                   <label style={styles.label}>Email</label>
                   <input type="email" value={userForm.email} onChange={(e) => setUserForm({...userForm, email: e.target.value})} style={styles.input} required />
+                  <label style={styles.label}>{tr.role}</label>
+                  <select value={userForm.role} onChange={(e) => setUserForm({...userForm, role: e.target.value})} style={styles.input}>
+                    <option>Owner</option><option>Manager</option><option>Accountant</option><option>Sales</option>
+                  </select>
                   
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', background: '#f9f9f9', padding: '15px', borderRadius: '8px', marginTop: '10px' }}>
                     <label style={{...styles.label, display:'flex', alignItems:'center', gap:'10px'}}><input type="checkbox" checked={userForm.is_admin} onChange={(e) => setUserForm({...userForm, is_admin: e.target.checked})} /> Admin (Full Access)</label>
