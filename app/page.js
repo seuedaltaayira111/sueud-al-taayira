@@ -17,7 +17,6 @@ export default function Home() {
   const [modal, setModal] = useState({ type: null, data: null });
   const [passForm, setPassForm] = useState({ newPass: '' });
 
-  // Chatbot State
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([{ sender: 'bot', text: 'مرحباً! أنا مساعدك في نظام ERP. كيف يمكنني مساعدتك اليوم؟' }]);
   const [chatInput, setChatInput] = useState('');
@@ -29,7 +28,6 @@ export default function Home() {
   const [data, setData] = useState({ invoices: [], portals: [], customers: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [], audits: [], investments: [], vendors: [], customFields: [], packages: [], branches: [] });
   const today = new Date().toISOString().split('T')[0];
   
-  // Forms State
   const [invForm, setInvForm] = useState({ custId: 'new', custName: '', custPhone: '', custType: 'Individual', passengerNames: '', employeeId: '', portal: '', bookingDate: today, invoiceDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
   const [investForm, setInvestForm] = useState({ name: '', amount: '', date: today, desc: '', mode: 'Cash' });
   const [settleForm, setSettleForm] = useState({ id: '', date: today, mode: 'Cash' });
@@ -92,7 +90,6 @@ export default function Home() {
     const servicesData = srv.data || [];
     const settingsData = set.data || {};
     setData({ invoices: inv.data || [], portals: portalsData, customers: cus.data || [], recharges: rec.data || [], settings: settingsData, employees: emp.data || [], payroll: pay.data || [], appUsers: usr.data || [], expenses: exp.data || [], services: servicesData, cashbook: cbk.data || [], audits: aud.data || [], investments: invstmnt.data || [], vendors: vnd.data || [], customFields: cf.data || [], packages: pkgs.data || [], branches: brns.data || [] });
-    
     if (portalsData.length > 0) setInvForm(f => ({ ...f, portal: f.portal || portalsData[0].name }));
     if (servicesData.length > 0) setInvForm(f => ({ ...f, service: f.service || servicesData[0].name }));
     if (settingsData) setSetForm(settingsData);
@@ -140,39 +137,80 @@ export default function Home() {
     try {
       const qty = parseInt(invForm.qty) || 1;
       const cost = (parseFloat(invForm.cost) || 0) * qty;
-      let sell = (parseFloat(invForm.sell) || 0) * qty - (parseFloat(invForm.discount) || 0);
-      const vat = sell * ((parseFloat(invForm.taxRate) || 0) / 100);
+      let sell = (parseFloat(invForm.sell) || 0) * qty;
+      const discount = parseFloat(invForm.discount) || 0;
+      sell = sell - discount;
+      const taxRate = parseFloat(invForm.taxRate) || 0;
+      const vat = sell * (taxRate / 100);
       const total = sell + vat;
       const paid = parseFloat(invForm.paid) || 0;
       const due = total - paid;
+      const profit = sell - cost;
+
       let cid = invForm.custId;
       if (invForm.custId === 'new') { const { data: nC } = await supabase.from('customers').insert([{ name: invForm.custName, phone: invForm.custPhone, type: invForm.custType }]).select().single(); cid = nC.id; }
       const portal = data.portals.find(p => p.name === invForm.portal); if (!portal) throw new Error("Select Portal");
-      
-      let desc = invForm.service === 'Flight' ? `${invForm.airline} - ${invForm.flightSector}` : invForm.service;
-      const payload = { customer_id: cid, portal_id: portal.id, service_type: invForm.service, pnr: invForm.pnr, sector: desc, total_cost: cost, total_sell: sell, profit: sell - cost, vat, total, paid_amount: paid, due_amount: due, payment_method: invForm.payment, invoice_date: invForm.invoiceDate };
-      
+
+      let desc = '';
+      if (invForm.service === 'Flight') desc = `${invForm.flightSub} (${invForm.flightType}) - ${invForm.airline} - ${invForm.flightJourney} - ${invForm.flightSector}`;
+      else if (invForm.service === 'Hotel') desc = `${invForm.hotelName} - ${invForm.destination} (${invForm.checkIn} to ${invForm.checkOut})`;
+      else if (invForm.service === 'Visa') desc = `${invForm.visaType} Visa - ${invForm.destination}`;
+      else desc = invForm.service;
+
+      const payload = {
+        customer_id: cid, portal_id: portal.id, employee_id: invForm.employeeId || null,
+        booking_date: invForm.bookingDate, invoice_date: invForm.invoiceDate,
+        service_type: invForm.service, flight_type: invForm.flightType, flight_sub: invForm.flightSub, pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty: qty, discount: discount,
+        passenger_names: invForm.passengerNames || null, airline: invForm.airline || null, flight_journey: invForm.flightJourney || null, flight_sector: invForm.flightSector || null,
+        total_cost: cost, total_sell: sell, profit, vat, total, paid_amount: paid, due_amount: due, payment_method: invForm.payment,
+        credit_due_date: due > 0 ? invForm.creditDueDate : null, tabby_order_no: invForm.payment === 'Tabby' ? invForm.tabbyNo : null, tamara_order_no: invForm.payment === 'Tamara' ? invForm.tamaraNo : null, ticket_status: invForm.ticketStatus
+      };
+
       if (editingId) {
-        const { data: upInv } = await supabase.from('invoices').update(payload).eq('id', editingId).select(`*, customers(name), portals(name)`).single();
+        const { data: upInv } = await supabase.from('invoices').update(payload).eq('id', editingId).select(`*, customers(name, type, phone), portals(name), employees(name)`).single();
         setData(prev => ({ ...prev, invoices: prev.invoices.map(i => i.id === editingId ? upInv : i) }));
+        await logAction(`Updated Invoice ID ${editingId}`);
         setEditingId(null);
-        showToast('Invoice Updated!');
+        showToast('Invoice Updated Successfully!');
       } else {
         const invNo = `INV-${Date.now()}`;
-        const { data: newInv } = await supabase.from('invoices').insert([{ invoice_no: invNo, ...payload }]).select(`*, customers(name), portals(name)`).single();
+        const { data: newInv } = await supabase.from('invoices').insert([{ invoice_no: invNo, ...payload }]).select(`*, customers(name, type, phone), portals(name), employees(name)`).single();
+        
         const newPortalBal = (portal.current_balance || 0) - cost;
         await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', portal.id);
-        if (paid > 0) { const cbType = invForm.payment === 'Cash' ? 'Cash-In' : 'Bank-In'; await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Payment for ${invNo}`, amount: paid }]); }
-        setData(prev => ({ ...prev, invoices: [newInv, ...prev.invoices], portals: prev.portals.map(p => p.id === portal.id ? { ...p, current_balance: newPortalBal } : p) }));
-        showToast('Invoice Generated!');
+        await logAction(`Created Invoice ${invNo}`);
+
+        let newCashEntry = null;
+        if (paid > 0) {
+          const cbType = invForm.payment === 'Cash' ? 'Cash-In' : (invForm.payment === 'Bank Transfer' ? 'Bank-In' : null);
+          if (cbType) {
+            const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: invForm.invoiceDate, type: cbType, description: `Payment for ${invNo}`, amount: paid }]).select().single();
+            newCashEntry = nC;
+          }
+        }
+
+        setData(prev => ({
+          ...prev,
+          invoices: [newInv, ...prev.invoices],
+          portals: prev.portals.map(p => p.id === portal.id ? { ...p, current_balance: newPortalBal } : p),
+          cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook
+        }));
+        showToast('Invoice Generated Successfully!');
       }
+      setInvForm({ custId: 'new', custName: '', custPhone: '', custType: 'Individual', passengerNames: '', employeeId: '', portal: data.portals[0]?.name || '', bookingDate: today, invoiceDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
       setPage('list');
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
   const handleEditClick = (inv) => {
     setEditingId(inv.id);
-    setInvForm({ custId: inv.customer_id, custName: '', custPhone: '', portal: inv.portals?.name, service: inv.service_type, flightSector: inv.sector, pnr: inv.pnr, cost: inv.total_cost, sell: inv.total_sell, paid: inv.paid_amount });
+    setInvForm({
+      custId: inv.customer_id, custName: '', custPhone: '', custType: inv.customers?.type || 'Individual', passengerNames: inv.passenger_names || '',
+      employeeId: inv.employee_id || '', portal: inv.portals?.name || '', bookingDate: inv.booking_date || today, invoiceDate: inv.invoice_date || today,
+      service: inv.service_type, flightType: inv.flight_type || 'Domestic', flightSub: inv.flight_sub || 'New Booking', flightJourney: inv.flight_journey || 'Single', flightSector: inv.flight_sector || '', airline: inv.airline || '', 
+      destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', pnr: inv.pnr || '', ticketNo: inv.ticket_no || '', qty: inv.qty || 1, cost: inv.total_cost || 0, sell: inv.total_sell || 0, discount: inv.discount || 0, taxRate: inv.vat > 0 ? '15' : '0', 
+      payment: inv.payment_method || 'Cash', paid: inv.paid_amount || 0, creditDueDate: inv.credit_due_date || '', tabbyNo: inv.tabby_order_no || '', tamaraNo: inv.tamara_order_no || '', ticketStatus: inv.ticket_status || 'Confirmed'
+    });
     setPage('create');
   };
 
@@ -181,11 +219,25 @@ export default function Home() {
     const inv = data.invoices.find(i => i.id === settleForm.id);
     if (!inv) return showToast('Not found');
     const newPaid = inv.paid_amount + inv.due_amount;
-    const { data: upInv } = await supabase.from('invoices').update({ paid_amount: newPaid, due_amount: 0, settlement_date: settleForm.date, payment_method: settleForm.mode }).eq('id', inv.id).select(`*, customers(name), portals(name)`).single();
-    const cbType = settleForm.mode === 'Cash' ? 'Cash-In' : 'Bank-In';
-    const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: settleForm.date, type: cbType, description: `Settlement for ${inv.invoice_no}`, amount: inv.due_amount }]).select().single();
-    setData(prev => ({ ...prev, invoices: prev.invoices.map(i => i.id === inv.id ? upInv : i), cashbook: [nC, ...prev.cashbook] }));
-    showToast('Payment Settled!');
+    
+    const { data: upInv } = await supabase.from('invoices').update({ 
+      paid_amount: newPaid, due_amount: 0, settlement_date: settleForm.date, payment_method: settleForm.mode
+    }).eq('id', inv.id).select(`*, customers(name, type, phone), portals(name), employees(name)`).single();
+    
+    let newCashEntry = null;
+    const cbType = settleForm.mode === 'Cash' ? 'Cash-In' : (settleForm.mode === 'Bank Transfer' ? 'Bank-In' : null);
+    if (cbType) {
+      const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: settleForm.date, type: cbType, description: `Settlement for ${inv.invoice_no}`, amount: inv.due_amount }]).select().single();
+      newCashEntry = nC;
+    }
+    await logAction(`Settled payment for ${inv.invoice_no}`);
+
+    setData(prev => ({
+      ...prev,
+      invoices: prev.invoices.map(i => i.id === inv.id ? upInv : i),
+      cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook
+    }));
+    showToast('Payment Settled Successfully!');
     setModal({ type: null, data: null });
   };
 
@@ -195,15 +247,35 @@ export default function Home() {
     if (!inv) return showToast('Not found');
     const compRef = parseFloat(refundForm.compRefund) || 0;
     const custRef = parseFloat(refundForm.custRefund) || 0;
-    const { data: upInv } = await supabase.from('invoices').update({ status: 'refunded', refund_company: compRef, refund_customer: custRef }).eq('id', inv.id).select(`*, customers(name), portals(name)`).single();
+
+    const { data: upInv } = await supabase.from('invoices').update({ status: 'refunded', refund_company: compRef, refund_customer: custRef }).eq('id', inv.id).select(`*, customers(name, type, phone), portals(name), employees(name)`).single();
     const refNo = `REF-${Date.now()}`;
-    const { data: newRefInv } = await supabase.from('invoices').insert([{ invoice_no: refNo, customer_id: inv.customer_id, portal_id: inv.portal_id, service_type: `Refund for ${inv.invoice_no}`, total_sell: -custRef, total: -custRef, paid_amount: -custRef, status: 'refunded', refund_company: compRef, refund_customer: custRef }]).select(`*, customers(name), portals(name)`).single();
+    const { data: newRefInv } = await supabase.from('invoices').insert([{
+      invoice_no: refNo, customer_id: inv.customer_id, portal_id: inv.portal_id, booking_date: today, invoice_date: today,
+      service_type: `Refund for ${inv.invoice_no}`, total_sell: -custRef, total: -custRef, paid_amount: -custRef, status: 'refunded', refund_company: compRef, refund_customer: custRef
+    }]).select(`*, customers(name, type, phone), portals(name), employees(name)`).single();
+
     let newPortalBal = inv.portals?.current_balance || 0;
-    if (inv.portal_id) { newPortalBal += compRef; await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', inv.portal_id); }
+    if (inv.portal_id) {
+      newPortalBal += compRef;
+      await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', inv.portal_id);
+    }
+
     let newCashEntry = null;
-    if (custRef > 0) { const cbType = refundForm.mode === 'Cash' ? 'Cash-Out' : 'Bank-Out'; const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Refund to customer for ${inv.invoice_no}`, amount: custRef }]).select().single(); newCashEntry = nC; }
-    setData(prev => ({ ...prev, invoices: [newRefInv, prev.invoices.map(i => i.id === inv.id ? upInv : i)].flat(), portals: prev.portals.map(p => p.id === inv.portal_id ? { ...p, current_balance: newPortalBal } : p), cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook }));
-    showToast('Refund Processed!');
+    if (custRef > 0) {
+      const cbType = refundForm.mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
+      const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Refund to customer for ${inv.invoice_no}`, amount: custRef }]).select().single();
+      newCashEntry = nC;
+    }
+    await logAction(`Processed refund ${refNo}`);
+
+    setData(prev => ({
+      ...prev,
+      invoices: [newRefInv, prev.invoices.map(i => i.id === inv.id ? upInv : i)].flat(),
+      portals: prev.portals.map(p => p.id === inv.portal_id ? { ...p, current_balance: newPortalBal } : p),
+      cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook
+    }));
+    showToast('Refund Processed! Portal balance updated.');
     setModal({ type: null, data: null });
   };
 
@@ -225,8 +297,9 @@ export default function Home() {
     await supabase.from('portals').update({ current_balance: newBal }).eq('id', p.id);
     const cbType = mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
     const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: e.target.date.value, type: cbType, description: `Recharge for ${p.name}`, amount }]).select().single();
+    await logAction(`Recharged ${amount} to ${p.name}`);
     setData(prev => ({ ...prev, recharges: [newRec, ...prev.recharges], portals: prev.portals.map(por => por.id === p.id ? { ...por, current_balance: newBal } : por), cashbook: [nC, ...prev.cashbook] }));
-    showToast('Recharged!');
+    showToast('Recharged! Balance Updated.');
     e.target.reset();
   };
 
@@ -241,7 +314,7 @@ export default function Home() {
     if (transferForm.to === 'Bank') entries.push({ trans_date: transferForm.date, type: 'Bank-In', description: `Transfer from ${transferForm.from}`, amount: amt });
     await Promise.all(entries.map(en => supabase.from('cashbook').insert([en])));
     await fetchAll();
-    showToast('Fund Transferred!');
+    showToast('Fund Transferred Successfully!');
     setTransferForm({ from: 'Cash', to: 'Bank', amount: '', date: today });
   };
 
@@ -321,6 +394,7 @@ export default function Home() {
           <div><h3 style="margin:0 0 5px;color:#1E3A8A;font-size:14px;">BILL TO:</h3><p style="margin:0;font-size:16px;font-weight:bold;">${inv.customers?.name || ''}</p><p style="margin:0;font-size:12px;color:#666;">${inv.customers?.phone || ''}</p></div>
           <div style="text-align:right;"><p style="margin:0;font-size:12px;"><b>Sales Rep:</b> ${inv.employees?.name || 'N/A'}</p><p style="margin:0;font-size:12px;"><b>Status:</b> <span style="color:${inv.due_amount>0?'#EF4444':'#059669'};font-weight:bold;">${inv.due_amount>0?'UNPAID':'PAID'}</span></p></div>
         </div>
+        ${inv.passenger_names ? `<div style="margin-bottom:20px;padding:10px;background:#fff;border:1px dashed #ddd;"><b style="font-size:12px;">Passengers:</b><br/><span style="font-size:12px;white-space:pre-wrap;">${inv.passenger_names}</span></div>` : ''}
         <table style="width:100%;border-collapse:collapse;text-align:center;margin-bottom:30px;">
           <thead><tr style="background:#1E3A8A;color:#fff;"><th style="padding:12px;border:1px solid #1e3a8a;width:40%;">Service / Sector</th><th style="padding:12px;border:1px solid #1e3a8a;">PNR</th><th style="padding:12px;border:1px solid #1e3a8a;">Qty</th><th style="padding:12px;border:1px solid #1e3a8a;">Total</th></tr></thead>
           <tbody><tr style="background:#fff;"><td style="padding:12px;border:1px solid #ddd;text-align:left;font-size:13px;"><b>${inv.service_type}</b><br/><span style="font-size:11px;color:#666;">${inv.sector || ''}</span></td><td style="padding:12px;border:1px solid #ddd;font-size:12px;">${inv.pnr || 'N/A'}</td><td style="padding:12px;border:1px solid #ddd;font-size:12px;">${inv.qty || 1}</td><td style="padding:12px;border:1px solid #ddd;font-size:14px;font-weight:bold;">${inv.total_sell.toFixed(2)} SAR</td></tr></tbody>
@@ -426,7 +500,7 @@ export default function Home() {
               ))}
             </div>
             <div style={{ padding: '15px', borderTop: '1px solid #e2e8f0', display: 'flex', background: 'white' }}>
-              <input placeholder="Type message..." value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} style={{ flex: 1, border: '1px solid #cbd5e1', borderRadius: '25px', padding: '12px 20px', outline: 'none' }} />
+              <input placeholder="Type your message..." value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} style={{ flex: 1, border: '1px solid #cbd5e1', borderRadius: '25px', padding: '12px 20px', outline: 'none' }} />
               <button onClick={handleSendMessage} style={{ background: '#FBBF24', color: '#1E3A8A', border: 'none', padding: '0 25px', cursor: 'pointer', marginLeft: '10px', borderRadius: '25px', fontWeight: 'bold' }}>Send</button>
             </div>
           </div>
@@ -575,33 +649,56 @@ export default function Home() {
                   {invForm.custId === 'new' && <>
                     <div><label style={styles.label}>Name</label><input placeholder="Enter Name" value={invForm.custName} onChange={(e) => setInvForm({...invForm, custName: e.target.value})} required style={styles.input} /></div>
                     <div><label style={styles.label}>Phone</label><input placeholder="Enter Phone" value={invForm.custPhone} onChange={(e) => setInvForm({...invForm, custPhone: e.target.value})} required style={styles.input} /></div>
+                    <div><label style={styles.label}>Type</label><select value={invForm.custType} onChange={(e) => setInvForm({...invForm, custType: e.target.value})} style={styles.input}><option>Individual</option><option>Group</option><option>Company</option></select></div>
                   </>}
                 </div>
+                {invForm.custType === 'Group' || invForm.custType === 'Company' ? (
+                  <div style={{ marginBottom: '20px' }}><label style={styles.label}>Passenger Names</label><textarea placeholder="One per line" value={invForm.passengerNames} onChange={(e) => setInvForm({...invForm, passengerNames: e.target.value})} style={{...styles.input, height: '80px'}} /></div>
+                ) : null}
+
                 <h3 style={{color: '#1E3A8A', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>Service Details</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
                   <div><label style={styles.label}>Service</label><select value={invForm.service} onChange={(e) => setInvForm({...invForm, service: e.target.value})} style={styles.input}>{data.services.map(s => <option key={s.id}>{s.name}</option>)}</select></div>
                   {invForm.service === 'Flight' && <>
                     <div><label style={styles.label}>Flight Type</label><select value={invForm.flightType} onChange={(e) => setInvForm({...invForm, flightType: e.target.value})} style={styles.input}><option>Domestic</option><option>International</option></select></div>
+                    <div><label style={styles.label}>Booking Type</label><select value={invForm.flightSub} onChange={(e) => setInvForm({...invForm, flightSub: e.target.value})} style={styles.input}><option>New Booking</option><option>Reissue</option><option>Extra Baggage</option></select></div>
+                    <div><label style={styles.label}>Journey</label><select value={invForm.flightJourney} onChange={(e) => setInvForm({...invForm, flightJourney: e.target.value})} style={styles.input}><option>Single</option><option>Roundtrip</option></select></div>
                     <div><label style={styles.label}>Airline</label><input placeholder="Flynas" value={invForm.airline} onChange={(e) => setInvForm({...invForm, airline: e.target.value})} style={styles.input} required /></div>
                     <div><label style={styles.label}>Sector</label><input placeholder="JED - RUH" value={invForm.flightSector} onChange={(e) => setInvForm({...invForm, flightSector: e.target.value})} style={styles.input} required /></div>
                     <div><label style={styles.label}>PNR</label><input placeholder="PNR" value={invForm.pnr} onChange={(e) => setInvForm({...invForm, pnr: e.target.value})} style={styles.input} required /></div>
+                    <div><label style={styles.label}>Ticket No</label><input placeholder="Ticket No" value={invForm.ticketNo} onChange={(e) => setInvForm({...invForm, ticketNo: e.target.value})} style={styles.input} /></div>
                   </>}
                   {invForm.service === 'Hotel' && <>
                     <div><label style={styles.label}>Hotel Name</label><input placeholder="Hotel Name" value={invForm.hotelName} onChange={(e) => setInvForm({...invForm, hotelName: e.target.value})} style={styles.input} required /></div>
                     <div><label style={styles.label}>Destination</label><input placeholder="Dubai" value={invForm.destination} onChange={(e) => setInvForm({...invForm, destination: e.target.value})} style={styles.input} required /></div>
+                    <div><label style={styles.label}>Check-in</label><input type="date" value={invForm.checkIn} onChange={(e) => setInvForm({...invForm, checkIn: e.target.value})} style={styles.input} required /></div>
+                    <div><label style={styles.label}>Check-out</label><input type="date" value={invForm.checkOut} onChange={(e) => setInvForm({...invForm, checkOut: e.target.value})} style={styles.input} required /></div>
+                  </>}
+                  {invForm.service === 'Visa' && <>
+                    <div><label style={styles.label}>Visa Type</label><select value={invForm.visaType} onChange={(e) => setInvForm({...invForm, visaType: e.target.value})} style={styles.input}><option>Tourist</option><option>Business</option><option>Visit</option><option>Work</option></select></div>
+                    <div><label style={styles.label}>Destination</label><input placeholder="Schengen" value={invForm.destination} onChange={(e) => setInvForm({...invForm, destination: e.target.value})} style={styles.input} required /></div>
                   </>}
                   {data.customFields.map(f => (
                     <div key={f.id}><label style={styles.label}>{f.name}</label><input placeholder={f.name} style={styles.input} /></div>
                   ))}
                 </div>
+
                 <h3 style={{color: '#1E3A8A', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>Pricing & Payment</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
+                  <div><label style={styles.label}>Sales Rep</label><select value={invForm.employeeId} onChange={(e) => setInvForm({...invForm, employeeId: e.target.value})} style={styles.input}><option value="">Select</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
                   <div><label style={styles.label}>Portal</label><select value={invForm.portal} onChange={(e) => setInvForm({...invForm, portal: e.target.value})} style={styles.input} required><option value="">Select</option>{data.portals.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}</select></div>
+                  <div><label style={styles.label}>Qty</label><input type="number" value={invForm.qty} onChange={(e) => setInvForm({...invForm, qty: e.target.value})} style={styles.input} required /></div>
                   <div><label style={styles.label}>Cost Price</label><input type="number" value={invForm.cost} onChange={(e) => setInvForm({...invForm, cost: e.target.value})} style={styles.input} required /></div>
                   <div><label style={styles.label}>Sell Price</label><input type="number" value={invForm.sell} onChange={(e) => setInvForm({...invForm, sell: e.target.value})} style={styles.input} required /></div>
+                  <div><label style={styles.label}>Discount</label><input type="number" value={invForm.discount} onChange={(e) => setInvForm({...invForm, discount: e.target.value})} style={styles.input} /></div>
+                  <div><label style={styles.label}>Tax</label><select value={invForm.taxRate} onChange={(e) => setInvForm({...invForm, taxRate: e.target.value})} style={styles.input}><option value="15">15%</option><option value="0">0%</option></select></div>
+                  <div><label style={styles.label}>Payment</label><select value={invForm.payment} onChange={(e) => setInvForm({...invForm, payment: e.target.value})} style={styles.input}><option>Cash</option><option>Bank Transfer</option><option>Tabby</option><option>Tamara</option><option>Credit</option></select></div>
+                  <div><label style={styles.label}>Booking Date</label><input type="date" value={invForm.bookingDate} onChange={(e) => setInvForm({...invForm, bookingDate: e.target.value})} style={styles.input} required /></div>
+                  <div><label style={styles.label}>Invoice Date</label><input type="date" value={invForm.invoiceDate} onChange={(e) => setInvForm({...invForm, invoiceDate: e.target.value})} style={styles.input} required /></div>
                   <div><label style={styles.label}>Paid Amount</label><input type="number" value={invForm.paid} onChange={(e) => setInvForm({...invForm, paid: e.target.value})} style={styles.input} required /></div>
                 </div>
                 <button type="submit" style={{ background: 'linear-gradient(90deg, #1E3A8A, #2563EB)', color: '#FBBF24', border: 'none', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', padding: '15px', width: '100%', borderRadius: '8px' }}>{editingId ? 'Update Invoice' : 'Generate Invoice'}</button>
+                {editingId && <button type="button" onClick={() => { setEditingId(null); setPage('list'); }} style={{ background: '#EF4444', color: 'white', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '15px', width: '100%', marginTop: '10px', borderRadius: '8px' }}>Cancel</button>}
               </form>
             </div>
           )}
@@ -613,11 +710,12 @@ export default function Home() {
                 <button onClick={() => exportCSV(activeInv, 'Sales_Invoices.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
               </div>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.th}>Inv No</th><th style={styles.th}>Customer</th><th style={styles.th}>Total</th><th style={styles.th}>Actions</th></tr></thead>
+                <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.th}>Inv No</th><th style={styles.th}>Customer</th><th style={styles.th}>Qty</th><th style={styles.th}>Profit</th><th style={styles.th}>Total</th><th style={styles.th}>Actions</th></tr></thead>
                 <tbody>
                   {paginatedInv.map(inv => (
                     <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: inv.due_amount > 0 ? '#fff3cd' : 'transparent' }}>
-                      <td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.customers?.name || 'N/A'}</td><td style={styles.td}>{inv.total} SAR</td>
+                      <td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.customers?.name || 'N/A'}</td>
+                      <td style={styles.td}>{inv.qty || 1}</td><td style={{...styles.td, color:'green'}}>{inv.profit} SAR</td><td style={styles.td}>{inv.total} SAR</td>
                       <td style={styles.td}>
                         <button onClick={() => setModal({type: 'preview', data: inv})} style={styles.btnSm}>Preview</button>
                         <button onClick={() => handleEditClick(inv)} style={{...styles.btnSm, background:'#2563EB'}}>Edit</button>
