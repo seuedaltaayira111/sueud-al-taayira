@@ -24,15 +24,15 @@ export default function Login() {
   };
 
   return (
-    <div style={styles.loginBody}>
-      {/* Animated Aircraft */}
+    <div style={styles.body}>
+      {/* Flying Aircraft Animation */}
       <div style={styles.aircraft}>✈️</div>
 
       <div style={styles.loginCard}>
         <div style={styles.logoBox}>
-          <img src="https://supabase.co/storage/v1/object/public/logos/plane-logo.png" alt="Logo" style={styles.logo} onError={(e) => e.target.style.display='none'} />
+          <div style={styles.logoCircle}>✈️</div>
           <h1 style={styles.titleEn}>SUEUD AL TAIYYARAH</h1>
-          <h2 style={styles.titleAr}>صعود الطائرة للسفر والسياحة</h2>
+          <h2 style={styles.titleAr}>صعود الطائرة للسفر و السياحة</h2>
         </div>
 
         <form onSubmit={handleAuth} style={styles.form}>
@@ -52,21 +52,16 @@ export default function Login() {
 }
 
 const styles = {
-  loginBody: { display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0F3D2E 0%, #145A38 100%)', position: 'relative', overflow: 'hidden', fontFamily: 'Segoe UI, sans-serif' },
-  aircraft: { position: 'absolute', fontSize: '50px', animation: 'fly 10s linear infinite', top: '20%', left: '-10%', color: '#D4AF37', opacity: 0.8 },
-  loginCard: { background: 'rgba(255, 255, 255, 0.95)', padding: '40px', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.3)', width: '450px', textAlign: 'center', backdropFilter: 'blur(10px)', zIndex: 10, borderTop: '6px solid #D4AF37' },
-  logoBox: { marginBottom: '20px' },
-  logo: { width: '80px', height: '80px', margin: '0 auto 10px', display: 'block' },
-  titleEn: { margin: 0, color: '#0F3D2E', fontSize: '28px', fontWeight: 'bold', letterSpacing: '1px' },
-  titleAr: { margin: '5px 0 0', color: '#D4AF37', fontSize: '22px', fontWeight: 'bold' },
+  body: { display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0F3D2E 0%, #145A38 100%)', position: 'relative', overflow: 'hidden', fontFamily: 'Segoe UI, sans-serif' },
+  aircraft: { position: 'absolute', fontSize: '60px', animation: 'fly 10s linear infinite', top: '25%', left: '-150px', color: '#D4AF37', opacity: 0.8, zIndex: 1 },
+  loginCard: { background: 'rgba(255, 255, 255, 0.95)', padding: '50px', borderRadius: '20px', boxShadow: '0 15px 40px rgba(0,0,0,0.3)', width: '480px', textAlign: 'center', backdropFilter: 'blur(10px)', zIndex: 10, border: '2px solid rgba(212, 175, 55, 0.3)' },
+  logoBox: { marginBottom: '30px' },
+  logoCircle: { width: '90px', height: '90px', background: '#0F3D2E', color: '#D4AF37', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px', fontSize: '40px', boxShadow: '0 5px 15px rgba(15, 61, 46, 0.3)' },
+  titleEn: { margin: 0, color: '#0F3D2E', fontSize: '26px', fontWeight: 'bold', letterSpacing: '1px' },
+  titleAr: { margin: '5px 0 0', color: '#D4AF37', fontSize: '24px', fontWeight: 'bold' },
   form: { display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '30px' },
-  input: { width: '100%', padding: '14px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box', outline: 'none' },
-  btn: { width: '100%', padding: '14px', background: '#0F3D2E', color: '#D4AF37', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '16px', transition: '0.3s' },
+  input: { width: '100%', padding: '15px', border: '1px solid #ccc', borderRadius: '8px', fontSize: '16px', boxSizing: 'border-box', outline: 'none', transition: 'border 0.3s' },
+  btn: { width: '100%', padding: '15px', background: 'linear-gradient(90deg, #0F3D2E 0%, #145A38 100%)', color: '#D4AF37', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '16px', marginTop: '10px', boxShadow: '0 4px 10px rgba(15, 61, 46, 0.2)' },
   msg: { color: '#e74c3c', fontSize: '14px', marginTop: '15px' },
-  linkBtn: { background: 'none', border: 'none', color: '#2980b9', cursor: 'pointer', marginTop: '15px', textDecoration: 'underline', fontSize: '14px' },
-  styleTag: `@keyframes fly { 0% { transform: translateX(-100px) rotate(15deg); } 100% { transform: translateX(120vw) rotate(15deg); } }`
+  linkBtn: { background: 'none', border: 'none', color: '#2980b9', cursor: 'pointer', marginTop: '15px', textDecoration: 'underline', fontSize: '14px' }
 };
-
-// Add this style tag to your layout or inject it if required. For Next.js, you can use <style jsx> or global CSS.
-// Since it's inline, I'm providing the keyframes via a style tag injection in the component if needed, 
-// But for simplicity, add this to your global.css: @keyframes fly { 0% { left: -10%; } 100% { left: 110%; } }
