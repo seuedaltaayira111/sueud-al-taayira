@@ -25,12 +25,16 @@ export default function Login() {
 
   return (
     <div style={styles.body}>
-      {/* Animated Flying Aircraft */}
+      {/* Flying Airplane Animation */}
       <div style={styles.aircraft}>✈️</div>
+      
+      {/* Background Elements for Premium Look */}
+      <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(251,191,36,0.2) 0%, rgba(0,0,0,0) 70%)', borderRadius: '50%' }}></div>
+      <div style={{ position: 'absolute', bottom: '-10%', left: '-10%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(37,99,235,0.2) 0%, rgba(0,0,0,0) 70%)', borderRadius: '50%' }}></div>
 
       <div style={styles.loginCard}>
         <div style={styles.logoBox}>
-          {/* User Provided Logo */}
+          {/* Company Logo Provided By User */}
           <img src="https://z-cdn-media.chatglm.cn/files/6e1b74e6-faa1-463e-854c-08f2485326b1.jpeg" alt="Company Logo" style={styles.logo} />
           <h1 style={styles.titleEn}>SUEUD AL TAIYYARAH</h1>
           <h2 style={styles.titleAr}>صعود الطائرة للسفر و السياحة</h2>
@@ -54,7 +58,7 @@ export default function Login() {
 
 const styles = {
   body: { display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 100%)', position: 'relative', overflow: 'hidden', fontFamily: "'Poppins', sans-serif" },
-  aircraft: { position: 'absolute', fontSize: '80px', animation: 'fly 12s linear infinite', top: '20%', left: '-200px', color: '#FBBF24', opacity: 0.8, zIndex: 1, filter: 'drop-shadow(0 10px 10px rgba(0,0,0,0.3))' },
+  aircraft: { position: 'absolute', fontSize: '80px', animation: 'fly 12s linear infinite', top: '20%', left: '-200px', color: '#FBBF24', opacity: 0.9, zIndex: 1, filter: 'drop-shadow(0 10px 10px rgba(0,0,0,0.3))' },
   loginCard: { background: 'rgba(255, 255, 255, 0.98)', padding: '50px', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.3)', width: '500px', textAlign: 'center', backdropFilter: 'blur(15px)', zIndex: 10, border: '1px solid rgba(251, 191, 36, 0.3)' },
   logoBox: { marginBottom: '30px' },
   logo: { width: '180px', height: 'auto', margin: '0 auto 20px', display: 'block', borderRadius: '12px', boxShadow: '0 10px 20px rgba(0,0,0,0.1)' },
