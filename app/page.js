@@ -5,6 +5,19 @@ import { useRouter } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
+// Added missing styles object
+const styles = {
+  input: { width: '100%', padding: '10px', margin: '5px 0', border: '1px solid #cbd5e1', borderRadius: '6px', outline: 'none' },
+  btnPrimary: { padding: '10px 15px', background: '#1E3A8A', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' },
+  btnSuccess: { padding: '8px 12px', background: '#059669', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' },
+  btnDanger: { padding: '8px 12px', background: '#EF4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' },
+  btnWarning: { padding: '8px 12px', background: '#FBBF24', color: '#1E3A8A', border: 'none', borderRadius: '6px', cursor: 'pointer' },
+  card: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px' },
+  label: { fontSize: '14px', fontWeight: 'bold', color: '#333', marginBottom: '5px', display: 'block' },
+  tableHeader: { background: '#1E3A8A', color: '#FBBF24', padding: '12px', textAlign: 'left' },
+  tableRow: { borderBottom: '1px solid #eee', padding: '12px' }
+};
+
 export default function Home() {
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState({ email: '', username: '', role: 'Owner', is_admin: true, can_access_invoices: true, can_access_bank: true, can_access_hr: true, can_access_reports: true, can_access_settings: true });
@@ -107,12 +120,14 @@ export default function Home() {
     setPassForm({ newPass: '' });
   };
 
+  // FIXED: USER PROFILE EMAIL UPDATE
   const handleUpdateOwnerProfile = async (e) => {
     e.preventDefault();
     try {
       if (userProfile.email !== user.email) {
         const { error: authError } = await supabase.auth.updateUser({ email: userProfile.email });
         if (authError) throw authError;
+        setUser({ ...user, email: userProfile.email }); // Update local user state
       }
       const { error: dbError } = await supabase.from('app_users').update({ email: userProfile.email, username: userProfile.username }).eq('id', userProfile.id);
       if (dbError) throw dbError;
@@ -637,10 +652,24 @@ export default function Home() {
               <div>
                 <h3>{modal.data.name} - {modal.data.phone}</h3>
                 <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '15px' }}>
-                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.td}>Date</th><th style={styles.td}>Inv No</th><th style={styles.td}>Total</th><th style={styles.td}>Paid</th><th style={styles.td}>Due</th></tr></thead>
+                  <thead>
+                    <tr style={{ background: '#1E3A8A', color: '#FBBF24' }}>
+                      <th style={{ padding: '10px', textAlign: 'left' }}>Date</th>
+                      <th style={{ padding: '10px', textAlign: 'left' }}>Invoice No</th>
+                      <th style={{ padding: '10px', textAlign: 'right' }}>Total</th>
+                      <th style={{ padding: '10px', textAlign: 'right' }}>Paid</th>
+                      <th style={{ padding: '10px', textAlign: 'right' }}>Due</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {data.invoices.filter(inv => inv.customer_id === modal.data.id).map(inv => (
-                      <tr key={inv.id}><td style={styles.td}>{inv.invoice_date}</td><td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.total}</td><td style={{...styles.td, color:'#059669'}}>{inv.paid_amount}</td><td style={{...styles.td, color:'#EF4444'}}>{inv.due_amount}</td></tr>
+                      <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
+                        <td style={{ padding: '10px' }}>{inv.invoice_date}</td>
+                        <td style={{ padding: '10px' }}>{inv.invoice_no}</td>
+                        <td style={{ padding: '10px', textAlign: 'right' }}>{inv.total.toFixed(2)}</td>
+                        <td style={{ padding: '10px', textAlign: 'right', color: '#059669' }}>{inv.paid_amount.toFixed(2)}</td>
+                        <td style={{ padding: '10px', textAlign: 'right', color: inv.due_amount > 0 ? '#EF4444' : '#059669' }}>{inv.due_amount.toFixed(2)}</td>
+                      </tr>
                     ))}
                   </tbody>
                 </table>
@@ -650,650 +679,559 @@ export default function Home() {
         </div>
       )}
 
-      <aside style={{ width: '280px', background: 'linear-gradient(180deg, #0F172A 0%, #1E3A8A 100%)', color: '#FBBF24', display: 'flex', flexDirection: 'column', boxShadow: '5px 0 15px rgba(0,0,0,0.1)' }}>
-        <div style={{ padding: '30px 20px', textAlign: 'center', borderBottom: '1px solid rgba(251, 191, 36, 0.3)' }}>
-          {data.settings.logo_url && <img src={data.settings.logo_url} style={{height:'50px', marginBottom:'10px'}} />}
-          {/* ARABIC NAME ONLY INSIDE ERP */}
-          <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', letterSpacing: '0.5px', fontFamily: "'Tajawal', sans-serif" }}>صعود الطائرة للسفر و السياحة</h2>
+      {/* SIDEBAR */}
+      <div style={{ width: '260px', background: '#1E3A8A', color: 'white', display: 'flex', flexDirection: 'column', boxShadow: '2px 0 10px rgba(0,0,0,0.1)' }}>
+        <div style={{ padding: '20px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+          <h1 style={{ fontSize: '20px', margin: 0, fontWeight: 'bold' }}>SUEUD AL TAIYYARAH</h1>
+          <p style={{ fontSize: '12px', color: '#FBBF24', marginTop: '5px' }}>ERP System</p>
         </div>
-        <nav style={{ flex: 1, overflowY: 'auto', padding: '20px 0' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '15px 0' }}>
           {menu.map(m => (
-            <button key={m.id} onClick={() => { setPage(m.id); setEditingId(null); }} style={{ width: '100%', textAlign: 'left', padding: '15px 30px', background: page === m.id ? 'linear-gradient(90deg, #FBBF24, #D97706)' : 'transparent', border: 'none', color: page === m.id ? '#0F172A' : '#FBBF24', cursor: 'pointer', fontWeight: '600', transition: 'all 0.3s', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div key={m.id} onClick={() => setPage(m.id)} style={{ padding: '15px 25px', cursor: 'pointer', background: page === m.id ? 'rgba(255,255,255,0.1)' : 'transparent', borderLeft: page === m.id ? '4px solid #FBBF24' : '4px solid transparent', transition: 'all 0.2s', fontWeight: page === m.id ? 'bold' : 'normal' }}>
               {m.label}
-            </button>
+            </div>
           ))}
-        </nav>
-        <div style={{ padding: '20px' }}>
-          <button onClick={() => setLang(lang === 'en' ? 'ar' : 'en')} style={{ width: '100%', padding: '12px', background: 'transparent', color: '#FBBF24', border: '1px solid #FBBF24', cursor: 'pointer', marginBottom: '10px', borderRadius: '8px', fontWeight: '600' }}>{lang === 'en' ? 'العربية' : 'English'}</button>
-          <button onClick={handleLogout} style={{ width: '100%', padding: '12px', background: 'linear-gradient(90deg, #991B1B, #EF4444)', color: '#FFF', border: 'none', cursor: 'pointer', borderRadius: '8px', fontWeight: '600' }}>{tr.logout}</button>
         </div>
-      </aside>
+        <div style={{ padding: '15px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+          <button onClick={() => setModal({ type: 'password', data: null })} style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', marginBottom: '10px' }}>{tr.changePass}</button>
+          <button onClick={handleLogout} style={{ width: '100%', padding: '10px', background: '#EF4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>{tr.logout}</button>
+        </div>
+      </div>
 
-      <main style={{ flex: 1, overflowY: 'auto' }}>
-        <header style={{ background: 'white', padding: '20px 40px', borderBottom: '1px solid #e2e8f0', display:'flex', justifyContent:'space-between', alignItems:'center', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
-          <h2 style={{ margin: 0, color: '#0F172A', fontSize: '24px', fontWeight: '700' }}>{menu.find(m=>m.id===page)?.label}</h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <button onClick={() => setModal({ type: 'password' })} style={{ background: '#f1f5f9', color: '#1E293B', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>🔑 {tr.changePass}</button>
-            <div style={{ fontSize: '14px', color: '#64748B', textAlign: 'right', fontWeight: '500' }}>
-              <b style={{color: '#0F172A'}}>{userProfile.username || user.email}</b><br/><span style={{color: '#FBBF24', background: '#1E3A8A', padding: '2px 8px', borderRadius: '4px', fontSize: '12px'}}>{userProfile.role}</span>
+      {/* MAIN CONTENT */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '30px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', background: 'white', padding: '15px 25px', borderRadius: '12px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
+          <h2 style={{ margin: 0, color: '#1E3A8A' }}>{menu.find(m => m.id === page)?.label}</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            <input type="text" placeholder={tr.search} value={search} onChange={(e) => setSearch(e.target.value)} style={{ padding: '8px 15px', borderRadius: '20px', border: '1px solid #ccc', outline: 'none' }} />
+            <select value={lang} onChange={(e) => setLang(e.target.value)} style={{ padding: '8px 15px', borderRadius: '8px', border: '1px solid #ccc', cursor: 'pointer' }}>
+              <option value="en">English</option>
+              <option value="ar">العربية</option>
+            </select>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ margin: 0, fontWeight: 'bold', color: '#1E3A8A' }}>{userProfile.username || userProfile.email}</p>
+              <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>{userProfile.role}</p>
             </div>
           </div>
-        </header>
-
-        <div style={{ padding: '40px' }}>
-          
-          {page === 'dashboard' && (
-            <div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '25px', marginBottom: '30px' }}>
-                <div style={{...styles.card, background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white'}}><h3 style={{margin:0, opacity:0.8, fontSize:'16px'}}>Total Sales</h3><h1 style={{margin:'10px 0 0', fontSize:'32px', fontWeight:'800'}}>{tSales.toFixed(0)} SAR</h1></div>
-                <div style={{...styles.card, background: 'linear-gradient(135deg, #059669, #10B981)', color: 'white'}}><h3 style={{margin:0, opacity:0.8, fontSize:'16px'}}>Gross Profit</h3><h1 style={{margin:'10px 0 0', fontSize:'32px', fontWeight:'800'}}>{tProfit.toFixed(0)} SAR</h1></div>
-                <div style={{...styles.card, background: 'linear-gradient(135deg, #D97706, #FBBF24)', color: 'white'}}><h3 style={{margin:0, opacity:0.8, fontSize:'16px'}}>Cash Balance</h3><h1 style={{margin:'10px 0 0', fontSize:'32px', fontWeight:'800'}}>{cashBalance.toFixed(0)} SAR</h1></div>
-                <div style={{...styles.card, background: 'linear-gradient(135deg, #7C3AED, #A78BFA)', color: 'white'}}><h3 style={{margin:0, opacity:0.8, fontSize:'16px'}}>Bank Balance</h3><h1 style={{margin:'10px 0 0', fontSize:'32px', fontWeight:'800'}}>{bankBalance.toFixed(0)} SAR</h1></div>
-              </div>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '25px' }}>
-                <div style={styles.card}>
-                  <h3 style={{color:'#0F172A', marginBottom:'20px', fontSize:'18px'}}>Recent Invoices</h3>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead><tr style={{ background: '#f8fafc', color: '#1E3A8A' }}><th style={styles.td}>Invoice No</th><th style={styles.td}>Customer</th><th style={styles.td}>Total</th></tr></thead>
-                    <tbody>
-                      {activeInv.slice(0, 5).map(inv => <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0' }}><td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.customers?.name || 'N/A'}</td><td style={styles.td}><b>{inv.total} SAR</b></td></tr>)}
-                    </tbody>
-                  </table>
-                </div>
-                <div style={styles.card}>
-                  <h3 style={{color:'#0F172A', marginBottom:'20px', fontSize:'18px'}}>Portal Balances</h3>
-                  {data.portals.map(p => (
-                    <div key={p.id} style={{ background: '#f8fafc', padding: '15px', borderRadius: '12px', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: '600', color: '#1E293B' }}>{p.name}</span>
-                      <span style={{ fontSize: '18px', fontWeight: '800', color: p.current_balance < 0 ? '#EF4444' : '#1E3A8A' }}>{p.current_balance || 0} SAR</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {page === 'create' && (
-             <div style={styles.card}>
-               <form onSubmit={handleCreateInvoice}>
-                 <h3 style={{color: '#1E3A8A', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>Customer Details</h3>
-                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
-                   <div><label style={styles.label}>Select Customer</label><select value={invForm.custId} onChange={(e) => setInvForm({...invForm, custId: e.target.value})} style={styles.input} disabled={editingId}><option value="new">+ New Customer</option>{data.customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.type})</option>)}</select></div>
-                   {invForm.custId === 'new' && <>
-                     <div><label style={styles.label}>Name</label><input placeholder="Enter Name" value={invForm.custName} onChange={(e) => setInvForm({...invForm, custName: e.target.value})} required style={styles.input} /></div>
-                     <div><label style={styles.label}>Phone</label><input placeholder="Enter Phone" value={invForm.custPhone} onChange={(e) => setInvForm({...invForm, custPhone: e.target.value})} required style={styles.input} /></div>
-                     <div><label style={styles.label}>Type</label><select value={invForm.custType} onChange={(e) => setInvForm({...invForm, custType: e.target.value})} style={styles.input}><option>Individual</option><option>Group</option><option>Company</option></select></div>
-                   </>}
-                 </div>
-                 {invForm.custType === 'Group' || invForm.custType === 'Company' ? (
-                   <div style={{ marginBottom: '20px' }}><label style={styles.label}>Passenger Names</label><textarea placeholder="One per line" value={invForm.passengerNames} onChange={(e) => setInvForm({...invForm, passengerNames: e.target.value})} style={{...styles.input, height: '80px'}} /></div>
-                 ) : null}
-
-                 <h3 style={{color: '#1E3A8A', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>Service Details</h3>
-                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
-                   <div><label style={styles.label}>Service</label><select value={invForm.service} onChange={(e) => setInvForm({...invForm, service: e.target.value})} style={styles.input}>{data.services.map(s => <option key={s.id}>{s.name}</option>)}</select></div>
-                   {invForm.service === 'Flight' && <>
-                     <div><label style={styles.label}>Flight Type</label><select value={invForm.flightType} onChange={(e) => setInvForm({...invForm, flightType: e.target.value})} style={styles.input}><option>Domestic</option><option>International</option></select></div>
-                     <div><label style={styles.label}>Booking Type</label><select value={invForm.flightSub} onChange={(e) => setInvForm({...invForm, flightSub: e.target.value})} style={styles.input}><option>New Booking</option><option>Reissue</option><option>Extra Baggage</option></select></div>
-                     <div><label style={styles.label}>Journey</label><select value={invForm.flightJourney} onChange={(e) => setInvForm({...invForm, flightJourney: e.target.value})} style={styles.input}><option>Single</option><option>Roundtrip</option></select></div>
-                     <div><label style={styles.label}>Airline</label><input placeholder="Flynas" value={invForm.airline} onChange={(e) => setInvForm({...invForm, airline: e.target.value})} style={styles.input} required /></div>
-                     <div><label style={styles.label}>Sector</label><input placeholder="JED - RUH" value={invForm.flightSector} onChange={(e) => setInvForm({...invForm, flightSector: e.target.value})} style={styles.input} required /></div>
-                     <div><label style={styles.label}>PNR</label><input placeholder="PNR" value={invForm.pnr} onChange={(e) => setInvForm({...invForm, pnr: e.target.value})} style={styles.input} required /></div>
-                     <div><label style={styles.label}>Ticket No</label><input placeholder="Ticket No" value={invForm.ticketNo} onChange={(e) => setInvForm({...invForm, ticketNo: e.target.value})} style={styles.input} /></div>
-                   </>}
-                   {invForm.service === 'Hotel' && <>
-                     <div><label style={styles.label}>Hotel Name</label><input placeholder="Hotel Name" value={invForm.hotelName} onChange={(e) => setInvForm({...invForm, hotelName: e.target.value})} style={styles.input} required /></div>
-                     <div><label style={styles.label}>Destination</label><input placeholder="Dubai" value={invForm.destination} onChange={(e) => setInvForm({...invForm, destination: e.target.value})} style={styles.input} required /></div>
-                     <div><label style={styles.label}>Check-in</label><input type="date" value={invForm.checkIn} onChange={(e) => setInvForm({...invForm, checkIn: e.target.value})} style={styles.input} required /></div>
-                     <div><label style={styles.label}>Check-out</label><input type="date" value={invForm.checkOut} onChange={(e) => setInvForm({...invForm, checkOut: e.target.value})} style={styles.input} required /></div>
-                   </>}
-                   {invForm.service === 'Visa' && <>
-                     <div><label style={styles.label}>Visa Type</label><select value={invForm.visaType} onChange={(e) => setInvForm({...invForm, visaType: e.target.value})} style={styles.input}><option>Tourist</option><option>Business</option><option>Visit</option><option>Work</option></select></div>
-                     <div><label style={styles.label}>Destination</label><input placeholder="Schengen" value={invForm.destination} onChange={(e) => setInvForm({...invForm, destination: e.target.value})} style={styles.input} required /></div>
-                   </>}
-                   {data.customFields.map(f => (
-                     <div key={f.id}>
-                       <label style={styles.label}>{f.name}</label>
-                       <input placeholder={f.name} style={styles.input} />
-                     </div>
-                   ))}
-                 </div>
-
-                 <h3 style={{color: '#1E3A8A', borderBottom: '1px solid #eee', paddingBottom: '10px'}}>Pricing & Payment</h3>
-                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
-                   <div><label style={styles.label}>Sales Rep</label><select value={invForm.employeeId} onChange={(e) => setInvForm({...invForm, employeeId: e.target.value})} style={styles.input}><option value="">Select</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
-                   <div><label style={styles.label}>Portal</label><select value={invForm.portal} onChange={(e) => setInvForm({...invForm, portal: e.target.value})} style={styles.input} required><option value="">Select</option>{data.portals.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}</select></div>
-                   <div><label style={styles.label}>Qty</label><input type="number" value={invForm.qty} onChange={(e) => setInvForm({...invForm, qty: e.target.value})} style={styles.input} required /></div>
-                   <div><label style={styles.label}>Cost Price</label><input type="number" value={invForm.cost} onChange={(e) => setInvForm({...invForm, cost: e.target.value})} style={styles.input} required /></div>
-                   <div><label style={styles.label}>Sell Price</label><input type="number" value={invForm.sell} onChange={(e) => setInvForm({...invForm, sell: e.target.value})} style={styles.input} required /></div>
-                   <div><label style={styles.label}>Discount</label><input type="number" value={invForm.discount} onChange={(e) => setInvForm({...invForm, discount: e.target.value})} style={styles.input} /></div>
-                   <div><label style={styles.label}>Tax</label><select value={invForm.taxRate} onChange={(e) => setInvForm({...invForm, taxRate: e.target.value})} style={styles.input}><option value="15">15%</option><option value="0">0%</option></select></div>
-                   <div><label style={styles.label}>Payment</label><select value={invForm.payment} onChange={(e) => setInvForm({...invForm, payment: e.target.value})} style={styles.input}><option>Cash</option><option>Bank Transfer</option><option>Tabby</option><option>Tamara</option><option>Credit</option></select></div>
-                   <div><label style={styles.label}>Booking Date</label><input type="date" value={invForm.bookingDate} onChange={(e) => setInvForm({...invForm, bookingDate: e.target.value})} style={styles.input} required /></div>
-                   <div><label style={styles.label}>Invoice Date</label><input type="date" value={invForm.invoiceDate} onChange={(e) => setInvForm({...invForm, invoiceDate: e.target.value})} style={styles.input} required /></div>
-                   <div><label style={styles.label}>Paid Amount</label><input type="number" value={invForm.paid} onChange={(e) => setInvForm({...invForm, paid: e.target.value})} style={styles.input} required /></div>
-                 </div>
-                 <button type="submit" style={{ background: 'linear-gradient(90deg, #1E3A8A, #2563EB)', color: '#FBBF24', border: 'none', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold', padding: '15px', width: '100%', borderRadius: '8px' }}>{editingId ? 'Update Invoice' : 'Generate Invoice'}</button>
-                 {editingId && <button type="button" onClick={() => { setEditingId(null); setPage('list'); }} style={{ background: '#EF4444', color: 'white', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '15px', width: '100%', marginTop: '10px', borderRadius: '8px' }}>Cancel</button>}
-               </form>
-             </div>
-          )}
-
-          {page === 'list' && (
-            <div style={styles.card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                <input placeholder={tr.search} value={search} onChange={(e) => { setSearch(e.target.value); setTblPage(1); }} style={{...styles.input, padding: '12px', width: '70%'}} />
-                <button onClick={() => exportCSV(activeInv, 'Sales_Invoices.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
-              </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.th}>Inv No</th><th style={styles.th}>Customer</th><th style={styles.th}>Qty</th><th style={styles.th}>Profit</th><th style={styles.th}>Total</th><th style={styles.th}>Actions</th></tr></thead>
-                <tbody>
-                  {paginatedInv.map(inv => (
-                    <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: inv.due_amount > 0 ? '#fff3cd' : 'transparent' }}>
-                      <td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.customers?.name || 'N/A'}</td>
-                      <td style={styles.td}>{inv.qty || 1}</td><td style={{...styles.td, color:'green'}}>{inv.profit} SAR</td><td style={styles.td}>{inv.total} SAR</td>
-                      <td style={styles.td}>
-                        <button onClick={() => setModal({type: 'preview', data: inv})} style={styles.btnSm}>Preview</button>
-                        <button onClick={() => handleEditClick(inv)} style={{...styles.btnSm, background:'#2563EB'}}>Edit</button>
-                        {inv.due_amount > 0 && <button onClick={() => { setSettleForm({id: inv.id, date: today, mode: 'Cash', tabbyNo: '', tamaraNo: ''}); setModal({type:'settle', data: inv}); }} style={{...styles.btnSm, background:'#059669'}}>Settle</button>}
-                        <button onClick={() => { setRefundForm({id: inv.id, compRefund: 0, custRefund: 0, mode: 'Cash'}); setModal({type:'refund', data: inv}); }} style={{...styles.btnSm, background:'#D97706'}}>Refund</button>
-                        <button onClick={() => handleDelete('invoices', inv.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
-                <button onClick={() => setTblPage(p => Math.max(p - 1, 1))} disabled={tblPage === 1} style={{ padding: '8px 16px', cursor: 'pointer', background: tblPage === 1 ? '#ccc' : '#1E3A8A', color: 'white', border: 'none', borderRadius: '6px' }}>Previous</button>
-                <span>Page {tblPage} of {totalPages || 1}</span>
-                <button onClick={() => setTblPage(p => Math.min(p + 1, totalPages))} disabled={tblPage === totalPages || totalPages === 0} style={{ padding: '8px 16px', cursor: 'pointer', background: tblPage === totalPages ? '#ccc' : '#1E3A8A', color: 'white', border: 'none', borderRadius: '6px' }}>Next</button>
-              </div>
-            </div>
-          )}
-
-          {page === 'refunds' && (
-             <div style={styles.card}>
-               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                 <h3 style={{margin: 0}}>All Refunds</h3>
-                 <button onClick={() => exportCSV(refundInv, 'Refunds.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
-               </div>
-               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                 <thead><tr style={{ background: '#EF4444', color: 'white' }}><th style={styles.th}>Refund No</th><th style={styles.th}>Original Inv</th><th style={styles.th}>Cust Refund</th><th style={styles.th}>Comp Refund</th></tr></thead>
-                 <tbody>
-                   {refundInv.map(inv => (
-                     <tr key={inv.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                       <td style={styles.td}>{inv.invoice_no}</td><td style={styles.td}>{inv.service_type}</td>
-                       <td style={{...styles.td, color:'red'}}>{inv.refund_customer} SAR</td><td style={{...styles.td, color:'green'}}>{inv.refund_company} SAR</td>
-                     </tr>
-                   ))}
-                 </tbody>
-               </table>
-             </div>
-          )}
-
-          {page === 'customers' && (
-            <div style={styles.card}>
-              <div style={{display:'flex', justifyContent:'space-between', marginBottom:'20px'}}>
-                <h3 style={{margin: 0}}>Customer List (CRM)</h3>
-                <button onClick={() => exportCSV(data.customers, 'Customers.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
-              </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.th}>Name</th><th style={styles.th}>Type</th><th style={styles.th}>Phone</th><th style={styles.th}>Action</th></tr></thead>
-                <tbody>
-                  {data.customers.map(c => (
-                    <tr key={c.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={styles.td}>{c.name}</td><td style={styles.td}>{c.type || 'Individual'}</td><td style={styles.td}>{c.phone}</td>
-                      <td style={styles.td}>
-                        <button onClick={() => setModal({type: 'ledger', data: c})} style={{...styles.btnSm, background:'#2563EB'}}>Ledger</button>
-                        <button onClick={() => handleDelete('customers', c.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {page === 'portals' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '25px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={styles.card}>
-                  <h3 style={{color:'#1E3A8A'}}>Add New Portal</h3>
-                  <form onSubmit={handleAddPortal} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <input placeholder="Portal Name (e.g. Flyadeal)" value={portalForm.name} onChange={(e) => setPortalForm({...portalForm, name: e.target.value})} style={styles.input} required />
-                    <input type="number" placeholder="Initial Balance" value={portalForm.balance} onChange={(e) => setPortalForm({...portalForm, balance: e.target.value})} style={styles.input} required />
-                    <button type="submit" style={styles.btnPrimary}>Add Portal</button>
-                  </form>
-                </div>
-                <div style={styles.card}>
-                  <h3 style={{color:'#1E3A8A'}}>Add Recharge</h3>
-                  <form onSubmit={handleRecharge} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <select name="portal" style={styles.input} required><option value="">Select Portal</option>{data.portals.map(p => <option key={p.id}>{p.name}</option>)}</select>
-                    <input type="number" name="amt" placeholder="Amount" style={styles.input} required />
-                    <input type="date" name="date" defaultValue={today} style={styles.input} required />
-                    <input name="desc" placeholder="Description" style={styles.input} />
-                    <select name="mode" style={styles.input}><option>Cash</option><option>Bank Transfer</option></select>
-                    <button type="submit" style={styles.btnPrimary}>Recharge</button>
-                  </form>
-                </div>
-              </div>
-              <div style={styles.card}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                  <h3 style={{color:'#1E3A8A', margin: 0}}>Portal Balances & History</h3>
-                  <button onClick={() => exportCSV(data.recharges, 'Portals_Recharges.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
-                </div>
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
-                  {data.portals.map(p => (
-                    <div key={p.id} style={{ flex: 1, minWidth: '120px', background: '#f8fafc', padding: '10px', borderRadius: '8px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                      <h4>{p.name}</h4><h2 style={{color: p.current_balance < 0 ? 'red' : '#1E3A8A'}}>{p.current_balance || 0}</h2>
-                    </div>
-                  ))}
-                </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.td}>Date</th><th style={styles.td}>Portal</th><th style={styles.td}>Amount</th><th style={styles.td}>Action</th></tr></thead>
-                  <tbody>
-                    {data.recharges.map(r => (
-                      <tr key={r.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={styles.td}>{r.recharge_date}</td><td style={styles.td}>{r.portals?.name}</td><td style={styles.td}>{r.amount} SAR</td>
-                        <td style={styles.td}><button onClick={() => handleDelete('recharges', r.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {page === 'vendors' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '25px' }}>
-              <div style={styles.card}>
-                <h3 style={{color:'#1E3A8A'}}>Add B2B Vendor</h3>
-                <form onSubmit={handleAddVendor} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <input placeholder="Vendor Name" value={vendorForm.name} onChange={(e) => setVendorForm({...vendorForm, name: e.target.value})} style={styles.input} required />
-                  <input placeholder="Phone" value={vendorForm.phone} onChange={(e) => setVendorForm({...vendorForm, phone: e.target.value})} style={styles.input} />
-                  <input type="number" placeholder="Initial Balance" value={vendorForm.balance} onChange={(e) => setVendorForm({...vendorForm, balance: e.target.value})} style={styles.input} required />
-                  <button type="submit" style={styles.btnPrimary}>Add Vendor</button>
-                </form>
-              </div>
-              <div style={styles.card}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                  <h3 style={{color:'#1E3A8A', margin: 0}}>Vendors List</h3>
-                  <button onClick={() => exportCSV(data.vendors, 'Vendors.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
-                </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.td}>Name</th><th style={styles.td}>Phone</th><th style={styles.td}>Balance</th><th style={styles.td}>Action</th></tr></thead>
-                  <tbody>
-                    {data.vendors.map(v => (
-                      <tr key={v.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={styles.td}>{v.name}</td><td style={styles.td}>{v.phone}</td><td style={styles.td}>{v.balance} SAR</td>
-                        <td style={styles.td}><button onClick={() => handleDelete('vendors', v.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {page === 'packages' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '25px' }}>
-              <div style={styles.card}>
-                <h3 style={{color:'#1E3A8A'}}>Add Tour Package</h3>
-                <form onSubmit={handleAddPackage} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <input placeholder="Package Name (e.g. Umrah)" value={pkgForm.name} onChange={(e) => setPkgForm({...pkgForm, name: e.target.value})} style={styles.input} required />
-                  <input type="number" placeholder="Price (SAR)" value={pkgForm.price} onChange={(e) => setPkgForm({...pkgForm, price: e.target.value})} style={styles.input} required />
-                  <textarea placeholder="Description" value={pkgForm.desc} onChange={(e) => setPkgForm({...pkgForm, desc: e.target.value})} style={{...styles.input, height: '80px'}} />
-                  <button type="submit" style={styles.btnPrimary}>Add Package</button>
-                </form>
-              </div>
-              <div style={styles.card}>
-                <h3 style={{color:'#1E3A8A', marginBottom:'20px'}}>Available Packages</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                  {data.packages.map(p => (
-                    <div key={p.id} style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                      <h4 style={{ margin: '0 0 10px', color: '#1E3A8A' }}>{p.name}</h4>
-                      <p style={{ margin: '0 0 5px', fontSize: '14px', color: '#64748b' }}>{p.description}</p>
-                      <h3 style={{ margin: '10px 0', color: '#059669' }}>{p.price} SAR</h3>
-                      <button onClick={() => handleDelete('packages', p.id)} style={{...styles.btnSm, background:'#EF4444'}}>Delete</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {page === 'branches' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '25px' }}>
-              <div style={styles.card}>
-                <h3 style={{color:'#1E3A8A'}}>Add Branch</h3>
-                <form onSubmit={handleAddBranch} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <input placeholder="Branch Name" value={brnForm.name} onChange={(e) => setBrnForm({...brnForm, name: e.target.value})} style={styles.input} required />
-                  <input placeholder="Location" value={brnForm.location} onChange={(e) => setBrnForm({...brnForm, location: e.target.value})} style={styles.input} required />
-                  <input placeholder="Phone" value={brnForm.phone} onChange={(e) => setBrnForm({...brnForm, phone: e.target.value})} style={styles.input} required />
-                  <button type="submit" style={styles.btnPrimary}>Add Branch</button>
-                </form>
-              </div>
-              <div style={styles.card}>
-                <h3 style={{color:'#1E3A8A', marginBottom:'20px'}}>Branches List</h3>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.th}>Name</th><th style={styles.th}>Location</th><th style={styles.th}>Phone</th><th style={styles.th}>Action</th></tr></thead>
-                  <tbody>
-                    {data.branches.map(b => <tr key={b.id} style={{ borderBottom: '1px solid #e2e8f0' }}><td style={styles.td}>{b.name}</td><td style={styles.td}>{b.location}</td><td style={styles.td}>{b.phone}</td><td style={styles.td}><button onClick={() => handleDelete('branches', b.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td></tr>)}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {page === 'bank' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '25px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={styles.card}>
-                  <h3 style={{color:'#1E3A8A'}}>Cash/Bank Balances</h3>
-                  <div style={{ fontSize: '24px', margin: '20px 0' }}>
-                    <p>Cash: <b style={{color:'#D97706'}}>{cashBalance.toFixed(0)} SAR</b></p>
-                    <p>Bank: <b style={{color:'#7C3AED'}}>{bankBalance.toFixed(0)} SAR</b></p>
-                  </div>
-                </div>
-                <div style={styles.card}>
-                  <h3 style={{color:'#1E3A8A'}}>Fund Transfer</h3>
-                  <form onSubmit={handleTransfer} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                      <div>
-                        <label style={styles.label}>From</label>
-                        <select value={transferForm.from} onChange={(e) => setTransferForm({...transferForm, from: e.target.value})} style={styles.input}><option>Cash</option><option>Bank</option><option>Investor</option></select>
-                      </div>
-                      <div>
-                        <label style={styles.label}>To</label>
-                        <select value={transferForm.to} onChange={(e) => setTransferForm({...transferForm, to: e.target.value})} style={styles.input}><option>Cash</option><option>Bank</option><option>Investor</option></select>
-                      </div>
-                    </div>
-                    <input type="number" placeholder="Amount" value={transferForm.amount} onChange={(e) => setTransferForm({...transferForm, amount: e.target.value})} style={styles.input} required />
-                    <input type="date" value={transferForm.date} onChange={(e) => setTransferForm({...transferForm, date: e.target.value})} style={styles.input} required />
-                    <button type="submit" style={styles.btnPrimary}>Transfer</button>
-                  </form>
-                </div>
-              </div>
-              <div style={styles.card}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                  <h3 style={{color:'#1E3A8A', margin: 0}}>Recent Transactions</h3>
-                  <button onClick={() => exportCSV(data.cashbook, 'Cashbook.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
-                </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.td}>Date</th><th style={styles.td}>Type</th><th style={styles.td}>Desc</th><th style={styles.td}>Amount</th><th style={styles.td}>Action</th></tr></thead>
-                  <tbody>
-                    {data.cashbook.map(c => (
-                      <tr key={c.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={styles.td}>{c.trans_date}</td><td style={styles.td}>{c.type}</td><td style={styles.td}>{c.description}</td><td style={styles.td}>{c.amount} SAR</td>
-                        <td style={styles.td}><button onClick={() => handleDelete('cashbook', c.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {page === 'invest' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '25px' }}>
-              <div style={styles.card}>
-                <h3 style={{color:'#1E3A8A'}}>Add Investment</h3>
-                <form onSubmit={handleAddInvestment} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <input placeholder="Investor Name" value={investForm.name} onChange={(e) => setInvestForm({...investForm, name: e.target.value})} style={styles.input} required />
-                  <input type="number" placeholder="Amount" value={investForm.amount} onChange={(e) => setInvestForm({...investForm, amount: e.target.value})} style={styles.input} required />
-                  <input type="date" value={investForm.date} onChange={(e) => setInvestForm({...investForm, date: e.target.value})} style={styles.input} required />
-                  <input placeholder="Description" value={investForm.desc} onChange={(e) => setInvestForm({...investForm, desc: e.target.value})} style={styles.input} />
-                  <select value={investForm.mode} onChange={(e) => setInvestForm({...investForm, mode: e.target.value})} style={styles.input}><option>Cash</option><option>Bank Transfer</option></select>
-                  <button type="submit" style={styles.btnPrimary}>Add Investment</button>
-                </form>
-              </div>
-              <div style={styles.card}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                  <h3 style={{color:'#1E3A8A', margin: 0}}>Investment History</h3>
-                  <button onClick={() => exportCSV(data.investments, 'Investments.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
-                </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.td}>Date</th><th style={styles.td}>Investor</th><th style={styles.td}>Amount</th><th style={styles.td}>Mode</th><th style={styles.td}>Action</th></tr></thead>
-                  <tbody>
-                    {data.investments.map(i => (
-                      <tr key={i.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={styles.td}>{i.invest_date}</td><td style={styles.td}>{i.investor_name}</td><td style={styles.td}>{i.amount} SAR</td><td style={styles.td}>{i.payment_mode}</td>
-                        <td style={styles.td}><button onClick={() => handleDelete('investments', i.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {page === 'hr' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '25px' }}>
-              <div style={styles.card}>
-                <h3 style={{color:'#1E3A8A'}}>Pay Salary</h3>
-                <form onSubmit={handlePaySalary} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <select name="emp" style={styles.input} required><option value="">Select Employee</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select>
-                  <input type="number" name="amt" placeholder="Amount" style={styles.input} required />
-                  <input type="month" name="month" style={styles.input} required />
-                  <select name="mode" style={styles.input}><option>Cash</option><option>Bank Transfer</option></select>
-                  <button type="submit" style={styles.btnPrimary}>Pay Salary</button>
-                </form>
-              </div>
-              <div style={styles.card}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                  <h3 style={{color:'#1E3A8A', margin: 0}}>Payroll History</h3>
-                  <button onClick={() => exportCSV(data.payroll, 'Payroll.csv')} style={{...styles.btnPrimary, background: 'linear-gradient(90deg, #7C3AED, #A78BFA)', width: 'auto', padding: '10px 20px'}}>Export Excel</button>
-                </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.td}>Employee</th><th style={styles.td}>Month</th><th style={styles.td}>Amount</th><th style={styles.td}>Mode</th><th style={styles.td}>Action</th></tr></thead>
-                  <tbody>
-                    {data.payroll.map(p => (
-                      <tr key={p.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={styles.td}>{p.employees?.name}</td><td style={styles.td}>{p.month}</td><td style={styles.td}>{p.amount} SAR</td><td style={styles.td}>{p.payment_mode}</td>
-                        <td style={styles.td}><button onClick={() => handleDelete('payroll', p.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              
-              <div style={{...styles.card, gridColumn: 'span 2'}}>
-                <h3 style={{color:'#1E3A8A'}}>Add Expense</h3>
-                <form onSubmit={handleAddExpense} style={{ display: 'flex', gap: '10px' }}>
-                  <input name="cat" placeholder="Category (Rent, Electricity)" style={styles.input} required />
-                  <input name="desc" placeholder="Description" style={styles.input} required />
-                  <input type="number" name="amt" placeholder="Amount" style={styles.input} required />
-                  <select name="mode" style={styles.input}><option>Cash</option><option>Bank Transfer</option></select>
-                  <button type="submit" style={{...styles.btnPrimary, width: 'auto', padding: '10px 20px'}}>Add Expense</button>
-                </form>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', marginTop: '15px' }}>
-                  <tbody>
-                    {data.expenses.map(ex => (
-                      <tr key={ex.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={styles.td}>{ex.category}</td><td style={styles.td}>{ex.description}</td><td style={styles.td}>{ex.amount} SAR</td>
-                        <td style={styles.td}><button onClick={() => handleDelete('expenses', ex.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {page === 'users' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '25px' }}>
-              <div style={styles.card}>
-                <h3 style={{color: '#1E3A8A', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px'}}>{tr.ownerProfile}</h3>
-                <form onSubmit={handleUpdateOwnerProfile}>
-                  <label style={styles.label}>Username</label>
-                  <input value={userProfile.username || ''} onChange={(e) => setUserProfile({...userProfile, username: e.target.value})} style={styles.input} />
-                  <label style={styles.label}>Email</label>
-                  <input value={userProfile.email || ''} onChange={(e) => setUserProfile({...userProfile, email: e.target.value})} style={styles.input} />
-                  <button type="submit" style={{...styles.btnPrimary, marginTop: '15px'}}>Update Owner Data</button>
-                </form>
-              </div>
-
-              <div style={styles.card}>
-                <h3 style={{color: '#1E3A8A', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px'}}>Add New System User</h3>
-                <form onSubmit={handleAddUser}>
-                  <label style={styles.label}>Username</label>
-                  <input value={userForm.username} onChange={(e) => setUserForm({...userForm, username: e.target.value})} style={styles.input} required />
-                  <label style={styles.label}>Email</label>
-                  <input type="email" value={userForm.email} onChange={(e) => setUserForm({...userForm, email: e.target.value})} style={styles.input} required />
-                  <label style={styles.label}>Role</label>
-                  <select value={userForm.role} onChange={(e) => setUserForm({...userForm, role: e.target.value})} style={styles.input}>
-                    <option>Owner</option><option>Manager</option><option>Accountant</option><option>Sales</option>
-                  </select>
-                  
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', background: '#f8fafc', padding: '15px', borderRadius: '8px', marginTop: '10px' }}>
-                    <label style={{...styles.label, display:'flex', alignItems:'center', gap:'10px'}}><input type="checkbox" checked={userForm.is_admin} onChange={(e) => setUserForm({...userForm, is_admin: e.target.checked})} /> Admin (Full Access)</label>
-                    <label style={{...styles.label, display:'flex', alignItems:'center', gap:'10px'}}><input type="checkbox" checked={userForm.can_access_invoices} onChange={(e) => setUserForm({...userForm, can_access_invoices: e.target.checked})} /> Access Invoices & Sales</label>
-                    <label style={{...styles.label, display:'flex', alignItems:'center', gap:'10px'}}><input type="checkbox" checked={userForm.can_access_bank} onChange={(e) => setUserForm({...userForm, can_access_bank: e.target.checked})} /> Access Bank & Cash</label>
-                    <label style={{...styles.label, display:'flex', alignItems:'center', gap:'10px'}}><input type="checkbox" checked={userForm.can_access_hr} onChange={(e) => setUserForm({...userForm, can_access_hr: e.target.checked})} /> Access HR & Payroll</label>
-                    <label style={{...styles.label, display:'flex', alignItems:'center', gap:'10px'}}><input type="checkbox" checked={userForm.can_access_reports} onChange={(e) => setUserForm({...userForm, can_access_reports: e.target.checked})} /> Access Reports</label>
-                    <label style={{...styles.label, display:'flex', alignItems:'center', gap:'10px'}}><input type="checkbox" checked={userForm.can_access_settings} onChange={(e) => setUserForm({...userForm, can_access_settings: e.target.checked})} /> Access Settings</label>
-                  </div>
-
-                  <button type="submit" style={{...styles.btnPrimary, marginTop: '15px'}}>Add User</button>
-                </form>
-              </div>
-
-              <div style={{...styles.card, gridColumn: 'span 2'}}>
-                <h3 style={{color: '#1E3A8A', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px'}}>System Users List</h3>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.th}>Username</th><th style={styles.th}>Email</th><th style={styles.th}>Role</th><th style={styles.th}>Action</th></tr></thead>
-                  <tbody>
-                    {data.appUsers.map(u => (
-                      <tr key={u.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={styles.td}>{u.username || 'N/A'}</td><td style={styles.td}>{u.email}</td><td style={styles.td}>{u.role}</td>
-                        <td style={styles.td}><button onClick={() => handleDelete('app_users', u.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {page === 'reports' && (
-            <div style={styles.card}>
-              <h3 style={{color: '#1E3A8A', marginBottom:'20px'}}>Financial Statements & Reports</h3>
-              <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-                <input type="date" value={repDate.from} onChange={(e) => setRepDate({...repDate, from: e.target.value})} style={styles.input} />
-                <input type="date" value={repDate.to} onChange={(e) => setRepDate({...repDate, to: e.target.value})} style={styles.input} />
-              </div>
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
-                {['sales', 'refunds', 'recharges', 'cashbook', 'investments', 'payroll', 'expenses'].map(tab => (
-                  <button key={tab} onClick={() => setReportTab(tab)} style={{...styles.btnPrimary, width:'auto', padding:'8px 15px', background: reportTab === tab ? 'linear-gradient(90deg, #1E3A8A, #2563EB)' : '#ccc', color: reportTab === tab ? '#FBBF24' : '#333'}}>{tab}</button>
-                ))}
-                <button onClick={() => exportCSV(currentReportData(), `${reportTab}_report.csv`)} style={{...styles.btnPrimary, width:'auto', padding:'8px 15px', background: 'linear-gradient(90deg, #7C3AED, #A78BFA)'}}>Export {reportTab} Excel</button>
-              </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}>{currentReportData().length > 0 && Object.keys(currentReportData()[0]).filter(k => k !== 'id').map(k => <th key={k} style={styles.td}>{k}</th>)}</tr></thead>
-                <tbody>
-                  {currentReportData().map((row, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      {Object.entries(row).filter(([k]) => k !== 'id').map(([k, val]) => <td key={k} style={styles.td}>{typeof val === 'object' ? val?.name || '' : String(val)}</td>)}
-                    </tr>
-                  ))}
-                  {currentReportData().length === 0 && <tr><td style={styles.td} colSpan="10">No data in selected range.</td></tr>}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {page === 'audit' && (
-             <div style={styles.card}>
-               <h3 style={{color: '#1E3A8A'}}>Audit Logs</h3>
-               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                 <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}><th style={styles.th}>Date</th><th style={styles.th}>User</th><th style={styles.th}>Action</th><th style={styles.th}>Delete</th></tr></thead>
-                 <tbody>
-                   {data.audits.map(a => (
-                     <tr key={a.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                       <td style={styles.td}>{new Date(a.created_at).toLocaleString()}</td><td style={styles.td}>{a.user_email}</td><td style={styles.td}>{a.action}</td>
-                       <td style={styles.td}><button onClick={() => handleDelete('audit_logs', a.id)} style={{...styles.btnSm, background:'#EF4444'}}>Del</button></td>
-                     </tr>
-                   ))}
-                 </tbody>
-               </table>
-             </div>
-          )}
-
-          {page === 'settings' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '25px' }}>
-              <div style={styles.card}>
-                <h3 style={{color: '#1E3A8A', marginBottom:'20px'}}>Company Settings & Invoice Config</h3>
-                <form onSubmit={handleSaveSettings}>
-                  <label style={styles.label}>Upload Logo (Will show on Invoice)</label>
-                  <input type="file" accept="image/*" onChange={handleLogoUpload} style={{...styles.input, padding:'5px', marginBottom:'10px'}} />
-                  {setForm.logo_url && <img src={setForm.logo_url} style={{height: '80px', marginBottom:'10px', background:'#eee', padding:'5px', borderRadius: '8px'}} />}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                    <div><label style={styles.label}>Company Name (EN) - For Invoice</label><input value={setForm.company_name_en || ''} onChange={(e) => setSetForm({...setForm, company_name_en: e.target.value})} style={styles.input} /></div>
-                    <div><label style={styles.label}>Company Name (AR) - For Invoice</label><input value={setForm.company_name_ar || ''} onChange={(e) => setSetForm({...setForm, company_name_ar: e.target.value})} style={styles.input} /></div>
-                    <div><label style={styles.label}>VAT Number</label><input value={setForm.vat_no || ''} onChange={(e) => setSetForm({...setForm, vat_no: e.target.value})} style={styles.input} /></div>
-                    <div><label style={styles.label}>CR Number</label><input value={setForm.cr_no || ''} onChange={(e) => setSetForm({...setForm, cr_no: e.target.value})} style={styles.input} /></div>
-                    <div><label style={styles.label}>IATA Number</label><input value={setForm.iata_no || ''} onChange={(e) => setSetForm({...setForm, iata_no: e.target.value})} style={styles.input} /></div>
-                    <div><label style={styles.label}>Phone Number</label><input value={setForm.phone || ''} onChange={(e) => setSetForm({...setForm, phone: e.target.value})} style={styles.input} /></div>
-                    <div style={{ gridColumn: 'span 2' }}><label style={styles.label}>Invoice Footer Text</label><input value={setForm.invoice_footer || ''} onChange={(e) => setSetForm({...setForm, invoice_footer: e.target.value})} style={styles.input} /></div>
-                  </div>
-                  <button type="submit" style={{...styles.btnPrimary, width:'auto', padding:'12px 30px', marginTop:'20px'}}>Save Settings</button>
-                </form>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
-                <div style={styles.card}>
-                  <h3 style={{color: '#1E3A8A'}}>Add Employee / Sales Rep</h3>
-                  <form onSubmit={handleAddEmployee} style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                    <input placeholder="Employee Name" value={empForm.name} onChange={(e) => setEmpForm({...empForm, name: e.target.value})} style={styles.input} required />
-                    <select value={empForm.role} onChange={(e) => setEmpForm({...empForm, role: e.target.value})} style={styles.input}><option>Sales</option><option>Manager</option><option>Accountant</option></select>
-                    <button type="submit" style={{...styles.btnPrimary, width: 'auto', padding: '10px 20px'}}>Add</button>
-                  </form>
-                  <div style={{ marginTop: '10px' }}>
-                    {data.employees.map(e => <span key={e.id} style={styles.tag}>{e.name} ({e.role}) <button onClick={() => handleDelete('employees', e.id)} style={styles.tagBtn}>x</button></span>)}
-                  </div>
-                </div>
-
-                <div style={styles.card}>
-                  <h3 style={{color: '#1E3A8A'}}>Add Service Type</h3>
-                  <form onSubmit={handleAddService} style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                    <input placeholder="e.g. Flight, Hotel, Visa" value={srvForm.name} onChange={(e) => setSrvForm({...srvForm, name: e.target.value})} style={styles.input} required />
-                    <button type="submit" style={{...styles.btnPrimary, width: 'auto', padding: '10px 20px'}}>Add</button>
-                  </form>
-                  <div style={{ marginTop: '10px' }}>
-                    {data.services.map(s => <span key={s.id} style={styles.tag}>{s.name} <button onClick={() => handleDelete('services', s.id)} style={styles.tagBtn}>x</button></span>)}
-                  </div>
-                </div>
-
-                <div style={styles.card}>
-                  <h3 style={{color: '#1E3A8A'}}>Add Custom Invoice Field</h3>
-                  <p style={{fontSize: '12px', color: '#666'}}>Add new fields to your Invoice Form for future needs.</p>
-                  <form onSubmit={handleAddCustomField} style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                    <input placeholder="e.g. Insurance No, Baggage Info" value={customFieldForm.name} onChange={(e) => setCustomFieldForm({name: e.target.value})} style={styles.input} required />
-                    <button type="submit" style={{...styles.btnPrimary, width: 'auto', padding: '10px 20px'}}>Add</button>
-                  </form>
-                  <div style={{ marginTop: '10px' }}>
-                    {data.customFields.map(f => <span key={f.id} style={styles.tag}>{f.name} <button onClick={() => handleDelete('custom_fields', f.id)} style={styles.tagBtn}>x</button></span>)}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
         </div>
-      </main>
+
+        {/* DASHBOARD */}
+        {page === 'dashboard' && (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+              <div style={styles.card}><h3 style={{ color: '#666', fontSize: '14px', margin: '0 0 10px 0' }}>Total Sales</h3><p style={{ fontSize: '28px', fontWeight: 'bold', color: '#1E3A8A', margin: 0 }}>{tSales.toFixed(2)} SAR</p></div>
+              <div style={styles.card}><h3 style={{ color: '#666', fontSize: '14px', margin: '0 0 10px 0' }}>Total Profit</h3><p style={{ fontSize: '28px', fontWeight: 'bold', color: '#059669', margin: 0 }}>{tProfit.toFixed(2)} SAR</p></div>
+              <div style={styles.card}><h3 style={{ color: '#666', fontSize: '14px', margin: '0 0 10px 0' }}>Outstanding</h3><p style={{ fontSize: '28px', fontWeight: 'bold', color: '#EF4444', margin: 0 }}>{totalOutstanding.toFixed(2)} SAR</p></div>
+              <div style={styles.card}><h3 style={{ color: '#666', fontSize: '14px', margin: '0 0 10px 0' }}>Cash / Bank Balance</h3><p style={{ fontSize: '20px', fontWeight: 'bold', color: '#1E3A8A', margin: 0 }}>Cash: {cashBalance.toFixed(2)}</p><p style={{ fontSize: '20px', fontWeight: 'bold', color: '#1E3A8A', margin: '5px 0 0 0' }}>Bank: {bankBalance.toFixed(2)}</p></div>
+            </div>
+            <div style={styles.card}>
+              <h3 style={{ color: '#1E3A8A', marginTop: 0 }}>Recent Invoices</h3>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}><th style={{padding: '10px'}}>Invoice No</th><th style={{padding: '10px'}}>Customer</th><th style={{padding: '10px'}}>Date</th><th style={{padding: '10px', textAlign: 'right'}}>Total</th></tr></thead>
+                <tbody>
+                  {data.invoices.slice(0, 5).map(inv => (
+                    <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <td style={{padding: '10px', fontWeight: 'bold', color: '#1E3A8A'}}>{inv.invoice_no}</td>
+                      <td style={{padding: '10px'}}>{inv.customers?.name || 'N/A'}</td>
+                      <td style={{padding: '10px'}}>{inv.invoice_date}</td>
+                      <td style={{padding: '10px', textAlign: 'right', fontWeight: 'bold'}}>{inv.total.toFixed(2)} SAR</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* CREATE INVOICE */}
+        {page === 'create' && (
+          <div style={styles.card}>
+            <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>{editingId ? 'Edit Invoice' : 'Create New Invoice'}</h3>
+            <form onSubmit={handleCreateInvoice} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div>
+                <label style={styles.label}>Customer</label>
+                <select value={invForm.custId} onChange={(e) => setInvForm({...invForm, custId: e.target.value})} style={styles.input}>
+                  <option value="new">New Customer</option>
+                  {data.customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.phone})</option>)}
+                </select>
+                {invForm.custId === 'new' && (
+                  <>
+                    <input type="text" placeholder="Customer Name" value={invForm.custName} onChange={(e) => setInvForm({...invForm, custName: e.target.value})} required style={styles.input} />
+                    <input type="text" placeholder="Phone" value={invForm.custPhone} onChange={(e) => setInvForm({...invForm, custPhone: e.target.value})} required style={styles.input} />
+                  </>
+                )}
+                <input type="text" placeholder="Passenger Names" value={invForm.passengerNames} onChange={(e) => setInvForm({...invForm, passengerNames: e.target.value})} style={styles.input} />
+                <label style={styles.label}>Portal</label>
+                <select value={invForm.portal} onChange={(e) => setInvForm({...invForm, portal: e.target.value})} style={styles.input}>
+                  {data.portals.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                </select>
+                <label style={styles.label}>Service</label>
+                <select value={invForm.service} onChange={(e) => setInvForm({...invForm, service: e.target.value})} style={styles.input}>
+                  <option>Flight</option><option>Hotel</option><option>Visa</option>
+                  {data.services.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={styles.label}>Dates</label>
+                <input type="date" value={invForm.bookingDate} onChange={(e) => setInvForm({...invForm, bookingDate: e.target.value})} style={styles.input} />
+                <input type="date" value={invForm.invoiceDate} onChange={(e) => setInvForm({...invForm, invoiceDate: e.target.value})} style={styles.input} />
+                
+                <label style={styles.label}>Financials</label>
+                <input type="number" placeholder="Qty" value={invForm.qty} onChange={(e) => setInvForm({...invForm, qty: e.target.value})} style={styles.input} />
+                <input type="number" placeholder="Cost" value={invForm.cost} onChange={(e) => setInvForm({...invForm, cost: e.target.value})} style={styles.input} />
+                <input type="number" placeholder="Sell" value={invForm.sell} onChange={(e) => setInvForm({...invForm, sell: e.target.value})} style={styles.input} />
+                <input type="number" placeholder="Discount" value={invForm.discount} onChange={(e) => setInvForm({...invForm, discount: e.target.value})} style={styles.input} />
+                <input type="number" placeholder="Paid Amount" value={invForm.paid} onChange={(e) => setInvForm({...invForm, paid: e.target.value})} style={styles.input} />
+              </div>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <button type="submit" style={styles.btnPrimary}>{editingId ? 'Update Invoice' : 'Generate Invoice'}</button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* INVOICE LIST */}
+        {page === 'list' && (
+          <div style={styles.card}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}>
+                <th style={{padding: '10px'}}>Inv No</th><th style={{padding: '10px'}}>Customer</th><th style={{padding: '10px'}}>Date</th><th style={{padding: '10px'}}>Total</th><th style={{padding: '10px'}}>Due</th><th style={{padding: '10px'}}>Actions</th>
+              </tr></thead>
+              <tbody>
+                {paginatedInv.map(inv => (
+                  <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{padding: '10px', fontWeight: 'bold', color: '#1E3A8A'}}>{inv.invoice_no}</td>
+                    <td style={{padding: '10px'}}>{inv.customers?.name}</td>
+                    <td style={{padding: '10px'}}>{inv.invoice_date}</td>
+                    <td style={{padding: '10px'}}>{inv.total.toFixed(2)}</td>
+                    <td style={{padding: '10px', color: inv.due_amount > 0 ? '#EF4444' : '#059669'}}>{inv.due_amount.toFixed(2)}</td>
+                    <td style={{padding: '10px', display: 'flex', gap: '5px'}}>
+                      <button onClick={() => setModal({type: 'preview', data: inv})} style={styles.btnWarning}>View</button>
+                      <button onClick={() => handleEditClick(inv)} style={styles.btnPrimary}>Edit</button>
+                      {inv.due_amount > 0 && <button onClick={() => { setSettleForm({...settleForm, id: inv.id}); setModal({type: 'settle', data: inv}); }} style={styles.btnSuccess}>Settle</button>}
+                      <button onClick={() => { setRefundForm({...refundForm, id: inv.id}); setModal({type: 'refund', data: inv}); }} style={styles.btnDanger}>Refund</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', gap: '10px' }}>
+              <button disabled={tblPage === 1} onClick={() => setTblPage(p => p - 1)} style={styles.btnPrimary}>Prev</button>
+              <span style={{ padding: '10px' }}>Page {tblPage} of {totalPages}</span>
+              <button disabled={tblPage === totalPages} onClick={() => setTblPage(p => p + 1)} style={styles.btnPrimary}>Next</button>
+            </div>
+          </div>
+        )}
+
+        {/* REFUNDS */}
+        {page === 'refunds' && (
+          <div style={styles.card}>
+            <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Refunded Invoices</h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}>
+                <th style={{padding: '10px'}}>Ref No</th><th style={{padding: '10px'}}>Customer</th><th style={{padding: '10px'}}>Date</th><th style={{padding: '10px'}}>Refund Amount</th>
+              </tr></thead>
+              <tbody>
+                {refundInv.map(inv => (
+                  <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{padding: '10px', fontWeight: 'bold', color: '#EF4444'}}>{inv.invoice_no}</td>
+                    <td style={{padding: '10px'}}>{inv.customers?.name}</td>
+                    <td style={{padding: '10px'}}>{inv.invoice_date}</td>
+                    <td style={{padding: '10px'}}>{inv.total.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* CUSTOMERS */}
+        {page === 'customers' && (
+          <div style={styles.card}>
+            <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Customers</h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}>
+                <th style={{padding: '10px'}}>Name</th><th style={{padding: '10px'}}>Phone</th><th style={{padding: '10px'}}>Type</th><th style={{padding: '10px'}}>Actions</th>
+              </tr></thead>
+              <tbody>
+                {data.customers.map(c => (
+                  <tr key={c.id} style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{padding: '10px', fontWeight: 'bold'}}>{c.name}</td>
+                    <td style={{padding: '10px'}}>{c.phone}</td>
+                    <td style={{padding: '10px'}}>{c.type}</td>
+                    <td style={{padding: '10px'}}>
+                      <button onClick={() => setModal({type: 'ledger', data: c})} style={styles.btnPrimary}>View Ledger</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* PORTALS */}
+        {page === 'portals' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
+            <div style={styles.card}>
+              <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Add Portal</h3>
+              <form onSubmit={handleAddPortal}>
+                <input type="text" placeholder="Portal Name" value={portalForm.name} onChange={(e) => setPortalForm({...portalForm, name: e.target.value})} required style={styles.input} />
+                <input type="number" placeholder="Initial Balance" value={portalForm.balance} onChange={(e) => setPortalForm({...portalForm, balance: e.target.value})} style={styles.input} />
+                <button type="submit" style={styles.btnPrimary}>Add</button>
+              </form>
+              <h3 style={{ color: '#1E3A8A', marginTop: '20px' }}>Recharge Portal</h3>
+              <form onSubmit={handleRecharge}>
+                <select name="portal" style={styles.input}>{data.portals.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}</select>
+                <input type="number" name="amt" placeholder="Amount" required style={styles.input} />
+                <input type="date" name="date" defaultValue={today} required style={styles.input} />
+                <input type="text" name="desc" placeholder="Description" style={styles.input} />
+                <select name="mode" style={styles.input}><option>Cash</option><option>Bank Transfer</option></select>
+                <button type="submit" style={styles.btnSuccess}>Recharge</button>
+              </form>
+            </div>
+            <div style={styles.card}>
+              <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Portals List</h3>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}><th style={{padding: '10px'}}>Name</th><th style={{padding: '10px'}}>Balance</th><th style={{padding: '10px'}}>Actions</th></tr></thead>
+                <tbody>
+                  {data.portals.map(p => (
+                    <tr key={p.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <td style={{padding: '10px', fontWeight: 'bold'}}>{p.name}</td>
+                      <td style={{padding: '10px', color: p.current_balance < 0 ? '#EF4444' : '#059669'}}>{p.current_balance?.toFixed(2)}</td>
+                      <td style={{padding: '10px'}}><button onClick={() => handleDelete('portals', p.id)} style={styles.btnDanger}>Delete</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* VENDORS */}
+        {page === 'vendors' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
+            <div style={styles.card}>
+              <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Add Vendor</h3>
+              <form onSubmit={handleAddVendor}>
+                <input type="text" placeholder="Name" value={vendorForm.name} onChange={(e) => setVendorForm({...vendorForm, name: e.target.value})} required style={styles.input} />
+                <input type="text" placeholder="Phone" value={vendorForm.phone} onChange={(e) => setVendorForm({...vendorForm, phone: e.target.value})} style={styles.input} />
+                <input type="number" placeholder="Balance" value={vendorForm.balance} onChange={(e) => setVendorForm({...vendorForm, balance: e.target.value})} style={styles.input} />
+                <button type="submit" style={styles.btnPrimary}>Add</button>
+              </form>
+            </div>
+            <div style={styles.card}>
+              <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Vendors List</h3>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}><th style={{padding: '10px'}}>Name</th><th style={{padding: '10px'}}>Phone</th><th style={{padding: '10px'}}>Balance</th></tr></thead>
+                <tbody>
+                  {data.vendors.map(v => (
+                    <tr key={v.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <td style={{padding: '10px', fontWeight: 'bold'}}>{v.name}</td>
+                      <td style={{padding: '10px'}}>{v.phone}</td>
+                      <td style={{padding: '10px'}}>{v.balance?.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* PACKAGES */}
+        {page === 'packages' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
+            <div style={styles.card}>
+              <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Add Package</h3>
+              <form onSubmit={handleAddPackage}>
+                <input type="text" placeholder="Package Name" value={pkgForm.name} onChange={(e) => setPkgForm({...pkgForm, name: e.target.value})} required style={styles.input} />
+                <input type="number" placeholder="Price" value={pkgForm.price} onChange={(e) => setPkgForm({...pkgForm, price: e.target.value})} required style={styles.input} />
+                <input type="text" placeholder="Description" value={pkgForm.desc} onChange={(e) => setPkgForm({...pkgForm, desc: e.target.value})} style={styles.input} />
+                <button type="submit" style={styles.btnPrimary}>Add</button>
+              </form>
+            </div>
+            <div style={styles.card}>
+              <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Packages List</h3>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}><th style={{padding: '10px'}}>Name</th><th style={{padding: '10px'}}>Price</th><th style={{padding: '10px'}}>Desc</th></tr></thead>
+                <tbody>
+                  {data.packages.map(p => (
+                    <tr key={p.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <td style={{padding: '10px', fontWeight: 'bold'}}>{p.name}</td>
+                      <td style={{padding: '10px'}}>{p.price?.toFixed(2)}</td>
+                      <td style={{padding: '10px'}}>{p.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* BRANCHES */}
+        {page === 'branches' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
+            <div style={styles.card}>
+              <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Add Branch</h3>
+              <form onSubmit={handleAddBranch}>
+                <input type="text" placeholder="Name" value={brnForm.name} onChange={(e) => setBrnForm({...brnForm, name: e.target.value})} required style={styles.input} />
+                <input type="text" placeholder="Location" value={brnForm.location} onChange={(e) => setBrnForm({...brnForm, location: e.target.value})} style={styles.input} />
+                <input type="text" placeholder="Phone" value={brnForm.phone} onChange={(e) => setBrnForm({...brnForm, phone: e.target.value})} style={styles.input} />
+                <button type="submit" style={styles.btnPrimary}>Add</button>
+              </form>
+            </div>
+            <div style={styles.card}>
+              <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Branches List</h3>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}><th style={{padding: '10px'}}>Name</th><th style={{padding: '10px'}}>Location</th><th style={{padding: '10px'}}>Phone</th></tr></thead>
+                <tbody>
+                  {data.branches.map(b => (
+                    <tr key={b.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <td style={{padding: '10px', fontWeight: 'bold'}}>{b.name}</td>
+                      <td style={{padding: '10px'}}>{b.location}</td>
+                      <td style={{padding: '10px'}}>{b.phone}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* BANK & CASH */}
+        {page === 'bank' && (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div style={styles.card}><h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Cash Balance</h3><h2 style={{ color: cashBalance < 0 ? '#EF4444' : '#059669' }}>{cashBalance.toFixed(2)} SAR</h2></div>
+              <div style={styles.card}><h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Bank Balance</h3><h2 style={{ color: bankBalance < 0 ? '#EF4444' : '#059669' }}>{bankBalance.toFixed(2)} SAR</h2></div>
+            </div>
+            <div style={styles.card}>
+              <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Fund Transfer</h3>
+              <form onSubmit={handleTransfer} style={{ display: 'flex', gap: '10px' }}>
+                <select value={transferForm.from} onChange={(e) => setTransferForm({...transferForm, from: e.target.value})} style={styles.input}><option>Cash</option><option>Bank</option></select>
+                <select value={transferForm.to} onChange={(e) => setTransferForm({...transferForm, to: e.target.value})} style={styles.input}><option>Bank</option><option>Cash</option></select>
+                <input type="number" placeholder="Amount" value={transferForm.amount} onChange={(e) => setTransferForm({...transferForm, amount: e.target.value})} required style={styles.input} />
+                <input type="date" value={transferForm.date} onChange={(e) => setTransferForm({...transferForm, date: e.target.value})} style={styles.input} />
+                <button type="submit" style={styles.btnPrimary}>Transfer</button>
+              </form>
+            </div>
+            <div style={styles.card}>
+              <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Cashbook Entries</h3>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}><th style={{padding: '10px'}}>Date</th><th style={{padding: '10px'}}>Type</th><th style={{padding: '10px'}}>Desc</th><th style={{padding: '10px'}}>Amount</th></tr></thead>
+                <tbody>
+                  {data.cashbook.slice(0, 20).map(c => (
+                    <tr key={c.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <td style={{padding: '10px'}}>{c.trans_date}</td>
+                      <td style={{padding: '10px', color: c.type.includes('In') ? '#059669' : '#EF4444'}}>{c.type}</td>
+                      <td style={{padding: '10px'}}>{c.description}</td>
+                      <td style={{padding: '10px', fontWeight: 'bold'}}>{c.amount.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* INVESTMENTS */}
+        {page === 'invest' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
+            <div style={styles.card}>
+              <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Add Investment</h3>
+              <form onSubmit={handleAddInvestment}>
+                <input type="text" placeholder="Investor Name" value={investForm.name} onChange={(e) => setInvestForm({...investForm, name: e.target.value})} required style={styles.input} />
+                <input type="number" placeholder="Amount" value={investForm.amount} onChange={(e) => setInvestForm({...investForm, amount: e.target.value})} required style={styles.input} />
+                <input type="date" value={investForm.date} onChange={(e) => setInvestForm({...investForm, date: e.target.value})} style={styles.input} />
+                <input type="text" placeholder="Description" value={investForm.desc} onChange={(e) => setInvestForm({...investForm, desc: e.target.value})} style={styles.input} />
+                <select value={investForm.mode} onChange={(e) => setInvestForm({...investForm, mode: e.target.value})} style={styles.input}><option>Cash</option><option>Bank Transfer</option></select>
+                <button type="submit" style={styles.btnPrimary}>Add</button>
+              </form>
+            </div>
+            <div style={styles.card}>
+              <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Investments List</h3>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}><th style={{padding: '10px'}}>Date</th><th style={{padding: '10px'}}>Name</th><th style={{padding: '10px'}}>Amount</th><th style={{padding: '10px'}}>Mode</th></tr></thead>
+                <tbody>
+                  {data.investments.map(i => (
+                    <tr key={i.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <td style={{padding: '10px'}}>{i.invest_date}</td>
+                      <td style={{padding: '10px', fontWeight: 'bold'}}>{i.investor_name}</td>
+                      <td style={{padding: '10px', color: '#059669'}}>{i.amount?.toFixed(2)}</td>
+                      <td style={{padding: '10px'}}>{i.payment_mode}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* HR & ACCOUNTS */}
+        {page === 'hr' && (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+              <div style={styles.card}>
+                <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Add Employee</h3>
+                <form onSubmit={handleAddEmployee}>
+                  <input type="text" placeholder="Name" value={empForm.name} onChange={(e) => setEmpForm({...empForm, name: e.target.value})} required style={styles.input} />
+                  <select value={empForm.role} onChange={(e) => setEmpForm({...empForm, role: e.target.value})} style={styles.input}><option>Sales</option><option>Manager</option><option>Accountant</option></select>
+                  <button type="submit" style={styles.btnPrimary}>Add</button>
+                </form>
+              </div>
+              <div style={styles.card}>
+                <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Pay Salary</h3>
+                <form onSubmit={handlePaySalary}>
+                  <select name="emp" style={styles.input}>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select>
+                  <input type="number" name="amt" placeholder="Amount" required style={styles.input} />
+                  <input type="text" name="month" placeholder="Month (e.g. Jan 2024)" required style={styles.input} />
+                  <select name="mode" style={styles.input}><option>Cash</option><option>Bank Transfer</option></select>
+                  <button type="submit" style={styles.btnSuccess}>Pay</button>
+                </form>
+              </div>
+              <div style={styles.card}>
+                <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Add Expense</h3>
+                <form onSubmit={handleAddExpense}>
+                  <input type="text" name="cat" placeholder="Category" required style={styles.input} />
+                  <input type="number" name="amt" placeholder="Amount" required style={styles.input} />
+                  <input type="text" name="desc" placeholder="Description" style={styles.input} />
+                  <select name="mode" style={styles.input}><option>Cash</option><option>Bank Transfer</option></select>
+                  <button type="submit" style={styles.btnDanger}>Add Expense</button>
+                </form>
+              </div>
+            </div>
+            <div style={styles.card}>
+              <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Recent Salaries & Expenses</h3>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}><th style={{padding: '10px'}}>Type</th><th style={{padding: '10px'}}>Desc</th><th style={{padding: '10px'}}>Amount</th></tr></thead>
+                <tbody>
+                  {data.payroll.map(p => (<tr key={p.id} style={{ borderBottom: '1px solid #eee' }}><td style={{padding: '10px'}}>Salary</td><td style={{padding: '10px'}}>{p.employees?.name} - {p.month}</td><td style={{padding: '10px'}}>{p.amount.toFixed(2)}</td></tr>))}
+                  {data.expenses.map(e => (<tr key={e.id} style={{ borderBottom: '1px solid #eee' }}><td style={{padding: '10px'}}>Expense</td><td style={{padding: '10px'}}>{e.category} - {e.description}</td><td style={{padding: '10px'}}>{e.amount.toFixed(2)}</td></tr>))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* USER MANAGEMENT */}
+        {page === 'users' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
+            <div style={styles.card}>
+              <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Add New User</h3>
+              <form onSubmit={handleAddUser}>
+                <input type="email" placeholder="Email" value={userForm.email} onChange={(e) => setUserForm({...userForm, email: e.target.value})} required style={styles.input} />
+                <input type="text" placeholder="Username" value={userForm.username} onChange={(e) => setUserForm({...userForm, username: e.target.value})} required style={styles.input} />
+                <select value={userForm.role} onChange={(e) => setUserForm({...userForm, role: e.target.value})} style={styles.input}>
+                  <option>Admin</option><option>Owner</option><option>Sales</option><option>Accountant</option><option>HR</option>
+                </select>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                  <input type="checkbox" checked={userForm.is_admin} onChange={(e) => setUserForm({...userForm, is_admin: e.target.checked})} id="is_admin" />
+                  <label htmlFor="is_admin" style={{ fontSize: '14px' }}>Is Admin (Full Access)</label>
+                </div>
+                <button type="submit" style={styles.btnPrimary}>Add User</button>
+              </form>
+            </div>
+            <div style={styles.card}>
+              <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>System Users</h3>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}>
+                  <th style={{padding: '10px'}}>Username</th><th style={{padding: '10px'}}>Email</th><th style={{padding: '10px'}}>Role</th><th style={{padding: '10px'}}>Actions</th>
+                </tr></thead>
+                <tbody>
+                  {data.appUsers.map(usr => (
+                    <tr key={usr.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <td style={{padding: '10px', fontWeight: 'bold'}}>{usr.username}</td>
+                      <td style={{padding: '10px'}}>{usr.email}</td>
+                      <td style={{padding: '10px'}}><span style={{ background: '#e0e7ff', color: '#1E3A8A', padding: '4px 8px', borderRadius: '12px', fontSize: '12px' }}>{usr.role}</span></td>
+                      <td style={{padding: '10px'}}>
+                        <button onClick={() => handleDelete('app_users', usr.id)} style={styles.btnDanger}>Delete</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* REPORTS */}
+        {page === 'reports' && (
+          <div style={styles.card}>
+            <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Financial Reports</h3>
+            <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
+              <input type="date" value={repDate.from} onChange={(e) => setRepDate({...repDate, from: e.target.value})} style={styles.input} />
+              <input type="date" value={repDate.to} onChange={(e) => setRepDate({...repDate, to: e.target.value})} style={styles.input} />
+              <select value={reportTab} onChange={(e) => setReportTab(e.target.value)} style={styles.input}>
+                <option value="sales">Sales</option><option value="refunds">Refunds</option><option value="recharges">Recharges</option><option value="cashbook">Cashbook</option><option value="investments">Investments</option><option value="payroll">Payroll</option><option value="expenses">Expenses</option>
+              </select>
+              <button onClick={() => exportCSV(currentReportData(), `${reportTab}_report.csv`)} style={styles.btnSuccess}>Export CSV</button>
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}>
+                {currentReportData().length > 0 && Object.keys(currentReportData()[0]).map(k => <th key={k} style={{padding: '10px'}}>{k}</th>)}
+              </tr></thead>
+              <tbody>
+                {currentReportData().slice(0, 20).map((row, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
+                    {Object.values(row).map((val, j) => <td key={j} style={{padding: '10px'}}>{typeof val === 'object' ? val?.name || JSON.stringify(val) : val}</td>)}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* AUDIT LOGS */}
+        {page === 'audit' && (
+          <div style={styles.card}>
+            <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Audit Logs</h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}><th style={{padding: '10px'}}>Date</th><th style={{padding: '10px'}}>User</th><th style={{padding: '10px'}}>Action</th></tr></thead>
+              <tbody>
+                {data.audits.map(a => (
+                  <tr key={a.id} style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{padding: '10px'}}>{new Date(a.created_at).toLocaleString()}</td>
+                    <td style={{padding: '10px', fontWeight: 'bold'}}>{a.user_email}</td>
+                    <td style={{padding: '10px'}}>{a.action}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* SETTINGS */}
+        {page === 'settings' && (
+          <div>
+            <div style={styles.card}>
+              <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Owner Profile & Settings</h3>
+              <form onSubmit={handleUpdateOwnerProfile}>
+                <label style={styles.label}>Update Email (Requires Auth Confirmation)</label>
+                <input type="email" value={userProfile.email || ''} onChange={(e) => setUserProfile({...userProfile, email: e.target.value})} style={styles.input} />
+                <label style={styles.label}>Update Username</label>
+                <input type="text" value={userProfile.username || ''} onChange={(e) => setUserProfile({...userProfile, username: e.target.value})} style={styles.input} />
+                <button type="submit" style={{...styles.btnPrimary, width: 'auto', padding: '10px 30px'}}>Save Profile</button>
+              </form>
+            </div>
+            
+            <div style={styles.card}>
+              <h3 style={{ color: '#1E3A8A' }}>Company Settings</h3>
+              <form onSubmit={handleSaveSettings}>
+                <input type="text" placeholder="Company Name (EN)" value={setForm.company_name_en || ''} onChange={(e) => setSetForm({...setForm, company_name_en: e.target.value})} style={styles.input} />
+                <input type="text" placeholder="Company Name (AR)" value={setForm.company_name_ar || ''} onChange={(e) => setSetForm({...setForm, company_name_ar: e.target.value})} style={styles.input} />
+                <input type="text" placeholder="VAT No" value={setForm.vat_no || ''} onChange={(e) => setSetForm({...setForm, vat_no: e.target.value})} style={styles.input} />
+                <input type="text" placeholder="CR No" value={setForm.cr_no || ''} onChange={(e) => setSetForm({...setForm, cr_no: e.target.value})} style={styles.input} />
+                <input type="text" placeholder="IATA No" value={setForm.iata_no || ''} onChange={(e) => setSetForm({...setForm, iata_no: e.target.value})} style={styles.input} />
+                <input type="text" placeholder="Phone" value={setForm.phone || ''} onChange={(e) => setSetForm({...setForm, phone: e.target.value})} style={styles.input} />
+                <input type="text" placeholder="Invoice Footer" value={setForm.invoice_footer || ''} onChange={(e) => setSetForm({...setForm, invoice_footer: e.target.value})} style={styles.input} />
+                <label style={styles.label}>Upload Logo</label>
+                <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ marginBottom: '10px' }} />
+                {setForm.logo_url && <img src={setForm.logo_url} alt="Logo" style={{ height: '80px', marginBottom: '10px' }} />}
+                <button type="submit" style={{...styles.btnPrimary, width: 'auto', padding: '10px 30px'}}>Save Settings</button>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
-
-const styles = {
-  card: { background: 'white', padding: '30px', borderRadius: '16px', boxShadow: '0 5px 20px rgba(0,0,0,0.05)', marginBottom: '20px' },
-  th: { padding: '15px', textAlign: 'left', fontSize: '14px', fontWeight: '600' },
-  td: { padding: '15px', fontSize: '14px' },
-  label: { fontSize: '12px', color: '#555', marginBottom: '5px', display: 'block' },
-  input: { width: '100%', padding: '14px', border: '1px solid #cbd5e1', borderRadius: '10px', fontSize: '15px', boxSizing: 'border-box', outline: 'none', marginBottom: '15px', transition: 'border 0.2s' },
-  btnPrimary: { width: '100%', padding: '15px', background: 'linear-gradient(90deg, #1E3A8A, #2563EB)', color: '#FBBF24', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '700', fontSize: '16px' },
-  btnSm: { color: 'white', border: 'none', padding: '8px 15px', cursor: 'pointer', borderRadius: '6px', fontSize: '13px', fontWeight: '600' },
-  tag: { background: '#f1f5f9', padding: '5px 10px', borderRadius: '15px', fontSize: '12px', margin: '5px', display: 'inline-block', border: '1px solid #cbd5e1' },
-  tagBtn: { background: 'none', border: 'none', color: 'red', cursor: 'pointer', fontWeight: 'bold' }
-};
