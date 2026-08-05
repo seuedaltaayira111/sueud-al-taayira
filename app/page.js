@@ -11,6 +11,7 @@ const styles = {
   btnSuccess: { padding: '8px 12px', background: '#059669', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' },
   btnDanger: { padding: '8px 12px', background: '#EF4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' },
   btnWarning: { padding: '8px 12px', background: '#FBBF24', color: '#1E3A8A', border: 'none', borderRadius: '6px', cursor: 'pointer' },
+  btnFilter: { padding: '8px 15px', background: '#E2E8F0', color: '#1E3A8A', border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: 'bold' },
   card: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px' },
   label: { fontSize: '14px', fontWeight: 'bold', color: '#333', marginBottom: '5px', display: 'block', marginTop: '10px' }
 };
@@ -21,6 +22,7 @@ export default function Home() {
   const [lang, setLang] = useState('en');
   const [page, setPage] = useState('dashboard');
   const [editingId, setEditingId] = useState(null);
+  const [payFilter, setPayFilter] = useState('All');
   const router = useRouter();
 
   const [toast, setToast] = useState(null);
@@ -28,24 +30,26 @@ export default function Home() {
   const [passForm, setPassForm] = useState({ newPass: '' });
 
   const [chatOpen, setChatOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState([{ sender: 'bot', text: 'مرحباً! أنا مساعدك في نظام ERP. كيف يمكنني مساعدتك اليوم؟' }]);
+  const [chatMessages, setChatMessages] = useState([{ sender: 'bot', text: 'مرحباً! أنا مساعدك الذكي. كيف يمكنني مساعدتك؟ I can speak English, Arabic, Hindi, and Roman Urdu.' }]);
   const [chatInput, setChatInput] = useState('');
 
   const [search, setSearch] = useState('');
   const [tblPage, setTblPage] = useState(1);
   const itemsPerPage = 10;
-  const [statementTab, setStatementTab] = useState('sales');
 
-  const [data, setData] = useState({ invoices: [], portals: [], customers: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [], audits: [], investments: [], vendors: [], customFields: [], packages: [], branches: [] });
+  const [data, setData] = useState({ invoices: [], portals: [], customers: [], corporates: [], creditors: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [], audits: [], investments: [], vendors: [], customFields: [], packages: [], branches: [] });
   const today = new Date().toISOString().split('T')[0];
   
-  const [invForm, setInvForm] = useState({ custId: 'new', custName: '', custPhone: '', custType: 'Individual', passengerNames: '', employeeId: '', portal: '', bookingDate: today, invoiceDate: today, service: 'Flight Ticket', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
+  const [invForm, setInvForm] = useState({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: Array(10).fill(''), employeeId: '', portal: '', bookingDate: today, invoiceDate: today, service: 'Flight Ticket', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
+  
+  const [creditorForm, setCreditorForm] = useState({ name: '', phone: '', address: '' });
   const [investForm, setInvestForm] = useState({ name: '', amount: '', date: today, desc: '', mode: 'Cash' });
   const [settleForm, setSettleForm] = useState({ id: '', date: today, mode: 'Cash' });
   const [refundForm, setRefundForm] = useState({ id: '', compRefund: 0, custRefund: 0, mode: 'Cash' });
   const [transferForm, setTransferForm] = useState({ from: 'Cash', to: 'Bank', amount: '', date: today });
   const [repDate, setRepDate] = useState({ from: '', to: '' });
   const [reportTab, setReportTab] = useState('sales');
+  const [statementTab, setStatementTab] = useState('sales');
   const [setForm, setSetForm] = useState({ company_name_en: 'SUEUD AL TAIYYARAH', company_name_ar: 'صعود الطائرة للسفر و السياحة', vat_no: '', cr_no: '', iata_no: '', phone: '', logo_url: '', invoice_footer: 'Thank you for choosing us!' });
   const [userForm, setUserForm] = useState({ email: '', username: '', role: 'Sales', is_admin: false, can_access_invoices: true, can_access_bank: false, can_access_hr: false, can_access_reports: false, can_access_settings: false });
   const [empForm, setEmpForm] = useState({ name: '', role: 'Sales' });
@@ -56,17 +60,16 @@ export default function Home() {
   const [pkgForm, setPkgForm] = useState({ name: '', price: '', desc: '' });
   const [brnForm, setBrnForm] = useState({ name: '', location: '', phone: '', manager: '', email: '', timing: '' });
 
-  // COMPLETE TRANSLATIONS
   const t = {
-    en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices List', refunds: 'Refund Invoices', customers: 'Customer List', portals: 'Portals & Recharge', bank: 'Bank & Cash', invest: 'Investors', hr: 'HR & Accounts', users: 'User Management', reports: 'Financial Reports', audit: 'Audit Logs', settings: 'Settings', vendors: 'Vendors (B2B)', packages: 'Tour Packages', branches: 'Branches', logout: 'Logout', search: 'Search...', ownerProfile: 'Owner Profile', changePass: 'Change Password', statements: 'Statements',
-          cust_name: 'Customer Name', cust_phone: 'Customer Phone', cust_type: 'Customer Type', individual: 'Individual', corporate: 'Corporate', passenger_names: 'Passenger Names', portal: 'Portal', sales_rep: 'Sales Representative', service: 'Service', booking_date: 'Booking Date', invoice_date: 'Invoice Date', payment_date: 'Payment Date', flight_type: 'Flight Type', flight_sub: 'Flight Sub-Type', airline: 'Airline', sector: 'Sector (e.g. DEL-RUH)', pnr: 'PNR', ticket_no: 'Ticket Number', qty: 'Quantity', cost: 'Cost', sell: 'Selling Price', discount: 'Discount', tax_rate: 'Tax Rate', payment_method: 'Payment Method', paid_amount: 'Paid Amount', credit_due_date: 'Credit Due Date', add_new_customer: '+ Add New Customer', add_new_service: '+ Add New Service Here',
-          from_acc: 'From Account', to_acc: 'To Account', amount: 'Amount', date: 'Date', desc: 'Description', mode: 'Mode', name: 'Name', role: 'Role', phone: 'Phone', location: 'Location', manager: 'Manager', email: 'Email', timing: 'Opening Time', price: 'Price', balance: 'Balance', category: 'Category', month: 'Month', investor_name: 'Investor Name', new_service_name: 'New Service Name',
-          sales_stmt: 'Sales Statement', portals_stmt: 'Portals Statement', salary_stmt: 'Salary Statement', daily_trans_stmt: 'Daily Transactions', fund_trans_stmt: 'Fund Transfers', export_csv: 'Export CSV'
+    en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices List', refunds: 'Refund Invoices', customers: 'Customer List', corporates: 'Corporate Accounts', creditors: 'Creditors', portals: 'Portals & Recharge', bank: 'Bank & Cash', invest: 'Investors', hr: 'HR & Accounts', users: 'User Management', reports: 'Financial Reports', audit: 'Audit Logs', settings: 'Settings', vendors: 'Vendors (B2B)', packages: 'Tour Packages', branches: 'Branches', logout: 'Logout', search: 'Search...', ownerProfile: 'Owner Profile', changePass: 'Change Password', statements: 'Statements',
+          cust_type: 'Customer Type', individual: 'Individual', corporate: 'Corporate', select_customer: 'Select Customer', select_corporate: 'Select Company', new_customer: 'New Customer', new_company: 'New Company', company_name: 'Company Name', company_vat: 'Company VAT', company_address: 'Company Address', passengers: 'Passengers (Up to 10)', passenger: 'Passenger', service: 'Service', booking_date: 'Booking Date', invoice_date: 'Invoice Date', payment_date: 'Payment Date', flight_type: 'Flight Type', flight_sub: 'Flight Sub-Type', airline: 'Airline', sector: 'Sector (e.g. DEL-RUH)', pnr: 'PNR', ticket_no: 'Ticket Number', qty: 'Quantity', cost: 'Cost', sell: 'Selling Price', discount: 'Discount', tax_rate: 'Tax Rate', payment_method: 'Payment Method', paid_amount: 'Paid Amount', credit_due_date: 'Credit Due Date', select_creditor: 'Select Creditor', new_service_name: 'New Service Name',
+          from_acc: 'From Account', to_acc: 'To Account', amount: 'Amount', date: 'Date', desc: 'Description', mode: 'Mode', name: 'Name', role: 'Role', phone: 'Phone', location: 'Location', manager: 'Manager', email: 'Email', timing: 'Opening Time', price: 'Price', balance: 'Balance', category: 'Category', month: 'Month', investor_name: 'Investor Name',
+          sales_stmt: 'Sales Statement', portals_stmt: 'Portals Statement', salary_stmt: 'Salary Statement', daily_trans_stmt: 'Daily Transactions', fund_trans_stmt: 'Fund Transfers', export_csv: 'Export CSV', all_invoices: 'All Invoices'
         },
-    ar: { dash: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'قائمة الفواتير', refunds: 'فواتير الاسترجاع', customers: 'قائمة العملاء', portals: 'البوابات والرصيد', bank: 'البنك والكاش', invest: 'المستثمرون', hr: 'الموارد البشرية', users: 'إدارة المستخدمين', reports: 'التقارير المالية', audit: 'سجلات التدقيق', settings: 'الإعدادات', vendors: 'الموردون', packages: 'باقات سياحية', branches: 'الفروع', logout: 'تسجيل الخروج', search: 'بحث...', ownerProfile: 'ملف المالك', changePass: 'تغيير كلمة المرور', statements: 'كشوف الحسابات',
-          cust_name: 'اسم العميل', cust_phone: 'هاتف العميل', cust_type: 'نوع العميل', individual: 'فرد', corporate: 'شركة', passenger_names: 'أسماء الركاب', portal: 'البوابة', sales_rep: 'مندوب المبيعات', service: 'الخدمة', booking_date: 'تاريخ الحجز', invoice_date: 'تاريخ الفاتورة', payment_date: 'تاريخ الدفع', flight_type: 'نوع الرحلة', flight_sub: 'نوع الرحلة الفرعي', airline: 'خطوط الطيران', sector: 'القطاع (مثال: DEL-RUH)', pnr: 'رقم الحجز', ticket_no: 'رقم التذكرة', qty: 'الكمية', cost: 'التكلفة', sell: 'سعر البيع', discount: 'الخصم', tax_rate: 'معدل الضريبة', payment_method: 'طريقة الدفع', paid_amount: 'المبلغ المدفوع', credit_due_date: 'تاريخ استحقاق الائتمان', add_new_customer: '+ إضافة عميل جديد', add_new_service: '+ أضف خدمة جديدة هنا',
-          from_acc: 'من حساب', to_acc: 'إلى حساب', amount: 'المبلغ', date: 'التاريخ', desc: 'الوصف', mode: 'الوضع', name: 'الاسم', role: 'الدور', phone: 'الهاتف', location: 'الموقع', manager: 'المدير', email: 'البريد الإلكتروني', timing: 'وقت العمل', price: 'السعر', balance: 'الرصيد', category: 'الفئة', month: 'الشهر', investor_name: 'اسم المستثمر', new_service_name: 'اسم الخدمة الجديدة',
-          sales_stmt: 'كشف حساب المبيعات', portals_stmt: 'كشف حساب البوابات', salary_stmt: 'كشف حساب الرواتب', daily_trans_stmt: 'المعاملات اليومية', fund_trans_stmt: 'تحويلات الأموال', export_csv: 'تصدير CSV'
+    ar: { dash: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'قائمة الفواتير', refunds: 'فواتير الاسترجاع', customers: 'قائمة العملاء', corporates: 'حسابات الشركات', creditors: 'الدائنون', portals: 'البوابات والرصيد', bank: 'البنك والكاش', invest: 'المستثمرون', hr: 'الموارد البشرية', users: 'إدارة المستخدمين', reports: 'التقارير المالية', audit: 'سجلات التدقيق', settings: 'الإعدادات', vendors: 'الموردون', packages: 'باقات سياحية', branches: 'الفروع', logout: 'تسجيل الخروج', search: 'بحث...', ownerProfile: 'ملف المالك', changePass: 'تغيير كلمة المرور', statements: 'كشوف الحسابات',
+          cust_type: 'نوع العميل', individual: 'فرد', corporate: 'شركة', select_customer: 'اختر العميل', select_corporate: 'اختر الشركة', new_customer: 'عميل جديد', new_company: 'شركة جديدة', company_name: 'اسم الشركة', company_vat: 'ضريبة الشركة', company_address: 'عنوان الشركة', passengers: 'الركاب (حتى 10)', passenger: 'راكب', service: 'الخدمة', booking_date: 'تاريخ الحجز', invoice_date: 'تاريخ الفاتورة', payment_date: 'تاريخ الدفع', flight_type: 'نوع الرحلة', flight_sub: 'نوع الرحلة الفرعي', airline: 'خطوط الطيران', sector: 'القطاع (مثال: DEL-RUH)', pnr: 'رقم الحجز', ticket_no: 'رقم التذكرة', qty: 'الكمية', cost: 'التكلفة', sell: 'سعر البيع', discount: 'الخصم', tax_rate: 'معدل الضريبة', payment_method: 'طريقة الدفع', paid_amount: 'المبلغ المدفوع', credit_due_date: 'تاريخ استحقاق الائتمان', select_creditor: 'اختر الدائن', new_service_name: 'اسم الخدمة الجديدة',
+          from_acc: 'من حساب', to_acc: 'إلى حساب', amount: 'المبلغ', date: 'التاريخ', desc: 'الوصف', mode: 'الوضع', name: 'الاسم', role: 'الدور', phone: 'الهاتف', location: 'الموقع', manager: 'المدير', email: 'البريد الإلكتروني', timing: 'وقت العمل', price: 'السعر', balance: 'الرصيد', category: 'الفئة', month: 'الشهر', investor_name: 'اسم المستثمر',
+          sales_stmt: 'كشف حساب المبيعات', portals_stmt: 'كشف حساب البوابات', salary_stmt: 'كشف حساب الرواتب', daily_trans_stmt: 'المعاملات اليومية', fund_trans_stmt: 'تحويلات الأموال', export_csv: 'تصدير CSV', all_invoices: 'كل الفواتير'
         }
   };
   const tr = t[lang];
@@ -86,9 +89,11 @@ export default function Home() {
   const logAction = async (action) => { if (user) await supabase.from('audit_logs').insert([{ user_email: user.email, action }]); };
 
   const fetchAll = async () => {
-    const inv = await supabase.from('invoices').select(`*, customers(name, type, phone), portals(name), employees(name)`).order('created_at', { ascending: false });
+    const inv = await supabase.from('invoices').select(`*, customers(name, type, phone), corporates(name, vat_no), portals(name), employees(name), creditors(name)`).order('created_at', { ascending: false });
     const por = await supabase.from('portals').select('*');
-    const cus = await supabase.from('customers').select('*').order('name', { ascending: true });
+    const cus = await supabase.from('customers').select('*').eq('type', 'Individual').order('name', { ascending: true });
+    const corp = await supabase.from('corporates').select('*').order('name', { ascending: true });
+    const crd = await supabase.from('creditors').select('*').order('name', { ascending: true });
     const rec = await supabase.from('recharges').select(`*, portals(name)`).order('recharge_date', { ascending: false });
     const set = await supabase.from('settings').select('*').eq('id', 1).maybeSingle();
     const emp = await supabase.from('employees').select('*');
@@ -107,7 +112,27 @@ export default function Home() {
     const portalsData = por.data || [];
     const servicesData = srv.data || [];
     const settingsData = set.data || {};
-    setData({ invoices: inv.data || [], portals: portalsData, customers: cus.data || [], recharges: rec.data || [], settings: settingsData, employees: emp.data || [], payroll: pay.data || [], appUsers: usr.data || [], expenses: exp.data || [], services: servicesData, cashbook: cbk.data || [], audits: aud.data || [], investments: invstmnt.data || [], vendors: vnd.data || [], customFields: cf.data || [], packages: pkgs.data || [], branches: brns.data || [] });
+    setData({ 
+      invoices: inv.data || [], 
+      portals: portalsData, 
+      customers: cus.data || [], 
+      corporates: corp.data || [], 
+      creditors: crd.data || [], 
+      recharges: rec.data || [], 
+      settings: settingsData, 
+      employees: emp.data || [], 
+      payroll: pay.data || [], 
+      appUsers: usr.data || [], 
+      expenses: exp.data || [], 
+      services: servicesData, 
+      cashbook: cbk.data || [], 
+      audits: aud.data || [], 
+      investments: invstmnt.data || [], 
+      vendors: vnd.data || [], 
+      customFields: cf.data || [], 
+      packages: pkgs.data || [], 
+      branches: brns.data || [] 
+    });
     
     if (portalsData.length > 0) setInvForm(f => ({ ...f, portal: f.portal || portalsData[0].name }));
     if (settingsData) setSetForm(settingsData);
@@ -134,25 +159,36 @@ export default function Home() {
       }
       const { error: dbError } = await supabase.from('app_users').update({ email: userProfile.email, username: userProfile.username }).eq('id', userProfile.id);
       if (dbError) throw dbError;
-      showToast('Profile Updated! Email change may require confirmation.');
+      showToast('Profile Updated!');
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
+  // --- POWERFUL MULTI-LINGUAL AI CHATBOT ---
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
     const userMsg = { sender: 'user', text: chatInput };
     setChatMessages(prev => [...prev, userMsg]);
     const text = chatInput.toLowerCase();
-    let botReply = "I am sorry, I didn't understand that. I can help with Invoices, Reports, or Users. (عذراً، لم أفهم ذلك. يمكنني المساعدة في الفواتير، التقارير، أو المستخدمين)";
-    if (text.includes('invoice') || text.includes('فاتورة') || text.includes('create')) {
-      botReply = "To create an invoice, go to 'Create Invoice'. You can add Flight, Hotel, or Visa details. The system will automatically calculate VAT and update your portal balance! (لإنشاء فاتورة، انتقل إلى 'إنشاء فاتورة'. يمكنك إضافة رحلة طيران أو فندق أو تأشيرة. سيقوم النظام تلقائياً بحساب ضريبة القيمة المضافة وتحديث رصيد البوابة الخاص بك!)";
-    } else if (text.includes('report') || text.includes('تقرير') || text.includes('excel')) {
-      botReply = "You can download Excel reports for Sales, Refunds, and Cashbook from the 'Financial Reports' section. Just select a date range! (يمكنك تنزيل تقارير Excel للمبيعات والاسترداد والدفع النقدي من قسم 'التقارير المالية'. ما عليك سوى تحديد نطاق التاريخ!)";
+    let botReply = "I can help with Invoices, Creditors, Corporate Accounts, and Reports. (يمكنني المساعدة في الفواتير، الدائنين، حسابات الشركات، والتقارير.)";
+    
+    // English & Roman Urdu/Hindi & Arabic Keywords
+    if (text.includes('invoice') || text.includes('fatura') || text.includes('فاتورة') || text.includes('bill') || text.includes('banana')) {
+      botReply = "To create an invoice, go to 'Create Invoice'. Select Individual or Corporate. If Corporate, add Company VAT and up to 10 passengers. Select Service (Flight, Hotel etc). (لإنشاء فاتورة، انتقل إلى 'إنشاء فاتورة'. يمكنك اختيار فرد أو شركة.)";
+    } else if (text.includes('credit') || text.includes('udhaar') || text.includes('دين') || text.includes('creditor')) {
+      botReply = "Creditors are people who buy tickets on credit. Add them in the 'Creditors' section. When making an invoice, select 'Credit' and choose the Creditor. Their balance updates automatically! (الدائنون هم الأشخاص الذين يشترون التذاكر بالائتمان.)";
+    } else if (text.includes('corporate') || text.includes('company') || text.includes('شركة')) {
+      botReply = "Corporate accounts have a separate section. You can track outstanding balances for companies. (حسابات الشركات لها قسم منفصل. يمكنك تتبع الأرصدة المستحقة للشركات.)";
+    } else if (text.includes('report') || text.includes('تقرير') || text.includes('hisab')) {
+      botReply = "You can download Excel reports from 'Financial Reports' or view 'Statements' for detailed summaries. (يمكنك تنزيل تقارير Excel من قسم 'التقارير المالية' أو عرض 'الكشوف'.)";
+    } else if (text.includes('hello') || text.includes('hi') || text.includes('salam') || text.includes('مرحبا')) {
+      botReply = `Hello ${userProfile.role}! How can I assist you today? (مرحباً ${userProfile.role}! كيف يمكنني مساعدتك اليوم؟)`;
     }
+    
     setTimeout(() => { setChatMessages(prev => [...prev, { sender: 'bot', text: botReply }]); }, 600);
     setChatInput('');
   };
 
+  // --- INVOICE HANDLER ---
   const handleCreateInvoice = async (e) => {
     e.preventDefault();
     try {
@@ -168,11 +204,18 @@ export default function Home() {
       const due = total - paid;
       const profit = sell - cost;
 
-      let cid;
-      if (invForm.custId === 'new') {
-        const { data: nC } = await supabase.from('customers').insert([{ name: invForm.custName, phone: invForm.custPhone, type: invForm.custType }]).select().single();
-        cid = nC.id;
-      } else { cid = invForm.custId; }
+      let cid = null, corpId = null;
+      if (invForm.custType === 'Individual') {
+        if (invForm.custId === 'new') {
+          const { data: nC } = await supabase.from('customers').insert([{ name: invForm.custName, phone: invForm.custPhone, type: 'Individual' }]).select().single();
+          cid = nC.id;
+        } else { cid = invForm.custId; }
+      } else {
+        if (invForm.corpId === 'new') {
+          const { data: nCorp } = await supabase.from('corporates').insert([{ name: invForm.corpName, vat_no: invForm.corpVat, phone: invForm.corpPhone, address: invForm.corpAddress }]).select().single();
+          corpId = nCorp.id;
+        } else { corpId = invForm.corpId; }
+      }
 
       const portal = data.portals.find(p => p.name === invForm.portal);
       if (!portal) throw new Error("Select Portal");
@@ -183,31 +226,34 @@ export default function Home() {
       else if (invForm.service === 'Umrah Visa' || invForm.service === 'Visit Visa') desc = `${invForm.service} - ${invForm.destination}`;
       else desc = invForm.service;
 
+      const passengerNames = invForm.custType === 'Corporate' ? invForm.passengers.filter(p => p).join('\n') : invForm.custName;
+
       const payload = {
-        customer_id: cid, portal_id: portal.id, employee_id: invForm.employeeId || null,
+        customer_id: cid, corporate_id: corpId, portal_id: portal.id, employee_id: invForm.employeeId || null,
         booking_date: invForm.bookingDate, invoice_date: invForm.invoiceDate,
         service_type: invForm.service, flight_type: invForm.flightType, flight_sub: invForm.flightSub, pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty: qty, discount: discount,
-        passenger_names: invForm.passengerNames || null, airline: invForm.airline || null, flight_journey: invForm.flightJourney || null, flight_sector: invForm.flightSector || null,
+        passenger_names: passengerNames || null, airline: invForm.airline || null, flight_journey: invForm.flightJourney || null, flight_sector: invForm.flightSector || null,
         total_cost: cost, total_sell: sell, profit, vat, total, paid_amount: paid, due_amount: due, payment_method: invForm.payment,
-        credit_due_date: due > 0 ? invForm.creditDueDate : null, tabby_order_no: invForm.payment === 'Tabby' ? invForm.tabbyNo : null, tamara_order_no: invForm.payment === 'Tamara' ? invForm.tamaraNo : null, ticket_status: invForm.ticketStatus
+        credit_due_date: due > 0 && invForm.payment === 'Credit' ? invForm.creditDueDate : null, 
+        creditor_id: invForm.payment === 'Credit' ? (invForm.creditorId || null) : null,
+        tabby_order_no: invForm.payment === 'Tabby' ? invForm.tabbyNo : null, tamara_order_no: invForm.payment === 'Tamara' ? invForm.tamaraNo : null, ticket_status: invForm.ticketStatus
       };
 
       if (editingId) {
-        const { data: upInv } = await supabase.from('invoices').update(payload).eq('id', editingId).select(`*, customers(name, type, phone), portals(name), employees(name)`).single();
+        const { data: upInv } = await supabase.from('invoices').update(payload).eq('id', editingId).select(`*, customers(name), corporates(name)`).single();
         setData(prev => ({ ...prev, invoices: prev.invoices.map(i => i.id === editingId ? upInv : i) }));
-        await logAction(`Updated Invoice ID ${editingId}`);
         setEditingId(null);
-        showToast('Invoice Updated Successfully!');
+        showToast('Invoice Updated!');
       } else {
         const invNo = `INV-${Date.now()}`;
-        const { data: newInv } = await supabase.from('invoices').insert([{ invoice_no: invNo, ...payload }]).select(`*, customers(name, type, phone), portals(name), employees(name)`).single();
+        const { data: newInv } = await supabase.from('invoices').insert([{ invoice_no: invNo, ...payload }]).select(`*, customers(name), corporates(name), creditors(name)`).single();
         
         const newPortalBal = (portal.current_balance || 0) - cost;
         await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', portal.id);
         await logAction(`Created Invoice ${invNo}`);
 
         let newCashEntry = null;
-        if (paid > 0) {
+        if (paid > 0 && invForm.payment !== 'Credit') {
           const cbType = invForm.payment === 'Cash' ? 'Cash-In' : (invForm.payment === 'Bank Transfer' ? 'Bank-In' : null);
           if (cbType) {
             const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: invForm.invoiceDate, type: cbType, description: `Payment for ${invNo}`, amount: paid }]).select().single();
@@ -221,89 +267,27 @@ export default function Home() {
           portals: prev.portals.map(p => p.id === portal.id ? { ...p, current_balance: newPortalBal } : p),
           cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook
         }));
-        showToast('Invoice Generated Successfully!');
+        showToast('Invoice Generated!');
       }
-      setInvForm({ custId: 'new', custName: '', custPhone: '', custType: 'Individual', passengerNames: '', employeeId: '', portal: data.portals[0]?.name || '', bookingDate: today, invoiceDate: today, service: 'Flight Ticket', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
+      setInvForm({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: Array(10).fill(''), employeeId: '', portal: data.portals[0]?.name || '', bookingDate: today, invoiceDate: today, service: 'Flight Ticket', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
       setPage('list');
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
-  const handleEditClick = (inv) => {
-    setEditingId(inv.id);
-    setInvForm({
-      custId: inv.customer_id, custName: '', custPhone: '', custType: inv.customers?.type || 'Individual', passengerNames: inv.passenger_names || '',
-      employeeId: inv.employee_id || '', portal: inv.portals?.name || '', bookingDate: inv.booking_date || today, invoiceDate: inv.invoice_date || today,
-      service: inv.service_type, flightType: inv.flight_type || 'Domestic', flightSub: inv.flight_sub || 'New Booking', flightJourney: inv.flight_journey || 'Single', flightSector: inv.flight_sector || '', airline: inv.airline || '', 
-      destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', pnr: inv.pnr || '', ticketNo: inv.ticket_no || '', qty: inv.qty || 1, cost: inv.total_cost || 0, sell: inv.total_sell || 0, discount: inv.discount || 0, taxRate: inv.vat > 0 ? '15' : '0', 
-      payment: inv.payment_method || 'Cash', paid: inv.paid_amount || 0, creditDueDate: inv.credit_due_date || '', tabbyNo: inv.tabby_order_no || '', tamaraNo: inv.tamara_order_no || '', ticketStatus: inv.ticket_status || 'Confirmed'
-    });
-    setPage('create');
-  };
-
-  const handleSettlePayment = async (e) => {
-    e.preventDefault();
-    const inv = data.invoices.find(i => i.id === settleForm.id);
-    if (!inv) return showToast('Not found');
-    const newPaid = inv.paid_amount + inv.due_amount;
-    const { data: upInv } = await supabase.from('invoices').update({ paid_amount: newPaid, due_amount: 0, settlement_date: settleForm.date, payment_method: settleForm.mode }).eq('id', inv.id).select(`*, customers(name, type, phone), portals(name), employees(name)`).single();
-    let newCashEntry = null;
-    const cbType = settleForm.mode === 'Cash' ? 'Cash-In' : (settleForm.mode === 'Bank Transfer' ? 'Bank-In' : null);
-    if (cbType) {
-      const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: settleForm.date, type: cbType, description: `Settlement for ${inv.invoice_no}`, amount: inv.due_amount }]).select().single();
-      newCashEntry = nC;
-    }
-    await logAction(`Settled payment for ${inv.invoice_no}`);
-    setData(prev => ({ ...prev, invoices: prev.invoices.map(i => i.id === inv.id ? upInv : i), cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook }));
-    showToast('Payment Settled Successfully!');
-    setModal({ type: null, data: null });
-  };
-
-  const handleRefund = async (e) => {
-    e.preventDefault();
-    const inv = data.invoices.find(i => i.id === refundForm.id);
-    if (!inv) return showToast('Not found');
-    const compRef = parseFloat(refundForm.compRefund) || 0;
-    const custRef = parseFloat(refundForm.custRefund) || 0;
-    const { data: upInv } = await supabase.from('invoices').update({ status: 'refunded', refund_company: compRef, refund_customer: custRef }).eq('id', inv.id).select(`*, customers(name, type, phone), portals(name), employees(name)`).single();
-    const refNo = `REF-${Date.now()}`;
-    const { data: newRefInv } = await supabase.from('invoices').insert([{ invoice_no: refNo, customer_id: inv.customer_id, portal_id: inv.portal_id, booking_date: today, invoice_date: today, service_type: `Refund for ${inv.invoice_no}`, total_sell: -custRef, total: -custRef, paid_amount: -custRef, status: 'refunded', refund_company: compRef, refund_customer: custRef }]).select(`*, customers(name, type, phone), portals(name), employees(name)`).single();
-    let newPortalBal = inv.portals?.current_balance || 0;
-    if (inv.portal_id) { newPortalBal += compRef; await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', inv.portal_id); }
-    let newCashEntry = null;
-    if (custRef > 0) {
-      const cbType = refundForm.mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
-      const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Refund to customer for ${inv.invoice_no}`, amount: custRef }]).select().single();
-      newCashEntry = nC;
-    }
-    await logAction(`Processed refund ${refNo}`);
-    setData(prev => ({ ...prev, invoices: [newRefInv, prev.invoices.map(i => i.id === inv.id ? upInv : i)].flat(), portals: prev.portals.map(p => p.id === inv.portal_id ? { ...p, current_balance: newPortalBal } : p), cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook }));
-    showToast('Refund Processed! Portal balance updated.');
-    setModal({ type: null, data: null });
+  const handleAddCreditor = async (e) => { 
+    e.preventDefault(); 
+    const { data: newItem } = await supabase.from('creditors').insert([{ name: creditorForm.name, phone: creditorForm.phone, address: creditorForm.address }]).select().single(); 
+    setData(prev => ({ ...prev, creditors: [...prev.creditors, newItem] })); 
+    showToast('Creditor Added!'); 
+    setCreditorForm({ name: '', phone: '', address: '' }); 
   };
 
   const handleAddPortal = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('portals').insert([{ name: portalForm.name, current_balance: parseFloat(portalForm.balance) || 0 }]).select().single(); setData(prev => ({ ...prev, portals: [...prev.portals, newItem] })); showToast('Portal Added!'); setPortalForm({ name: '', balance: 0 }); };
   const handleAddVendor = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('vendors').insert([{ name: vendorForm.name, phone: vendorForm.phone, balance: parseFloat(vendorForm.balance) || 0 }]).select().single(); setData(prev => ({ ...prev, vendors: [...prev.vendors, newItem] })); showToast('Vendor Added!'); setVendorForm({ name: '', phone: '', balance: 0 }); };
   const handleAddPackage = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('packages').insert([{ name: pkgForm.name, price: parseFloat(pkgForm.price), description: pkgForm.desc }]).select().single(); setData(prev => ({ ...prev, packages: [...prev.packages, newItem] })); showToast('Package Added!'); setPkgForm({ name: '', price: '', desc: '' }); };
-  
-  const handleAddBranch = async (e) => { 
-    e.preventDefault(); 
-    const { data: newItem } = await supabase.from('branches').insert([{ name: brnForm.name, location: brnForm.location, phone: brnForm.phone, manager: brnForm.manager, email: brnForm.email, timing: brnForm.timing }]).select().single(); 
-    setData(prev => ({ ...prev, branches: [...prev.branches, newItem] })); 
-    showToast('Branch Added!'); 
-    setBrnForm({ name: '', location: '', phone: '', manager: '', email: '', timing: '' }); 
-  };
-  
+  const handleAddBranch = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('branches').insert([{ name: brnForm.name, location: brnForm.location, phone: brnForm.phone, manager: brnForm.manager, email: brnForm.email, timing: brnForm.timing }]).select().single(); setData(prev => ({ ...prev, branches: [...prev.branches, newItem] })); showToast('Branch Added!'); setBrnForm({ name: '', location: '', phone: '', manager: '', email: '', timing: '' }); };
   const handleAddEmployee = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('employees').insert([{ name: empForm.name, role: empForm.role }]).select().single(); setData(prev => ({ ...prev, employees: [newItem, ...prev.employees] })); showToast('Employee Added!'); setEmpForm({ name: '', role: 'Sales' }); };
-  
-  const handleAddService = async (e) => { 
-    e.preventDefault(); 
-    const { data: newItem } = await supabase.from('services').insert([{ name: srvForm.name }]).select().single(); 
-    setData(prev => ({ ...prev, services: [newItem, ...prev.services] })); 
-    showToast('Service Added!'); 
-    setSrvForm({ name: '' }); 
-  };
-
-  const handleAddCustomField = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('custom_fields').insert([{ name: customFieldForm.name }]).select().single(); setData(prev => ({ ...prev, customFields: [...prev.customFields, newItem] })); showToast('Custom Field Added!'); setCustomFieldForm({ name: '' }); };
+  const handleAddService = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('services').insert([{ name: srvForm.name }]).select().single(); setData(prev => ({ ...prev, services: [newItem, ...prev.services] })); showToast('Service Added!'); setSrvForm({ name: '' }); };
 
   const handleRecharge = async (e) => {
     e.preventDefault();
@@ -317,7 +301,7 @@ export default function Home() {
     const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: e.target.date.value, type: cbType, description: `Recharge for ${p.name}`, amount }]).select().single();
     await logAction(`Recharged ${amount} to ${p.name}`);
     setData(prev => ({ ...prev, recharges: [newRec, ...prev.recharges], portals: prev.portals.map(por => por.id === p.id ? { ...por, current_balance: newBal } : por), cashbook: [nC, ...prev.cashbook] }));
-    showToast('Recharged! Balance Updated.');
+    showToast('Recharged!');
     e.target.reset();
   };
 
@@ -329,14 +313,12 @@ export default function Home() {
     if (transferForm.from === 'Cash') entries.push({ trans_date: transferForm.date, type: 'Cash-Out', description: `Transfer to ${transferForm.to}`, amount: amt });
     if (transferForm.from === 'Bank') entries.push({ trans_date: transferForm.date, type: 'Bank-Out', description: `Transfer to ${transferForm.to}`, amount: amt });
     if (transferForm.from === 'Investor') entries.push({ trans_date: transferForm.date, type: 'Investor-Out', description: `Transfer to ${transferForm.to}`, amount: amt });
-    
     if (transferForm.to === 'Cash') entries.push({ trans_date: transferForm.date, type: 'Cash-In', description: `Transfer from ${transferForm.from}`, amount: amt });
     if (transferForm.to === 'Bank') entries.push({ trans_date: transferForm.date, type: 'Bank-In', description: `Transfer from ${transferForm.from}`, amount: amt });
     if (transferForm.to === 'Investor') entries.push({ trans_date: transferForm.date, type: 'Investor-In', description: `Transfer from ${transferForm.from}`, amount: amt });
-    
     await Promise.all(entries.map(en => supabase.from('cashbook').insert([en])));
     await fetchAll();
-    showToast('Fund Transferred Successfully!');
+    showToast('Fund Transferred!');
     setTransferForm({ from: 'Cash', to: 'Bank', amount: '', date: today });
   };
 
@@ -381,7 +363,7 @@ export default function Home() {
     e.preventDefault();
     const { data: newUser } = await supabase.from('app_users').insert([{ email: userForm.email, username: userForm.username, role: userForm.role, ...userForm }]).select().single();
     setData(prev => ({ ...prev, appUsers: [newUser, ...prev.appUsers] }));
-    showToast('User Added with Custom Permissions!');
+    showToast('User Added!');
     setUserForm({ email: '', username: '', role: 'Sales', is_admin: false, can_access_invoices: true, can_access_bank: false, can_access_hr: false, can_access_reports: false, can_access_settings: false });
   };
 
@@ -401,14 +383,14 @@ export default function Home() {
     const { error } = await supabase.from('settings').upsert([{ id: 1, ...setForm }]).eq('id', 1);
     if (error) return showToast('Error saving settings');
     setData(prev => ({ ...prev, settings: setForm }));
-    showToast('Settings Saved Successfully!');
+    showToast('Settings Saved!');
   };
 
   const handleDelete = async (table, id) => {
     if (!confirm('Delete permanently?')) return;
     await supabase.from(table).delete().eq('id', id);
     setData(prev => ({ ...prev, [table]: prev[table].filter(item => item.id !== id) }));
-    showToast('Deleted Successfully!');
+    showToast('Deleted!');
   };
 
   const filterData = (arr, dateKey) => {
@@ -417,7 +399,7 @@ export default function Home() {
   };
 
   const exportCSV = (csvData, filename) => {
-    if (!csvData || csvData.length === 0) return showToast('No data to export in selected range');
+    if (!csvData || csvData.length === 0) return showToast('No data to export');
     const headers = Object.keys(csvData[0]);
     const csvRows = [headers.join(',')];
     for (const row of csvData) { csvRows.push(headers.map(h => `"${row[h] || ''}"`).join(',')); }
@@ -426,7 +408,7 @@ export default function Home() {
     link.href = URL.createObjectURL(blob);
     link.download = filename;
     link.click();
-    showToast('Exported Successfully!');
+    showToast('Exported!');
   };
 
   const getInvoiceHTML = (inv, s) => {
@@ -450,7 +432,7 @@ export default function Home() {
           </div>
         </div>
         <div style="margin-bottom:30px;display:flex;justify-content:space-between;background:#f8fafc;padding:15px;border-radius:8px;border-left:5px solid #FBBF24;">
-          <div><h3 style="margin:0 0 5px;color:#1E3A8A;font-size:14px;">BILL TO:</h3><p style="margin:0;font-size:16px;font-weight:bold;">${inv.customers?.name || ''}</p><p style="margin:0;font-size:12px;color:#666;">${inv.customers?.phone || ''}</p></div>
+          <div><h3 style="margin:0 0 5px;color:#1E3A8A;font-size:14px;">BILL TO:</h3><p style="margin:0;font-size:16px;font-weight:bold;">${inv.customers?.name || inv.corporates?.name || ''}</p><p style="margin:0;font-size:12px;color:#666;">${inv.customers?.phone || inv.corporates?.phone || ''} ${inv.corporates?.vat_no ? '| VAT: '+inv.corporates.vat_no : ''}</p></div>
           <div style="text-align:right;"><p style="margin:0;font-size:12px;"><b>Sales Rep:</b> ${inv.employees?.name || 'N/A'}</p><p style="margin:0;font-size:12px;"><b>Status:</b> <span style="color:${inv.due_amount>0?'#EF4444':'#059669'};font-weight:bold;">${inv.due_amount>0?'UNPAID':'PAID'}</span></p></div>
         </div>
         ${inv.passenger_names ? `<div style="margin-bottom:20px;padding:10px;background:#fff;border:1px dashed #ddd;"><b style="font-size:12px;">Passengers:</b><br/><span style="font-size:12px;white-space:pre-wrap;">${inv.passenger_names}</span></div>` : ''}
@@ -501,7 +483,6 @@ export default function Home() {
 
   const activeInv = data.invoices.filter(i => !i.invoice_no.startsWith('REF-'));
   const refundInv = data.invoices.filter(i => i.invoice_no.startsWith('REF-'));
-  const outstandingInv = activeInv.filter(i => i.due_amount > 0);
   
   const cashBalance = data.cashbook.filter(c => c.type === 'Cash-In').reduce((s,c) => s + c.amount, 0) - data.cashbook.filter(c => c.type === 'Cash-Out').reduce((s,c) => s + c.amount, 0);
   const bankBalance = data.cashbook.filter(c => c.type === 'Bank-In').reduce((s,c) => s + c.amount, 0) - data.cashbook.filter(c => c.type === 'Bank-Out').reduce((s,c) => s + c.amount, 0);
@@ -509,10 +490,12 @@ export default function Home() {
 
   const tSales = activeInv.reduce((s,i) => s + i.total, 0);
   const tProfit = activeInv.reduce((s,i) => s + i.profit, 0);
-  const totalOutstanding = outstandingInv.reduce((s,i) => s + i.due_amount, 0);
-  const tInvestments = data.investments.reduce((s,i) => s + i.amount, 0);
+  const totalOutstanding = activeInv.reduce((s,i) => s + i.due_amount, 0);
 
-  const filteredInvoices = activeInv.filter(inv => inv.invoice_no.toLowerCase().includes(search.toLowerCase()) || inv.customers?.name.toLowerCase().includes(search.toLowerCase()) || inv.customers?.phone.includes(search));
+  const filteredInvoices = activeInv.filter(inv => 
+    (payFilter === 'All' || inv.payment_method === payFilter) &&
+    (inv.invoice_no.toLowerCase().includes(search.toLowerCase()) || inv.customers?.name.toLowerCase().includes(search.toLowerCase()) || inv.corporates?.name.toLowerCase().includes(search.toLowerCase()))
+  );
   const paginatedInv = filteredInvoices.slice((tblPage - 1) * itemsPerPage, tblPage * itemsPerPage);
   const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
 
@@ -522,6 +505,8 @@ export default function Home() {
     { id: 'list', label: tr.list, show: userProfile.is_admin || userProfile.can_access_invoices },
     { id: 'refunds', label: tr.refunds, show: userProfile.is_admin || userProfile.can_access_invoices },
     { id: 'customers', label: tr.customers, show: userProfile.is_admin || userProfile.can_access_invoices },
+    { id: 'corporates', label: tr.corporates, show: userProfile.is_admin || userProfile.can_access_invoices },
+    { id: 'creditors', label: tr.creditors, show: userProfile.is_admin || userProfile.can_access_invoices },
     { id: 'portals', label: tr.portals, show: userProfile.is_admin || userProfile.can_access_invoices },
     { id: 'vendors', label: tr.vendors, show: userProfile.is_admin || userProfile.can_access_invoices },
     { id: 'packages', label: tr.packages, show: userProfile.is_admin || userProfile.can_access_invoices },
@@ -548,7 +533,7 @@ export default function Home() {
   };
 
   const getStatementData = () => {
-    if (statementTab === 'sales') return data.invoices.map(i => ({ date: i.invoice_date, invoice_no: i.invoice_no, customer: i.customers?.name, total: i.total, paid: i.paid_amount, due: i.due_amount }));
+    if (statementTab === 'sales') return data.invoices.map(i => ({ date: i.invoice_date, invoice_no: i.invoice_no, customer: i.customers?.name || i.corporates?.name, total: i.total, paid: i.paid_amount, due: i.due_amount }));
     if (statementTab === 'portals') return data.portals.map(p => ({ name: p.name, balance: p.current_balance }));
     if (statementTab === 'salaries') return data.payroll.map(p => ({ date: p.paid_date, employee: p.employees?.name, month: p.month, amount: p.amount, mode: p.payment_mode }));
     if (statementTab === 'daily_trans') return data.cashbook.map(c => ({ date: c.trans_date, type: c.type, desc: c.description, amount: c.amount }));
@@ -567,7 +552,7 @@ export default function Home() {
         {chatOpen && (
           <div style={{ width: '380px', height: '500px', background: 'white', borderRadius: '20px', marginBottom: '15px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 15px 40px rgba(0,0,0,0.2)' }}>
             <div style={{ background: 'linear-gradient(90deg, #1E3A8A, #2563EB)', color: 'white', padding: '20px', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              ERP AI Assistant (مساعد)
+              ERP AI Assistant (مساعد ذكي)
               <button onClick={() => setChatOpen(false)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '20px' }}>✖</button>
             </div>
             <div style={{ flex: 1, padding: '20px', fontSize: '14px', overflowY: 'auto', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '15px' }}>
@@ -594,7 +579,7 @@ export default function Home() {
                 {modal.type === 'settle' && 'Settle Credit Payment'}
                 {modal.type === 'refund' && 'Process Refund'}
                 {modal.type === 'preview' && 'Invoice Preview'}
-                {modal.type === 'ledger' && 'Customer Ledger'}
+                {modal.type === 'ledger' && `${modal.data.name} - Ledger`}
                 {modal.type === 'password' && tr.changePass}
               </h2>
               <button onClick={() => setModal({type: null, data: null})} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#EF4444' }}>✖</button>
@@ -638,26 +623,23 @@ export default function Home() {
                 <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', marginBottom: '15px', border: '1px solid #eee' }} dangerouslySetInnerHTML={{ __html: getInvoiceHTML(modal.data, data.settings) }} />
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={() => downloadPDF(modal.data)} style={{ flex: 1, background: 'linear-gradient(90deg, #1E3A8A, #2563EB)', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Download PDF</button>
-                  <a href={`https://wa.me/${modal.data.customers?.phone || ''}?text=Dear%20${modal.data.customers?.name || ''},%20your%20invoice%20${modal.data.invoice_no}%20of%20${modal.data.total}%20SAR%20is%20ready.`} target="_blank" style={{ flex: 1, background: '#25D366', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', cursor: 'pointer', textAlign: 'center', textDecoration: 'none', fontWeight: 'bold' }}>Send WhatsApp</a>
+                  <a href={`https://wa.me/${modal.data.customers?.phone || modal.data.corporates?.phone || ''}?text=Dear%20${modal.data.customers?.name || modal.data.corporates?.name || ''},%20your%20invoice%20${modal.data.invoice_no}%20of%20${modal.data.total}%20SAR%20is%20ready.`} target="_blank" style={{ flex: 1, background: '#25D366', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', cursor: 'pointer', textAlign: 'center', textDecoration: 'none', fontWeight: 'bold' }}>Send WhatsApp</a>
                 </div>
               </div>
             )}
 
             {modal.type === 'ledger' && (
               <div>
-                <h3>{modal.data.name} - {modal.data.phone}</h3>
                 <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '15px' }}>
-                  <thead>
-                    <tr style={{ background: '#1E3A8A', color: '#FBBF24' }}>
-                      <th style={{ padding: '10px', textAlign: 'left' }}>Date</th>
-                      <th style={{ padding: '10px', textAlign: 'left' }}>Invoice No</th>
-                      <th style={{ padding: '10px', textAlign: 'right' }}>Total</th>
-                      <th style={{ padding: '10px', textAlign: 'right' }}>Paid</th>
-                      <th style={{ padding: '10px', textAlign: 'right' }}>Due</th>
-                    </tr>
-                  </thead>
+                  <thead><tr style={{ background: '#1E3A8A', color: '#FBBF24' }}>
+                    <th style={{ padding: '10px', textAlign: 'left' }}>Date</th>
+                    <th style={{ padding: '10px', textAlign: 'left' }}>Invoice No</th>
+                    <th style={{ padding: '10px', textAlign: 'right' }}>Total</th>
+                    <th style={{ padding: '10px', textAlign: 'right' }}>Paid</th>
+                    <th style={{ padding: '10px', textAlign: 'right' }}>Due</th>
+                  </tr></thead>
                   <tbody>
-                    {data.invoices.filter(inv => inv.customer_id === modal.data.id).map(inv => (
+                    {data.invoices.filter(inv => inv.customer_id === modal.data.id || inv.corporate_id === modal.data.id || inv.creditor_id === modal.data.id).map(inv => (
                       <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
                         <td style={{ padding: '10px' }}>{inv.invoice_date}</td>
                         <td style={{ padding: '10px' }}>{inv.invoice_no}</td>
@@ -727,7 +709,7 @@ export default function Home() {
                   {data.invoices.slice(0, 5).map(inv => (
                     <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
                       <td style={{padding: '10px', fontWeight: 'bold', color: '#1E3A8A'}}>{inv.invoice_no}</td>
-                      <td style={{padding: '10px'}}>{inv.customers?.name || 'N/A'}</td>
+                      <td style={{padding: '10px'}}>{inv.customers?.name || inv.corporates?.name || 'N/A'}</td>
                       <td style={{padding: '10px'}}>{inv.invoice_date}</td>
                       <td style={{padding: '10px', textAlign: 'right', fontWeight: 'bold'}}>{inv.total.toFixed(2)} SAR</td>
                     </tr>
@@ -738,56 +720,62 @@ export default function Home() {
           </div>
         )}
 
-        {/* CREATE INVOICE WITH LABELS & NEW FEATURES */}
+        {/* CREATE INVOICE (DYNAMIC FORM) */}
         {page === 'create' && (
           <div style={styles.card}>
             <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>{editingId ? 'Edit Invoice' : 'Create New Invoice'}</h3>
             <form onSubmit={handleCreateInvoice} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               <div>
                 <label style={styles.label}>{tr.cust_type}</label>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <select value={invForm.custType} onChange={(e) => setInvForm({...invForm, custType: e.target.value})} style={styles.input}>
-                    <option>Individual</option><option>Corporate</option>
-                  </select>
-                  <button type="button" onClick={() => setInvForm({...invForm, custId: 'new'})} style={{...styles.btnSuccess, width: 'auto', whiteSpace: 'nowrap'}}>+</button>
-                </div>
-                
-                <label style={styles.label}>Customer</label>
-                <select value={invForm.custId} onChange={(e) => setInvForm({...invForm, custId: e.target.value})} style={styles.input}>
-                  <option value="new">New Customer</option>
-                  {data.customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.phone})</option>)}
+                <select value={invForm.custType} onChange={(e) => setInvForm({...invForm, custType: e.target.value})} style={styles.input}>
+                  <option value="Individual">{tr.individual}</option>
+                  <option value="Corporate">{tr.corporate}</option>
                 </select>
-                
-                {invForm.custId === 'new' && (
+
+                {invForm.custType === 'Individual' ? (
                   <>
-                    <label style={styles.label}>{tr.cust_name}</label>
-                    <input type="text" value={invForm.custName} onChange={(e) => setInvForm({...invForm, custName: e.target.value})} required style={styles.input} />
-                    <label style={styles.label}>{tr.cust_phone}</label>
-                    <input type="text" value={invForm.custPhone} onChange={(e) => setInvForm({...invForm, custPhone: e.target.value})} required style={styles.input} />
+                    <label style={styles.label}>{tr.select_customer}</label>
+                    <select value={invForm.custId} onChange={(e) => setInvForm({...invForm, custId: e.target.value})} style={styles.input}>
+                      <option value="new">{tr.new_customer}</option>
+                      {data.customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.phone})</option>)}
+                    </select>
+                    {invForm.custId === 'new' && (
+                      <>
+                        <label style={styles.label}>{tr.name}</label>
+                        <input type="text" value={invForm.custName} onChange={(e) => setInvForm({...invForm, custName: e.target.value})} required style={styles.input} />
+                        <label style={styles.label}>{tr.phone}</label>
+                        <input type="text" value={invForm.custPhone} onChange={(e) => setInvForm({...invForm, custPhone: e.target.value})} required style={styles.input} />
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <label style={styles.label}>{tr.select_corporate}</label>
+                    <select value={invForm.corpId} onChange={(e) => setInvForm({...invForm, corpId: e.target.value})} style={styles.input}>
+                      <option value="new">{tr.new_company}</option>
+                      {data.corporates.map(c => <option key={c.id} value={c.id}>{c.name} (VAT: {c.vat_no})</option>)}
+                    </select>
+                    {invForm.corpId === 'new' && (
+                      <>
+                        <label style={styles.label}>{tr.company_name}</label>
+                        <input type="text" value={invForm.corpName} onChange={(e) => setInvForm({...invForm, corpName: e.target.value})} required style={styles.input} />
+                        <label style={styles.label}>{tr.company_vat}</label>
+                        <input type="text" value={invForm.corpVat} onChange={(e) => setInvForm({...invForm, corpVat: e.target.value})} required style={styles.input} />
+                        <label style={styles.label}>{tr.phone}</label>
+                        <input type="text" value={invForm.corpPhone} onChange={(e) => setInvForm({...invForm, corpPhone: e.target.value})} style={styles.input} />
+                        <label style={styles.label}>{tr.company_address}</label>
+                        <input type="text" value={invForm.corpAddress} onChange={(e) => setInvForm({...invForm, corpAddress: e.target.value})} style={styles.input} />
+                      </>
+                    )}
                   </>
                 )}
-                
-                <label style={styles.label}>{tr.passenger_names}</label>
-                <input type="text" value={invForm.passengerNames} onChange={(e) => setInvForm({...invForm, passengerNames: e.target.value})} style={styles.input} />
-                
-                <label style={styles.label}>{tr.portal}</label>
-                <select value={invForm.portal} onChange={(e) => setInvForm({...invForm, portal: e.target.value})} style={styles.input}>
-                  {data.portals.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
-                </select>
-                
-                <label style={styles.label}>{tr.sales_rep}</label>
-                <select value={invForm.employeeId} onChange={(e) => setInvForm({...invForm, employeeId: e.target.value})} style={styles.input}>
-                  <option value="">Select Employee</option>
-                  {data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-                </select>
-                
+
                 <label style={styles.label}>{tr.service}</label>
                 <select value={invForm.service} onChange={(e) => setInvForm({...invForm, service: e.target.value})} style={styles.input}>
                   <option>Flight Ticket</option><option>Hotel</option><option>Packages</option><option>Umrah Visa</option><option>Visit Visa</option>
                   {data.services.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
                 </select>
-                
-                <label style={styles.label}>{tr.add_new_service}</label>
+                <label style={styles.label}>{tr.new_service_name}</label>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <input type="text" placeholder={tr.new_service_name} value={srvForm.name} onChange={(e) => setSrvForm({name: e.target.value})} style={styles.input} />
                   <button type="button" onClick={handleAddService} style={{...styles.btnPrimary, width: 'auto'}}>+</button>
@@ -795,23 +783,46 @@ export default function Home() {
               </div>
 
               <div>
+                {invForm.custType === 'Corporate' && (
+                  <div style={{ marginBottom: '15px' }}>
+                    <label style={styles.label}>{tr.passengers}</label>
+                    {invForm.passengers.map((p, idx) => (
+                      <input key={idx} type="text" placeholder={`${tr.passenger} ${idx + 1}`} value={p} onChange={(e) => {
+                        const newPass = [...invForm.passengers]; newPass[idx] = e.target.value; setInvForm({...invForm, passengers: newPass});
+                      }} style={styles.input} />
+                    ))}
+                  </div>
+                )}
+
                 <label style={styles.label}>{tr.booking_date}</label>
                 <input type="date" value={invForm.bookingDate} onChange={(e) => setInvForm({...invForm, bookingDate: e.target.value})} style={styles.input} />
                 <label style={styles.label}>{tr.invoice_date}</label>
                 <input type="date" value={invForm.invoiceDate} onChange={(e) => setInvForm({...invForm, invoiceDate: e.target.value})} style={styles.input} />
-                
-                <label style={styles.label}>{tr.flight_type} (If Flight)</label>
-                <select value={invForm.flightType} onChange={(e) => setInvForm({...invForm, flightType: e.target.value})} style={styles.input}><option>Domestic</option><option>International</option></select>
-                <label style={styles.label}>{tr.flight_sub}</label>
-                <select value={invForm.flightSub} onChange={(e) => setInvForm({...invForm, flightSub: e.target.value})} style={styles.input}><option>New Booking</option><option>Reissue</option><option>Refund</option></select>
-                <label style={styles.label}>{tr.airline}</label>
-                <input type="text" value={invForm.airline} onChange={(e) => setInvForm({...invForm, airline: e.target.value})} style={styles.input} />
-                <label style={styles.label}>{tr.sector}</label>
-                <input type="text" value={invForm.flightSector} onChange={(e) => setInvForm({...invForm, flightSector: e.target.value})} style={styles.input} />
-                <label style={styles.label}>{tr.pnr}</label>
-                <input type="text" value={invForm.pnr} onChange={(e) => setInvForm({...invForm, pnr: e.target.value})} style={styles.input} />
-                <label style={styles.label}>{tr.ticket_no}</label>
-                <input type="text" value={invForm.ticketNo} onChange={(e) => setInvForm({...invForm, ticketNo: e.target.value})} style={styles.input} />
+
+                {invForm.service === 'Flight Ticket' && (
+                  <>
+                    <label style={styles.label}>{tr.flight_type}</label>
+                    <select value={invForm.flightType} onChange={(e) => setInvForm({...invForm, flightType: e.target.value})} style={styles.input}><option>Domestic</option><option>International</option></select>
+                    <label style={styles.label}>{tr.airline}</label>
+                    <input type="text" value={invForm.airline} onChange={(e) => setInvForm({...invForm, airline: e.target.value})} style={styles.input} />
+                    <label style={styles.label}>{tr.sector}</label>
+                    <input type="text" value={invForm.flightSector} onChange={(e) => setInvForm({...invForm, flightSector: e.target.value})} style={styles.input} />
+                    <label style={styles.label}>{tr.pnr}</label>
+                    <input type="text" value={invForm.pnr} onChange={(e) => setInvForm({...invForm, pnr: e.target.value})} style={styles.input} />
+                  </>
+                )}
+                {invForm.service === 'Hotel' && (
+                  <>
+                    <label style={styles.label}>Hotel Name</label>
+                    <input type="text" value={invForm.hotelName} onChange={(e) => setInvForm({...invForm, hotelName: e.target.value})} style={styles.input} />
+                    <label style={styles.label}>Destination</label>
+                    <input type="text" value={invForm.destination} onChange={(e) => setInvForm({...invForm, destination: e.target.value})} style={styles.input} />
+                    <label style={styles.label}>Check-in</label>
+                    <input type="date" value={invForm.checkIn} onChange={(e) => setInvForm({...invForm, checkIn: e.target.value})} style={styles.input} />
+                    <label style={styles.label}>Check-out</label>
+                    <input type="date" value={invForm.checkOut} onChange={(e) => setInvForm({...invForm, checkOut: e.target.value})} style={styles.input} />
+                  </>
+                )}
 
                 <label style={styles.label}>{tr.qty}</label>
                 <input type="number" value={invForm.qty} onChange={(e) => setInvForm({...invForm, qty: e.target.value})} style={styles.input} />
@@ -826,10 +837,20 @@ export default function Home() {
                 
                 <label style={styles.label}>{tr.payment_method}</label>
                 <select value={invForm.payment} onChange={(e) => setInvForm({...invForm, payment: e.target.value})} style={styles.input}><option>Cash</option><option>Bank Transfer</option><option>Tabby</option><option>Tamara</option><option>Credit</option></select>
+                
+                {invForm.payment === 'Credit' && (
+                  <>
+                    <label style={styles.label}>{tr.select_creditor}</label>
+                    <select value={invForm.creditorId} onChange={(e) => setInvForm({...invForm, creditorId: e.target.value})} required style={styles.input}>
+                      <option value="">Select Creditor</option>
+                      {data.creditors.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                    <label style={styles.label}>{tr.credit_due_date}</label>
+                    <input type="date" value={invForm.creditDueDate} onChange={(e) => setInvForm({...invForm, creditDueDate: e.target.value})} required style={styles.input} />
+                  </>
+                )}
                 <label style={styles.label}>{tr.paid_amount}</label>
                 <input type="number" value={invForm.paid} onChange={(e) => setInvForm({...invForm, paid: e.target.value})} style={styles.input} />
-                <label style={styles.label}>{tr.credit_due_date}</label>
-                <input type="date" value={invForm.creditDueDate} onChange={(e) => setInvForm({...invForm, creditDueDate: e.target.value})} style={styles.input} />
               </div>
               <div style={{ gridColumn: '1 / -1' }}>
                 <button type="submit" style={{...styles.btnPrimary, width: 'auto', padding: '10px 30px'}}>{editingId ? 'Update Invoice' : 'Generate Invoice'}</button>
@@ -838,24 +859,32 @@ export default function Home() {
           </div>
         )}
 
-        {/* INVOICE LIST */}
+        {/* INVOICE LIST WITH FILTERS */}
         {page === 'list' && (
           <div style={styles.card}>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              <button onClick={() => setPayFilter('All')} style={payFilter === 'All' ? styles.btnPrimary : styles.btnFilter}>{tr.all_invoices}</button>
+              <button onClick={() => setPayFilter('Cash')} style={payFilter === 'Cash' ? styles.btnPrimary : styles.btnFilter}>Cash</button>
+              <button onClick={() => setPayFilter('Bank Transfer')} style={payFilter === 'Bank Transfer' ? styles.btnPrimary : styles.btnFilter}>Bank Transfer</button>
+              <button onClick={() => setPayFilter('Credit')} style={payFilter === 'Credit' ? styles.btnPrimary : styles.btnFilter}>Credit</button>
+              <button onClick={() => setPayFilter('Tabby')} style={payFilter === 'Tabby' ? styles.btnPrimary : styles.btnFilter}>Tabby</button>
+              <button onClick={() => setPayFilter('Tamara')} style={payFilter === 'Tamara' ? styles.btnPrimary : styles.btnFilter}>Tamara</button>
+            </div>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}>
-                <th style={{padding: '10px'}}>Inv No</th><th style={{padding: '10px'}}>Customer</th><th style={{padding: '10px'}}>Date</th><th style={{padding: '10px'}}>Total</th><th style={{padding: '10px'}}>Due</th><th style={{padding: '10px'}}>Actions</th>
+                <th style={{padding: '10px'}}>Inv No</th><th style={{padding: '10px'}}>Customer</th><th style={{padding: '10px'}}>Date</th><th style={{padding: '10px'}}>Payment</th><th style={{padding: '10px'}}>Total</th><th style={{padding: '10px'}}>Due</th><th style={{padding: '10px'}}>Actions</th>
               </tr></thead>
               <tbody>
                 {paginatedInv.map(inv => (
                   <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
                     <td style={{padding: '10px', fontWeight: 'bold', color: '#1E3A8A'}}>{inv.invoice_no}</td>
-                    <td style={{padding: '10px'}}>{inv.customers?.name}</td>
+                    <td style={{padding: '10px'}}>{inv.customers?.name || inv.corporates?.name}</td>
                     <td style={{padding: '10px'}}>{inv.invoice_date}</td>
+                    <td style={{padding: '10px'}}><span style={{ background: '#e0e7ff', color: '#1E3A8A', padding: '4px 8px', borderRadius: '12px', fontSize: '12px' }}>{inv.payment_method}</span></td>
                     <td style={{padding: '10px'}}>{inv.total.toFixed(2)}</td>
                     <td style={{padding: '10px', color: inv.due_amount > 0 ? '#EF4444' : '#059669'}}>{inv.due_amount.toFixed(2)}</td>
                     <td style={{padding: '10px', display: 'flex', gap: '5px', flexWrap: 'wrap'}}>
                       <button onClick={() => setModal({type: 'preview', data: inv})} style={styles.btnWarning}>View</button>
-                      <button onClick={() => handleEditClick(inv)} style={styles.btnPrimary}>Edit</button>
                       {inv.due_amount > 0 && <button onClick={() => { setSettleForm({...settleForm, id: inv.id}); setModal({type: 'settle', data: inv}); }} style={styles.btnSuccess}>Settle</button>}
                       <button onClick={() => { setRefundForm({...refundForm, id: inv.id}); setModal({type: 'refund', data: inv}); }} style={styles.btnDanger}>Refund</button>
                     </td>
@@ -871,7 +900,73 @@ export default function Home() {
           </div>
         )}
 
-        {/* STATEMENTS SECTION (NEW) */}
+        {/* CREDITORS SECTION */}
+        {page === 'creditors' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
+            <div style={styles.card}>
+              <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Add Creditor</h3>
+              <form onSubmit={handleAddCreditor}>
+                <input type="text" placeholder={tr.name} value={creditorForm.name} onChange={(e) => setCreditorForm({...creditorForm, name: e.target.value})} required style={styles.input} />
+                <input type="text" placeholder={tr.phone} value={creditorForm.phone} onChange={(e) => setCreditorForm({...creditorForm, phone: e.target.value})} style={styles.input} />
+                <input type="text" placeholder="Address" value={creditorForm.address} onChange={(e) => setCreditorForm({...creditorForm, address: e.target.value})} style={styles.input} />
+                <button type="submit" style={styles.btnPrimary}>Add Creditor</button>
+              </form>
+            </div>
+            <div style={styles.card}>
+              <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Creditors List</h3>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}>
+                  <th style={{padding: '10px'}}>Name</th><th style={{padding: '10px'}}>Phone</th><th style={{padding: '10px'}}>Total Due</th><th style={{padding: '10px'}}>Actions</th>
+                </tr></thead>
+                <tbody>
+                  {data.creditors.map(c => {
+                    const due = data.invoices.filter(inv => inv.creditor_id === c.id).reduce((s, inv) => s + inv.due_amount, 0);
+                    return (
+                      <tr key={c.id} style={{ borderBottom: '1px solid #eee' }}>
+                        <td style={{padding: '10px', fontWeight: 'bold'}}>{c.name}</td>
+                        <td style={{padding: '10px'}}>{c.phone}</td>
+                        <td style={{padding: '10px', color: '#EF4444', fontWeight: 'bold'}}>{due.toFixed(2)} SAR</td>
+                        <td style={{padding: '10px'}}>
+                          <button onClick={() => setModal({type: 'ledger', data: c})} style={styles.btnPrimary}>View Ledger</button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* CORPORATE SECTION */}
+        {page === 'corporates' && (
+          <div style={styles.card}>
+            <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Corporate Accounts</h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}>
+                <th style={{padding: '10px'}}>Company Name</th><th style={{padding: '10px'}}>VAT</th><th style={{padding: '10px'}}>Phone</th><th style={{padding: '10px'}}>Total Due</th><th style={{padding: '10px'}}>Actions</th>
+              </tr></thead>
+              <tbody>
+                {data.corporates.map(c => {
+                  const due = data.invoices.filter(inv => inv.corporate_id === c.id).reduce((s, inv) => s + inv.due_amount, 0);
+                  return (
+                    <tr key={c.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <td style={{padding: '10px', fontWeight: 'bold'}}>{c.name}</td>
+                      <td style={{padding: '10px'}}>{c.vat_no}</td>
+                      <td style={{padding: '10px'}}>{c.phone}</td>
+                      <td style={{padding: '10px', color: '#EF4444', fontWeight: 'bold'}}>{due.toFixed(2)} SAR</td>
+                      <td style={{padding: '10px'}}>
+                        <button onClick={() => setModal({type: 'ledger', data: c})} style={styles.btnPrimary}>View Ledger</button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* STATEMENTS SECTION */}
         {page === 'statements' && (
           <div style={styles.card}>
             <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Financial Statements</h3>
@@ -898,7 +993,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* REFUNDS */}
+        {/* OTHER PAGES (Same as before, no removal) */}
         {page === 'refunds' && (
           <div style={styles.card}>
             <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Refunded Invoices</h3>
@@ -910,7 +1005,7 @@ export default function Home() {
                 {refundInv.map(inv => (
                   <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
                     <td style={{padding: '10px', fontWeight: 'bold', color: '#EF4444'}}>{inv.invoice_no}</td>
-                    <td style={{padding: '10px'}}>{inv.customers?.name}</td>
+                    <td style={{padding: '10px'}}>{inv.customers?.name || inv.corporates?.name}</td>
                     <td style={{padding: '10px'}}>{inv.invoice_date}</td>
                     <td style={{padding: '10px'}}>{inv.total.toFixed(2)}</td>
                   </tr>
@@ -920,20 +1015,18 @@ export default function Home() {
           </div>
         )}
 
-        {/* CUSTOMERS */}
         {page === 'customers' && (
           <div style={styles.card}>
-            <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Customers</h3>
+            <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Individual Customers</h3>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}>
-                <th style={{padding: '10px'}}>Name</th><th style={{padding: '10px'}}>Phone</th><th style={{padding: '10px'}}>Type</th><th style={{padding: '10px'}}>Actions</th>
+                <th style={{padding: '10px'}}>Name</th><th style={{padding: '10px'}}>Phone</th><th style={{padding: '10px'}}>Actions</th>
               </tr></thead>
               <tbody>
                 {data.customers.map(c => (
                   <tr key={c.id} style={{ borderBottom: '1px solid #eee' }}>
                     <td style={{padding: '10px', fontWeight: 'bold'}}>{c.name}</td>
                     <td style={{padding: '10px'}}>{c.phone}</td>
-                    <td style={{padding: '10px'}}>{c.type}</td>
                     <td style={{padding: '10px'}}>
                       <button onClick={() => setModal({type: 'ledger', data: c})} style={styles.btnPrimary}>View Ledger</button>
                     </td>
@@ -944,7 +1037,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* PORTALS */}
         {page === 'portals' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
             <div style={styles.card}>
@@ -982,7 +1074,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* VENDORS */}
         {page === 'vendors' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
             <div style={styles.card}>
@@ -1012,7 +1103,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* PACKAGES */}
         {page === 'packages' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
             <div style={styles.card}>
@@ -1042,7 +1132,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* BRANCHES (ENHANCED) */}
         {page === 'branches' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
             <div style={styles.card}>
@@ -1078,7 +1167,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* BANK & CASH (WITH INVESTOR TRANSFER) */}
         {page === 'bank' && (
           <div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
@@ -1115,7 +1203,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* INVESTORS (INVEST) */}
         {page === 'invest' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
             <div style={styles.card}>
@@ -1148,7 +1235,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* HR & ACCOUNTS */}
         {page === 'hr' && (
           <div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
@@ -1194,7 +1280,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* USER MANAGEMENT */}
         {page === 'users' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
             <div style={styles.card}>
@@ -1235,7 +1320,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* REPORTS */}
         {page === 'reports' && (
           <div style={styles.card}>
             <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Financial Reports</h3>
@@ -1262,7 +1346,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* AUDIT LOGS */}
         {page === 'audit' && (
           <div style={styles.card}>
             <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Audit Logs</h3>
@@ -1281,20 +1364,18 @@ export default function Home() {
           </div>
         )}
 
-        {/* SETTINGS */}
         {page === 'settings' && (
           <div>
             <div style={styles.card}>
               <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Owner Profile & Settings</h3>
               <form onSubmit={handleUpdateOwnerProfile}>
-                <label style={styles.label}>Update Email (Requires Auth Confirmation)</label>
+                <label style={styles.label}>Update Email</label>
                 <input type="email" value={userProfile.email || ''} onChange={(e) => setUserProfile({...userProfile, email: e.target.value})} style={styles.input} />
                 <label style={styles.label}>Update Username</label>
                 <input type="text" value={userProfile.username || ''} onChange={(e) => setUserProfile({...userProfile, username: e.target.value})} style={styles.input} />
                 <button type="submit" style={{...styles.btnPrimary, width: 'auto', padding: '10px 30px'}}>Save Profile</button>
               </form>
             </div>
-            
             <div style={styles.card}>
               <h3 style={{ color: '#1E3A8A' }}>Company Settings</h3>
               <form onSubmit={handleSaveSettings}>
