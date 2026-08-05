@@ -5,17 +5,15 @@ import { useRouter } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
-// Added missing styles object
+// Added missing styles object (Iske bina input/buttons break ho rahe the)
 const styles = {
-  input: { width: '100%', padding: '10px', margin: '5px 0', border: '1px solid #cbd5e1', borderRadius: '6px', outline: 'none' },
-  btnPrimary: { padding: '10px 15px', background: '#1E3A8A', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' },
+  input: { width: '100%', padding: '10px', margin: '5px 0', border: '1px solid #cbd5e1', borderRadius: '6px', outline: 'none', boxSizing: 'border-box' },
+  btnPrimary: { padding: '10px 15px', background: '#1E3A8A', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', width: '100%' },
   btnSuccess: { padding: '8px 12px', background: '#059669', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' },
   btnDanger: { padding: '8px 12px', background: '#EF4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' },
   btnWarning: { padding: '8px 12px', background: '#FBBF24', color: '#1E3A8A', border: 'none', borderRadius: '6px', cursor: 'pointer' },
   card: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px' },
-  label: { fontSize: '14px', fontWeight: 'bold', color: '#333', marginBottom: '5px', display: 'block' },
-  tableHeader: { background: '#1E3A8A', color: '#FBBF24', padding: '12px', textAlign: 'left' },
-  tableRow: { borderBottom: '1px solid #eee', padding: '12px' }
+  label: { fontSize: '14px', fontWeight: 'bold', color: '#333', marginBottom: '5px', display: 'block' }
 };
 
 export default function Home() {
@@ -120,14 +118,14 @@ export default function Home() {
     setPassForm({ newPass: '' });
   };
 
-  // FIXED: USER PROFILE EMAIL UPDATE
+  // FIXED: USER PROFILE EMAIL UPDATE BUG
   const handleUpdateOwnerProfile = async (e) => {
     e.preventDefault();
     try {
       if (userProfile.email !== user.email) {
         const { error: authError } = await supabase.auth.updateUser({ email: userProfile.email });
         if (authError) throw authError;
-        setUser({ ...user, email: userProfile.email }); // Update local user state
+        setUser({ ...user, email: userProfile.email }); // Update local state to reflect change immediately
       }
       const { error: dbError } = await supabase.from('app_users').update({ email: userProfile.email, username: userProfile.username }).eq('id', userProfile.id);
       if (dbError) throw dbError;
@@ -758,12 +756,18 @@ export default function Home() {
                   <>
                     <input type="text" placeholder="Customer Name" value={invForm.custName} onChange={(e) => setInvForm({...invForm, custName: e.target.value})} required style={styles.input} />
                     <input type="text" placeholder="Phone" value={invForm.custPhone} onChange={(e) => setInvForm({...invForm, custPhone: e.target.value})} required style={styles.input} />
+                    <select value={invForm.custType} onChange={(e) => setInvForm({...invForm, custType: e.target.value})} style={styles.input}><option>Individual</option><option>Corporate</option></select>
                   </>
                 )}
                 <input type="text" placeholder="Passenger Names" value={invForm.passengerNames} onChange={(e) => setInvForm({...invForm, passengerNames: e.target.value})} style={styles.input} />
                 <label style={styles.label}>Portal</label>
                 <select value={invForm.portal} onChange={(e) => setInvForm({...invForm, portal: e.target.value})} style={styles.input}>
                   {data.portals.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                </select>
+                <label style={styles.label}>Sales Rep</label>
+                <select value={invForm.employeeId} onChange={(e) => setInvForm({...invForm, employeeId: e.target.value})} style={styles.input}>
+                  <option value="">Select Employee</option>
+                  {data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
                 </select>
                 <label style={styles.label}>Service</label>
                 <select value={invForm.service} onChange={(e) => setInvForm({...invForm, service: e.target.value})} style={styles.input}>
@@ -776,15 +780,28 @@ export default function Home() {
                 <input type="date" value={invForm.bookingDate} onChange={(e) => setInvForm({...invForm, bookingDate: e.target.value})} style={styles.input} />
                 <input type="date" value={invForm.invoiceDate} onChange={(e) => setInvForm({...invForm, invoiceDate: e.target.value})} style={styles.input} />
                 
+                <label style={styles.label}>Flight Details (If Flight)</label>
+                <select value={invForm.flightType} onChange={(e) => setInvForm({...invForm, flightType: e.target.value})} style={styles.input}><option>Domestic</option><option>International</option></select>
+                <select value={invForm.flightSub} onChange={(e) => setInvForm({...invForm, flightSub: e.target.value})} style={styles.input}><option>New Booking</option><option>Reissue</option><option>Refund</option></select>
+                <input type="text" placeholder="Airline" value={invForm.airline} onChange={(e) => setInvForm({...invForm, airline: e.target.value})} style={styles.input} />
+                <input type="text" placeholder="Sector (e.g. DEL-RUH)" value={invForm.flightSector} onChange={(e) => setInvForm({...invForm, flightSector: e.target.value})} style={styles.input} />
+                <input type="text" placeholder="PNR" value={invForm.pnr} onChange={(e) => setInvForm({...invForm, pnr: e.target.value})} style={styles.input} />
+                <input type="text" placeholder="Ticket No" value={invForm.ticketNo} onChange={(e) => setInvForm({...invForm, ticketNo: e.target.value})} style={styles.input} />
+
                 <label style={styles.label}>Financials</label>
                 <input type="number" placeholder="Qty" value={invForm.qty} onChange={(e) => setInvForm({...invForm, qty: e.target.value})} style={styles.input} />
                 <input type="number" placeholder="Cost" value={invForm.cost} onChange={(e) => setInvForm({...invForm, cost: e.target.value})} style={styles.input} />
                 <input type="number" placeholder="Sell" value={invForm.sell} onChange={(e) => setInvForm({...invForm, sell: e.target.value})} style={styles.input} />
                 <input type="number" placeholder="Discount" value={invForm.discount} onChange={(e) => setInvForm({...invForm, discount: e.target.value})} style={styles.input} />
+                <select value={invForm.taxRate} onChange={(e) => setInvForm({...invForm, taxRate: e.target.value})} style={styles.input}><option value="15">VAT 15%</option><option value="0">Exempt</option></select>
+                
+                <label style={styles.label}>Payment</label>
+                <select value={invForm.payment} onChange={(e) => setInvForm({...invForm, payment: e.target.value})} style={styles.input}><option>Cash</option><option>Bank Transfer</option><option>Tabby</option><option>Tamara</option><option>Credit</option></select>
                 <input type="number" placeholder="Paid Amount" value={invForm.paid} onChange={(e) => setInvForm({...invForm, paid: e.target.value})} style={styles.input} />
+                <input type="date" placeholder="Credit Due Date" value={invForm.creditDueDate} onChange={(e) => setInvForm({...invForm, creditDueDate: e.target.value})} style={styles.input} />
               </div>
               <div style={{ gridColumn: '1 / -1' }}>
-                <button type="submit" style={styles.btnPrimary}>{editingId ? 'Update Invoice' : 'Generate Invoice'}</button>
+                <button type="submit" style={{...styles.btnPrimary, width: 'auto', padding: '10px 30px'}}>{editingId ? 'Update Invoice' : 'Generate Invoice'}</button>
               </div>
             </form>
           </div>
@@ -805,7 +822,7 @@ export default function Home() {
                     <td style={{padding: '10px'}}>{inv.invoice_date}</td>
                     <td style={{padding: '10px'}}>{inv.total.toFixed(2)}</td>
                     <td style={{padding: '10px', color: inv.due_amount > 0 ? '#EF4444' : '#059669'}}>{inv.due_amount.toFixed(2)}</td>
-                    <td style={{padding: '10px', display: 'flex', gap: '5px'}}>
+                    <td style={{padding: '10px', display: 'flex', gap: '5px', flexWrap: 'wrap'}}>
                       <button onClick={() => setModal({type: 'preview', data: inv})} style={styles.btnWarning}>View</button>
                       <button onClick={() => handleEditClick(inv)} style={styles.btnPrimary}>Edit</button>
                       {inv.due_amount > 0 && <button onClick={() => { setSettleForm({...settleForm, id: inv.id}); setModal({type: 'settle', data: inv}); }} style={styles.btnSuccess}>Settle</button>}
@@ -1011,7 +1028,7 @@ export default function Home() {
                 <select value={transferForm.to} onChange={(e) => setTransferForm({...transferForm, to: e.target.value})} style={styles.input}><option>Bank</option><option>Cash</option></select>
                 <input type="number" placeholder="Amount" value={transferForm.amount} onChange={(e) => setTransferForm({...transferForm, amount: e.target.value})} required style={styles.input} />
                 <input type="date" value={transferForm.date} onChange={(e) => setTransferForm({...transferForm, date: e.target.value})} style={styles.input} />
-                <button type="submit" style={styles.btnPrimary}>Transfer</button>
+                <button type="submit" style={{...styles.btnPrimary, width: 'auto'}}>Transfer</button>
               </form>
             </div>
             <div style={styles.card}>
@@ -1112,7 +1129,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* USER MANAGEMENT */}
+        {/* USER MANAGEMENT (FIXED) */}
         {page === 'users' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
             <div style={styles.card}>
@@ -1157,13 +1174,13 @@ export default function Home() {
         {page === 'reports' && (
           <div style={styles.card}>
             <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Financial Reports</h3>
-            <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
               <input type="date" value={repDate.from} onChange={(e) => setRepDate({...repDate, from: e.target.value})} style={styles.input} />
               <input type="date" value={repDate.to} onChange={(e) => setRepDate({...repDate, to: e.target.value})} style={styles.input} />
               <select value={reportTab} onChange={(e) => setReportTab(e.target.value)} style={styles.input}>
                 <option value="sales">Sales</option><option value="refunds">Refunds</option><option value="recharges">Recharges</option><option value="cashbook">Cashbook</option><option value="investments">Investments</option><option value="payroll">Payroll</option><option value="expenses">Expenses</option>
               </select>
-              <button onClick={() => exportCSV(currentReportData(), `${reportTab}_report.csv`)} style={styles.btnSuccess}>Export CSV</button>
+              <button onClick={() => exportCSV(currentReportData(), `${reportTab}_report.csv`)} style={{...styles.btnSuccess, width: 'auto'}}>Export CSV</button>
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}>
@@ -1199,7 +1216,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* SETTINGS */}
+        {/* SETTINGS (FIXED with Email Update) */}
         {page === 'settings' && (
           <div>
             <div style={styles.card}>
