@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
-// Added missing styles object (Iske bina input/buttons break ho rahe the)
 const styles = {
   input: { width: '100%', padding: '10px', margin: '5px 0', border: '1px solid #cbd5e1', borderRadius: '6px', outline: 'none', boxSizing: 'border-box' },
   btnPrimary: { padding: '10px 15px', background: '#1E3A8A', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', width: '100%' },
@@ -13,7 +12,7 @@ const styles = {
   btnDanger: { padding: '8px 12px', background: '#EF4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' },
   btnWarning: { padding: '8px 12px', background: '#FBBF24', color: '#1E3A8A', border: 'none', borderRadius: '6px', cursor: 'pointer' },
   card: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px' },
-  label: { fontSize: '14px', fontWeight: 'bold', color: '#333', marginBottom: '5px', display: 'block' }
+  label: { fontSize: '14px', fontWeight: 'bold', color: '#333', marginBottom: '5px', display: 'block', marginTop: '10px' }
 };
 
 export default function Home() {
@@ -28,7 +27,6 @@ export default function Home() {
   const [modal, setModal] = useState({ type: null, data: null });
   const [passForm, setPassForm] = useState({ newPass: '' });
 
-  // Chatbot State
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([{ sender: 'bot', text: 'مرحباً! أنا مساعدك في نظام ERP. كيف يمكنني مساعدتك اليوم؟' }]);
   const [chatInput, setChatInput] = useState('');
@@ -36,12 +34,12 @@ export default function Home() {
   const [search, setSearch] = useState('');
   const [tblPage, setTblPage] = useState(1);
   const itemsPerPage = 10;
+  const [statementTab, setStatementTab] = useState('sales');
 
   const [data, setData] = useState({ invoices: [], portals: [], customers: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [], audits: [], investments: [], vendors: [], customFields: [], packages: [], branches: [] });
   const today = new Date().toISOString().split('T')[0];
   
-  // Forms State
-  const [invForm, setInvForm] = useState({ custId: 'new', custName: '', custPhone: '', custType: 'Individual', passengerNames: '', employeeId: '', portal: '', bookingDate: today, invoiceDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
+  const [invForm, setInvForm] = useState({ custId: 'new', custName: '', custPhone: '', custType: 'Individual', passengerNames: '', employeeId: '', portal: '', bookingDate: today, invoiceDate: today, service: 'Flight Ticket', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
   const [investForm, setInvestForm] = useState({ name: '', amount: '', date: today, desc: '', mode: 'Cash' });
   const [settleForm, setSettleForm] = useState({ id: '', date: today, mode: 'Cash' });
   const [refundForm, setRefundForm] = useState({ id: '', compRefund: 0, custRefund: 0, mode: 'Cash' });
@@ -56,11 +54,20 @@ export default function Home() {
   const [vendorForm, setVendorForm] = useState({ name: '', phone: '', balance: 0 });
   const [customFieldForm, setCustomFieldForm] = useState({ name: '' });
   const [pkgForm, setPkgForm] = useState({ name: '', price: '', desc: '' });
-  const [brnForm, setBrnForm] = useState({ name: '', location: '', phone: '' });
+  const [brnForm, setBrnForm] = useState({ name: '', location: '', phone: '', manager: '', email: '', timing: '' });
 
+  // COMPLETE TRANSLATIONS
   const t = {
-    en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices List', refunds: 'Refund Invoices', customers: 'Customer List', portals: 'Portals & Recharge', bank: 'Bank & Cash', invest: 'Investments', hr: 'HR & Accounts', users: 'User Management', reports: 'Financial Reports', audit: 'Audit Logs', settings: 'Settings', vendors: 'Vendors (B2B)', packages: 'Tour Packages', branches: 'Branches', logout: 'Logout', search: 'Search...', ownerProfile: 'Owner Profile', changePass: 'Change Password' },
-    ar: { dash: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'قائمة الفواتير', refunds: 'فواتير الاسترجاع', customers: 'قائمة العملاء', portals: 'البوابات والرصيد', bank: 'البنك والكاش', invest: 'الاستثمارات', hr: 'الموارد البشرية', users: 'إدارة المستخدمين', reports: 'التقارير المالية', audit: 'سجلات التدقيق', settings: 'الإعدادات', vendors: 'الموردون', packages: 'باقات سياحية', branches: 'الفروع', logout: 'تسجيل الخروج', search: 'بحث...', ownerProfile: 'ملف المالك', changePass: 'تغيير كلمة المرور' }
+    en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices List', refunds: 'Refund Invoices', customers: 'Customer List', portals: 'Portals & Recharge', bank: 'Bank & Cash', invest: 'Investors', hr: 'HR & Accounts', users: 'User Management', reports: 'Financial Reports', audit: 'Audit Logs', settings: 'Settings', vendors: 'Vendors (B2B)', packages: 'Tour Packages', branches: 'Branches', logout: 'Logout', search: 'Search...', ownerProfile: 'Owner Profile', changePass: 'Change Password', statements: 'Statements',
+          cust_name: 'Customer Name', cust_phone: 'Customer Phone', cust_type: 'Customer Type', individual: 'Individual', corporate: 'Corporate', passenger_names: 'Passenger Names', portal: 'Portal', sales_rep: 'Sales Representative', service: 'Service', booking_date: 'Booking Date', invoice_date: 'Invoice Date', payment_date: 'Payment Date', flight_type: 'Flight Type', flight_sub: 'Flight Sub-Type', airline: 'Airline', sector: 'Sector (e.g. DEL-RUH)', pnr: 'PNR', ticket_no: 'Ticket Number', qty: 'Quantity', cost: 'Cost', sell: 'Selling Price', discount: 'Discount', tax_rate: 'Tax Rate', payment_method: 'Payment Method', paid_amount: 'Paid Amount', credit_due_date: 'Credit Due Date', add_new_customer: '+ Add New Customer', add_new_service: '+ Add New Service Here',
+          from_acc: 'From Account', to_acc: 'To Account', amount: 'Amount', date: 'Date', desc: 'Description', mode: 'Mode', name: 'Name', role: 'Role', phone: 'Phone', location: 'Location', manager: 'Manager', email: 'Email', timing: 'Opening Time', price: 'Price', balance: 'Balance', category: 'Category', month: 'Month', investor_name: 'Investor Name', new_service_name: 'New Service Name',
+          sales_stmt: 'Sales Statement', portals_stmt: 'Portals Statement', salary_stmt: 'Salary Statement', daily_trans_stmt: 'Daily Transactions', fund_trans_stmt: 'Fund Transfers', export_csv: 'Export CSV'
+        },
+    ar: { dash: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'قائمة الفواتير', refunds: 'فواتير الاسترجاع', customers: 'قائمة العملاء', portals: 'البوابات والرصيد', bank: 'البنك والكاش', invest: 'المستثمرون', hr: 'الموارد البشرية', users: 'إدارة المستخدمين', reports: 'التقارير المالية', audit: 'سجلات التدقيق', settings: 'الإعدادات', vendors: 'الموردون', packages: 'باقات سياحية', branches: 'الفروع', logout: 'تسجيل الخروج', search: 'بحث...', ownerProfile: 'ملف المالك', changePass: 'تغيير كلمة المرور', statements: 'كشوف الحسابات',
+          cust_name: 'اسم العميل', cust_phone: 'هاتف العميل', cust_type: 'نوع العميل', individual: 'فرد', corporate: 'شركة', passenger_names: 'أسماء الركاب', portal: 'البوابة', sales_rep: 'مندوب المبيعات', service: 'الخدمة', booking_date: 'تاريخ الحجز', invoice_date: 'تاريخ الفاتورة', payment_date: 'تاريخ الدفع', flight_type: 'نوع الرحلة', flight_sub: 'نوع الرحلة الفرعي', airline: 'خطوط الطيران', sector: 'القطاع (مثال: DEL-RUH)', pnr: 'رقم الحجز', ticket_no: 'رقم التذكرة', qty: 'الكمية', cost: 'التكلفة', sell: 'سعر البيع', discount: 'الخصم', tax_rate: 'معدل الضريبة', payment_method: 'طريقة الدفع', paid_amount: 'المبلغ المدفوع', credit_due_date: 'تاريخ استحقاق الائتمان', add_new_customer: '+ إضافة عميل جديد', add_new_service: '+ أضف خدمة جديدة هنا',
+          from_acc: 'من حساب', to_acc: 'إلى حساب', amount: 'المبلغ', date: 'التاريخ', desc: 'الوصف', mode: 'الوضع', name: 'الاسم', role: 'الدور', phone: 'الهاتف', location: 'الموقع', manager: 'المدير', email: 'البريد الإلكتروني', timing: 'وقت العمل', price: 'السعر', balance: 'الرصيد', category: 'الفئة', month: 'الشهر', investor_name: 'اسم المستثمر', new_service_name: 'اسم الخدمة الجديدة',
+          sales_stmt: 'كشف حساب المبيعات', portals_stmt: 'كشف حساب البوابات', salary_stmt: 'كشف حساب الرواتب', daily_trans_stmt: 'المعاملات اليومية', fund_trans_stmt: 'تحويلات الأموال', export_csv: 'تصدير CSV'
+        }
   };
   const tr = t[lang];
 
@@ -103,7 +110,6 @@ export default function Home() {
     setData({ invoices: inv.data || [], portals: portalsData, customers: cus.data || [], recharges: rec.data || [], settings: settingsData, employees: emp.data || [], payroll: pay.data || [], appUsers: usr.data || [], expenses: exp.data || [], services: servicesData, cashbook: cbk.data || [], audits: aud.data || [], investments: invstmnt.data || [], vendors: vnd.data || [], customFields: cf.data || [], packages: pkgs.data || [], branches: brns.data || [] });
     
     if (portalsData.length > 0) setInvForm(f => ({ ...f, portal: f.portal || portalsData[0].name }));
-    if (servicesData.length > 0) setInvForm(f => ({ ...f, service: f.service || servicesData[0].name }));
     if (settingsData) setSetForm(settingsData);
   };
 
@@ -118,14 +124,13 @@ export default function Home() {
     setPassForm({ newPass: '' });
   };
 
-  // FIXED: USER PROFILE EMAIL UPDATE BUG
   const handleUpdateOwnerProfile = async (e) => {
     e.preventDefault();
     try {
       if (userProfile.email !== user.email) {
         const { error: authError } = await supabase.auth.updateUser({ email: userProfile.email });
         if (authError) throw authError;
-        setUser({ ...user, email: userProfile.email }); // Update local state to reflect change immediately
+        setUser({ ...user, email: userProfile.email });
       }
       const { error: dbError } = await supabase.from('app_users').update({ email: userProfile.email, username: userProfile.username }).eq('id', userProfile.id);
       if (dbError) throw dbError;
@@ -133,33 +138,21 @@ export default function Home() {
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
-  // --- AI CHATBOT LOGIC ---
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
     const userMsg = { sender: 'user', text: chatInput };
     setChatMessages(prev => [...prev, userMsg]);
     const text = chatInput.toLowerCase();
     let botReply = "I am sorry, I didn't understand that. I can help with Invoices, Reports, or Users. (عذراً، لم أفهم ذلك. يمكنني المساعدة في الفواتير، التقارير، أو المستخدمين)";
-    
     if (text.includes('invoice') || text.includes('فاتورة') || text.includes('create')) {
       botReply = "To create an invoice, go to 'Create Invoice'. You can add Flight, Hotel, or Visa details. The system will automatically calculate VAT and update your portal balance! (لإنشاء فاتورة، انتقل إلى 'إنشاء فاتورة'. يمكنك إضافة رحلة طيران أو فندق أو تأشيرة. سيقوم النظام تلقائياً بحساب ضريبة القيمة المضافة وتحديث رصيد البوابة الخاص بك!)";
     } else if (text.includes('report') || text.includes('تقرير') || text.includes('excel')) {
       botReply = "You can download Excel reports for Sales, Refunds, and Cashbook from the 'Financial Reports' section. Just select a date range! (يمكنك تنزيل تقارير Excel للمبيعات والاسترداد والدفع النقدي من قسم 'التقارير المالية'. ما عليك سوى تحديد نطاق التاريخ!)";
-    } else if (text.includes('user') || text.includes('مستخدم') || text.includes('permission')) {
-      botReply = "Admins can add new users with custom permissions in 'User Management'. You can grant access to specific modules like Bank or HR. (يمكن للمسؤولين إضافة مستخدمين جدد بأذونات مخصصة في 'إدارة المستخدمين'. يمكنك منح الوصول إلى وحدات محددة مثل البنك أو الموارد البشرية.)";
-    } else if (text.includes('refund') || text.includes('استرجاع')) {
-      botReply = "To process a refund, go to 'Invoices List', find the invoice, and click 'Refund'. It will automatically adjust the portal and cash balances. (لإجراء استرداد، انتقل إلى 'قائمة الفواتير'، وابحث عن الفاتورة، وانقر على 'استرداد'. سيقوم تلقائياً بتعديل أرصدة البوابة والنقدية.)";
-    } else if (text.includes('hello') || text.includes('hi') || text.includes('مرحبا')) {
-      botReply = `Hello ${userProfile.role}! How can I assist you with the ERP today? (مرحباً ${userProfile.role}! كيف يمكنني مساعدتك في نظام ERP اليوم؟)`;
     }
-    
-    setTimeout(() => {
-      setChatMessages(prev => [...prev, { sender: 'bot', text: botReply }]);
-    }, 600);
+    setTimeout(() => { setChatMessages(prev => [...prev, { sender: 'bot', text: botReply }]); }, 600);
     setChatInput('');
   };
 
-  // --- INVOICE HANDLERS ---
   const handleCreateInvoice = async (e) => {
     e.preventDefault();
     try {
@@ -185,9 +178,9 @@ export default function Home() {
       if (!portal) throw new Error("Select Portal");
 
       let desc = '';
-      if (invForm.service === 'Flight') desc = `${invForm.flightSub} (${invForm.flightType}) - ${invForm.airline} - ${invForm.flightJourney} - ${invForm.flightSector}`;
+      if (invForm.service === 'Flight Ticket') desc = `${invForm.flightSub} (${invForm.flightType}) - ${invForm.airline} - ${invForm.flightJourney} - ${invForm.flightSector}`;
       else if (invForm.service === 'Hotel') desc = `${invForm.hotelName} - ${invForm.destination} (${invForm.checkIn} to ${invForm.checkOut})`;
-      else if (invForm.service === 'Visa') desc = `${invForm.visaType} Visa - ${invForm.destination}`;
+      else if (invForm.service === 'Umrah Visa' || invForm.service === 'Visit Visa') desc = `${invForm.service} - ${invForm.destination}`;
       else desc = invForm.service;
 
       const payload = {
@@ -230,7 +223,7 @@ export default function Home() {
         }));
         showToast('Invoice Generated Successfully!');
       }
-      setInvForm({ custId: 'new', custName: '', custPhone: '', custType: 'Individual', passengerNames: '', employeeId: '', portal: data.portals[0]?.name || '', bookingDate: today, invoiceDate: today, service: 'Flight', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
+      setInvForm({ custId: 'new', custName: '', custPhone: '', custType: 'Individual', passengerNames: '', employeeId: '', portal: data.portals[0]?.name || '', bookingDate: today, invoiceDate: today, service: 'Flight Ticket', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
       setPage('list');
     } catch (err) { showToast('Error: ' + err.message); }
   };
@@ -252,11 +245,7 @@ export default function Home() {
     const inv = data.invoices.find(i => i.id === settleForm.id);
     if (!inv) return showToast('Not found');
     const newPaid = inv.paid_amount + inv.due_amount;
-    
-    const { data: upInv } = await supabase.from('invoices').update({ 
-      paid_amount: newPaid, due_amount: 0, settlement_date: settleForm.date, payment_method: settleForm.mode
-    }).eq('id', inv.id).select(`*, customers(name, type, phone), portals(name), employees(name)`).single();
-    
+    const { data: upInv } = await supabase.from('invoices').update({ paid_amount: newPaid, due_amount: 0, settlement_date: settleForm.date, payment_method: settleForm.mode }).eq('id', inv.id).select(`*, customers(name, type, phone), portals(name), employees(name)`).single();
     let newCashEntry = null;
     const cbType = settleForm.mode === 'Cash' ? 'Cash-In' : (settleForm.mode === 'Bank Transfer' ? 'Bank-In' : null);
     if (cbType) {
@@ -264,12 +253,7 @@ export default function Home() {
       newCashEntry = nC;
     }
     await logAction(`Settled payment for ${inv.invoice_no}`);
-
-    setData(prev => ({
-      ...prev,
-      invoices: prev.invoices.map(i => i.id === inv.id ? upInv : i),
-      cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook
-    }));
+    setData(prev => ({ ...prev, invoices: prev.invoices.map(i => i.id === inv.id ? upInv : i), cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook }));
     showToast('Payment Settled Successfully!');
     setModal({ type: null, data: null });
   };
@@ -280,20 +264,11 @@ export default function Home() {
     if (!inv) return showToast('Not found');
     const compRef = parseFloat(refundForm.compRefund) || 0;
     const custRef = parseFloat(refundForm.custRefund) || 0;
-
     const { data: upInv } = await supabase.from('invoices').update({ status: 'refunded', refund_company: compRef, refund_customer: custRef }).eq('id', inv.id).select(`*, customers(name, type, phone), portals(name), employees(name)`).single();
     const refNo = `REF-${Date.now()}`;
-    const { data: newRefInv } = await supabase.from('invoices').insert([{
-      invoice_no: refNo, customer_id: inv.customer_id, portal_id: inv.portal_id, booking_date: today, invoice_date: today,
-      service_type: `Refund for ${inv.invoice_no}`, total_sell: -custRef, total: -custRef, paid_amount: -custRef, status: 'refunded', refund_company: compRef, refund_customer: custRef
-    }]).select(`*, customers(name, type, phone), portals(name), employees(name)`).single();
-
+    const { data: newRefInv } = await supabase.from('invoices').insert([{ invoice_no: refNo, customer_id: inv.customer_id, portal_id: inv.portal_id, booking_date: today, invoice_date: today, service_type: `Refund for ${inv.invoice_no}`, total_sell: -custRef, total: -custRef, paid_amount: -custRef, status: 'refunded', refund_company: compRef, refund_customer: custRef }]).select(`*, customers(name, type, phone), portals(name), employees(name)`).single();
     let newPortalBal = inv.portals?.current_balance || 0;
-    if (inv.portal_id) {
-      newPortalBal += compRef;
-      await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', inv.portal_id);
-    }
-
+    if (inv.portal_id) { newPortalBal += compRef; await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', inv.portal_id); }
     let newCashEntry = null;
     if (custRef > 0) {
       const cbType = refundForm.mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
@@ -301,24 +276,33 @@ export default function Home() {
       newCashEntry = nC;
     }
     await logAction(`Processed refund ${refNo}`);
-
-    setData(prev => ({
-      ...prev,
-      invoices: [newRefInv, prev.invoices.map(i => i.id === inv.id ? upInv : i)].flat(),
-      portals: prev.portals.map(p => p.id === inv.portal_id ? { ...p, current_balance: newPortalBal } : p),
-      cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook
-    }));
+    setData(prev => ({ ...prev, invoices: [newRefInv, prev.invoices.map(i => i.id === inv.id ? upInv : i)].flat(), portals: prev.portals.map(p => p.id === inv.portal_id ? { ...p, current_balance: newPortalBal } : p), cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook }));
     showToast('Refund Processed! Portal balance updated.');
     setModal({ type: null, data: null });
   };
 
-  // --- ENTITY HANDLERS ---
   const handleAddPortal = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('portals').insert([{ name: portalForm.name, current_balance: parseFloat(portalForm.balance) || 0 }]).select().single(); setData(prev => ({ ...prev, portals: [...prev.portals, newItem] })); showToast('Portal Added!'); setPortalForm({ name: '', balance: 0 }); };
   const handleAddVendor = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('vendors').insert([{ name: vendorForm.name, phone: vendorForm.phone, balance: parseFloat(vendorForm.balance) || 0 }]).select().single(); setData(prev => ({ ...prev, vendors: [...prev.vendors, newItem] })); showToast('Vendor Added!'); setVendorForm({ name: '', phone: '', balance: 0 }); };
   const handleAddPackage = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('packages').insert([{ name: pkgForm.name, price: parseFloat(pkgForm.price), description: pkgForm.desc }]).select().single(); setData(prev => ({ ...prev, packages: [...prev.packages, newItem] })); showToast('Package Added!'); setPkgForm({ name: '', price: '', desc: '' }); };
-  const handleAddBranch = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('branches').insert([{ name: brnForm.name, location: brnForm.location, phone: brnForm.phone }]).select().single(); setData(prev => ({ ...prev, branches: [...prev.branches, newItem] })); showToast('Branch Added!'); setBrnForm({ name: '', location: '', phone: '' }); };
+  
+  const handleAddBranch = async (e) => { 
+    e.preventDefault(); 
+    const { data: newItem } = await supabase.from('branches').insert([{ name: brnForm.name, location: brnForm.location, phone: brnForm.phone, manager: brnForm.manager, email: brnForm.email, timing: brnForm.timing }]).select().single(); 
+    setData(prev => ({ ...prev, branches: [...prev.branches, newItem] })); 
+    showToast('Branch Added!'); 
+    setBrnForm({ name: '', location: '', phone: '', manager: '', email: '', timing: '' }); 
+  };
+  
   const handleAddEmployee = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('employees').insert([{ name: empForm.name, role: empForm.role }]).select().single(); setData(prev => ({ ...prev, employees: [newItem, ...prev.employees] })); showToast('Employee Added!'); setEmpForm({ name: '', role: 'Sales' }); };
-  const handleAddService = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('services').insert([{ name: srvForm.name }]).select().single(); setData(prev => ({ ...prev, services: [newItem, ...prev.services] })); showToast('Service Added!'); setSrvForm({ name: '' }); };
+  
+  const handleAddService = async (e) => { 
+    e.preventDefault(); 
+    const { data: newItem } = await supabase.from('services').insert([{ name: srvForm.name }]).select().single(); 
+    setData(prev => ({ ...prev, services: [newItem, ...prev.services] })); 
+    showToast('Service Added!'); 
+    setSrvForm({ name: '' }); 
+  };
+
   const handleAddCustomField = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('custom_fields').insert([{ name: customFieldForm.name }]).select().single(); setData(prev => ({ ...prev, customFields: [...prev.customFields, newItem] })); showToast('Custom Field Added!'); setCustomFieldForm({ name: '' }); };
 
   const handleRecharge = async (e) => {
@@ -344,8 +328,12 @@ export default function Home() {
     const entries = [];
     if (transferForm.from === 'Cash') entries.push({ trans_date: transferForm.date, type: 'Cash-Out', description: `Transfer to ${transferForm.to}`, amount: amt });
     if (transferForm.from === 'Bank') entries.push({ trans_date: transferForm.date, type: 'Bank-Out', description: `Transfer to ${transferForm.to}`, amount: amt });
+    if (transferForm.from === 'Investor') entries.push({ trans_date: transferForm.date, type: 'Investor-Out', description: `Transfer to ${transferForm.to}`, amount: amt });
+    
     if (transferForm.to === 'Cash') entries.push({ trans_date: transferForm.date, type: 'Cash-In', description: `Transfer from ${transferForm.from}`, amount: amt });
     if (transferForm.to === 'Bank') entries.push({ trans_date: transferForm.date, type: 'Bank-In', description: `Transfer from ${transferForm.from}`, amount: amt });
+    if (transferForm.to === 'Investor') entries.push({ trans_date: transferForm.date, type: 'Investor-In', description: `Transfer from ${transferForm.from}`, amount: amt });
+    
     await Promise.all(entries.map(en => supabase.from('cashbook').insert([en])));
     await fetchAll();
     showToast('Fund Transferred Successfully!');
@@ -385,7 +373,7 @@ export default function Home() {
     const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: investForm.date, type: cbType, description: `Investment by ${investForm.name}`, amount: parseFloat(investForm.amount) }]).select().single();
     await logAction(`Added investment from ${investForm.name}`);
     setData(prev => ({ ...prev, investments: [newInv, ...prev.investments], cashbook: [nC, ...prev.cashbook] }));
-    showToast('Investment Added!');
+    showToast('Investor Added!');
     setInvestForm({ name: '', amount: '', date: today, desc: '', mode: 'Cash' });
   };
 
@@ -441,7 +429,6 @@ export default function Home() {
     showToast('Exported Successfully!');
   };
 
-  // --- BEAUTIFUL INVOICE HTML ---
   const getInvoiceHTML = (inv, s) => {
     const isExempt = inv.vat === 0;
     const taxLabel = isExempt ? 'Exempt (معافاة)' : 'VAT 15% (ضريبة 15%)';
@@ -518,6 +505,7 @@ export default function Home() {
   
   const cashBalance = data.cashbook.filter(c => c.type === 'Cash-In').reduce((s,c) => s + c.amount, 0) - data.cashbook.filter(c => c.type === 'Cash-Out').reduce((s,c) => s + c.amount, 0);
   const bankBalance = data.cashbook.filter(c => c.type === 'Bank-In').reduce((s,c) => s + c.amount, 0) - data.cashbook.filter(c => c.type === 'Bank-Out').reduce((s,c) => s + c.amount, 0);
+  const investorBalance = data.cashbook.filter(c => c.type === 'Investor-In').reduce((s,c) => s + c.amount, 0) - data.cashbook.filter(c => c.type === 'Investor-Out').reduce((s,c) => s + c.amount, 0);
 
   const tSales = activeInv.reduce((s,i) => s + i.total, 0);
   const tProfit = activeInv.reduce((s,i) => s + i.profit, 0);
@@ -541,6 +529,7 @@ export default function Home() {
     { id: 'bank', label: tr.bank, show: userProfile.is_admin || userProfile.can_access_bank },
     { id: 'invest', label: tr.invest, show: userProfile.is_admin || userProfile.can_access_bank },
     { id: 'hr', label: tr.hr, show: userProfile.is_admin || userProfile.can_access_hr },
+    { id: 'statements', label: tr.statements, show: userProfile.is_admin || userProfile.can_access_reports },
     { id: 'users', label: tr.users, show: userProfile.is_admin },
     { id: 'reports', label: tr.reports, show: userProfile.is_admin || userProfile.can_access_reports },
     { id: 'audit', label: tr.audit, show: userProfile.is_admin },
@@ -558,6 +547,15 @@ export default function Home() {
     return [];
   };
 
+  const getStatementData = () => {
+    if (statementTab === 'sales') return data.invoices.map(i => ({ date: i.invoice_date, invoice_no: i.invoice_no, customer: i.customers?.name, total: i.total, paid: i.paid_amount, due: i.due_amount }));
+    if (statementTab === 'portals') return data.portals.map(p => ({ name: p.name, balance: p.current_balance }));
+    if (statementTab === 'salaries') return data.payroll.map(p => ({ date: p.paid_date, employee: p.employees?.name, month: p.month, amount: p.amount, mode: p.payment_mode }));
+    if (statementTab === 'daily_trans') return data.cashbook.map(c => ({ date: c.trans_date, type: c.type, desc: c.description, amount: c.amount }));
+    if (statementTab === 'fund_trans') return data.cashbook.filter(c => c.description.includes('Transfer')).map(c => ({ date: c.trans_date, type: c.type, desc: c.description, amount: c.amount }));
+    return [];
+  };
+
   return (
     <div style={{ display: 'flex', height: '100vh', fontFamily: "'Poppins', sans-serif", background: '#F1F5F9', direction: lang === 'ar' ? 'rtl' : 'ltr' }}>
       
@@ -565,7 +563,6 @@ export default function Home() {
         <div style={{ position: 'fixed', top: '20px', right: '20px', background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: '#FBBF24', padding: '15px 25px', borderRadius: '12px', zIndex: 9999, boxShadow: '0 5px 15px rgba(0,0,0,0.2)', fontWeight: '600' }}>{toast}</div>
       )}
 
-      {/* AI Chatbot UI */}
       <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 999 }}>
         {chatOpen && (
           <div style={{ width: '380px', height: '500px', background: 'white', borderRadius: '20px', marginBottom: '15px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 15px 40px rgba(0,0,0,0.2)' }}>
@@ -741,64 +738,98 @@ export default function Home() {
           </div>
         )}
 
-        {/* CREATE INVOICE */}
+        {/* CREATE INVOICE WITH LABELS & NEW FEATURES */}
         {page === 'create' && (
           <div style={styles.card}>
             <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>{editingId ? 'Edit Invoice' : 'Create New Invoice'}</h3>
             <form onSubmit={handleCreateInvoice} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               <div>
+                <label style={styles.label}>{tr.cust_type}</label>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <select value={invForm.custType} onChange={(e) => setInvForm({...invForm, custType: e.target.value})} style={styles.input}>
+                    <option>Individual</option><option>Corporate</option>
+                  </select>
+                  <button type="button" onClick={() => setInvForm({...invForm, custId: 'new'})} style={{...styles.btnSuccess, width: 'auto', whiteSpace: 'nowrap'}}>+</button>
+                </div>
+                
                 <label style={styles.label}>Customer</label>
                 <select value={invForm.custId} onChange={(e) => setInvForm({...invForm, custId: e.target.value})} style={styles.input}>
                   <option value="new">New Customer</option>
                   {data.customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.phone})</option>)}
                 </select>
+                
                 {invForm.custId === 'new' && (
                   <>
-                    <input type="text" placeholder="Customer Name" value={invForm.custName} onChange={(e) => setInvForm({...invForm, custName: e.target.value})} required style={styles.input} />
-                    <input type="text" placeholder="Phone" value={invForm.custPhone} onChange={(e) => setInvForm({...invForm, custPhone: e.target.value})} required style={styles.input} />
-                    <select value={invForm.custType} onChange={(e) => setInvForm({...invForm, custType: e.target.value})} style={styles.input}><option>Individual</option><option>Corporate</option></select>
+                    <label style={styles.label}>{tr.cust_name}</label>
+                    <input type="text" value={invForm.custName} onChange={(e) => setInvForm({...invForm, custName: e.target.value})} required style={styles.input} />
+                    <label style={styles.label}>{tr.cust_phone}</label>
+                    <input type="text" value={invForm.custPhone} onChange={(e) => setInvForm({...invForm, custPhone: e.target.value})} required style={styles.input} />
                   </>
                 )}
-                <input type="text" placeholder="Passenger Names" value={invForm.passengerNames} onChange={(e) => setInvForm({...invForm, passengerNames: e.target.value})} style={styles.input} />
-                <label style={styles.label}>Portal</label>
+                
+                <label style={styles.label}>{tr.passenger_names}</label>
+                <input type="text" value={invForm.passengerNames} onChange={(e) => setInvForm({...invForm, passengerNames: e.target.value})} style={styles.input} />
+                
+                <label style={styles.label}>{tr.portal}</label>
                 <select value={invForm.portal} onChange={(e) => setInvForm({...invForm, portal: e.target.value})} style={styles.input}>
                   {data.portals.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
                 </select>
-                <label style={styles.label}>Sales Rep</label>
+                
+                <label style={styles.label}>{tr.sales_rep}</label>
                 <select value={invForm.employeeId} onChange={(e) => setInvForm({...invForm, employeeId: e.target.value})} style={styles.input}>
                   <option value="">Select Employee</option>
                   {data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
                 </select>
-                <label style={styles.label}>Service</label>
+                
+                <label style={styles.label}>{tr.service}</label>
                 <select value={invForm.service} onChange={(e) => setInvForm({...invForm, service: e.target.value})} style={styles.input}>
-                  <option>Flight</option><option>Hotel</option><option>Visa</option>
+                  <option>Flight Ticket</option><option>Hotel</option><option>Packages</option><option>Umrah Visa</option><option>Visit Visa</option>
                   {data.services.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
                 </select>
+                
+                <label style={styles.label}>{tr.add_new_service}</label>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input type="text" placeholder={tr.new_service_name} value={srvForm.name} onChange={(e) => setSrvForm({name: e.target.value})} style={styles.input} />
+                  <button type="button" onClick={handleAddService} style={{...styles.btnPrimary, width: 'auto'}}>+</button>
+                </div>
               </div>
+
               <div>
-                <label style={styles.label}>Dates</label>
+                <label style={styles.label}>{tr.booking_date}</label>
                 <input type="date" value={invForm.bookingDate} onChange={(e) => setInvForm({...invForm, bookingDate: e.target.value})} style={styles.input} />
+                <label style={styles.label}>{tr.invoice_date}</label>
                 <input type="date" value={invForm.invoiceDate} onChange={(e) => setInvForm({...invForm, invoiceDate: e.target.value})} style={styles.input} />
                 
-                <label style={styles.label}>Flight Details (If Flight)</label>
+                <label style={styles.label}>{tr.flight_type} (If Flight)</label>
                 <select value={invForm.flightType} onChange={(e) => setInvForm({...invForm, flightType: e.target.value})} style={styles.input}><option>Domestic</option><option>International</option></select>
+                <label style={styles.label}>{tr.flight_sub}</label>
                 <select value={invForm.flightSub} onChange={(e) => setInvForm({...invForm, flightSub: e.target.value})} style={styles.input}><option>New Booking</option><option>Reissue</option><option>Refund</option></select>
-                <input type="text" placeholder="Airline" value={invForm.airline} onChange={(e) => setInvForm({...invForm, airline: e.target.value})} style={styles.input} />
-                <input type="text" placeholder="Sector (e.g. DEL-RUH)" value={invForm.flightSector} onChange={(e) => setInvForm({...invForm, flightSector: e.target.value})} style={styles.input} />
-                <input type="text" placeholder="PNR" value={invForm.pnr} onChange={(e) => setInvForm({...invForm, pnr: e.target.value})} style={styles.input} />
-                <input type="text" placeholder="Ticket No" value={invForm.ticketNo} onChange={(e) => setInvForm({...invForm, ticketNo: e.target.value})} style={styles.input} />
+                <label style={styles.label}>{tr.airline}</label>
+                <input type="text" value={invForm.airline} onChange={(e) => setInvForm({...invForm, airline: e.target.value})} style={styles.input} />
+                <label style={styles.label}>{tr.sector}</label>
+                <input type="text" value={invForm.flightSector} onChange={(e) => setInvForm({...invForm, flightSector: e.target.value})} style={styles.input} />
+                <label style={styles.label}>{tr.pnr}</label>
+                <input type="text" value={invForm.pnr} onChange={(e) => setInvForm({...invForm, pnr: e.target.value})} style={styles.input} />
+                <label style={styles.label}>{tr.ticket_no}</label>
+                <input type="text" value={invForm.ticketNo} onChange={(e) => setInvForm({...invForm, ticketNo: e.target.value})} style={styles.input} />
 
-                <label style={styles.label}>Financials</label>
-                <input type="number" placeholder="Qty" value={invForm.qty} onChange={(e) => setInvForm({...invForm, qty: e.target.value})} style={styles.input} />
-                <input type="number" placeholder="Cost" value={invForm.cost} onChange={(e) => setInvForm({...invForm, cost: e.target.value})} style={styles.input} />
-                <input type="number" placeholder="Sell" value={invForm.sell} onChange={(e) => setInvForm({...invForm, sell: e.target.value})} style={styles.input} />
-                <input type="number" placeholder="Discount" value={invForm.discount} onChange={(e) => setInvForm({...invForm, discount: e.target.value})} style={styles.input} />
+                <label style={styles.label}>{tr.qty}</label>
+                <input type="number" value={invForm.qty} onChange={(e) => setInvForm({...invForm, qty: e.target.value})} style={styles.input} />
+                <label style={styles.label}>{tr.cost}</label>
+                <input type="number" value={invForm.cost} onChange={(e) => setInvForm({...invForm, cost: e.target.value})} style={styles.input} />
+                <label style={styles.label}>{tr.sell}</label>
+                <input type="number" value={invForm.sell} onChange={(e) => setInvForm({...invForm, sell: e.target.value})} style={styles.input} />
+                <label style={styles.label}>{tr.discount}</label>
+                <input type="number" value={invForm.discount} onChange={(e) => setInvForm({...invForm, discount: e.target.value})} style={styles.input} />
+                <label style={styles.label}>{tr.tax_rate}</label>
                 <select value={invForm.taxRate} onChange={(e) => setInvForm({...invForm, taxRate: e.target.value})} style={styles.input}><option value="15">VAT 15%</option><option value="0">Exempt</option></select>
                 
-                <label style={styles.label}>Payment</label>
+                <label style={styles.label}>{tr.payment_method}</label>
                 <select value={invForm.payment} onChange={(e) => setInvForm({...invForm, payment: e.target.value})} style={styles.input}><option>Cash</option><option>Bank Transfer</option><option>Tabby</option><option>Tamara</option><option>Credit</option></select>
-                <input type="number" placeholder="Paid Amount" value={invForm.paid} onChange={(e) => setInvForm({...invForm, paid: e.target.value})} style={styles.input} />
-                <input type="date" placeholder="Credit Due Date" value={invForm.creditDueDate} onChange={(e) => setInvForm({...invForm, creditDueDate: e.target.value})} style={styles.input} />
+                <label style={styles.label}>{tr.paid_amount}</label>
+                <input type="number" value={invForm.paid} onChange={(e) => setInvForm({...invForm, paid: e.target.value})} style={styles.input} />
+                <label style={styles.label}>{tr.credit_due_date}</label>
+                <input type="date" value={invForm.creditDueDate} onChange={(e) => setInvForm({...invForm, creditDueDate: e.target.value})} style={styles.input} />
               </div>
               <div style={{ gridColumn: '1 / -1' }}>
                 <button type="submit" style={{...styles.btnPrimary, width: 'auto', padding: '10px 30px'}}>{editingId ? 'Update Invoice' : 'Generate Invoice'}</button>
@@ -837,6 +868,33 @@ export default function Home() {
               <span style={{ padding: '10px' }}>Page {tblPage} of {totalPages}</span>
               <button disabled={tblPage === totalPages} onClick={() => setTblPage(p => p + 1)} style={styles.btnPrimary}>Next</button>
             </div>
+          </div>
+        )}
+
+        {/* STATEMENTS SECTION (NEW) */}
+        {page === 'statements' && (
+          <div style={styles.card}>
+            <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Financial Statements</h3>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              <button onClick={() => setStatementTab('sales')} style={statementTab === 'sales' ? styles.btnPrimary : styles.btnSuccess}>{tr.sales_stmt}</button>
+              <button onClick={() => setStatementTab('portals')} style={statementTab === 'portals' ? styles.btnPrimary : styles.btnSuccess}>{tr.portals_stmt}</button>
+              <button onClick={() => setStatementTab('salaries')} style={statementTab === 'salaries' ? styles.btnPrimary : styles.btnSuccess}>{tr.salary_stmt}</button>
+              <button onClick={() => setStatementTab('daily_trans')} style={statementTab === 'daily_trans' ? styles.btnPrimary : styles.btnSuccess}>{tr.daily_trans_stmt}</button>
+              <button onClick={() => setStatementTab('fund_trans')} style={statementTab === 'fund_trans' ? styles.btnPrimary : styles.btnSuccess}>{tr.fund_trans_stmt}</button>
+              <button onClick={() => exportCSV(getStatementData(), `${statementTab}_statement.csv`)} style={{...styles.btnWarning, marginLeft: 'auto'}}>{tr.export_csv}</button>
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}>
+                {getStatementData().length > 0 && Object.keys(getStatementData()[0]).map(k => <th key={k} style={{padding: '10px', textTransform: 'capitalize'}}>{k.replace(/_/g, ' ')}</th>)}
+              </tr></thead>
+              <tbody>
+                {getStatementData().map((row, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
+                    {Object.values(row).map((val, j) => <td key={j} style={{padding: '10px'}}>{typeof val === 'object' ? val?.name || 'N/A' : val !== null ? val.toString() : ''}</td>)}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
@@ -984,28 +1042,34 @@ export default function Home() {
           </div>
         )}
 
-        {/* BRANCHES */}
+        {/* BRANCHES (ENHANCED) */}
         {page === 'branches' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
             <div style={styles.card}>
               <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Add Branch</h3>
               <form onSubmit={handleAddBranch}>
-                <input type="text" placeholder="Name" value={brnForm.name} onChange={(e) => setBrnForm({...brnForm, name: e.target.value})} required style={styles.input} />
-                <input type="text" placeholder="Location" value={brnForm.location} onChange={(e) => setBrnForm({...brnForm, location: e.target.value})} style={styles.input} />
-                <input type="text" placeholder="Phone" value={brnForm.phone} onChange={(e) => setBrnForm({...brnForm, phone: e.target.value})} style={styles.input} />
+                <input type="text" placeholder={tr.name} value={brnForm.name} onChange={(e) => setBrnForm({...brnForm, name: e.target.value})} required style={styles.input} />
+                <input type="text" placeholder={tr.location} value={brnForm.location} onChange={(e) => setBrnForm({...brnForm, location: e.target.value})} style={styles.input} />
+                <input type="text" placeholder={tr.phone} value={brnForm.phone} onChange={(e) => setBrnForm({...brnForm, phone: e.target.value})} style={styles.input} />
+                <input type="text" placeholder={tr.manager} value={brnForm.manager} onChange={(e) => setBrnForm({...brnForm, manager: e.target.value})} style={styles.input} />
+                <input type="email" placeholder={tr.email} value={brnForm.email} onChange={(e) => setBrnForm({...brnForm, email: e.target.value})} style={styles.input} />
+                <input type="text" placeholder={tr.timing} value={brnForm.timing} onChange={(e) => setBrnForm({...brnForm, timing: e.target.value})} style={styles.input} />
                 <button type="submit" style={styles.btnPrimary}>Add</button>
               </form>
             </div>
             <div style={styles.card}>
               <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Branches List</h3>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}><th style={{padding: '10px'}}>Name</th><th style={{padding: '10px'}}>Location</th><th style={{padding: '10px'}}>Phone</th></tr></thead>
+                <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}>
+                  <th style={{padding: '10px'}}>{tr.name}</th><th style={{padding: '10px'}}>{tr.location}</th><th style={{padding: '10px'}}>{tr.manager}</th><th style={{padding: '10px'}}>{tr.email}</th>
+                </tr></thead>
                 <tbody>
                   {data.branches.map(b => (
                     <tr key={b.id} style={{ borderBottom: '1px solid #eee' }}>
                       <td style={{padding: '10px', fontWeight: 'bold'}}>{b.name}</td>
                       <td style={{padding: '10px'}}>{b.location}</td>
-                      <td style={{padding: '10px'}}>{b.phone}</td>
+                      <td style={{padding: '10px'}}>{b.manager || 'N/A'}</td>
+                      <td style={{padding: '10px'}}>{b.email || 'N/A'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1014,19 +1078,20 @@ export default function Home() {
           </div>
         )}
 
-        {/* BANK & CASH */}
+        {/* BANK & CASH (WITH INVESTOR TRANSFER) */}
         {page === 'bank' && (
           <div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
               <div style={styles.card}><h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Cash Balance</h3><h2 style={{ color: cashBalance < 0 ? '#EF4444' : '#059669' }}>{cashBalance.toFixed(2)} SAR</h2></div>
               <div style={styles.card}><h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Bank Balance</h3><h2 style={{ color: bankBalance < 0 ? '#EF4444' : '#059669' }}>{bankBalance.toFixed(2)} SAR</h2></div>
+              <div style={styles.card}><h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Investor Balance</h3><h2 style={{ color: investorBalance < 0 ? '#EF4444' : '#059669' }}>{investorBalance.toFixed(2)} SAR</h2></div>
             </div>
             <div style={styles.card}>
               <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Fund Transfer</h3>
-              <form onSubmit={handleTransfer} style={{ display: 'flex', gap: '10px' }}>
-                <select value={transferForm.from} onChange={(e) => setTransferForm({...transferForm, from: e.target.value})} style={styles.input}><option>Cash</option><option>Bank</option></select>
-                <select value={transferForm.to} onChange={(e) => setTransferForm({...transferForm, to: e.target.value})} style={styles.input}><option>Bank</option><option>Cash</option></select>
-                <input type="number" placeholder="Amount" value={transferForm.amount} onChange={(e) => setTransferForm({...transferForm, amount: e.target.value})} required style={styles.input} />
+              <form onSubmit={handleTransfer} style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <select value={transferForm.from} onChange={(e) => setTransferForm({...transferForm, from: e.target.value})} style={styles.input}><option>Cash</option><option>Bank</option><option>Investor</option></select>
+                <select value={transferForm.to} onChange={(e) => setTransferForm({...transferForm, to: e.target.value})} style={styles.input}><option>Bank</option><option>Cash</option><option>Investor</option></select>
+                <input type="number" placeholder={tr.amount} value={transferForm.amount} onChange={(e) => setTransferForm({...transferForm, amount: e.target.value})} required style={styles.input} />
                 <input type="date" value={transferForm.date} onChange={(e) => setTransferForm({...transferForm, date: e.target.value})} style={styles.input} />
                 <button type="submit" style={{...styles.btnPrimary, width: 'auto'}}>Transfer</button>
               </form>
@@ -1050,22 +1115,22 @@ export default function Home() {
           </div>
         )}
 
-        {/* INVESTMENTS */}
+        {/* INVESTORS (INVEST) */}
         {page === 'invest' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
             <div style={styles.card}>
-              <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Add Investment</h3>
+              <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Add New Investor</h3>
               <form onSubmit={handleAddInvestment}>
-                <input type="text" placeholder="Investor Name" value={investForm.name} onChange={(e) => setInvestForm({...investForm, name: e.target.value})} required style={styles.input} />
-                <input type="number" placeholder="Amount" value={investForm.amount} onChange={(e) => setInvestForm({...investForm, amount: e.target.value})} required style={styles.input} />
+                <input type="text" placeholder={tr.investor_name} value={investForm.name} onChange={(e) => setInvestForm({...investForm, name: e.target.value})} required style={styles.input} />
+                <input type="number" placeholder={tr.amount} value={investForm.amount} onChange={(e) => setInvestForm({...investForm, amount: e.target.value})} required style={styles.input} />
                 <input type="date" value={investForm.date} onChange={(e) => setInvestForm({...investForm, date: e.target.value})} style={styles.input} />
-                <input type="text" placeholder="Description" value={investForm.desc} onChange={(e) => setInvestForm({...investForm, desc: e.target.value})} style={styles.input} />
+                <input type="text" placeholder={tr.desc} value={investForm.desc} onChange={(e) => setInvestForm({...investForm, desc: e.target.value})} style={styles.input} />
                 <select value={investForm.mode} onChange={(e) => setInvestForm({...investForm, mode: e.target.value})} style={styles.input}><option>Cash</option><option>Bank Transfer</option></select>
-                <button type="submit" style={styles.btnPrimary}>Add</button>
+                <button type="submit" style={styles.btnPrimary}>Add Investor</button>
               </form>
             </div>
             <div style={styles.card}>
-              <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Investments List</h3>
+              <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Investors List</h3>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr style={{ background: '#f1f5f9', textAlign: 'left' }}><th style={{padding: '10px'}}>Date</th><th style={{padding: '10px'}}>Name</th><th style={{padding: '10px'}}>Amount</th><th style={{padding: '10px'}}>Mode</th></tr></thead>
                 <tbody>
@@ -1090,7 +1155,7 @@ export default function Home() {
               <div style={styles.card}>
                 <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Add Employee</h3>
                 <form onSubmit={handleAddEmployee}>
-                  <input type="text" placeholder="Name" value={empForm.name} onChange={(e) => setEmpForm({...empForm, name: e.target.value})} required style={styles.input} />
+                  <input type="text" placeholder={tr.name} value={empForm.name} onChange={(e) => setEmpForm({...empForm, name: e.target.value})} required style={styles.input} />
                   <select value={empForm.role} onChange={(e) => setEmpForm({...empForm, role: e.target.value})} style={styles.input}><option>Sales</option><option>Manager</option><option>Accountant</option></select>
                   <button type="submit" style={styles.btnPrimary}>Add</button>
                 </form>
@@ -1099,8 +1164,8 @@ export default function Home() {
                 <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Pay Salary</h3>
                 <form onSubmit={handlePaySalary}>
                   <select name="emp" style={styles.input}>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select>
-                  <input type="number" name="amt" placeholder="Amount" required style={styles.input} />
-                  <input type="text" name="month" placeholder="Month (e.g. Jan 2024)" required style={styles.input} />
+                  <input type="number" name="amt" placeholder={tr.amount} required style={styles.input} />
+                  <input type="text" name="month" placeholder={tr.month} required style={styles.input} />
                   <select name="mode" style={styles.input}><option>Cash</option><option>Bank Transfer</option></select>
                   <button type="submit" style={styles.btnSuccess}>Pay</button>
                 </form>
@@ -1108,9 +1173,9 @@ export default function Home() {
               <div style={styles.card}>
                 <h3 style={{ marginTop: 0, color: '#1E3A8A' }}>Add Expense</h3>
                 <form onSubmit={handleAddExpense}>
-                  <input type="text" name="cat" placeholder="Category" required style={styles.input} />
-                  <input type="number" name="amt" placeholder="Amount" required style={styles.input} />
-                  <input type="text" name="desc" placeholder="Description" style={styles.input} />
+                  <input type="text" name="cat" placeholder={tr.category} required style={styles.input} />
+                  <input type="number" name="amt" placeholder={tr.amount} required style={styles.input} />
+                  <input type="text" name="desc" placeholder={tr.desc} style={styles.input} />
                   <select name="mode" style={styles.input}><option>Cash</option><option>Bank Transfer</option></select>
                   <button type="submit" style={styles.btnDanger}>Add Expense</button>
                 </form>
@@ -1129,7 +1194,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* USER MANAGEMENT (FIXED) */}
+        {/* USER MANAGEMENT */}
         {page === 'users' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
             <div style={styles.card}>
@@ -1216,7 +1281,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* SETTINGS (FIXED with Email Update) */}
+        {/* SETTINGS */}
         {page === 'settings' && (
           <div>
             <div style={styles.card}>
