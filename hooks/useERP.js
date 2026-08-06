@@ -106,13 +106,13 @@ export default function useERP() {
       airline: inv.airline || '',
       pnr: inv.pnr || '',
       ticketNo: inv.ticket_no || '',
-      qty: inv.qty,
-      cost: inv.total_cost / inv.qty,
-      sell: (inv.total_sell + inv.discount) / inv.qty,
-      discount: inv.discount,
+      qty: inv.qty || 1,
+      cost: (inv.total_cost || 0) / (inv.qty || 1),
+      sell: ((inv.total_sell || 0) + (inv.discount || 0)) / (inv.qty || 1),
+      discount: inv.discount || 0,
       taxRate: inv.vat > 0 ? '15' : '0',
       payment: inv.payment_method,
-      paid: inv.paid_amount - (inv.used_credit || 0),
+      paid: (inv.paid_amount || 0) - (inv.used_credit || 0),
       useCredit: inv.used_credit || 0,
       passengers: inv.passenger_names ? inv.passenger_names.split('\n') : ['']
     });
@@ -135,7 +135,7 @@ export default function useERP() {
       const usedCredit = parseFloat(invForm.useCredit) || 0;
       const totalPaid = cashPaid + usedCredit;
       const due = total - totalPaid; 
-      const profit = sell - cost; // <-- FIXED: Added missing profit variable
+      const profit = sell - cost; 
       
       let cid = null, corpId = null;
       
@@ -205,11 +205,11 @@ export default function useERP() {
     if (!confirm('Delete this invoice permanently? This will reverse the portal balance.')) return;
     const portal = data.portals.find(p => p.id === inv.portal_id);
     if (portal) {
-      const newBal = (portal.current_balance || 0) + inv.total_cost;
+      const newBal = (portal.current_balance || 0) + (inv.total_cost || 0);
       await supabase.from('portals').update({ current_balance: newBal }).eq('id', portal.id);
     }
     await supabase.from('invoices').delete().eq('id', inv.id);
-    setData(prev => ({ ...prev, invoices: prev.invoices.filter(i => i.id !== inv.id), portals: prev.portals.map(p => p.id === inv.portal_id ? { ...p, current_balance: (p.current_balance || 0) + inv.total_cost } : p) }));
+    setData(prev => ({ ...prev, invoices: prev.invoices.filter(i => i.id !== inv.id), portals: prev.portals.map(p => p.id === inv.portal_id ? { ...p, current_balance: (p.current_balance || 0) + (inv.total_cost || 0) } : p) }));
     showToast('Invoice Deleted & Portal Balance Reversed!');
   };
 
@@ -236,7 +236,7 @@ export default function useERP() {
   const handlePaySalary = async (e) => { e.preventDefault(); const empId = e.target.emp.value; const amount = parseFloat(e.target.amt.value); const mode = e.target.mode.value; const emp = data.employees.find(em => em.id === empId); const { data: newPay } = await supabase.from('payroll').insert([{ employee_id: empId, amount, month: e.target.month.value, payment_mode: mode }]).select('*, employees(name)').single(); const cbType = mode === 'Cash' ? 'Cash-Out' : 'Bank-Out'; const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Salary to ${emp.name}`, amount }]).select().single(); setData(prev => ({ ...prev, payroll: [newPay, ...prev.payroll], cashbook: [nC, ...prev.cashbook] })); showToast('Salary Paid!'); e.target.reset(); };
   const handleAddExpense = async (e) => { e.preventDefault(); const mode = e.target.mode.value; const { data: newExp } = await supabase.from('expenses').insert([{ category: e.target.cat.value, amount: parseFloat(e.target.amt.value), description: e.target.desc.value, payment_mode: mode }]).select().single(); const cbType = mode === 'Cash' ? 'Cash-Out' : 'Bank-Out'; const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Expense: ${e.target.cat.value}`, amount: parseFloat(e.target.amt.value) }]).select().single(); setData(prev => ({ ...prev, expenses: [newExp, ...prev.expenses], cashbook: [nC, ...prev.cashbook] })); showToast('Expense Added!'); e.target.reset(); };
 
-  const handleSettlePayment = async (e) => { e.preventDefault(); const inv = data.invoices.find(i => i.id === settleForm.id); if (!inv) return; const newPaid = inv.paid_amount + inv.due_amount; const { data: upInv } = await supabase.from('invoices').update({ paid_amount: newPaid, due_amount: 0, settlement_date: settleForm.date, payment_method: settleForm.mode }).eq('id', inv.id).select(`*, customers(name)`).single(); const cbType = settleForm.mode === 'Cash' ? 'Cash-In' : 'Bank-In'; const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: settleForm.date, type: cbType, description: `Settlement for ${inv.invoice_no}`, amount: inv.due_amount }]).select().single(); setData(prev => ({ ...prev, invoices: prev.invoices.map(i => i.id === inv.id ? upInv : i), cashbook: [nC, ...prev.cashbook] })); showToast('Payment Settled!'); setModal({ type: null, data: null }); };
+  const handleSettlePayment = async (e) => { e.preventDefault(); const inv = data.invoices.find(i => i.id === settleForm.id); if (!inv) return; const newPaid = (inv.paid_amount || 0) + (inv.due_amount || 0); const { data: upInv } = await supabase.from('invoices').update({ paid_amount: newPaid, due_amount: 0, settlement_date: settleForm.date, payment_method: settleForm.mode }).eq('id', inv.id).select(`*, customers(name)`).single(); const cbType = settleForm.mode === 'Cash' ? 'Cash-In' : 'Bank-In'; const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: settleForm.date, type: cbType, description: `Settlement for ${inv.invoice_no}`, amount: inv.due_amount }]).select().single(); setData(prev => ({ ...prev, invoices: prev.invoices.map(i => i.id === inv.id ? upInv : i), cashbook: [nC, ...prev.cashbook] })); showToast('Payment Settled!'); setModal({ type: null, data: null }); };
   
   const handleRefund = async (e) => { 
     e.preventDefault(); 
@@ -345,7 +345,7 @@ export default function useERP() {
           <p style="margin:5px 0 0;font-size:13px;color:#666;">${inv.customers?.phone || inv.corporates?.phone || ''} ${inv.corporates?.vat_no ? '| VAT: '+inv.corporates.vat_no : ''}</p>
         </div>
         <div style="text-align:${textAlignOpp};">
-          <p style="margin:0;font-size:14px;"><b>${isAr ? 'الحالة:' : 'Status:'}</b> <span style="color:${inv.due_amount>0?'#EF4444':'#059669'};font-weight:bold;">${inv.due_amount>0?(isAr?'غير مدفوع':'UNPAID'):(isAr?'مدفوع':'PAID')}</span></p>
+          <p style="margin:0;font-size:14px;"><b>${isAr ? 'الحالة:' : 'Status:'}</b> <span style="color:${(inv.due_amount || 0)>0?'#EF4444':'#059669'};font-weight:bold;">${(inv.due_amount || 0)>0?(isAr?'غير مدفوع':'UNPAID'):(isAr?'مدفوع':'PAID')}</span></p>
         </div>
       </div>
 
@@ -369,7 +369,7 @@ export default function useERP() {
             <td style="padding:15px;border:1px solid #ddd;font-size:14px;">${inv.pnr || 'N/A'}</td>
             <td style="padding:15px;border:1px solid #ddd;font-size:14px;">${inv.ticket_no || 'N/A'}</td>
             <td style="padding:15px;border:1px solid #ddd;font-size:14px;">${inv.qty || 1}</td>
-            <td style="padding:15px;border:1px solid #ddd;font-size:14px;font-weight:bold;">${inv.total_sell.toFixed(2)} SAR</td>
+            <td style="padding:15px;border:1px solid #ddd;font-size:14px;font-weight:bold;">${(inv.total_sell || 0).toFixed(2)} SAR</td>
           </tr>
         </tbody>
       </table>
@@ -380,16 +380,16 @@ export default function useERP() {
           <img src="${inv.qrCode || ''}" width="110" height="110" />
         </div>
         <div style="width:360px;font-size:16px;">
-          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;"><span>${isAr ? 'قبل الضريبة:' : 'Before VAT:'}</span><b>${inv.total_sell.toFixed(2)} SAR</b></div>
-          ${inv.discount > 0 ? `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;color:#EF4444;"><span>${isAr ? 'الخصم:' : 'Discount:'}</span><b>- ${inv.discount.toFixed(2)} SAR</b></div>` : ''}
-          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;"><span>${isAr ? 'ضريبة 15%' : 'VAT 15%:'}</span><b>${inv.vat.toFixed(2)} SAR</b></div>
-          <div style="display:flex;justify-content:space-between;background:#1E3A8A;color:#FBBF24;padding:15px;font-weight:bold;font-size:20px;border-radius:6px;margin-top:10px;"><span>${isAr ? 'المجموع:' : 'TOTAL:'}</span><b>${inv.total.toFixed(2)} SAR</b></div>
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;"><span>${isAr ? 'قبل الضريبة:' : 'Before VAT:'}</span><b>${(inv.total_sell || 0).toFixed(2)} SAR</b></div>
+          ${(inv.discount || 0) > 0 ? `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;color:#EF4444;"><span>${isAr ? 'الخصم:' : 'Discount:'}</span><b>- ${(inv.discount || 0).toFixed(2)} SAR</b></div>` : ''}
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;"><span>${isAr ? 'ضريبة 15%' : 'VAT 15%:'}</span><b>${(inv.vat || 0).toFixed(2)} SAR</b></div>
+          <div style="display:flex;justify-content:space-between;background:#1E3A8A;color:#FBBF24;padding:15px;font-weight:bold;font-size:20px;border-radius:6px;margin-top:10px;"><span>${isAr ? 'المجموع:' : 'TOTAL:'}</span><b>${(inv.total || 0).toFixed(2)} SAR</b></div>
           
-          ${inv.used_credit > 0 ? `<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee;color:#059669;"><span>${isAr ? 'خصم من الرصيد:' : 'Less: Credit Applied:'}</span><b>- ${inv.used_credit.toFixed(2)} SAR</b></div>` : ''}
+          ${(inv.used_credit || 0) > 0 ? `<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee;color:#059669;"><span>${isAr ? 'خصم من الرصيد:' : 'Less: Credit Applied:'}</span><b>- ${(inv.used_credit || 0).toFixed(2)} SAR</b></div>` : ''}
           
-          <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee;color:#059669;"><span>${isAr ? 'مدفوع نقدا/بنك:' : 'Cash/Bank Paid:'}</span><b>${(inv.paid_amount - (inv.used_credit || 0)).toFixed(2)} SAR</b></div>
+          <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee;color:#059669;"><span>${isAr ? 'مدفوع نقدا/بنك:' : 'Cash/Bank Paid:'}</span><b>${((inv.paid_amount || 0) - (inv.used_credit || 0)).toFixed(2)} SAR</b></div>
           
-          <div style="display:flex;justify-content:space-between;padding:15px 0;color:#EF4444;font-weight:bold;font-size:18px;"><span>${isAr ? 'المستحق:' : 'BALANCE DUE:'}</span><b>${inv.due_amount.toFixed(2)} SAR</b></div>
+          <div style="display:flex;justify-content:space-between;padding:15px 0;color:#EF4444;font-weight:bold;font-size:18px;"><span>${isAr ? 'المستحق:' : 'BALANCE DUE:'}</span><b>${(inv.due_amount || 0).toFixed(2)} SAR</b></div>
         </div>
       </div>
     </div>`;
@@ -402,7 +402,7 @@ export default function useERP() {
       const { default: QRCode } = await import('qrcode'); 
       const s = data.settings; 
       const enc = (tag, v) => String.fromCharCode(tag) + String.fromCharCode(v.length) + v; 
-      const tlv = enc(1, s.company_name_en||"S") + enc(2, s.vat_no||"V") + enc(3, new Date(inv.created_at).toISOString()) + enc(4, inv.total.toFixed(2)) + enc(5, inv.vat.toFixed(2)); 
+      const tlv = enc(1, s.company_name_en||"S") + enc(2, s.vat_no||"V") + enc(3, new Date(inv.created_at).toISOString()) + enc(4, (inv.total || 0).toFixed(2)) + enc(5, (inv.vat || 0).toFixed(2)); 
       const qr = await QRCode.toDataURL(btoa(tlv)); 
       const html = document.createElement('div'); 
       html.innerHTML = getInvoiceHTML({...inv, qrCode: qr}, s, invLang); 
@@ -439,7 +439,7 @@ export default function useERP() {
       const { default: QRCode } = await import('qrcode'); 
       const s = data.settings; 
       const enc = (tag, v) => String.fromCharCode(tag) + String.fromCharCode(v.length) + v; 
-      const tlv = enc(1, s.company_name_en||"S") + enc(2, s.vat_no||"V") + enc(3, new Date(inv.created_at).toISOString()) + enc(4, inv.total.toFixed(2)) + enc(5, inv.vat.toFixed(2)); 
+      const tlv = enc(1, s.company_name_en||"S") + enc(2, s.vat_no||"V") + enc(3, new Date(inv.created_at).toISOString()) + enc(4, (inv.total || 0).toFixed(2)) + enc(5, (inv.vat || 0).toFixed(2)); 
       const qr = await QRCode.toDataURL(btoa(tlv)); 
       const html = document.createElement('div'); 
       html.innerHTML = getInvoiceHTML({...inv, qrCode: qr}, s, invLang); 
