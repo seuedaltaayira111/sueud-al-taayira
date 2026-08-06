@@ -51,10 +51,14 @@ export default function Home() {
           // Invoices
           invForm={erp.invForm} setInvForm={erp.setInvForm} 
           handleCreateInvoice={erp.handleCreateInvoice} downloadPDF={erp.downloadPDF}
-          printInvoice={erp.printInvoice} exportCSV={erp.exportCSV} 
+          printInvoice={erp.printInvoice} exportCSV={erp.exportCSV} exportToExcel={erp.exportToExcel} 
           search={erp.search} setSearch={erp.setSearch} 
           tblPage={erp.tblPage} setTblPage={erp.setTblPage} 
           payFilter={erp.payFilter} setPayFilter={erp.setPayFilter}
+          handleEditInvoice={erp.handleEditInvoice} 
+          handleDeleteInvoice={erp.handleDeleteInvoice} 
+          openRefundModal={erp.openRefundModal} 
+          editInvId={erp.editInvId}
           
           // Customer & Corp & Creditors
           handleAddEditCust={erp.handleAddEditCust} custForm={erp.custForm} setCustForm={erp.setCustForm} handleEditCust={erp.handleEditCust} editCustId={erp.editCustId}
