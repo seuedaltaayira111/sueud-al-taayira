@@ -16,6 +16,7 @@ export default function Home() {
     { id: 'customers', label: erp.tr.customers, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'corporates', label: erp.tr.corporates, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'creditors', label: erp.tr.creditors, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
+    { id: 'credit', label: erp.tr.credit, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'portals', label: erp.tr.portals, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'vendors', label: erp.tr.vendors, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'packages', label: erp.tr.packages, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
@@ -47,6 +48,7 @@ export default function Home() {
         <ERPViews 
           // Core Data & State
           page={erp.page} data={erp.data} tr={erp.tr} today={erp.today}
+          ledgerCustId={erp.ledgerCustId} setLedgerCustId={erp.setLedgerCustId}
           
           // Invoices
           invForm={erp.invForm} setInvForm={erp.setInvForm} 
