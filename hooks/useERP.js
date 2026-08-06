@@ -23,21 +23,22 @@ export default function useERP() {
   const [data, setData] = useState({ invoices: [], portals: [], customers: [], corporates: [], creditors: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [], audits: [], investments: [], vendors: [], customFields: [], packages: [], branches: [] });
   const today = new Date().toISOString().split('T')[0];
   
-  const [invForm, setInvForm] = useState({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: '', bookingDate: today, invoiceDate: today, service: 'Flight Ticket', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' });
+  const [editInvId, setEditInvId] = useState(null); // For editing invoice
+  const [invForm, setInvForm] = useState({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: '', bookingDate: today, invoiceDate: today, service: 'Flight Ticket', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0 });
   
   const [editCorpId, setEditCorpId] = useState(null); const [corpForm, setCorpForm] = useState({ name: '', vat_no: '', phone: '', address: '' });
   const [editCredId, setEditCredId] = useState(null); const [creditorForm, setCreditorForm] = useState({ name: '', phone: '', address: '' });
-  const [editCustId, setEditCustId] = useState(null); const [custForm, setCustForm] = useState({ name: '', phone: '' });
+  const [editCustId, setEditCustId] = useState(null); const [custForm, setCustForm] = useState({ name: '', phone: '', store_credit: 0 });
   const [editVendId, setEditVendId] = useState(null); const [vendorForm, setVendorForm] = useState({ name: '', phone: '', balance: 0 });
-  const [editPkgId, setEditPkgId] = useState(null); const [pkgForm, setPkgForm] = useState({ name: '', price: '', desc: '' });
-  const [editBrnId, setEditBrnId] = useState(null); const [brnForm, setBrnForm] = useState({ name: '', location: '', phone: '', manager: '', email: '', timing: '' });
-  const [editEmpId, setEditEmpId] = useState(null); const [empForm, setEmpForm] = useState({ name: '', role: 'Sales' });
+  const [editPkgId, setEditPkgId] = useState(null); const [pkgForm, setPkgForm] = useState({ name: '', price: '', desc: '', duration: '', inclusions: '' });
+  const [editBrnId, setEditBrnId] = useState(null); const [brnForm, setBrnForm] = useState({ name: '', location: '', phone: '', manager: '', email: '', timing: '', status: 'Active' });
+  const [editEmpId, setEditEmpId] = useState(null); const [empForm, setEmpForm] = useState({ name: '', role: 'Sales', salary: 0, phone: '' });
   const [editSrvId, setEditSrvId] = useState(null); const [srvForm, setSrvForm] = useState({ name: '' });
-  const [editUserId, setEditUserId] = useState(null); // Added Edit User State
+  const [editUserId, setEditUserId] = useState(null); 
   
   const [investForm, setInvestForm] = useState({ name: '', amount: '', date: today, desc: '', mode: 'Cash' });
   const [settleForm, setSettleForm] = useState({ id: '', date: today, mode: 'Cash' });
-  const [refundForm, setRefundForm] = useState({ id: '', date: today, compRefund: 0, custRefund: 0, mode: 'Cash', reason: '' });
+  const [refundForm, setRefundForm] = useState({ id: '', date: today, compRefund: 0, custRefund: 0, mode: 'Cash', reason: '', portalId: '' });
   const [transferForm, setTransferForm] = useState({ from: 'Cash', to: 'Bank', amount: '', date: today });
   const [repDate, setRepDate] = useState({ from: '', to: '' }); const [reportTab, setReportTab] = useState('sales'); const [statementTab, setStatementTab] = useState('sales');
   const [setForm, setSetForm] = useState({ company_name_en: 'SUEUD AL TAAYIRA', company_name_ar: 'صعود الطائرة للسفر السياحة', vat_no: '', cr_no: '', iata_no: '', phone: '', address_ar: 'طريق ملك عبدالعزيز عرعر', license_no: '', tourist_license_no: '', logo_url: '', invoice_footer: 'Thank you for choosing us!' });
@@ -62,7 +63,7 @@ export default function useERP() {
   const logAction = async (action) => { if (user) await supabase.from('audit_logs').insert([{ user_email: user.email, action }]); };
 
   const fetchAll = async () => {
-    const inv = await supabase.from('invoices').select(`*, customers(name, type, phone), corporates(name, vat_no), portals(name), employees(name), creditors(name)`).order('created_at', { ascending: false });
+    const inv = await supabase.from('invoices').select(`*, customers(name, type, phone, store_credit), corporates(name, vat_no), portals(name), employees(name), creditors(name)`).order('created_at', { ascending: false });
     const por = await supabase.from('portals').select('*');
     const cus = await supabase.from('customers').select('*').eq('type', 'Individual').order('name', { ascending: true });
     const corp = await supabase.from('corporates').select('*').order('name', { ascending: true });
@@ -93,35 +94,111 @@ export default function useERP() {
   const handleChangePassword = async (e) => { e.preventDefault(); const { error } = await supabase.auth.updateUser({ password: passForm.newPass }); if (error) return showToast('Error: ' + error.message); showToast('Password Updated!'); setModal({ type: null, data: null }); setPassForm({ newPass: '' }); };
   const handleSendMessage = () => { if (!chatInput.trim()) return; setChatMessages(prev => [...prev, { sender: 'user', text: chatInput }]); setChatInput(''); setTimeout(() => { setChatMessages(prev => [...prev, { sender: 'bot', text: "I can help with Invoices. (يمكنني المساعدة في الفواتير)" }]); }, 600); };
 
+  const handleEditInvoice = (inv) => {
+    setEditInvId(inv.id);
+    setInvForm({
+      custType: inv.customer_id ? 'Individual' : 'Corporate',
+      custId: inv.customer_id || 'new',
+      corpId: inv.corporate_id || 'new',
+      portalId: inv.portal_id,
+      service: inv.service_type,
+      flightType: inv.flight_type || 'Domestic',
+      flightSector: inv.flight_sector || '',
+      airline: inv.airline || '',
+      pnr: inv.pnr || '',
+      ticketNo: inv.ticket_no || '',
+      qty: inv.qty,
+      cost: inv.total_cost / inv.qty,
+      sell: (inv.total_sell + inv.discount) / inv.qty,
+      discount: inv.discount,
+      taxRate: inv.vat > 0 ? '15' : '0',
+      payment: inv.payment_method,
+      paid: inv.paid_amount,
+      passengers: inv.passenger_names ? inv.passenger_names.split('\n') : ['']
+    });
+    setPage('create');
+  };
+
   const handleCreateInvoice = async (e) => {
     e.preventDefault();
     try {
-      const qty = parseInt(invForm.qty) || 1; const cost = (parseFloat(invForm.cost) || 0) * qty; let sell = (parseFloat(invForm.sell) || 0) * qty; const discount = parseFloat(invForm.discount) || 0; sell = sell - discount; const taxRate = parseFloat(invForm.taxRate) || 0; const vat = sell * (taxRate / 100); const total = sell + vat; const paid = parseFloat(invForm.paid) || 0; const due = total - paid; const profit = sell - cost;
+      const qty = parseInt(invForm.qty) || 1; 
+      const cost = (parseFloat(invForm.cost) || 0) * qty; 
+      let sell = (parseFloat(invForm.sell) || 0) * qty; 
+      const discount = parseFloat(invForm.discount) || 0; 
+      sell = sell - discount; 
+      const taxRate = parseFloat(invForm.taxRate) || 0; 
+      const vat = sell * (taxRate / 100); 
+      const total = sell + vat; 
+      
+      let paid = parseFloat(invForm.paid) || 0;
+      let usedCredit = parseFloat(invForm.useCredit) || 0;
+      
+      // Deduct used credit from customer's store credit
+      if (usedCredit > 0 && invForm.custId !== 'new') {
+        const cust = data.customers.find(c => c.id === invForm.custId);
+        if (cust) {
+          const newCredit = (cust.store_credit || 0) - usedCredit;
+          await supabase.from('customers').update({ store_credit: newCredit }).eq('id', cust.id);
+          paid += usedCredit; // Credit acts as paid amount
+        }
+      }
+
+      const due = total - paid; 
+      const profit = sell - cost;
+      
       let cid = null, corpId = null;
       if (invForm.custType === 'Individual') { if (invForm.custId === 'new') { const { data: nC } = await supabase.from('customers').insert([{ name: invForm.custName, phone: invForm.custPhone, type: 'Individual' }]).select().single(); cid = nC.id; } else { cid = invForm.custId; } } else { if (invForm.corpId === 'new') { const { data: nCorp } = await supabase.from('corporates').insert([{ name: invForm.corpName, vat_no: invForm.corpVat, phone: invForm.corpPhone, address: invForm.corpAddress }]).select().single(); corpId = nCorp.id; } else { corpId = invForm.corpId; } }
+      
       const portal = data.portals.find(p => p.id === invForm.portalId); if (!portal) throw new Error("Select Portal");
-      let desc = invForm.service === 'Flight Ticket' ? `${invForm.airline} - ${invForm.flightSector}` : invForm.service; const passengerNames = invForm.passengers.filter(p => p).join('\n');
+      let desc = invForm.service === 'Flight Ticket' ? `${invForm.airline} - ${invForm.flightSector}` : invForm.service; 
+      const passengerNames = invForm.passengers.filter(p => p).join('\n');
+      
       const payload = { customer_id: cid, corporate_id: corpId, portal_id: portal.id, employee_id: invForm.employeeId || null, booking_date: invForm.bookingDate, invoice_date: invForm.invoiceDate, service_type: invForm.service, flight_type: invForm.flightType, pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty: qty, discount: discount, passenger_names: passengerNames || null, airline: invForm.airline || null, flight_sector: invForm.flightSector || null, total_cost: cost, total_sell: sell, profit, vat, total, paid_amount: paid, due_amount: due, payment_method: invForm.payment, credit_due_date: due > 0 && invForm.payment === 'Credit' ? invForm.creditDueDate : null, creditor_id: invForm.payment === 'Credit' ? (invForm.creditorId || null) : null, tabby_order_no: invForm.payment === 'Tabby' ? invForm.tabbyNo : null, tamara_order_no: invForm.payment === 'Tamara' ? invForm.tamaraNo : null, ticket_status: invForm.ticketStatus };
-      const invNo = `INV-${Date.now()}`;
-      const { data: newInv } = await supabase.from('invoices').insert([{ invoice_no: invNo, ...payload }]).select(`*, customers(name), corporates(name)`).single();
-      const newPortalBal = (portal.current_balance || 0) - cost; await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', portal.id); await logAction(`Created Invoice ${invNo}`);
-      let newCashEntry = null; if (paid > 0 && invForm.payment !== 'Credit') { const cbType = invForm.payment === 'Cash' ? 'Cash-In' : (invForm.payment === 'Bank Transfer' ? 'Bank-In' : null); if (cbType) { const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: invForm.invoiceDate, type: cbType, description: `Payment for ${invNo}`, amount: paid }]).select().single(); newCashEntry = nC; } }
-      setData(prev => ({ ...prev, invoices: [newInv, ...prev.invoices], portals: prev.portals.map(p => p.id === portal.id ? { ...p, current_balance: newPortalBal } : p), cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook }));
-      showToast('Invoice Generated!'); setInvForm({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: data.portals[0]?.id || '', bookingDate: today, invoiceDate: today, service: 'Flight Ticket', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed' }); setPage('list');
+      
+      if (editInvId) {
+        const { data: upInv } = await supabase.from('invoices').update(payload).eq('id', editInvId).select(`*, customers(name), corporates(name)`).single();
+        setData(prev => ({ ...prev, invoices: prev.invoices.map(i => i.id === editInvId ? upInv : i) }));
+        showToast('Invoice Updated!'); setEditInvId(null);
+      } else {
+        const invNo = `INV-${Date.now()}`;
+        const { data: newInv } = await supabase.from('invoices').insert([{ invoice_no: invNo, ...payload }]).select(`*, customers(name), corporates(name)`).single();
+        const newPortalBal = (portal.current_balance || 0) - cost; await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', portal.id); await logAction(`Created Invoice ${invNo}`);
+        let newCashEntry = null; if (paid > 0 && invForm.payment !== 'Credit') { const cbType = invForm.payment === 'Cash' ? 'Cash-In' : (invForm.payment === 'Bank Transfer' ? 'Bank-In' : null); if (cbType) { const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: invForm.invoiceDate, type: cbType, description: `Payment for ${invNo}`, amount: paid }]).select().single(); newCashEntry = nC; } }
+        setData(prev => ({ ...prev, invoices: [newInv, ...prev.invoices], portals: prev.portals.map(p => p.id === portal.id ? { ...p, current_balance: newPortalBal } : p), cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook }));
+        showToast('Invoice Generated!');
+      }
+      
+      setInvForm({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: data.portals[0]?.id || '', bookingDate: today, invoiceDate: today, service: 'Flight Ticket', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0 }); 
+      setPage('list');
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
+  const handleDeleteInvoice = async (inv) => {
+    if (!confirm('Delete this invoice permanently? This will reverse the portal balance.')) return;
+    const portal = data.portals.find(p => p.id === inv.portal_id);
+    if (portal) {
+      const newBal = (portal.current_balance || 0) + inv.total_cost;
+      await supabase.from('portals').update({ current_balance: newBal }).eq('id', portal.id);
+    }
+    await supabase.from('invoices').delete().eq('id', inv.id);
+    setData(prev => ({ ...prev, invoices: prev.invoices.filter(i => i.id !== inv.id), portals: prev.portals.map(p => p.id === inv.portal_id ? { ...p, current_balance: (p.current_balance || 0) + inv.total_cost } : p) }));
+    showToast('Invoice Deleted & Portal Balance Reversed!');
+  };
+
+  const handleAddEditCust = async (e) => { e.preventDefault(); const pl = { name: custForm.name, phone: custForm.phone, store_credit: parseFloat(custForm.store_credit) || 0 }; if (editCustId) { const { data: up } = await supabase.from('customers').update(pl).eq('id', editCustId).select().single(); setData(prev => ({...prev, customers: prev.customers.map(c => c.id === editCustId ? up : c)})); showToast('Updated!'); setEditCustId(null); } else { const { data: nItem } = await supabase.from('customers').insert([{...pl, type: 'Individual'}]).select().single(); setData(prev => ({...prev, customers: [...prev.customers, nItem]})); showToast('Added!'); } setCustForm({ name: '', phone: '', store_credit: 0 }); };
   const handleAddEditCorp = async (e) => { e.preventDefault(); if (editCorpId) { const { data: up } = await supabase.from('corporates').update(corpForm).eq('id', editCorpId).select().single(); setData(prev => ({...prev, corporates: prev.corporates.map(c => c.id === editCorpId ? up : c)})); showToast('Updated!'); setEditCorpId(null); } else { const { data: nItem } = await supabase.from('corporates').insert([corpForm]).select().single(); setData(prev => ({...prev, corporates: [...prev.corporates, nItem]})); showToast('Added!'); } setCorpForm({ name: '', vat_no: '', phone: '', address: '' }); };
   const handleAddEditCred = async (e) => { e.preventDefault(); if (editCredId) { const { data: up } = await supabase.from('creditors').update(creditorForm).eq('id', editCredId).select().single(); setData(prev => ({...prev, creditors: prev.creditors.map(c => c.id === editCredId ? up : c)})); showToast('Updated!'); setEditCredId(null); } else { const { data: nItem } = await supabase.from('creditors').insert([creditorForm]).select().single(); setData(prev => ({...prev, creditors: [...prev.creditors, nItem]})); showToast('Added!'); } setCreditorForm({ name: '', phone: '', address: '' }); };
-  const handleAddEditCust = async (e) => { e.preventDefault(); if (editCustId) { const { data: up } = await supabase.from('customers').update(custForm).eq('id', editCustId).select().single(); setData(prev => ({...prev, customers: prev.customers.map(c => c.id === editCustId ? up : c)})); showToast('Updated!'); setEditCustId(null); } else { const { data: nItem } = await supabase.from('customers').insert([{...custForm, type: 'Individual'}]).select().single(); setData(prev => ({...prev, customers: [...prev.customers, nItem]})); showToast('Added!'); } setCustForm({ name: '', phone: '' }); };
   const handleAddEditVend = async (e) => { e.preventDefault(); if (editVendId) { const { data: up } = await supabase.from('vendors').update(vendorForm).eq('id', editVendId).select().single(); setData(prev => ({...prev, vendors: prev.vendors.map(c => c.id === editVendId ? up : c)})); showToast('Updated!'); setEditVendId(null); } else { const { data: nItem } = await supabase.from('vendors').insert([vendorForm]).select().single(); setData(prev => ({...prev, vendors: [...prev.vendors, nItem]})); showToast('Added!'); } setVendorForm({ name: '', phone: '', balance: 0 }); };
-  const handleAddEditPkg = async (e) => { e.preventDefault(); const pl = { name: pkgForm.name, price: parseFloat(pkgForm.price), description: pkgForm.desc }; if (editPkgId) { const { data: up } = await supabase.from('packages').update(pl).eq('id', editPkgId).select().single(); setData(prev => ({...prev, packages: prev.packages.map(c => c.id === editPkgId ? up : c)})); showToast('Updated!'); setEditPkgId(null); } else { const { data: nItem } = await supabase.from('packages').insert([pl]).select().single(); setData(prev => ({...prev, packages: [...prev.packages, nItem]})); showToast('Added!'); } setPkgForm({ name: '', price: '', desc: '' }); };
-  const handleAddEditBrn = async (e) => { e.preventDefault(); if (editBrnId) { const { data: up } = await supabase.from('branches').update(brnForm).eq('id', editBrnId).select().single(); setData(prev => ({...prev, branches: prev.branches.map(c => c.id === editBrnId ? up : c)})); showToast('Updated!'); setEditBrnId(null); } else { const { data: nItem } = await supabase.from('branches').insert([brnForm]).select().single(); setData(prev => ({...prev, branches: [...prev.branches, nItem]})); showToast('Added!'); } setBrnForm({ name: '', location: '', phone: '', manager: '', email: '', timing: '' }); };
-  const handleAddEditEmp = async (e) => { e.preventDefault(); if (editEmpId) { const { data: up } = await supabase.from('employees').update(empForm).eq('id', editEmpId).select().single(); setData(prev => ({...prev, employees: prev.employees.map(c => c.id === editEmpId ? up : c)})); showToast('Updated!'); setEditEmpId(null); } else { const { data: nItem } = await supabase.from('employees').insert([empForm]).select().single(); setData(prev => ({...prev, employees: [nItem, ...prev.employees]})); showToast('Added!'); } setEmpForm({ name: '', role: 'Sales' }); };
+  const handleAddEditPkg = async (e) => { e.preventDefault(); const pl = { name: pkgForm.name, price: parseFloat(pkgForm.price), description: pkgForm.desc, duration: pkgForm.duration, inclusions: pkgForm.inclusions }; if (editPkgId) { const { data: up } = await supabase.from('packages').update(pl).eq('id', editPkgId).select().single(); setData(prev => ({...prev, packages: prev.packages.map(c => c.id === editPkgId ? up : c)})); showToast('Updated!'); setEditPkgId(null); } else { const { data: nItem } = await supabase.from('packages').insert([pl]).select().single(); setData(prev => ({...prev, packages: [...prev.packages, nItem]})); showToast('Added!'); } setPkgForm({ name: '', price: '', desc: '', duration: '', inclusions: '' }); };
+  const handleAddEditBrn = async (e) => { e.preventDefault(); if (editBrnId) { const { data: up } = await supabase.from('branches').update(brnForm).eq('id', editBrnId).select().single(); setData(prev => ({...prev, branches: prev.branches.map(c => c.id === editBrnId ? up : c)})); showToast('Updated!'); setEditBrnId(null); } else { const { data: nItem } = await supabase.from('branches').insert([brnForm]).select().single(); setData(prev => ({...prev, branches: [...prev.branches, nItem]})); showToast('Added!'); } setBrnForm({ name: '', location: '', phone: '', manager: '', email: '', timing: '', status: 'Active' }); };
+  const handleAddEditEmp = async (e) => { e.preventDefault(); if (editEmpId) { const { data: up } = await supabase.from('employees').update(empForm).eq('id', editEmpId).select().single(); setData(prev => ({...prev, employees: prev.employees.map(c => c.id === editEmpId ? up : c)})); showToast('Updated!'); setEditEmpId(null); } else { const { data: nItem } = await supabase.from('employees').insert([empForm]).select().single(); setData(prev => ({...prev, employees: [nItem, ...prev.employees]})); showToast('Added!'); } setEmpForm({ name: '', role: 'Sales', salary: 0, phone: '' }); };
   const handleAddEditSrv = async (e) => { e.preventDefault(); if (editSrvId) { const { data: up } = await supabase.from('services').update(srvForm).eq('id', editSrvId).select().single(); setData(prev => ({...prev, services: prev.services.map(c => c.id === editSrvId ? up : c)})); showToast('Updated!'); setEditSrvId(null); } else { const { data: nItem } = await supabase.from('services').insert([srvForm]).select().single(); setData(prev => ({...prev, services: [...prev.services, nItem]})); showToast('Added!'); } setSrvForm({ name: '' }); };
 
   const handleAddPortal = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('portals').insert([{ name: portalForm.name, current_balance: parseFloat(portalForm.balance) || 0 }]).select().single(); setData(prev => ({ ...prev, portals: [...prev.portals, newItem] })); showToast('Portal Added!'); setPortalForm({ name: '', balance: 0 }); };
+  const handleEditPortal = (p) => { setPortalForm({ name: p.name, balance: p.current_balance }); /* Need an editId for portal if we want to update. For now, keeping it simple or just allowing delete */ };
   const handleAddInvestment = async (e) => { e.preventDefault(); const mode = investForm.mode; const { data: newInv } = await supabase.from('investments').insert([{ investor_name: investForm.name, amount: parseFloat(investForm.amount), invest_date: investForm.date, description: investForm.desc, payment_mode: mode }]).select().single(); const cbType = mode === 'Cash' ? 'Cash-In' : 'Bank-In'; const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: investForm.date, type: cbType, description: `Investment by ${investForm.name}`, amount: parseFloat(investForm.amount) }]).select().single(); setData(prev => ({ ...prev, investments: [newInv, ...prev.investments], cashbook: [nC, ...prev.cashbook] })); showToast('Investor Added!'); setInvestForm({ name: '', amount: '', date: today, desc: '', mode: 'Cash' }); };
+  
   const handleDelete = async (table, id) => { if (!confirm('Delete permanently?')) return; await supabase.from(table).delete().eq('id', id); setData(prev => ({ ...prev, [table]: prev[table].filter(item => item.id !== id) })); showToast('Deleted!'); };
   const handleRecharge = async (e) => { e.preventDefault(); const p = data.portals.find(p => p.id === e.target.portal.value); const amount = parseFloat(e.target.amt.value); const mode = e.target.mode.value; const { data: newRec } = await supabase.from('recharges').insert([{ portal_id: p.id, amount, recharge_date: e.target.date.value, description: e.target.desc.value, payment_mode: mode }]).select('*, portals(name)').single(); const newBal = (p.current_balance || 0) + amount; await supabase.from('portals').update({ current_balance: newBal }).eq('id', p.id); const cbType = mode === 'Cash' ? 'Cash-Out' : 'Bank-Out'; const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: e.target.date.value, type: cbType, description: `Recharge for ${p.name}`, amount }]).select().single(); setData(prev => ({ ...prev, recharges: [newRec, ...prev.recharges], portals: prev.portals.map(por => por.id === p.id ? { ...por, current_balance: newBal } : por), cashbook: [nC, ...prev.cashbook] })); showToast('Recharged!'); e.target.reset(); };
   const handleTransfer = async (e) => { e.preventDefault(); const amt = parseFloat(transferForm.amount); if (amt <= 0 || transferForm.from === transferForm.to) return showToast("Invalid transfer"); const entries = []; if (transferForm.from === 'Cash') entries.push({ trans_date: transferForm.date, type: 'Cash-Out', description: `Transfer to ${transferForm.to}`, amount: amt }); if (transferForm.from === 'Bank') entries.push({ trans_date: transferForm.date, type: 'Bank-Out', description: `Transfer to ${transferForm.to}`, amount: amt }); if (transferForm.from === 'Investor') entries.push({ trans_date: transferForm.date, type: 'Investor-Out', description: `Transfer to ${transferForm.to}`, amount: amt }); if (transferForm.to === 'Cash') entries.push({ trans_date: transferForm.date, type: 'Cash-In', description: `Transfer from ${transferForm.from}`, amount: amt }); if (transferForm.to === 'Bank') entries.push({ trans_date: transferForm.date, type: 'Bank-In', description: `Transfer from ${transferForm.from}`, amount: amt }); if (transferForm.to === 'Investor') entries.push({ trans_date: transferForm.date, type: 'Investor-In', description: `Transfer from ${transferForm.from}`, amount: amt }); await Promise.all(entries.map(en => supabase.from('cashbook').insert([en]))); await fetchAll(); showToast('Fund Transferred!'); setTransferForm({ from: 'Cash', to: 'Bank', amount: '', date: today }); };
@@ -134,8 +211,63 @@ export default function useERP() {
   const handleAddExpense = async (e) => { e.preventDefault(); const mode = e.target.mode.value; const { data: newExp } = await supabase.from('expenses').insert([{ category: e.target.cat.value, amount: parseFloat(e.target.amt.value), description: e.target.desc.value, payment_mode: mode }]).select().single(); const cbType = mode === 'Cash' ? 'Cash-Out' : 'Bank-Out'; const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Expense: ${e.target.cat.value}`, amount: parseFloat(e.target.amt.value) }]).select().single(); setData(prev => ({ ...prev, expenses: [newExp, ...prev.expenses], cashbook: [nC, ...prev.cashbook] })); showToast('Expense Added!'); e.target.reset(); };
 
   const handleSettlePayment = async (e) => { e.preventDefault(); const inv = data.invoices.find(i => i.id === settleForm.id); if (!inv) return; const newPaid = inv.paid_amount + inv.due_amount; const { data: upInv } = await supabase.from('invoices').update({ paid_amount: newPaid, due_amount: 0, settlement_date: settleForm.date, payment_method: settleForm.mode }).eq('id', inv.id).select(`*, customers(name)`).single(); const cbType = settleForm.mode === 'Cash' ? 'Cash-In' : 'Bank-In'; const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: settleForm.date, type: cbType, description: `Settlement for ${inv.invoice_no}`, amount: inv.due_amount }]).select().single(); setData(prev => ({ ...prev, invoices: prev.invoices.map(i => i.id === inv.id ? upInv : i), cashbook: [nC, ...prev.cashbook] })); showToast('Payment Settled!'); setModal({ type: null, data: null }); };
-  const handleRefund = async (e) => { e.preventDefault(); const inv = data.invoices.find(i => i.id === refundForm.id); if (!inv) return; const compRef = parseFloat(refundForm.compRefund) || 0; const custRef = parseFloat(refundForm.custRefund) || 0; const { data: upInv } = await supabase.from('invoices').update({ status: 'refunded', refund_company: compRef, refund_customer: custRef }).eq('id', inv.id).select(`*, customers(name)`).single(); const refNo = `REF-${Date.now()}`; const { data: newRefInv } = await supabase.from('invoices').insert([{ invoice_no: refNo, customer_id: inv.customer_id, portal_id: inv.portal_id, booking_date: today, invoice_date: refundForm.date, service_type: `Refund: ${refundForm.reason}`, total_sell: -custRef, total: -custRef, paid_amount: -custRef, status: 'refunded', refund_company: compRef, refund_customer: custRef }]).select(`*, customers(name)`).single(); let newPortalBal = inv.portals?.current_balance || 0; if (inv.portal_id) { newPortalBal += compRef; await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', inv.portal_id); } let newCashEntry = null; if (custRef > 0) { const cbType = refundForm.mode === 'Cash' ? 'Cash-Out' : 'Bank-Out'; const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: refundForm.date, type: cbType, description: `Refund for ${inv.invoice_no}`, amount: custRef }]).select().single(); newCashEntry = nC; } setData(prev => ({ ...prev, invoices: [newRefInv, prev.invoices.map(i => i.id === inv.id ? upInv : i)].flat(), portals: prev.portals.map(p => p.id === inv.portal_id ? { ...p, current_balance: newPortalBal } : p), cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook })); showToast('Refund Processed!'); setModal({ type: null, data: null }); };
   
+  const handleRefund = async (e) => { 
+    e.preventDefault(); 
+    const inv = data.invoices.find(i => i.id === refundForm.id); 
+    if (!inv) return; 
+    const compRef = parseFloat(refundForm.compRefund) || 0; 
+    const custRef = parseFloat(refundForm.custRefund) || 0; 
+    
+    const { data: upInv } = await supabase.from('invoices').update({ status: 'refunded', refund_company: compRef, refund_customer: custRef }).eq('id', inv.id).select(`*, customers(name)`).single(); 
+    
+    const refNo = `REF-${Date.now()}`; 
+    const { data: newRefInv } = await supabase.from('invoices').insert([{ 
+      invoice_no: refNo, customer_id: inv.customer_id, portal_id: inv.portal_id, booking_date: today, 
+      invoice_date: refundForm.date, service_type: `Refund: ${refundForm.reason}`, total_sell: -custRef, 
+      total: -custRef, paid_amount: -custRef, status: 'refunded', refund_company: compRef, refund_customer: custRef 
+    }]).select(`*, customers(name)`).single(); 
+    
+    // Recharge Portal with Company Refund
+    if (inv.portal_id && compRef > 0) { 
+      const portal = data.portals.find(p => p.id === inv.portal_id);
+      const newPortalBal = (portal.current_balance || 0) + compRef; 
+      await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', inv.portal_id); 
+      setData(prev => ({ ...prev, portals: prev.portals.map(p => p.id === inv.portal_id ? { ...p, current_balance: newPortalBal } : p) }));
+    } 
+    
+    // Customer Refund: Cash, Bank, or Credit
+    let newCashEntry = null; 
+    if (custRef > 0) {
+      if (refundForm.mode === 'Credit') {
+        // Add to customer store credit
+        const cust = data.customers.find(c => c.id === inv.customer_id);
+        if (cust) {
+          const newCredit = (cust.store_credit || 0) + custRef;
+          await supabase.from('customers').update({ store_credit: newCredit }).eq('id', cust.id);
+          setData(prev => ({ ...prev, customers: prev.customers.map(c => c.id === cust.id ? { ...c, store_credit: newCredit } : c) }));
+        }
+      } else {
+        const cbType = refundForm.mode === 'Cash' ? 'Cash-Out' : 'Bank-Out'; 
+        const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: refundForm.date, type: cbType, description: `Refund to customer for ${inv.invoice_no}`, amount: custRef }]).select().single(); 
+        newCashEntry = nC; 
+      }
+    } 
+    
+    setData(prev => ({ 
+      ...prev, 
+      invoices: [newRefInv, prev.invoices.map(i => i.id === inv.id ? upInv : i)].flat(), 
+      cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook 
+    })); 
+    showToast('Refund Processed!'); 
+    setModal({ type: null, data: null }); 
+  };
+
+  const openRefundModal = (inv) => {
+    setRefundForm({ id: inv.id, date: today, compRefund: 0, custRefund: 0, mode: 'Cash', reason: '', portalId: inv.portal_id });
+    setModal({ type: 'refund', data: inv });
+  };
+
   const handleLogoUpload = async (e) => { const file = e.target.files[0]; if (!file) return; const fileName = `logo-${Date.now()}.${file.name.split('.').pop()}`; const { error } = await supabase.storage.from('logos').upload(fileName, file); if (error) return showToast('Upload Error'); const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName); setSetForm(prev => ({ ...prev, logo_url: urlData.publicUrl })); showToast('Logo Uploaded!'); };
   const handleSaveSettings = async (e) => { e.preventDefault(); const { error } = await supabase.from('settings').upsert([{ id: 1, ...setForm }]).eq('id', 1); if (error) return showToast('Error saving settings'); setData(prev => ({ ...prev, settings: setForm })); showToast('Settings Saved!'); };
 
@@ -160,13 +292,159 @@ export default function useERP() {
 
   const getInvoiceHTML = (inv, s, invLang = 'en') => {
     const isAr = invLang === 'ar'; const dir = isAr ? 'rtl' : 'ltr'; const textAlign = isAr ? 'right' : 'left'; const textAlignOpp = isAr ? 'left' : 'right';
-    return `<div style="width:800px;padding:40px;font-family:'Segoe UI',Tahoma,Arial;background:#fff;color:#333;direction:${dir};text-align:${textAlign};"><div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1E3A8A;padding-bottom:20px;margin-bottom:30px;"><div style="display:flex;align-items:center;gap:20px;">${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:140px;width:auto;object-fit:contain;" />` : ''}<div><h1 style="margin:0;color:#1E3A8A;font-size:32px;font-weight:bold;">${s.company_name_en || 'SUEUD AL TAAYIRA'}</h1><h2 style="margin:0;color:#D97706;font-size:24px;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2><p style="font-size:12px;margin-top:10px;line-height:1.6;color:#555;">${isAr ? 'عنوان: ' : 'Address: '}${s.address_ar || 'طريق ملك عبدالعزيز عرعر'}<br/>${isAr ? 'سجل تجاري: ' : 'CR: '}${s.cr_no || ''} | ${isAr ? 'هاتف: ' : 'Ph: '}${s.phone || ''}<br/>${isAr ? 'رقم ترخيص: ' : 'License: '}${s.license_no || ''} | ${isAr ? 'ترخيص سياحي: ' : 'Tourist Lic: '}${s.tourist_license_no || ''}<br/>VAT: ${s.vat_no || ''} | IATA: ${s.iata_no || ''}</p></div></div><div style="text-align:${textAlignOpp};background:#1E3A8A;color:#fff;padding:15px 20px;border-radius:8px;"><h1 style="margin:0;font-size:24px;">${isAr ? 'فاتورة ضريبية' : 'TAX INVOICE'}</h1><p style="font-size:13px;margin-top:10px;color:#eee;">Inv No: <b>${inv.invoice_no}</b><br/>Date: ${inv.invoice_date}</p></div></div><div style="margin-bottom:30px;display:flex;justify-content:space-between;background:#f8fafc;padding:15px;border-radius:8px;"><div><h3 style="margin:0 0 5px;color:#1E3A8A;font-size:14px;">${isAr ? 'الفاتورة إلى:' : 'BILL TO:'}</h3><p style="margin:0;font-size:16px;font-weight:bold;">${inv.customers?.name || inv.corporates?.name || ''}</p></div><div style="text-align:${textAlignOpp};"><p style="margin:0;font-size:12px;"><b>${isAr ? 'الحالة:' : 'Status:'}</b> <span style="color:${inv.due_amount>0?'#EF4444':'#059669'};font-weight:bold;">${inv.due_amount>0?(isAr?'غير مدفوع':'UNPAID'):(isAr?'مدفوع':'PAID')}</span></p></div></div><table style="width:100%;border-collapse:collapse;text-align:center;margin-bottom:30px;"><thead><tr style="background:#1E3A8A;color:#fff;"><th style="padding:12px;border:1px solid #1e3a8a;width:40%;">${isAr ? 'الخدمة' : 'Service'}</th><th style="padding:12px;border:1px solid #1e3a8a;">PNR</th><th style="padding:12px;border:1px solid #1e3a8a;">${isAr ? 'الكمية' : 'Qty'}</th><th style="padding:12px;border:1px solid #1e3a8a;">${isAr ? 'المجموع' : 'Total'}</th></tr></thead><tbody><tr style="background:#fff;"><td style="padding:12px;border:1px solid #ddd;text-align:${textAlign};"><b>${inv.service_type}</b><br/><span style="font-size:11px;color:#666;">${inv.sector || ''}</span></td><td style="padding:12px;border:1px solid #ddd;">${inv.pnr || 'N/A'}</td><td style="padding:12px;border:1px solid #ddd;">${inv.qty || 1}</td><td style="padding:12px;border:1px solid #ddd;font-weight:bold;">${inv.total_sell.toFixed(2)} SAR</td></tr></tbody></table><div style="display:flex;justify-content:space-between;"><div style="text-align:center;background:#f8fafc;padding:10px;border-radius:8px;border:1px solid #eee;"><p style="margin:0 0 5px;font-size:10px;color:#666;">ZATCA QR</p><img src="${inv.qrCode || ''}" width="120" height="120" /></div><div style="width:320px;font-size:14px;"><div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>${isAr ? 'قبل الضريبة:' : 'Before VAT:'}</span><b>${inv.total_sell.toFixed(2)} SAR</b></div><div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>${isAr ? 'ضريبة 15%' : 'VAT 15%:'}</span><b>${inv.vat.toFixed(2)} SAR</b></div><div style="display:flex;justify-content:space-between;background:#1E3A8A;color:#FBBF24;padding:12px;font-weight:bold;font-size:18px;border-radius:4px;margin-top:5px;"><span>${isAr ? 'المجموع:' : 'TOTAL:'}</span><b>${inv.total.toFixed(2)} SAR</b></div><div style="display:flex;justify-content:space-between;padding:12px 0;color:#EF4444;font-weight:bold;font-size:16px;margin-top:10px;"><span>${isAr ? 'المستحق:' : 'BALANCE DUE:'}</span><b>${inv.due_amount.toFixed(2)} SAR</b></div></div></div></div>`;
+    // A4 Size: 210mm x 297mm approx 794px x 1123px at 96 DPI
+    return `<div style="width:794px;min-height:1123px;padding:40px;font-family:'Segoe UI',Tahoma,Arial;background:#fff;color:#333;direction:${dir};text-align:${textAlign};">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1E3A8A;padding-bottom:20px;margin-bottom:30px;">
+        <div style="display:flex;align-items:center;gap:20px;">
+          ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:140px;width:auto;object-fit:contain;" />` : ''}
+          <div>
+            <h1 style="margin:0;color:#1E3A8A;font-size:32px;font-weight:bold;">${s.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
+            <h2 style="margin:0;color:#D97706;font-size:24px;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
+            <p style="font-size:12px;margin-top:10px;line-height:1.6;color:#555;">
+              ${isAr ? 'عنوان: ' : 'Address: '}${s.address_ar || 'طريق ملك عبدالعزيز عرعر'}<br/>
+              ${isAr ? 'سجل تجاري: ' : 'CR: '}${s.cr_no || ''} | ${isAr ? 'هاتف: ' : 'Ph: '}${s.phone || ''}<br/>
+              ${isAr ? 'رقم ترخيص: ' : 'License: '}${s.license_no || ''} | ${isAr ? 'ترخيص سياحي: ' : 'Tourist Lic: '}${s.tourist_license_no || ''}<br/>
+              VAT: ${s.vat_no || ''} | IATA: ${s.iata_no || ''}
+            </p>
+          </div>
+        </div>
+        <div style="text-align:${textAlignOpp};background:#1E3A8A;color:#fff;padding:15px 20px;border-radius:8px;">
+          <h1 style="margin:0;font-size:24px;">${isAr ? 'فاتورة ضريبية' : 'TAX INVOICE'}</h1>
+          <p style="font-size:13px;margin-top:10px;color:#eee;">Inv No: <b>${inv.invoice_no}</b><br/>Date: ${inv.invoice_date}</p>
+        </div>
+      </div>
+      
+      <div style="margin-bottom:30px;display:flex;justify-content:space-between;background:#f8fafc;padding:15px;border-radius:8px;">
+        <div>
+          <h3 style="margin:0 0 5px;color:#1E3A8A;font-size:14px;">${isAr ? 'الفاتورة إلى:' : 'BILL TO:'}</h3>
+          <p style="margin:0;font-size:16px;font-weight:bold;">${inv.customers?.name || inv.corporates?.name || ''}</p>
+          <p style="margin:0;font-size:12px;color:#666;">${inv.customers?.phone || inv.corporates?.phone || ''} ${inv.corporates?.vat_no ? '| VAT: '+inv.corporates.vat_no : ''}</p>
+        </div>
+        <div style="text-align:${textAlignOpp};">
+          <p style="margin:0;font-size:12px;"><b>${isAr ? 'طريقة الدفع:' : 'Payment Method:'}</b> ${inv.payment_method}</p>
+          <p style="margin:0;font-size:12px;"><b>${isAr ? 'الحالة:' : 'Status:'}</b> <span style="color:${inv.due_amount>0?'#EF4444':'#059669'};font-weight:bold;">${inv.due_amount>0?(isAr?'غير مدفوع':'UNPAID'):(isAr?'مدفوع':'PAID')}</span></p>
+        </div>
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;text-align:center;margin-bottom:30px;">
+        <thead>
+          <tr style="background:#1E3A8A;color:#fff;">
+            <th style="padding:12px;border:1px solid #1e3a8a;">${isAr ? 'الخدمة / القطاع' : 'Service / Sector'}</th>
+            <th style="padding:12px;border:1px solid #1e3a8a;">${isAr ? 'خطوط الطيران' : 'Airline'}</th>
+            <th style="padding:12px;border:1px solid #1e3a8a;">PNR</th>
+            <th style="padding:12px;border:1px solid #1e3a8a;">${isAr ? 'رقم التذكرة' : 'Ticket No'}</th>
+            <th style="padding:12px;border:1px solid #1e3a8a;">${isAr ? 'الكمية' : 'Qty'}</th>
+            <th style="padding:12px;border:1px solid #1e3a8a;">${isAr ? 'المجموع' : 'Total'}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="background:#fff;">
+            <td style="padding:12px;border:1px solid #ddd;text-align:${textAlign};"><b>${inv.service_type}</b><br/><span style="font-size:11px;color:#666;">${inv.sector || ''}</span></td>
+            <td style="padding:12px;border:1px solid #ddd;">${inv.airline || 'N/A'}</td>
+            <td style="padding:12px;border:1px solid #ddd;">${inv.pnr || 'N/A'}</td>
+            <td style="padding:12px;border:1px solid #ddd;">${inv.ticket_no || 'N/A'}</td>
+            <td style="padding:12px;border:1px solid #ddd;">${inv.qty || 1}</td>
+            <td style="padding:12px;border:1px solid #ddd;font-weight:bold;">${inv.total_sell.toFixed(2)} SAR</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="display:flex;justify-content:space-between;">
+        <div style="text-align:center;background:#f8fafc;padding:10px;border-radius:8px;border:1px solid #eee;">
+          <p style="margin:0 0 5px;font-size:10px;color:#666;">ZATCA QR</p>
+          <img src="${inv.qrCode || ''}" width="120" height="120" />
+        </div>
+        <div style="width:320px;font-size:14px;">
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;">
+            <span>${isAr ? 'قبل الضريبة:' : 'Before VAT:'}</span><b>${inv.total_sell.toFixed(2)} SAR</b>
+          </div>
+          ${inv.discount > 0 ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;color:#EF4444;"><span>${isAr ? 'الخصم:' : 'Discount:'}</span><b>- ${inv.discount.toFixed(2)} SAR</b></div>` : ''}
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;">
+            <span>${isAr ? 'ضريبة 15%' : 'VAT 15%:'}</span><b>${inv.vat.toFixed(2)} SAR</b>
+          </div>
+          <div style="display:flex;justify-content:space-between;background:#1E3A8A;color:#FBBF24;padding:12px;font-weight:bold;font-size:18px;border-radius:4px;margin-top:5px;">
+            <span>${isAr ? 'المجموع:' : 'TOTAL:'}</span><b>${inv.total.toFixed(2)} SAR</b>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:12px 0;color:#EF4444;font-weight:bold;font-size:16px;margin-top:10px;">
+            <span>${isAr ? 'المستحق:' : 'BALANCE DUE:'}</span><b>${inv.due_amount.toFixed(2)} SAR</b>
+          </div>
+        </div>
+      </div>
+    </div>`;
   };
 
-  const downloadPDF = async (inv, invLang = 'en') => { try { const { default: html2canvas } = await import('html2canvas'); const { default: jsPDF } = await import('jspdf'); const { default: QRCode } = await import('qrcode'); const s = data.settings; const enc = (tag, v) => String.fromCharCode(tag) + String.fromCharCode(v.length) + v; const tlv = enc(1, s.company_name_en||"S") + enc(2, s.vat_no||"V") + enc(3, new Date(inv.created_at).toISOString()) + enc(4, inv.total.toFixed(2)) + enc(5, inv.vat.toFixed(2)); const qr = await QRCode.toDataURL(btoa(tlv)); const html = document.createElement('div'); html.innerHTML = getInvoiceHTML({...inv, qrCode: qr}, s, invLang); document.body.appendChild(html); const canvas = await html2canvas(html, { useCORS: true, allowTaint: true, scale: 2 }); const doc = new jsPDF('p', 'mm', 'a4'); const imgWidth = 190; const imgHeight = canvas.height * imgWidth / canvas.width; doc.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, imgWidth, imgHeight); doc.save(`${inv.invoice_no}-${invLang}.pdf`); document.body.removeChild(html); showToast('PDF Downloaded!'); } catch (err) { showToast('PDF Error: ' + err.message); } };
-  const printInvoice = async (inv, invLang = 'en') => { try { const { default: html2canvas } = await import('html2canvas'); const { default: jsPDF } = await import('jspdf'); const { default: QRCode } = await import('qrcode'); const s = data.settings; const enc = (tag, v) => String.fromCharCode(tag) + String.fromCharCode(v.length) + v; const tlv = enc(1, s.company_name_en||"S") + enc(2, s.vat_no||"V") + enc(3, new Date(inv.created_at).toISOString()) + enc(4, inv.total.toFixed(2)) + enc(5, inv.vat.toFixed(2)); const qr = await QRCode.toDataURL(btoa(tlv)); const html = document.createElement('div'); html.innerHTML = getInvoiceHTML({...inv, qrCode: qr}, s, invLang); document.body.appendChild(html); const canvas = await html2canvas(html, { useCORS: true, allowTaint: true, scale: 2 }); const doc = new jsPDF('p', 'mm', 'a4'); const imgWidth = 190; const imgHeight = canvas.height * imgWidth / canvas.width; doc.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, imgWidth, imgHeight); document.body.removeChild(html); doc.autoPrint(); window.open(doc.output('bloburl'), '_blank'); } catch (err) { showToast('Print Error: ' + err.message); } };
+  const downloadPDF = async (inv, invLang = 'en') => { 
+    try { 
+      const { default: html2canvas } = await import('html2canvas'); 
+      const { default: jsPDF } = await import('jspdf'); 
+      const { default: QRCode } = await import('qrcode'); 
+      const s = data.settings; 
+      const enc = (tag, v) => String.fromCharCode(tag) + String.fromCharCode(v.length) + v; 
+      const tlv = enc(1, s.company_name_en||"S") + enc(2, s.vat_no||"V") + enc(3, new Date(inv.created_at).toISOString()) + enc(4, inv.total.toFixed(2)) + enc(5, inv.vat.toFixed(2)); 
+      const qr = await QRCode.toDataURL(btoa(tlv)); 
+      const html = document.createElement('div'); 
+      html.innerHTML = getInvoiceHTML({...inv, qrCode: qr}, s, invLang); 
+      document.body.appendChild(html); 
+      const canvas = await html2canvas(html, { useCORS: true, allowTaint: true, scale: 2 }); 
+      const doc = new jsPDF('p', 'mm', 'a4'); // Explicitly A4 size
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = canvas.height * imgWidth / canvas.width; 
+      doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight); 
+      doc.save(`${inv.invoice_no}-${invLang}.pdf`); 
+      document.body.removeChild(html); 
+      showToast('PDF Downloaded!'); 
+    } catch (err) { 
+      showToast('PDF Error: ' + err.message); 
+    } 
+  };
+  
+  const printInvoice = async (inv, invLang = 'en') => { 
+    try { 
+      const { default: html2canvas } = await import('html2canvas'); 
+      const { default: jsPDF } = await import('jspdf'); 
+      const { default: QRCode } = await import('qrcode'); 
+      const s = data.settings; 
+      const enc = (tag, v) => String.fromCharCode(tag) + String.fromCharCode(v.length) + v; 
+      const tlv = enc(1, s.company_name_en||"S") + enc(2, s.vat_no||"V") + enc(3, new Date(inv.created_at).toISOString()) + enc(4, inv.total.toFixed(2)) + enc(5, inv.vat.toFixed(2)); 
+      const qr = await QRCode.toDataURL(btoa(tlv)); 
+      const html = document.createElement('div'); 
+      html.innerHTML = getInvoiceHTML({...inv, qrCode: qr}, s, invLang); 
+      document.body.appendChild(html); 
+      const canvas = await html2canvas(html, { useCORS: true, allowTaint: true, scale: 2 }); 
+      const doc = new jsPDF('p', 'mm', 'a4'); 
+      const imgWidth = 210; 
+      const imgHeight = canvas.height * imgWidth / canvas.width; 
+      doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight); 
+      document.body.removeChild(html); 
+      doc.autoPrint(); 
+      window.open(doc.output('bloburl'), '_blank'); 
+    } catch (err) { 
+      showToast('Print Error: ' + err.message); 
+    } 
+  };
 
   return {
-    user, userProfile, lang, setLang, page, setPage, payFilter, setPayFilter, toast, modal, setModal, passForm, setPassForm, chatOpen, setChatOpen, chatMessages, chatInput, setChatInput, search, setSearch, tblPage, setTblPage, itemsPerPage, data, today, invForm, setInvForm, corpForm, setCorpForm, editCorpId, setEditCorpId, creditorForm, setCreditorForm, editCredId, setEditCredId, custForm, setCustForm, editCustId, setEditCustId, vendorForm, setVendorForm, editVendId, setEditVendId, pkgForm, setPkgForm, editPkgId, setEditPkgId, brnForm, setBrnForm, editBrnId, setEditBrnId, empForm, setEmpForm, editEmpId, setEditEmpId, srvForm, setSrvForm, editSrvId, setEditSrvId, portalForm, setPortalForm, investForm, setInvestForm, settleForm, setSettleForm, refundForm, setRefundForm, transferForm, setTransferForm, setForm, setSetForm, userForm, setUserForm, editUserId, setEditUserId, repDate, setRepDate, reportTab, setReportTab, statementTab, setStatementTab, tr, handleLogout, handleChangePassword, handleSendMessage, handleCreateInvoice, handleAddEditCorp, handleEditCorp: (c) => { setEditCorpId(c.id); setCorpForm({ name: c.name, vat_no: c.vat_no, phone: c.phone, address: c.address }); }, handleAddEditCred, handleEditCred: (c) => { setEditCredId(c.id); setCreditorForm({ name: c.name, phone: c.phone, address: c.address }); }, handleAddEditCust, handleEditCust: (c) => { setEditCustId(c.id); setCustForm({ name: c.name, phone: c.phone }); }, handleAddEditVend, handleEditVend: (c) => { setEditVendId(c.id); setVendorForm({ name: c.name, phone: c.phone, balance: c.balance }); }, handleAddEditPkg, handleEditPkg: (c) => { setEditPkgId(c.id); setPkgForm({ name: c.name, price: c.price, desc: c.description }); }, handleAddEditBrn, handleEditBrn: (c) => { setEditBrnId(c.id); setBrnForm({ name: c.name, location: c.location, phone: c.phone, manager: c.manager, email: c.email, timing: c.timing }); }, handleAddEditEmp, handleEditEmp: (c) => { setEditEmpId(c.id); setEmpForm({ name: c.name, role: c.role }); }, handleAddEditSrv, handleEditSrv: (c) => { setEditSrvId(c.id); setSrvForm({ name: c.name }); }, handleAddPortal, handleAddInvestment, handleDelete, handleRecharge, handleTransfer, handleSettlePayment, handleRefund, handleLogoUpload, handleSaveSettings, handleAddUser, handleEditUser, handleUpdateUser, handlePaySalary, handleAddExpense, filterData, exportToExcel, downloadPDF, printInvoice
+    user, userProfile, lang, setLang, page, setPage, payFilter, setPayFilter, toast, modal, setModal, passForm, setPassForm, chatOpen, setChatOpen, chatMessages, chatInput, setChatInput, search, setSearch, tblPage, setTblPage, itemsPerPage, data, today, 
+    invForm, setInvForm, editInvId, setEditInvId, handleEditInvoice, handleCreateInvoice, handleDeleteInvoice, 
+    corpForm, setCorpForm, editCorpId, setEditCorpId, creditorForm, setCreditorForm, editCredId, setEditCredId, 
+    custForm, setCustForm, editCustId, setEditCustId, vendorForm, setVendorForm, editVendId, setEditVendId, 
+    pkgForm, setPkgForm, editPkgId, setEditPkgId, brnForm, setBrnForm, editBrnId, setEditBrnId, 
+    empForm, setEmpForm, editEmpId, setEditEmpId, srvForm, setSrvForm, editSrvId, setEditSrvId, 
+    portalForm, setPortalForm, investForm, setInvestForm, settleForm, setSettleForm, refundForm, setRefundForm, 
+    transferForm, setTransferForm, setForm, setSetForm, userForm, setUserForm, editUserId, setEditUserId, 
+    repDate, setRepDate, reportTab, setReportTab, statementTab, setStatementTab, tr, 
+    handleLogout, handleChangePassword, handleSendMessage, 
+    handleAddEditCorp, handleEditCorp: (c) => { setEditCorpId(c.id); setCorpForm({ name: c.name, vat_no: c.vat_no, phone: c.phone, address: c.address }); }, 
+    handleAddEditCred, handleEditCred: (c) => { setEditCredId(c.id); setCreditorForm({ name: c.name, phone: c.phone, address: c.address }); }, 
+    handleAddEditCust, handleEditCust: (c) => { setEditCustId(c.id); setCustForm({ name: c.name, phone: c.phone, store_credit: c.store_credit || 0 }); }, 
+    handleAddEditVend, handleEditVend: (c) => { setEditVendId(c.id); setVendorForm({ name: c.name, phone: c.phone, balance: c.balance }); }, 
+    handleAddEditPkg, handleEditPkg: (c) => { setEditPkgId(c.id); setPkgForm({ name: c.name, price: c.price, desc: c.description, duration: c.duration || '', inclusions: c.inclusions || '' }); }, 
+    handleAddEditBrn, handleEditBrn: (c) => { setEditBrnId(c.id); setBrnForm({ name: c.name, location: c.location, phone: c.phone, manager: c.manager, email: c.email, timing: c.timing, status: c.status || 'Active' }); }, 
+    handleAddEditEmp, handleEditEmp: (c) => { setEditEmpId(c.id); setEmpForm({ name: c.name, role: c.role, salary: c.salary || 0, phone: c.phone || '' }); }, 
+    handleAddEditSrv, handleEditSrv: (c) => { setEditSrvId(c.id); setSrvForm({ name: c.name }); }, 
+    handleAddPortal, handleAddInvestment, handleDelete, handleRecharge, handleTransfer, 
+    handleSettlePayment, handleRefund, openRefundModal, handleLogoUpload, handleSaveSettings, 
+    handleAddUser, handleEditUser, handleUpdateUser, handlePaySalary, handleAddExpense, 
+    filterData, exportToExcel, downloadPDF, printInvoice
   };
 }
