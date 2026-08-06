@@ -134,10 +134,11 @@ export default function useERP() {
       const cashPaid = parseFloat(invForm.paid) || 0;
       const usedCredit = parseFloat(invForm.useCredit) || 0;
       const totalPaid = cashPaid + usedCredit;
+      const due = total - totalPaid; 
+      const profit = sell - cost; // <-- FIXED: Added missing profit variable
       
       let cid = null, corpId = null;
       
-      // If Credit Balance is used, assign the invoice to that customer
       if (invForm.payment === 'Credit Balance' && invForm.creditCustId) {
         cid = invForm.creditCustId;
         const cust = data.customers.find(c => c.id === cid);
@@ -165,8 +166,8 @@ export default function useERP() {
         flight_type: invForm.flightType, pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty: qty, 
         discount: discount, passenger_names: passengerNames || null, airline: invForm.airline || null, 
         flight_sector: invForm.flightSector || null, total_cost: cost, total_sell: sell, profit, vat, total, 
-        paid_amount: totalPaid, used_credit: usedCredit, due_amount: total - totalPaid, payment_method: invForm.payment, 
-        credit_due_date: total - totalPaid > 0 && invForm.payment === 'Credit' ? invForm.creditDueDate : null, 
+        paid_amount: totalPaid, used_credit: usedCredit, due_amount: due, payment_method: invForm.payment, 
+        credit_due_date: due > 0 && invForm.payment === 'Credit' ? invForm.creditDueDate : null, 
         creditor_id: invForm.payment === 'Credit' ? (invForm.creditorId || null) : null, 
         tabby_order_no: invForm.payment === 'Tabby' ? invForm.tabbyNo : null, 
         tamara_order_no: invForm.payment === 'Tamara' ? invForm.tamaraNo : null, 
@@ -315,7 +316,6 @@ export default function useERP() {
 
   const getInvoiceHTML = (inv, s, invLang = 'en') => {
     const isAr = invLang === 'ar'; const dir = isAr ? 'rtl' : 'ltr'; const textAlign = isAr ? 'right' : 'left'; const textAlignOpp = isAr ? 'left' : 'right';
-    // A4 Exact Pixel Size for html2canvas
     return `
     <div id="invoice-capture" style="width:794px; min-height:1123px; padding:50px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial; direction:${dir}; text-align:${textAlign}; display:flex; flex-direction:column;">
       
