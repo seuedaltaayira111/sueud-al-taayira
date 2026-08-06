@@ -37,10 +37,10 @@ export default function ERPViews(props) {
 
   if (page === 'dashboard') {
     const activeInv = data.invoices.filter(i => !i.invoice_no.startsWith('REF-'));
-    const tSales = activeInv.reduce((s,i) => s + i.total, 0);
-    const tProfit = activeInv.reduce((s,i) => s + i.profit, 0);
-    const cashBal = data.cashbook.filter(c => c.type === 'Cash-In').reduce((s,c) => s + c.amount, 0) - data.cashbook.filter(c => c.type === 'Cash-Out').reduce((s,c) => s + c.amount, 0);
-    const bankBal = data.cashbook.filter(c => c.type === 'Bank-In').reduce((s,c) => s + c.amount, 0) - data.cashbook.filter(c => c.type === 'Bank-Out').reduce((s,c) => s + c.amount, 0);
+    const tSales = activeInv.reduce((s,i) => s + (i.total || 0), 0);
+    const tProfit = activeInv.reduce((s,i) => s + (i.profit || 0), 0);
+    const cashBal = data.cashbook.filter(c => c.type === 'Cash-In').reduce((s,c) => s + (c.amount || 0), 0) - data.cashbook.filter(c => c.type === 'Cash-Out').reduce((s,c) => s + (c.amount || 0), 0);
+    const bankBal = data.cashbook.filter(c => c.type === 'Bank-In').reduce((s,c) => s + (c.amount || 0), 0) - data.cashbook.filter(c => c.type === 'Bank-Out').reduce((s,c) => s + (c.amount || 0), 0);
     return (
       <div>
         <h2>{tr.dash}</h2>
@@ -55,7 +55,7 @@ export default function ERPViews(props) {
   }
 
   if (page === 'credit') {
-    const creditCustomers = data.customers.filter(c => c.store_credit > 0);
+    const creditCustomers = data.customers.filter(c => (c.store_credit || 0) > 0);
     return (
       <div>
         <h2>{tr.credit}</h2>
@@ -63,7 +63,7 @@ export default function ERPViews(props) {
           <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Customer</th><th style={{ padding: '12px' }}>Phone</th><th style={{ padding: '12px' }}>Available Credit (SAR)</th></tr></thead>
           <tbody>
             {creditCustomers.length === 0 ? <tr><td colSpan="3" style={{padding: '20px', textAlign: 'center'}}>No credit balances available.</td></tr> : 
-              creditCustomers.map(c => <tr key={c.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{c.name}</td><td style={{ padding: '12px' }}>{c.phone}</td><td style={{ padding: '12px', color: '#059669', fontWeight: 'bold' }}>{c.store_credit.toFixed(2)}</td></tr>)
+              creditCustomers.map(c => <tr key={c.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{c.name}</td><td style={{ padding: '12px' }}>{c.phone}</td><td style={{ padding: '12px', color: '#059669', fontWeight: 'bold' }}>{(c.store_credit || 0).toFixed(2)}</td></tr>)
             }
           </tbody>
         </table>
@@ -137,7 +137,7 @@ export default function ERPViews(props) {
             <label style={styles.label}>Portal</label>
             <select value={invForm.portalId} onChange={e => setInvForm({...invForm, portalId: e.target.value})} style={styles.input} required>
               <option value="">Select Portal</option>
-              {data.portals.map(p => <option key={p.id} value={p.id}>{p.name} (Bal: {p.current_balance.toFixed(2)})</option>)}
+              {data.portals.map(p => <option key={p.id} value={p.id}>{p.name} (Bal: {(p.current_balance || 0).toFixed(2)})</option>)}
             </select>
           </div>
 
@@ -216,7 +216,7 @@ export default function ERPViews(props) {
                   required
                 >
                   <option value="">Select Customer</option>
-                  {data.customers.filter(c => c.store_credit > 0).map(c => <option key={c.id} value={c.id}>{c.name} (Avl: {c.store_credit.toFixed(2)})</option>)}
+                  {data.customers.filter(c => (c.store_credit || 0) > 0).map(c => <option key={c.id} value={c.id}>{c.name} (Avl: {(c.store_credit || 0).toFixed(2)})</option>)}
                 </select>
               </div>
               <div>
@@ -283,8 +283,8 @@ export default function ERPViews(props) {
               <tr key={inv.id} style={{ borderBottom: '1px solid #E2E8F0' }}>
                 <td style={{ padding: '12px' }}>{inv.invoice_no}</td>
                 <td style={{ padding: '12px' }}>{inv.customers?.name || inv.corporates?.name}</td>
-                <td style={{ padding: '12px' }}>{inv.total.toFixed(2)}</td>
-                <td style={{ padding: '12px', color: inv.due_amount > 0 ? '#EF4444' : '#059669', fontWeight: 'bold' }}>{inv.due_amount.toFixed(2)}</td>
+                <td style={{ padding: '12px' }}>{(inv.total || 0).toFixed(2)}</td>
+                <td style={{ padding: '12px', color: (inv.due_amount || 0) > 0 ? '#EF4444' : '#059669', fontWeight: 'bold' }}>{(inv.due_amount || 0).toFixed(2)}</td>
                 <td style={{ padding: '12px' }}>{inv.payment_method}</td>
                 <td style={{ padding: '12px' }}>
                   <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
@@ -292,7 +292,7 @@ export default function ERPViews(props) {
                     <button onClick={() => printInvoice(inv, 'ar')} style={{ ...styles.btnWarning, padding: '5px 8px', fontSize: '11px' }}>Print</button>
                     <button onClick={() => handleEditInvoice(inv)} style={{ ...styles.btnWarning, padding: '5px 8px', fontSize: '11px' }}>Edit</button>
                     <button onClick={() => handleDeleteInvoice(inv)} style={{ ...styles.btnDanger, padding: '5px 8px', fontSize: '11px' }}>Delete</button>
-                    {isInvoices && inv.due_amount > 0 && <button onClick={() => openRefundModal(inv)} style={{ ...styles.btnDanger, padding: '5px 8px', fontSize: '11px' }}>Refund</button>}
+                    {isInvoices && (inv.due_amount || 0) > 0 && <button onClick={() => openRefundModal(inv)} style={{ ...styles.btnDanger, padding: '5px 8px', fontSize: '11px' }}>Refund</button>}
                   </div>
                 </td>
               </tr>
@@ -377,7 +377,7 @@ export default function ERPViews(props) {
 
       <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
         <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Balance</th><th style={{ padding: '12px' }}>Actions</th></tr></thead>
-        <tbody>{data.portals.map(p => <tr key={p.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{p.name}</td><td style={{ padding: '12px', fontWeight: 'bold', color: p.current_balance < 0 ? '#EF4444' : '#059669' }}>{p.current_balance.toFixed(2)}</td><td style={{ padding: '12px' }}><button onClick={() => handleDelete('portals', p.id)} style={styles.btnDanger}>Delete</button></td></tr>)}</tbody>
+        <tbody>{data.portals.map(p => <tr key={p.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{p.name}</td><td style={{ padding: '12px', fontWeight: 'bold', color: (p.current_balance || 0) < 0 ? '#EF4444' : '#059669' }}>{(p.current_balance || 0).toFixed(2)}</td><td style={{ padding: '12px' }}><button onClick={() => handleDelete('portals', p.id)} style={styles.btnDanger}>Delete</button></td></tr>)}</tbody>
       </table>
     </div>
   );
@@ -458,13 +458,13 @@ export default function ERPViews(props) {
       <button onClick={() => exportToExcel(data.cashbook, 'Cashbook')} style={styles.btnSuccess}>{tr.download_excel}</button>
       <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', marginTop: '20px' }}>
         <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px', textAlign: 'left' }}>Type</th><th style={{ padding: '12px', textAlign: 'left' }}>Desc</th><th style={{ padding: '12px', textAlign: 'left' }}>Amount</th><th style={{ padding: '12px', textAlign: 'left' }}>Action</th></tr></thead>
-        <tbody>{data.cashbook.slice(0, 20).map(c => <tr key={c.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{c.trans_date}</td><td style={{ padding: '12px' }}>{c.type}</td><td style={{ padding: '12px' }}>{c.description}</td><td style={{ padding: '12px', color: c.type.includes('In') ? '#059669' : '#EF4444', fontWeight: 'bold' }}>{c.amount.toFixed(2)}</td><td style={{ padding: '12px' }}><button onClick={() => handleDelete('cashbook', c.id)} style={styles.btnDanger}>Delete</button></td></tr>)}</tbody>
+        <tbody>{data.cashbook.slice(0, 20).map(c => <tr key={c.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{c.trans_date}</td><td style={{ padding: '12px' }}>{c.type}</td><td style={{ padding: '12px' }}>{c.description}</td><td style={{ padding: '12px', color: c.type.includes('In') ? '#059669' : '#EF4444', fontWeight: 'bold' }}>{(c.amount || 0).toFixed(2)}</td><td style={{ padding: '12px' }}><button onClick={() => handleDelete('cashbook', c.id)} style={styles.btnDanger}>Delete</button></td></tr>)}</tbody>
       </table>
     </div>
   );
 
   if (page === 'invest') return (
-    <div><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}><h2>{tr.invest}</h2><button onClick={() => exportToExcel(data.investments, 'Investments')} style={styles.btnSuccess}>{tr.download_excel}</button></div><div style={styles.card}><form onSubmit={handleAddInvestment} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '10px', alignItems: 'flex-end' }}><div><label style={styles.label}>Name</label><input value={investForm.name} onChange={e => setInvestForm({...investForm, name: e.target.value})} style={styles.input} required /></div><div><label style={styles.label}>Amount</label><input type="number" step="0.01" value={investForm.amount} onChange={e => setInvestForm({...investForm, amount: e.target.value})} style={styles.input} required /></div><div><label style={styles.label}>Mode</label><select value={investForm.mode} onChange={e => setInvestForm({...investForm, mode: e.target.value})} style={styles.input}><option>Cash</option><option>Bank Transfer</option></select></div><button type="submit" style={styles.btnPrimary}>Add</button></form></div><table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}><thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Amount</th><th style={{ padding: '12px' }}>Date</th><th style={{ padding: '12px' }}>Action</th></tr></thead><tbody>{data.investments.map(i => <tr key={i.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{i.investor_name}</td><td style={{ padding: '12px' }}>{i.amount.toFixed(2)}</td><td style={{ padding: '12px' }}>{i.invest_date}</td><td style={{ padding: '12px' }}><button onClick={() => handleDelete('investments', i.id)} style={styles.btnDanger}>Delete</button></td></tr>)}</tbody></table></div>
+    <div><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}><h2>{tr.invest}</h2><button onClick={() => exportToExcel(data.investments, 'Investments')} style={styles.btnSuccess}>{tr.download_excel}</button></div><div style={styles.card}><form onSubmit={handleAddInvestment} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '10px', alignItems: 'flex-end' }}><div><label style={styles.label}>Name</label><input value={investForm.name} onChange={e => setInvestForm({...investForm, name: e.target.value})} style={styles.input} required /></div><div><label style={styles.label}>Amount</label><input type="number" step="0.01" value={investForm.amount} onChange={e => setInvestForm({...investForm, amount: e.target.value})} style={styles.input} required /></div><div><label style={styles.label}>Mode</label><select value={investForm.mode} onChange={e => setInvestForm({...investForm, mode: e.target.value})} style={styles.input}><option>Cash</option><option>Bank Transfer</option></select></div><button type="submit" style={styles.btnPrimary}>Add</button></form></div><table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}><thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Amount</th><th style={{ padding: '12px' }}>Date</th><th style={{ padding: '12px' }}>Action</th></tr></thead><tbody>{data.investments.map(i => <tr key={i.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{i.investor_name}</td><td style={{ padding: '12px' }}>{(i.amount || 0).toFixed(2)}</td><td style={{ padding: '12px' }}>{i.invest_date}</td><td style={{ padding: '12px' }}><button onClick={() => handleDelete('investments', i.id)} style={styles.btnDanger}>Delete</button></td></tr>)}</tbody></table></div>
   );
 
   if (page === 'hr') return (
@@ -537,7 +537,7 @@ export default function ERPViews(props) {
           runningBalance -= inv.refund_customer || 0;
           return { ...inv, type: 'Refund', amount: inv.refund_customer, balance: runningBalance };
         } else {
-          runningBalance += inv.due_amount;
+          runningBalance += inv.due_amount || 0;
           return { ...inv, type: 'Invoice', amount: inv.total, balance: runningBalance };
         }
       });
@@ -571,8 +571,8 @@ export default function ERPViews(props) {
                       <td style={{ padding: '10px' }}>{item.invoice_date}</td>
                       <td style={{ padding: '10px' }}>{item.invoice_no}</td>
                       <td style={{ padding: '10px', color: item.type === 'Refund' ? '#EF4444' : '#059669' }}>{item.type}</td>
-                      <td style={{ padding: '10px', fontWeight: 'bold' }}>{item.amount?.toFixed(2)}</td>
-                      <td style={{ padding: '10px', fontWeight: 'bold', color: item.balance > 0 ? '#EF4444' : '#333' }}>{item.balance?.toFixed(2)}</td>
+                      <td style={{ padding: '10px', fontWeight: 'bold' }}>{(item.amount || 0).toFixed(2)}</td>
+                      <td style={{ padding: '10px', fontWeight: 'bold', color: item.balance > 0 ? '#EF4444' : '#333' }}>{(item.balance || 0).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -612,45 +612,6 @@ export default function ERPViews(props) {
                 <tr key={item.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                   <td style={{ padding: '10px' }}>{item.invoice_date || item.trans_date || item.invest_date || item.created_at?.split('T')[0]}</td>
                   <td style={{ padding: '10px' }}>{item.invoice_no || item.description || item.category}</td>
-                  <td style={{ padding: '10px', fontWeight: 'bold' }}>{item.total?.toFixed(2) || item.amount?.toFixed(2)}</td>
+                  <td style={{ padding: '10px', fontWeight: 'bold' }}>{(item.total || item.amount || 0).toFixed(2)}</td>
                 </tr>
               ))}
-            </tbody>
-            <tfoot>
-              <tr style={{ background: '#1E3A8A', color: 'white' }}>
-                <td colSpan="2" style={{ padding: '12px', textAlign: 'right' }}><b>Total:</b></td>
-                <td style={{ padding: '12px' }}><b>{totalAmount.toFixed(2)} SAR</b></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </div>
-    );
-  }
-
-  if (page === 'audit') return (
-    <div>
-      <h2>{tr.audit}</h2>
-      <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
-        <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>User</th><th style={{ padding: '12px' }}>Action</th><th style={{ padding: '12px' }}>Time</th></tr></thead>
-        <tbody>{data.audits.map(a => <tr key={a.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{a.user_email}</td><td style={{ padding: '12px' }}>{a.action}</td><td style={{ padding: '12px' }}>{new Date(a.created_at).toLocaleString()}</td></tr>)}</tbody>
-      </table>
-    </div>
-  );
-
-  if (page === 'settings') return (
-    <div style={styles.card}><h2>{tr.settings}</h2><form onSubmit={handleSaveSettings}><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-      <div><label style={styles.label}>Company Name (EN)</label><input value={setForm.company_name_en || ''} onChange={e => setSetForm({...setForm, company_name_en: e.target.value})} style={styles.input} /></div>
-      <div><label style={styles.label}>Company Name (AR)</label><input value={setForm.company_name_ar || ''} onChange={e => setSetForm({...setForm, company_name_ar: e.target.value})} style={styles.input} /></div>
-      <div><label style={styles.label}>Address (AR)</label><input value={setForm.address_ar || ''} onChange={e => setSetForm({...setForm, address_ar: e.target.value})} style={styles.input} /></div>
-      <div><label style={styles.label}>CR No</label><input value={setForm.cr_no || ''} onChange={e => setSetForm({...setForm, cr_no: e.target.value})} style={styles.input} /></div>
-      <div><label style={styles.label}>Phone</label><input value={setForm.phone || ''} onChange={e => setSetForm({...setForm, phone: e.target.value})} style={styles.input} /></div>
-      <div><label style={styles.label}>License No</label><input value={setForm.license_no || ''} onChange={e => setSetForm({...setForm, license_no: e.target.value})} style={styles.input} /></div>
-      <div><label style={styles.label}>Tourist License</label><input value={setForm.tourist_license_no || ''} onChange={e => setSetForm({...setForm, tourist_license_no: e.target.value})} style={styles.input} /></div>
-      <div><label style={styles.label}>VAT No</label><input value={setForm.vat_no || ''} onChange={e => setSetForm({...setForm, vat_no: e.target.value})} style={styles.input} /></div>
-      <div style={{ gridColumn: '1 / -1' }}><label style={styles.label}>Logo</label><input type="file" accept="image/*" onChange={handleLogoUpload} style={styles.input} />{setForm.logo_url && <img src={setForm.logo_url} style={{ height: 100, marginTop: 10, borderRadius: 8 }} />}</div>
-    </div><button type="submit" style={{ ...styles.btnPrimary, marginTop: '20px' }}>Save</button></form></div>
-  );
-
-  return <div><h2>{page}</h2><p>Section under development.</p></div>;
-}
