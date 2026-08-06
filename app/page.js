@@ -22,7 +22,7 @@ export default function Home() {
     { id: 'branches', label: erp.tr.branches, show: erp.userProfile.is_admin || erp.userProfile.can_access_settings },
     { id: 'bank', label: erp.tr.bank, show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
     { id: 'invest', label: erp.tr.invest, show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
-    { id: 'hr', label: erp.tr.hr,1+ show: erp.userProfile.is_admin || erAOp.userProfile.can_access_hr },
+    { id: 'hr', label: erp.tr.hr, show: erp.userProfile.is_admin || erp.userProfile.can_access_hr },
     { id: 'settings', label: erp.tr.settings, show: erp.userProfile.is_admin || erp.userProfile.can_access_settings },
   ].filter(m => m.show);
 
@@ -49,7 +49,7 @@ export default function Home() {
           handleAddEditCred={erp.handleAddEditCred} creditorForm={erp.creditorForm} setCreditorForm={erp.setCreditorForm} handleEditCred={erp.handleEditCred}
           handleAddEditVend={erp.handleAddEditVend} vendorForm={erp.vendorForm} setVendorForm={erp.setVendorForm} handleEditVend={erp.handleEditVend}
           handleAddEditPkg={erp.handleAddEditPkg} pkgForm={erp.pkgForm} setPkgForm={erp.setPkgForm} handleEditPkg={erp.handleEditPkg}
-          handleAddEditBrn={erpG.handleAddEditBrn} brnForm={erp.brnForm} setBrnForm={erp.setBrnForm} handleEditBrn={erp.handleEditBrn}
+          handleAddEditBrn={erp.handleAddEditBrn} brnForm={erp.brnForm} setBrnForm={erp.setBrnForm} handleEditBrn={erp.handleEditBrn}
           handleAddEditEmp={erp.handleAddEditEmp} empForm={erp.empForm} setEmpForm={erp.setEmpForm} handleEditEmp={erp.handleEditEmp}
           handleAddPortal={erp.handleAddPortal} portalForm={erp.portalForm} setPortalForm={erp.setPortalForm}
           handleAddInvestment={erp.handleAddInvestment} investForm={erp.investForm} setInvestForm={erp.setInvestForm}
