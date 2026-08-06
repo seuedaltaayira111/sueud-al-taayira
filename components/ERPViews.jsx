@@ -615,3 +615,42 @@ export default function ERPViews(props) {
                   <td style={{ padding: '10px', fontWeight: 'bold' }}>{(item.total || item.amount || 0).toFixed(2)}</td>
                 </tr>
               ))}
+            </tbody>
+            <tfoot>
+              <tr style={{ background: '#1E3A8A', color: 'white' }}>
+                <td colSpan="2" style={{ padding: '12px', textAlign: 'right' }}><b>Total:</b></td>
+                <td style={{ padding: '12px' }}><b>{totalAmount.toFixed(2)} SAR</b></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  if (page === 'audit') return (
+    <div>
+      <h2>{tr.audit}</h2>
+      <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
+        <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>User</th><th style={{ padding: '12px' }}>Action</th><th style={{ padding: '12px' }}>Time</th></tr></thead>
+        <tbody>{data.audits.map(a => <tr key={a.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{a.user_email}</td><td style={{ padding: '12px' }}>{a.action}</td><td style={{ padding: '12px' }}>{new Date(a.created_at).toLocaleString()}</td></tr>)}</tbody>
+      </table>
+    </div>
+  );
+
+  if (page === 'settings') return (
+    <div style={styles.card}><h2>{tr.settings}</h2><form onSubmit={handleSaveSettings}><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+      <div><label style={styles.label}>Company Name (EN)</label><input value={setForm.company_name_en || ''} onChange={e => setSetForm({...setForm, company_name_en: e.target.value})} style={styles.input} /></div>
+      <div><label style={styles.label}>Company Name (AR)</label><input value={setForm.company_name_ar || ''} onChange={e => setSetForm({...setForm, company_name_ar: e.target.value})} style={styles.input} /></div>
+      <div><label style={styles.label}>Address (AR)</label><input value={setForm.address_ar || ''} onChange={e => setSetForm({...setForm, address_ar: e.target.value})} style={styles.input} /></div>
+      <div><label style={styles.label}>CR No</label><input value={setForm.cr_no || ''} onChange={e => setSetForm({...setForm, cr_no: e.target.value})} style={styles.input} /></div>
+      <div><label style={styles.label}>Phone</label><input value={setForm.phone || ''} onChange={e => setSetForm({...setForm, phone: e.target.value})} style={styles.input} /></div>
+      <div><label style={styles.label}>License No</label><input value={setForm.license_no || ''} onChange={e => setSetForm({...setForm, license_no: e.target.value})} style={styles.input} /></div>
+      <div><label style={styles.label}>Tourist License</label><input value={setForm.tourist_license_no || ''} onChange={e => setSetForm({...setForm, tourist_license_no: e.target.value})} style={styles.input} /></div>
+      <div><label style={styles.label}>VAT No</label><input value={setForm.vat_no || ''} onChange={e => setSetForm({...setForm, vat_no: e.target.value})} style={styles.input} /></div>
+      <div style={{ gridColumn: '1 / -1' }}><label style={styles.label}>Logo</label><input type="file" accept="image/*" onChange={handleLogoUpload} style={styles.input} />{setForm.logo_url && <img src={setForm.logo_url} style={{ height: 100, marginTop: 10, borderRadius: 8 }} />}</div>
+    </div><button type="submit" style={{ ...styles.btnPrimary, marginTop: '20px' }}>Save</button></form></div>
+  );
+
+  return <div><h2>{page}</h2><p>Section under development.</p></div>;
+}
