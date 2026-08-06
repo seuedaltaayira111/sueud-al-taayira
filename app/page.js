@@ -79,7 +79,7 @@ export default function Home() {
           transferForm={erp.transferForm} setTransferForm={erp.setTransferForm}
           
           // Users & Settings
-          handleAddUser={erp.handleAddUser} userForm={erp.userForm} setUserForm={erp.setUserForm}
+          handleAddUser={erp.handleAddUser} handleEditUser={erp.handleEditUser} handleUpdateUser={erp.handleUpdateUser} userForm={erp.userForm} setUserForm={erp.setUserForm} editUserId={erp.editUserId}
           handleSaveSettings={erp.handleSaveSettings} handleLogoUpload={erp.handleLogoUpload} 
           setForm={erp.setForm} setSetForm={erp.setSetForm} 
           
@@ -87,6 +87,7 @@ export default function Home() {
           repDate={erp.repDate} setRepDate={erp.setRepDate} 
           reportTab={erp.reportTab} setReportTab={erp.setReportTab} 
           statementTab={erp.statementTab} setStatementTab={erp.setStatementTab}
+          filterData={erp.filterData}
           
           // Global Actions
           handleDelete={erp.handleDelete}
