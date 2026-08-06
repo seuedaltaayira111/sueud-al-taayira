@@ -59,10 +59,7 @@ export default function ERPViews(props) {
     return (
       <div>
         <h2>{tr.credit}</h2>
-        <div style={styles.card}>
-          <p>Ye un customers ka list hai jinki refunds unke credit balance me add hui hain. Naya invoice banate waqt ye balance automatically use ho sakta hai.</p>
-        </div>
-        <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', marginTop: '20px' }}>
           <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Customer</th><th style={{ padding: '12px' }}>Phone</th><th style={{ padding: '12px' }}>Available Credit (SAR)</th></tr></thead>
           <tbody>
             {creditCustomers.length === 0 ? <tr><td colSpan="3" style={{padding: '20px', textAlign: 'center'}}>No credit balances available.</td></tr> : 
@@ -79,14 +76,17 @@ export default function ERPViews(props) {
       <h2>{editInvId ? 'Edit Invoice' : tr.create}</h2>
       <form onSubmit={handleCreateInvoice}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-          <div>
-            <label style={styles.label}>Customer Type</label>
-            <select value={invForm.custType} onChange={e => setInvForm({...invForm, custType: e.target.value})} style={styles.input}>
-              <option>Individual</option><option>Corporate</option>
-            </select>
-          </div>
           
-          {invForm.custType === 'Individual' ? (
+          {invForm.payment !== 'Credit Balance' && (
+            <div>
+              <label style={styles.label}>Customer Type</label>
+              <select value={invForm.custType} onChange={e => setInvForm({...invForm, custType: e.target.value})} style={styles.input}>
+                <option>Individual</option><option>Corporate</option>
+              </select>
+            </div>
+          )}
+
+          {invForm.payment !== 'Credit Balance' && invForm.custType === 'Individual' ? (
             <>
               <div>
                 <label style={styles.label}>Select Customer</label>
@@ -102,7 +102,7 @@ export default function ERPViews(props) {
                 </>
               )}
             </>
-          ) : (
+          ) : invForm.payment !== 'Credit Balance' && invForm.custType === 'Corporate' ? (
             <>
               <div>
                 <label style={styles.label}>Select Corporate</label>
@@ -120,7 +120,7 @@ export default function ERPViews(props) {
                 </>
               )}
             </>
-          )}
+          ) : null}
 
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={styles.label}>Passengers</label>
@@ -195,22 +195,38 @@ export default function ERPViews(props) {
             </select>
           </div>
 
-          <div><label style={styles.label}>Payment Method</label><select value={invForm.payment} onChange={e => setInvForm({...invForm, payment: e.target.value})} style={styles.input}><option>Cash</option><option>Bank Transfer</option><option>Credit</option><option>Tabby</option><option>Tamara</option></select></div>
-          <div><label style={styles.label}>Paid Amount</label><input type="number" step="0.01" value={invForm.paid} onChange={e => setInvForm({...invForm, paid: e.target.value})} style={styles.input} required /></div>
+          <div>
+            <label style={styles.label}>Payment Method</label>
+            <select value={invForm.payment} onChange={e => setInvForm({...invForm, payment: e.target.value, useCredit: 0, creditCustId: ''})} style={styles.input}>
+              <option>Cash</option><option>Bank Transfer</option><option>Credit</option><option>Credit Balance</option><option>Tabby</option><option>Tamara</option>
+            </select>
+          </div>
 
-          {/* Use Store Credit Logic */}
-          {invForm.custType === 'Individual' && invForm.custId !== 'new' && (() => {
-            const cust = data.customers.find(c => c.id === invForm.custId);
-            if (cust && cust.store_credit > 0) {
-              return (
-                <div>
-                  <label style={styles.label}>Use Store Credit (Avl: {cust.store_credit.toFixed(2)})</label>
-                  <input type="number" step="0.01" value={invForm.useCredit} onChange={e => setInvForm({...invForm, useCredit: e.target.value})} style={styles.input} max={cust.store_credit} />
-                </div>
-              );
-            }
-            return null;
-          })()}
+          {invForm.payment === 'Credit Balance' && (
+            <>
+              <div>
+                <label style={styles.label}>Select Customer (Credit Available)</label>
+                <select 
+                  value={invForm.creditCustId} 
+                  onChange={e => {
+                    const c = data.customers.find(x => x.id === e.target.value);
+                    setInvForm({...invForm, creditCustId: e.target.value, useCredit: c?.store_credit || 0});
+                  }} 
+                  style={styles.input} 
+                  required
+                >
+                  <option value="">Select Customer</option>
+                  {data.customers.filter(c => c.store_credit > 0).map(c => <option key={c.id} value={c.id}>{c.name} (Avl: {c.store_credit.toFixed(2)})</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={styles.label}>Use Credit Amount</label>
+                <input type="number" step="0.01" value={invForm.useCredit} onChange={e => setInvForm({...invForm, useCredit: e.target.value})} style={styles.input} required />
+              </div>
+            </>
+          )}
+
+          <div><label style={styles.label}>Paid Amount (Cash/Bank)</label><input type="number" step="0.01" value={invForm.paid} onChange={e => setInvForm({...invForm, paid: e.target.value})} style={styles.input} required /></div>
 
           {invForm.payment === 'Credit' && (
             <>
@@ -249,7 +265,7 @@ export default function ERPViews(props) {
         <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
           <input placeholder={tr.search} value={search} onChange={e => setSearch(e.target.value)} style={styles.input} />
           <select value={payFilter} onChange={e => setPayFilter(e.target.value)} style={{...styles.input, maxWidth: '200px'}}>
-            <option>All</option><option>Cash</option><option>Bank Transfer</option><option>Credit</option><option>Tabby</option><option>Tamara</option>
+            <option>All</option><option>Cash</option><option>Bank Transfer</option><option>Credit</option><option>Credit Balance</option><option>Tabby</option><option>Tamara</option>
           </select>
         </div>
 
