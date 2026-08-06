@@ -46,13 +46,23 @@ export default function ERPLayout({ children, tr, lang, setLang, page, setPage, 
           <div style={styles.card}>
             <h3>Process Refund</h3>
             <form onSubmit={handleRefund}>
-              <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Company Refund</label>
+              <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Company Refund (Goes back to Portal)</label>
               <input type="number" step="0.01" value={refundForm.compRefund} onChange={e => setRefundForm({...refundForm, compRefund: e.target.value})} style={styles.input} required />
-              <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Customer Refund</label>
+              
+              <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Customer Refund Amount</label>
               <input type="number" step="0.01" value={refundForm.custRefund} onChange={e => setRefundForm({...refundForm, custRefund: e.target.value})} style={styles.input} required />
+              
+              <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Customer Refund Method</label>
+              <select value={refundForm.mode} onChange={e => setRefundForm({...refundForm, mode: e.target.value})} style={styles.input}>
+                <option value="Cash">Cash</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Credit">Credit (Store for next booking)</option>
+              </select>
+
               <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Reason</label>
               <input type="text" value={refundForm.reason} onChange={e => setRefundForm({...refundForm, reason: e.target.value})} style={styles.input} required />
-              <button type="submit" style={styles.btnPrimary}>Refund</button>
+              
+              <button type="submit" style={styles.btnPrimary}>Process Refund</button>
               <button type="button" onClick={() => setModal({ type: null, data: null })} style={{ ...styles.btnDanger, width: '100%', marginTop: 10 }}>Cancel</button>
             </form>
           </div>
