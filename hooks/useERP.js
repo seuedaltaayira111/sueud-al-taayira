@@ -20,10 +20,11 @@ export default function useERP() {
   const [search, setSearch] = useState('');
   const [tblPage, setTblPage] = useState(1);
   const itemsPerPage = 10;
+  const [ledgerCustId, setLedgerCustId] = useState(''); // For Customer Ledger
   const [data, setData] = useState({ invoices: [], portals: [], customers: [], corporates: [], creditors: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [], audits: [], investments: [], vendors: [], customFields: [], packages: [], branches: [] });
   const today = new Date().toISOString().split('T')[0];
   
-  const [editInvId, setEditInvId] = useState(null); // For editing invoice
+  const [editInvId, setEditInvId] = useState(null);
   const [invForm, setInvForm] = useState({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: '', bookingDate: today, invoiceDate: today, service: 'Flight Ticket', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0 });
   
   const [editCorpId, setEditCorpId] = useState(null); const [corpForm, setCorpForm] = useState({ name: '', vat_no: '', phone: '', address: '' });
@@ -45,7 +46,7 @@ export default function useERP() {
   const [userForm, setUserForm] = useState({ email: '', username: '', role: 'Sales', is_admin: false, can_access_invoices: true, can_access_bank: false, can_access_hr: false, can_access_reports: false, can_access_settings: false });
   const [portalForm, setPortalForm] = useState({ name: '', balance: 0 });
 
-  const t = { en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices List', refunds: 'Refund Invoices', customers: 'Customer List', corporates: 'Corporate Accounts', creditors: 'Creditors', portals: 'Portals & Recharge', bank: 'Bank & Cash', invest: 'Investors', hr: 'HR & Accounts', users: 'User Management', reports: 'Financial Reports', audit: 'Audit Logs', settings: 'Settings', vendors: 'Vendors (B2B)', packages: 'Tour Packages', branches: 'Branches', logout: 'Logout', search: 'Search...', changePass: 'Change Password', statements: 'Statements', download_excel: 'Download Excel' }, ar: { dash: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'قائمة الفواتير', refunds: 'فواتير الاسترجاع', customers: 'قائمة العملاء', corporates: 'حسابات الشركات', creditors: 'الدائنون', portals: 'البوابات والرصيد', bank: 'البنك والكاش', invest: 'المستثمرون', hr: 'الموارد البشرية', users: 'إدارة المستخدمين', reports: 'التقارير المالية', audit: 'سجلات التدقيق', settings: 'الإعدادات', vendors: 'الموردون', packages: 'باقات سياحية', branches: 'الفروع', logout: 'تسجيل الخروج', search: 'بحث...', changePass: 'تغيير كلمة المرور', statements: 'كشوف الحسابات', download_excel: 'تحميل إكسل' } };
+  const t = { en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices List', refunds: 'Refund Invoices', customers: 'Customer List', corporates: 'Corporate Accounts', creditors: 'Creditors', portals: 'Portals & Recharge', bank: 'Bank & Cash', invest: 'Investors', hr: 'HR & Accounts', users: 'User Management', reports: 'Financial Reports', audit: 'Audit Logs', settings: 'Settings', vendors: 'Vendors (B2B)', packages: 'Tour Packages', branches: 'Branches', logout: 'Logout', search: 'Search...', changePass: 'Change Password', statements: 'Statements', download_excel: 'Download Excel', credit: 'Credit Balances' }, ar: { dash: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'قائمة الفواتير', refunds: 'فواتير الاسترجاع', customers: 'قائمة العملاء', corporates: 'حسابات الشركات', creditors: 'الدائنون', portals: 'البوابات والرصيد', bank: 'البنك والكاش', invest: 'المستثمرون', hr: 'الموارد البشرية', users: 'إدارة المستخدمين', reports: 'التقارير المالية', audit: 'سجلات التدقيق', settings: 'الإعدادات', vendors: 'الموردون', packages: 'باقات سياحية', branches: 'الفروع', logout: 'تسجيل الخروج', search: 'بحث...', changePass: 'تغيير كلمة المرور', statements: 'كشوف الحسابات', download_excel: 'تحميل إكسل', credit: 'أرصدة الائتمان' } };
   const tr = t[lang];
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
@@ -134,13 +135,12 @@ export default function useERP() {
       let paid = parseFloat(invForm.paid) || 0;
       let usedCredit = parseFloat(invForm.useCredit) || 0;
       
-      // Deduct used credit from customer's store credit
       if (usedCredit > 0 && invForm.custId !== 'new') {
         const cust = data.customers.find(c => c.id === invForm.custId);
         if (cust) {
           const newCredit = (cust.store_credit || 0) - usedCredit;
           await supabase.from('customers').update({ store_credit: newCredit }).eq('id', cust.id);
-          paid += usedCredit; // Credit acts as paid amount
+          paid += usedCredit;
         }
       }
 
@@ -196,7 +196,6 @@ export default function useERP() {
   const handleAddEditSrv = async (e) => { e.preventDefault(); if (editSrvId) { const { data: up } = await supabase.from('services').update(srvForm).eq('id', editSrvId).select().single(); setData(prev => ({...prev, services: prev.services.map(c => c.id === editSrvId ? up : c)})); showToast('Updated!'); setEditSrvId(null); } else { const { data: nItem } = await supabase.from('services').insert([srvForm]).select().single(); setData(prev => ({...prev, services: [...prev.services, nItem]})); showToast('Added!'); } setSrvForm({ name: '' }); };
 
   const handleAddPortal = async (e) => { e.preventDefault(); const { data: newItem } = await supabase.from('portals').insert([{ name: portalForm.name, current_balance: parseFloat(portalForm.balance) || 0 }]).select().single(); setData(prev => ({ ...prev, portals: [...prev.portals, newItem] })); showToast('Portal Added!'); setPortalForm({ name: '', balance: 0 }); };
-  const handleEditPortal = (p) => { setPortalForm({ name: p.name, balance: p.current_balance }); /* Need an editId for portal if we want to update. For now, keeping it simple or just allowing delete */ };
   const handleAddInvestment = async (e) => { e.preventDefault(); const mode = investForm.mode; const { data: newInv } = await supabase.from('investments').insert([{ investor_name: investForm.name, amount: parseFloat(investForm.amount), invest_date: investForm.date, description: investForm.desc, payment_mode: mode }]).select().single(); const cbType = mode === 'Cash' ? 'Cash-In' : 'Bank-In'; const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: investForm.date, type: cbType, description: `Investment by ${investForm.name}`, amount: parseFloat(investForm.amount) }]).select().single(); setData(prev => ({ ...prev, investments: [newInv, ...prev.investments], cashbook: [nC, ...prev.cashbook] })); showToast('Investor Added!'); setInvestForm({ name: '', amount: '', date: today, desc: '', mode: 'Cash' }); };
   
   const handleDelete = async (table, id) => { if (!confirm('Delete permanently?')) return; await supabase.from(table).delete().eq('id', id); setData(prev => ({ ...prev, [table]: prev[table].filter(item => item.id !== id) })); showToast('Deleted!'); };
@@ -222,13 +221,14 @@ export default function useERP() {
     const { data: upInv } = await supabase.from('invoices').update({ status: 'refunded', refund_company: compRef, refund_customer: custRef }).eq('id', inv.id).select(`*, customers(name)`).single(); 
     
     const refNo = `REF-${Date.now()}`; 
+    // Copying original invoice details to refund invoice
     const { data: newRefInv } = await supabase.from('invoices').insert([{ 
       invoice_no: refNo, customer_id: inv.customer_id, portal_id: inv.portal_id, booking_date: today, 
-      invoice_date: refundForm.date, service_type: `Refund: ${refundForm.reason}`, total_sell: -custRef, 
-      total: -custRef, paid_amount: -custRef, status: 'refunded', refund_company: compRef, refund_customer: custRef 
+      invoice_date: refundForm.date, service_type: `Refund: ${refundForm.reason}`, 
+      airline: inv.airline, flight_sector: inv.flight_sector, pnr: inv.pnr, ticket_no: inv.ticket_no, passenger_names: inv.passenger_names,
+      total_sell: -custRef, total: -custRef, paid_amount: -custRef, status: 'refunded', refund_company: compRef, refund_customer: custRef 
     }]).select(`*, customers(name)`).single(); 
     
-    // Recharge Portal with Company Refund
     if (inv.portal_id && compRef > 0) { 
       const portal = data.portals.find(p => p.id === inv.portal_id);
       const newPortalBal = (portal.current_balance || 0) + compRef; 
@@ -236,11 +236,9 @@ export default function useERP() {
       setData(prev => ({ ...prev, portals: prev.portals.map(p => p.id === inv.portal_id ? { ...p, current_balance: newPortalBal } : p) }));
     } 
     
-    // Customer Refund: Cash, Bank, or Credit
     let newCashEntry = null; 
     if (custRef > 0) {
       if (refundForm.mode === 'Credit') {
-        // Add to customer store credit
         const cust = data.customers.find(c => c.id === inv.customer_id);
         if (cust) {
           const newCredit = (cust.store_credit || 0) + custRef;
@@ -292,82 +290,75 @@ export default function useERP() {
 
   const getInvoiceHTML = (inv, s, invLang = 'en') => {
     const isAr = invLang === 'ar'; const dir = isAr ? 'rtl' : 'ltr'; const textAlign = isAr ? 'right' : 'left'; const textAlignOpp = isAr ? 'left' : 'right';
-    // A4 Size: 210mm x 297mm approx 794px x 1123px at 96 DPI
-    return `<div style="width:794px;min-height:1123px;padding:40px;font-family:'Segoe UI',Tahoma,Arial;background:#fff;color:#333;direction:${dir};text-align:${textAlign};">
+    return `
+    <div style="width:210mm;min-height:297mm;padding:20mm;margin:0 auto;box-sizing:border-box;font-family:'Segoe UI',Tahoma,Arial;background:#fff;color:#333;direction:${dir};text-align:${textAlign};">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1E3A8A;padding-bottom:20px;margin-bottom:30px;">
         <div style="display:flex;align-items:center;gap:20px;">
-          ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:140px;width:auto;object-fit:contain;" />` : ''}
+          ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:120px;width:auto;object-fit:contain;" />` : ''}
           <div>
-            <h1 style="margin:0;color:#1E3A8A;font-size:32px;font-weight:bold;">${s.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
-            <h2 style="margin:0;color:#D97706;font-size:24px;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
-            <p style="font-size:12px;margin-top:10px;line-height:1.6;color:#555;">
-              ${isAr ? 'عنوان: ' : 'Address: '}${s.address_ar || 'طريق ملك عبدالعزيز عرعر'}<br/>
+            <h1 style="margin:0;color:#1E3A8A;font-size:28px;font-weight:bold;">${s.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
+            <h2 style="margin:0;color:#D97706;font-size:22px;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
+            <p style="font-size:11px;margin-top:8px;line-height:1.5;color:#555;">
+              ${isAr ? 'عنوان: ' : 'Address: '}${s.address_ar || ''}<br/>
               ${isAr ? 'سجل تجاري: ' : 'CR: '}${s.cr_no || ''} | ${isAr ? 'هاتف: ' : 'Ph: '}${s.phone || ''}<br/>
-              ${isAr ? 'رقم ترخيص: ' : 'License: '}${s.license_no || ''} | ${isAr ? 'ترخيص سياحي: ' : 'Tourist Lic: '}${s.tourist_license_no || ''}<br/>
               VAT: ${s.vat_no || ''} | IATA: ${s.iata_no || ''}
             </p>
           </div>
         </div>
-        <div style="text-align:${textAlignOpp};background:#1E3A8A;color:#fff;padding:15px 20px;border-radius:8px;">
-          <h1 style="margin:0;font-size:24px;">${isAr ? 'فاتورة ضريبية' : 'TAX INVOICE'}</h1>
-          <p style="font-size:13px;margin-top:10px;color:#eee;">Inv No: <b>${inv.invoice_no}</b><br/>Date: ${inv.invoice_date}</p>
+        <div style="text-align:${textAlignOpp};background:#1E3A8A;color:#fff;padding:15px 20px;border-radius:8px;min-width:200px;">
+          <h1 style="margin:0;font-size:22px;">${isAr ? 'فاتورة ضريبية' : 'TAX INVOICE'}</h1>
+          <p style="font-size:12px;margin-top:10px;color:#eee;">Inv No: <b>${inv.invoice_no}</b><br/>Date: ${inv.invoice_date}<br/>Payment: ${inv.payment_method}</p>
         </div>
       </div>
       
-      <div style="margin-bottom:30px;display:flex;justify-content:space-between;background:#f8fafc;padding:15px;border-radius:8px;">
+      <div style="margin-bottom:20px;display:flex;justify-content:space-between;background:#f8fafc;padding:15px;border-radius:8px;">
         <div>
           <h3 style="margin:0 0 5px;color:#1E3A8A;font-size:14px;">${isAr ? 'الفاتورة إلى:' : 'BILL TO:'}</h3>
-          <p style="margin:0;font-size:16px;font-weight:bold;">${inv.customers?.name || inv.corporates?.name || ''}</p>
-          <p style="margin:0;font-size:12px;color:#666;">${inv.customers?.phone || inv.corporates?.phone || ''} ${inv.corporates?.vat_no ? '| VAT: '+inv.corporates.vat_no : ''}</p>
+          <p style="margin:0;font-size:15px;font-weight:bold;">${inv.customers?.name || inv.corporates?.name || ''}</p>
+          <p style="margin:0;font-size:11px;color:#666;">${inv.customers?.phone || inv.corporates?.phone || ''} ${inv.corporates?.vat_no ? '| VAT: '+inv.corporates.vat_no : ''}</p>
         </div>
         <div style="text-align:${textAlignOpp};">
-          <p style="margin:0;font-size:12px;"><b>${isAr ? 'طريقة الدفع:' : 'Payment Method:'}</b> ${inv.payment_method}</p>
           <p style="margin:0;font-size:12px;"><b>${isAr ? 'الحالة:' : 'Status:'}</b> <span style="color:${inv.due_amount>0?'#EF4444':'#059669'};font-weight:bold;">${inv.due_amount>0?(isAr?'غير مدفوع':'UNPAID'):(isAr?'مدفوع':'PAID')}</span></p>
         </div>
       </div>
 
+      ${inv.passenger_names ? `<div style="margin-bottom:20px;padding:10px;background:#fff;border:1px dashed #ddd;"><b style="font-size:12px;">Passengers:</b><br/><span style="font-size:12px;white-space:pre-wrap;">${inv.passenger_names}</span></div>` : ''}
+
       <table style="width:100%;border-collapse:collapse;text-align:center;margin-bottom:30px;">
         <thead>
           <tr style="background:#1E3A8A;color:#fff;">
-            <th style="padding:12px;border:1px solid #1e3a8a;">${isAr ? 'الخدمة / القطاع' : 'Service / Sector'}</th>
-            <th style="padding:12px;border:1px solid #1e3a8a;">${isAr ? 'خطوط الطيران' : 'Airline'}</th>
-            <th style="padding:12px;border:1px solid #1e3a8a;">PNR</th>
-            <th style="padding:12px;border:1px solid #1e3a8a;">${isAr ? 'رقم التذكرة' : 'Ticket No'}</th>
-            <th style="padding:12px;border:1px solid #1e3a8a;">${isAr ? 'الكمية' : 'Qty'}</th>
-            <th style="padding:12px;border:1px solid #1e3a8a;">${isAr ? 'المجموع' : 'Total'}</th>
+            <th style="padding:10px;border:1px solid #1e3a8a;">${isAr ? 'الخدمة / القطاع' : 'Service / Sector'}</th>
+            <th style="padding:10px;border:1px solid #1e3a8a;">${isAr ? 'خطوط الطيران' : 'Airline'}</th>
+            <th style="padding:10px;border:1px solid #1e3a8a;">PNR</th>
+            <th style="padding:10px;border:1px solid #1e3a8a;">${isAr ? 'رقم التذكرة' : 'Ticket No'}</th>
+            <th style="padding:10px;border:1px solid #1e3a8a;">${isAr ? 'الكمية' : 'Qty'}</th>
+            <th style="padding:10px;border:1px solid #1e3a8a;">${isAr ? 'المجموع' : 'Total'}</th>
           </tr>
         </thead>
         <tbody>
           <tr style="background:#fff;">
-            <td style="padding:12px;border:1px solid #ddd;text-align:${textAlign};"><b>${inv.service_type}</b><br/><span style="font-size:11px;color:#666;">${inv.sector || ''}</span></td>
-            <td style="padding:12px;border:1px solid #ddd;">${inv.airline || 'N/A'}</td>
-            <td style="padding:12px;border:1px solid #ddd;">${inv.pnr || 'N/A'}</td>
-            <td style="padding:12px;border:1px solid #ddd;">${inv.ticket_no || 'N/A'}</td>
-            <td style="padding:12px;border:1px solid #ddd;">${inv.qty || 1}</td>
-            <td style="padding:12px;border:1px solid #ddd;font-weight:bold;">${inv.total_sell.toFixed(2)} SAR</td>
+            <td style="padding:10px;border:1px solid #ddd;text-align:${textAlign};"><b>${inv.service_type}</b><br/><span style="font-size:10px;color:#666;">${inv.sector || ''}</span></td>
+            <td style="padding:10px;border:1px solid #ddd;">${inv.airline || 'N/A'}</td>
+            <td style="padding:10px;border:1px solid #ddd;">${inv.pnr || 'N/A'}</td>
+            <td style="padding:10px;border:1px solid #ddd;">${inv.ticket_no || 'N/A'}</td>
+            <td style="padding:10px;border:1px solid #ddd;">${inv.qty || 1}</td>
+            <td style="padding:10px;border:1px solid #ddd;font-weight:bold;">${inv.total_sell.toFixed(2)} SAR</td>
           </tr>
         </tbody>
       </table>
 
-      <div style="display:flex;justify-content:space-between;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div style="text-align:center;background:#f8fafc;padding:10px;border-radius:8px;border:1px solid #eee;">
           <p style="margin:0 0 5px;font-size:10px;color:#666;">ZATCA QR</p>
-          <img src="${inv.qrCode || ''}" width="120" height="120" />
+          <img src="${inv.qrCode || ''}" width="100" height="100" />
         </div>
-        <div style="width:320px;font-size:14px;">
-          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;">
-            <span>${isAr ? 'قبل الضريبة:' : 'Before VAT:'}</span><b>${inv.total_sell.toFixed(2)} SAR</b>
-          </div>
+        <div style="width:300px;font-size:14px;">
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>${isAr ? 'قبل الضريبة:' : 'Before VAT:'}</span><b>${inv.total_sell.toFixed(2)} SAR</b></div>
           ${inv.discount > 0 ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;color:#EF4444;"><span>${isAr ? 'الخصم:' : 'Discount:'}</span><b>- ${inv.discount.toFixed(2)} SAR</b></div>` : ''}
-          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;">
-            <span>${isAr ? 'ضريبة 15%' : 'VAT 15%:'}</span><b>${inv.vat.toFixed(2)} SAR</b>
-          </div>
-          <div style="display:flex;justify-content:space-between;background:#1E3A8A;color:#FBBF24;padding:12px;font-weight:bold;font-size:18px;border-radius:4px;margin-top:5px;">
-            <span>${isAr ? 'المجموع:' : 'TOTAL:'}</span><b>${inv.total.toFixed(2)} SAR</b>
-          </div>
-          <div style="display:flex;justify-content:space-between;padding:12px 0;color:#EF4444;font-weight:bold;font-size:16px;margin-top:10px;">
-            <span>${isAr ? 'المستحق:' : 'BALANCE DUE:'}</span><b>${inv.due_amount.toFixed(2)} SAR</b>
-          </div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>${isAr ? 'ضريبة 15%' : 'VAT 15%:'}</span><b>${inv.vat.toFixed(2)} SAR</b></div>
+          <div style="display:flex;justify-content:space-between;background:#1E3A8A;color:#FBBF24;padding:12px;font-weight:bold;font-size:18px;border-radius:4px;margin-top:5px;"><span>${isAr ? 'المجموع:' : 'TOTAL:'}</span><b>${inv.total.toFixed(2)} SAR</b></div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;color:#059669;margin-top:10px;"><span>Paid:</span><b>${inv.paid_amount.toFixed(2)} SAR</b></div>
+          <div style="display:flex;justify-content:space-between;padding:12px 0;color:#EF4444;font-weight:bold;font-size:16px;"><span>${isAr ? 'المستحق:' : 'BALANCE DUE:'}</span><b>${inv.due_amount.toFixed(2)} SAR</b></div>
         </div>
       </div>
     </div>`;
@@ -386,10 +377,20 @@ export default function useERP() {
       html.innerHTML = getInvoiceHTML({...inv, qrCode: qr}, s, invLang); 
       document.body.appendChild(html); 
       const canvas = await html2canvas(html, { useCORS: true, allowTaint: true, scale: 2 }); 
-      const doc = new jsPDF('p', 'mm', 'a4'); // Explicitly A4 size
+      const doc = new jsPDF('p', 'mm', 'a4'); // A4 Size Explicit
       const imgWidth = 210; // A4 width in mm
+      const pageHeight = 297; // A4 height in mm
       const imgHeight = canvas.height * imgWidth / canvas.width; 
-      doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight); 
+      let heightLeft = imgHeight;
+      let position = 0;
+      doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight); 
+      heightLeft -= pageHeight;
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        doc.addPage();
+        doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight); 
+        heightLeft -= pageHeight;
+      }
       doc.save(`${inv.invoice_no}-${invLang}.pdf`); 
       document.body.removeChild(html); 
       showToast('PDF Downloaded!'); 
@@ -413,8 +414,18 @@ export default function useERP() {
       const canvas = await html2canvas(html, { useCORS: true, allowTaint: true, scale: 2 }); 
       const doc = new jsPDF('p', 'mm', 'a4'); 
       const imgWidth = 210; 
+      const pageHeight = 297; 
       const imgHeight = canvas.height * imgWidth / canvas.width; 
-      doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight); 
+      let heightLeft = imgHeight;
+      let position = 0;
+      doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight); 
+      heightLeft -= pageHeight;
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        doc.addPage();
+        doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight); 
+        heightLeft -= pageHeight;
+      }
       document.body.removeChild(html); 
       doc.autoPrint(); 
       window.open(doc.output('bloburl'), '_blank'); 
@@ -424,7 +435,7 @@ export default function useERP() {
   };
 
   return {
-    user, userProfile, lang, setLang, page, setPage, payFilter, setPayFilter, toast, modal, setModal, passForm, setPassForm, chatOpen, setChatOpen, chatMessages, chatInput, setChatInput, search, setSearch, tblPage, setTblPage, itemsPerPage, data, today, 
+    user, userProfile, lang, setLang, page, setPage, payFilter, setPayFilter, toast, modal, setModal, passForm, setPassForm, chatOpen, setChatOpen, chatMessages, chatInput, setChatInput, search, setSearch, tblPage, setTblPage, itemsPerPage, ledgerCustId, setLedgerCustId, data, today, 
     invForm, setInvForm, editInvId, setEditInvId, handleEditInvoice, handleCreateInvoice, handleDeleteInvoice, 
     corpForm, setCorpForm, editCorpId, setEditCorpId, creditorForm, setCreditorForm, editCredId, setEditCredId, 
     custForm, setCustForm, editCustId, setEditCustId, vendorForm, setVendorForm, editVendId, setEditVendId, 
