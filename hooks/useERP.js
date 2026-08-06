@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
-export const dynamic = 'force-dynamic';
-
 export default function useERP() {
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState({ email: '', username: '', role: 'Owner', is_admin: true, can_access_invoices: true, can_access_bank: true, can_access_hr: true, can_access_reports: true, can_access_settings: true });
@@ -25,7 +23,7 @@ export default function useERP() {
   const today = new Date().toISOString().split('T')[0];
   
   const [editInvId, setEditInvId] = useState(null);
-  const [invForm, setInvForm] = useState({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: '', bookingDate: today, invoiceDate: today, service: 'Flight Ticket', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0 });
+  const [invForm, setInvForm] = useState({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: '', bookingDate: today, invoiceDate: today, service: 'Flight Ticket', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' });
   
   const [editCorpId, setEditCorpId] = useState(null); const [corpForm, setCorpForm] = useState({ name: '', vat_no: '', phone: '', address: '' });
   const [editCredId, setEditCredId] = useState(null); const [creditorForm, setCreditorForm] = useState({ name: '', phone: '', address: '' });
@@ -137,19 +135,25 @@ export default function useERP() {
       const usedCredit = parseFloat(invForm.useCredit) || 0;
       const totalPaid = cashPaid + usedCredit;
       
-      if (usedCredit > 0 && invForm.custId !== 'new') {
-        const cust = data.customers.find(c => c.id === invForm.custId);
+      let cid = null, corpId = null;
+      
+      // If Credit Balance is used, assign the invoice to that customer
+      if (invForm.payment === 'Credit Balance' && invForm.creditCustId) {
+        cid = invForm.creditCustId;
+        const cust = data.customers.find(c => c.id === cid);
         if (cust) {
           const newCredit = (cust.store_credit || 0) - usedCredit;
           await supabase.from('customers').update({ store_credit: newCredit }).eq('id', cust.id);
         }
+      } else {
+        if (invForm.custType === 'Individual') { 
+          if (invForm.custId === 'new') { const { data: nC } = await supabase.from('customers').insert([{ name: invForm.custName, phone: invForm.custPhone, type: 'Individual' }]).select().single(); cid = nC.id; } 
+          else { cid = invForm.custId; } 
+        } else { 
+          if (invForm.corpId === 'new') { const { data: nCorp } = await supabase.from('corporates').insert([{ name: invForm.corpName, vat_no: invForm.corpVat, phone: invForm.corpPhone, address: invForm.corpAddress }]).select().single(); corpId = nCorp.id; } 
+          else { corpId = invForm.corpId; } 
+        }
       }
-
-      const due = total - totalPaid; 
-      const profit = sell - cost;
-      
-      let cid = null, corpId = null;
-      if (invForm.custType === 'Individual') { if (invForm.custId === 'new') { const { data: nC } = await supabase.from('customers').insert([{ name: invForm.custName, phone: invForm.custPhone, type: 'Individual' }]).select().single(); cid = nC.id; } else { cid = invForm.custId; } } else { if (invForm.corpId === 'new') { const { data: nCorp } = await supabase.from('corporates').insert([{ name: invForm.corpName, vat_no: invForm.corpVat, phone: invForm.corpPhone, address: invForm.corpAddress }]).select().single(); corpId = nCorp.id; } else { corpId = invForm.corpId; } }
       
       const portal = data.portals.find(p => p.id === invForm.portalId); if (!portal) throw new Error("Select Portal");
       let desc = invForm.service === 'Flight Ticket' ? `${invForm.airline} - ${invForm.flightSector}` : invForm.service; 
@@ -161,8 +165,8 @@ export default function useERP() {
         flight_type: invForm.flightType, pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty: qty, 
         discount: discount, passenger_names: passengerNames || null, airline: invForm.airline || null, 
         flight_sector: invForm.flightSector || null, total_cost: cost, total_sell: sell, profit, vat, total, 
-        paid_amount: totalPaid, used_credit: usedCredit, due_amount: due, payment_method: invForm.payment, 
-        credit_due_date: due > 0 && invForm.payment === 'Credit' ? invForm.creditDueDate : null, 
+        paid_amount: totalPaid, used_credit: usedCredit, due_amount: total - totalPaid, payment_method: invForm.payment, 
+        credit_due_date: total - totalPaid > 0 && invForm.payment === 'Credit' ? invForm.creditDueDate : null, 
         creditor_id: invForm.payment === 'Credit' ? (invForm.creditorId || null) : null, 
         tabby_order_no: invForm.payment === 'Tabby' ? invForm.tabbyNo : null, 
         tamara_order_no: invForm.payment === 'Tamara' ? invForm.tamaraNo : null, 
@@ -180,7 +184,7 @@ export default function useERP() {
         await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', portal.id); 
         await logAction(`Created Invoice ${invNo}`);
         let newCashEntry = null; 
-        if (cashPaid > 0 && invForm.payment !== 'Credit') { 
+        if (cashPaid > 0 && invForm.payment !== 'Credit' && invForm.payment !== 'Credit Balance') { 
           const cbType = invForm.payment === 'Cash' ? 'Cash-In' : (invForm.payment === 'Bank Transfer' ? 'Bank-In' : null); 
           if (cbType) { 
             const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: invForm.invoiceDate, type: cbType, description: `Payment for ${invNo}`, amount: cashPaid }]).select().single(); 
@@ -191,7 +195,7 @@ export default function useERP() {
         showToast('Invoice Generated!');
       }
       
-      setInvForm({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: data.portals[0]?.id || '', bookingDate: today, invoiceDate: today, service: 'Flight Ticket', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0 }); 
+      setInvForm({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: data.portals[0]?.id || '', bookingDate: today, invoiceDate: today, service: 'Flight Ticket', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' }); 
       setPage('list');
     } catch (err) { showToast('Error: ' + err.message); }
   };
@@ -381,7 +385,7 @@ export default function useERP() {
           <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;"><span>${isAr ? 'ضريبة 15%' : 'VAT 15%:'}</span><b>${inv.vat.toFixed(2)} SAR</b></div>
           <div style="display:flex;justify-content:space-between;background:#1E3A8A;color:#FBBF24;padding:15px;font-weight:bold;font-size:20px;border-radius:6px;margin-top:10px;"><span>${isAr ? 'المجموع:' : 'TOTAL:'}</span><b>${inv.total.toFixed(2)} SAR</b></div>
           
-          ${inv.used_credit > 0 ? `<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee;color:#059669;"><span>${isAr ? 'خ_credit:' : 'Less: Credit Applied:'}</span><b>- ${inv.used_credit.toFixed(2)} SAR</b></div>` : ''}
+          ${inv.used_credit > 0 ? `<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee;color:#059669;"><span>${isAr ? 'خصم من الرصيد:' : 'Less: Credit Applied:'}</span><b>- ${inv.used_credit.toFixed(2)} SAR</b></div>` : ''}
           
           <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee;color:#059669;"><span>${isAr ? 'مدفوع نقدا/بنك:' : 'Cash/Bank Paid:'}</span><b>${(inv.paid_amount - (inv.used_credit || 0)).toFixed(2)} SAR</b></div>
           
