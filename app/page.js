@@ -23,6 +23,10 @@ export default function Home() {
     { id: 'bank', label: erp.tr.bank, show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
     { id: 'invest', label: erp.tr.invest, show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
     { id: 'hr', label: erp.tr.hr, show: erp.userProfile.is_admin || erp.userProfile.can_access_hr },
+    { id: 'statements', label: erp.tr.statements, show: erp.userProfile.is_admin || erp.userProfile.can_access_reports },
+    { id: 'users', label: erp.tr.users, show: erp.userProfile.is_admin },
+    { id: 'reports', label: erp.tr.reports, show: erp.userProfile.is_admin || erp.userProfile.can_access_reports },
+    { id: 'audit', label: erp.tr.audit, show: erp.userProfile.is_admin },
     { id: 'settings', label: erp.tr.settings, show: erp.userProfile.is_admin || erp.userProfile.can_access_settings },
   ].filter(m => m.show);
 
@@ -41,22 +45,51 @@ export default function Home() {
         refundForm={erp.refundForm} setRefundForm={erp.setRefundForm} handleRefund={erp.handleRefund}
       >
         <ERPViews 
-          page={erp.page} data={erp.data} tr={erp.tr} invForm={erp.invForm} setInvForm={erp.setInvForm} 
-          handleCreateInvoice={erp.handleCreateInvoice} downloadPDF={erp.downloadPDF} printInvoice={erp.printInvoice} 
-          exportToExcel={erp.exportToExcel} 
-          handleAddEditCust={erp.handleAddEditCust} custForm={erp.custForm} setCustForm={erp.setCustForm} handleEditCust={erp.handleEditCust}
-          handleAddEditCorp={erp.handleAddEditCorp} corpForm={erp.corpForm} setCorpForm={erp.setCorpForm} handleEditCorp={erp.handleEditCorp}
-          handleAddEditCred={erp.handleAddEditCred} creditorForm={erp.creditorForm} setCreditorForm={erp.setCreditorForm} handleEditCred={erp.handleEditCred}
-          handleAddEditVend={erp.handleAddEditVend} vendorForm={erp.vendorForm} setVendorForm={erp.setVendorForm} handleEditVend={erp.handleEditVend}
-          handleAddEditPkg={erp.handleAddEditPkg} pkgForm={erp.pkgForm} setPkgForm={erp.setPkgForm} handleEditPkg={erp.handleEditPkg}
-          handleAddEditBrn={erp.handleAddEditBrn} brnForm={erp.brnForm} setBrnForm={erp.setBrnForm} handleEditBrn={erp.handleEditBrn}
-          handleAddEditEmp={erp.handleAddEditEmp} empForm={erp.empForm} setEmpForm={erp.setEmpForm} handleEditEmp={erp.handleEditEmp}
+          // Core Data & State
+          page={erp.page} data={erp.data} tr={erp.tr} today={erp.today}
+          
+          // Invoices
+          invForm={erp.invForm} setInvForm={erp.setInvForm} 
+          handleCreateInvoice={erp.handleCreateInvoice} downloadPDF={erp.downloadPDF}
+          printInvoice={erp.printInvoice} exportCSV={erp.exportCSV} 
+          search={erp.search} setSearch={erp.setSearch} 
+          tblPage={erp.tblPage} setTblPage={erp.setTblPage} 
+          payFilter={erp.payFilter} setPayFilter={erp.setPayFilter}
+          
+          // Customer & Corp & Creditors
+          handleAddEditCust={erp.handleAddEditCust} custForm={erp.custForm} setCustForm={erp.setCustForm} handleEditCust={erp.handleEditCust} editCustId={erp.editCustId}
+          handleAddEditCorp={erp.handleAddEditCorp} corpForm={erp.corpForm} setCorpForm={erp.setCorpForm} handleEditCorp={erp.handleEditCorp} editCorpId={erp.editCorpId}
+          handleAddEditCred={erp.handleAddEditCred} creditorForm={erp.creditorForm} setCreditorForm={erp.setCreditorForm} handleEditCred={erp.handleEditCred} editCredId={erp.editCredId}
+          
+          // Vendors & Packages & Branches
+          handleAddEditVend={erp.handleAddEditVend} vendorForm={erp.vendorForm} setVendorForm={erp.setVendorForm} handleEditVend={erp.handleEditVend} editVendId={erp.editVendId}
+          handleAddEditPkg={erp.handleAddEditPkg} pkgForm={erp.pkgForm} setPkgForm={erp.setPkgForm} handleEditPkg={erp.handleEditPkg} editPkgId={erp.editPkgId}
+          handleAddEditBrn={erp.handleAddEditBrn} brnForm={erp.brnForm} setBrnForm={erp.setBrnForm} handleEditBrn={erp.handleEditBrn} editBrnId={erp.editBrnId}
+          
+          // HR & Employees & Services
+          handleAddEditEmp={erp.handleAddEditEmp} empForm={erp.empForm} setEmpForm={erp.setEmpForm} handleEditEmp={erp.handleEditEmp} editEmpId={erp.editEmpId}
+          handleAddEditSrv={erp.handleAddEditSrv} srvForm={erp.srvForm} setSrvForm={erp.setSrvForm} handleEditSrv={erp.handleEditSrv} editSrvId={erp.editSrvId}
+          handlePaySalary={erp.handlePaySalary} 
+          handleAddExpense={erp.handleAddExpense}
+          
+          // Portals & Investors & Transfers
           handleAddPortal={erp.handleAddPortal} portalForm={erp.portalForm} setPortalForm={erp.setPortalForm}
           handleAddInvestment={erp.handleAddInvestment} investForm={erp.investForm} setInvestForm={erp.setInvestForm}
-          handleDelete={erp.handleDelete} handleRecharge={erp.handleRecharge} handleTransfer={erp.handleTransfer} 
-          handleSaveSettings={erp.handleSaveSettings} handleLogoUpload={erp.handleLogoUpload} 
-          setForm={erp.setForm} setSetForm={erp.setSetForm} today={erp.today}
+          handleRecharge={erp.handleRecharge} handleTransfer={erp.handleTransfer} 
           transferForm={erp.transferForm} setTransferForm={erp.setTransferForm}
+          
+          // Users & Settings
+          handleAddUser={erp.handleAddUser} userForm={erp.userForm} setUserForm={erp.setUserForm}
+          handleSaveSettings={erp.handleSaveSettings} handleLogoUpload={erp.handleLogoUpload} 
+          setForm={erp.setForm} setSetForm={erp.setSetForm} 
+          
+          // Reports & Statements
+          repDate={erp.repDate} setRepDate={erp.setRepDate} 
+          reportTab={erp.reportTab} setReportTab={erp.setReportTab} 
+          statementTab={erp.statementTab} setStatementTab={erp.setStatementTab}
+          
+          // Global Actions
+          handleDelete={erp.handleDelete}
         />
       </ERPLayout>
     </>
