@@ -31,7 +31,8 @@ export default function ERPViews(props) {
     handleSaveSettings, handleLogoUpload, setForm, setSetForm,
     repDate, setRepDate, reportTab, setReportTab, statementTab, setStatementTab,
     handleDelete, filterData,
-    handleEditInvoice, handleDeleteInvoice, openRefundModal, editInvId
+    handleEditInvoice, handleDeleteInvoice, openRefundModal, editInvId,
+    ledgerCustId, setLedgerCustId
   } = props;
 
   if (page === 'dashboard') {
@@ -49,6 +50,26 @@ export default function ERPViews(props) {
           <div style={{...styles.card, borderLeft: '5px solid #D97706'}}><h3>Cash Balance</h3><h2>{cashBal.toFixed(2)} SAR</h2></div>
           <div style={{...styles.card, borderLeft: '5px solid #EF4444'}}><h3>Bank Balance</h3><h2>{bankBal.toFixed(2)} SAR</h2></div>
         </div>
+      </div>
+    );
+  }
+
+  if (page === 'credit') {
+    const creditCustomers = data.customers.filter(c => c.store_credit > 0);
+    return (
+      <div>
+        <h2>{tr.credit}</h2>
+        <div style={styles.card}>
+          <p>Ye un customers ka list hai jinki refunds unke credit balance me add hui hain. Naya invoice banate waqt ye balance automatically use ho sakta hai.</p>
+        </div>
+        <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
+          <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Customer</th><th style={{ padding: '12px' }}>Phone</th><th style={{ padding: '12px' }}>Available Credit (SAR)</th></tr></thead>
+          <tbody>
+            {creditCustomers.length === 0 ? <tr><td colSpan="3" style={{padding: '20px', textAlign: 'center'}}>No credit balances available.</td></tr> : 
+              creditCustomers.map(c => <tr key={c.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{c.name}</td><td style={{ padding: '12px' }}>{c.phone}</td><td style={{ padding: '12px', color: '#059669', fontWeight: 'bold' }}>{c.store_credit.toFixed(2)}</td></tr>)
+            }
+          </tbody>
+        </table>
       </div>
     );
   }
@@ -138,7 +159,6 @@ export default function ERPViews(props) {
                 <label style={styles.label}>Flight Type</label>
                 <select value={invForm.flightType} onChange={e => {
                   const ft = e.target.value;
-                  // Auto-set VAT based on flight type
                   setInvForm({...invForm, flightType: ft, taxRate: ft === 'International' ? '0' : '15'});
                 }} style={styles.input}>
                   <option>Domestic</option>
@@ -492,6 +512,61 @@ export default function ERPViews(props) {
       if (activeTab === 'payroll') return filterData(data.payroll, 'created_at');
       return [];
     };
+    
+    if (activeTab === 'ledger') {
+      const custInvs = data.invoices.filter(i => i.customer_id === ledgerCustId).sort((a,b) => new Date(a.invoice_date) - new Date(b.invoice_date));
+      let runningBalance = 0;
+      const ledgerData = custInvs.map(inv => {
+        if (inv.invoice_no.startsWith('REF-')) {
+          runningBalance -= inv.refund_customer || 0;
+          return { ...inv, type: 'Refund', amount: inv.refund_customer, balance: runningBalance };
+        } else {
+          runningBalance += inv.due_amount;
+          return { ...inv, type: 'Invoice', amount: inv.total, balance: runningBalance };
+        }
+      });
+
+      return (
+        <div>
+          <h2>{isReport ? tr.reports : tr.statements}</h2>
+          <div style={styles.card}>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              <button onClick={() => setTab('sales')} style={styles.btnWarning}>Sales</button>
+              <button onClick={() => setTab('refunds')} style={styles.btnWarning}>Refunds</button>
+              <button onClick={() => setTab('cashbook')} style={styles.btnWarning}>Cashbook</button>
+              <button onClick={() => setTab('investments')} style={styles.btnWarning}>Investments</button>
+              <button onClick={() => setTab('expenses')} style={styles.btnWarning}>Expenses</button>
+              <button onClick={() => setTab('recharges')} style={styles.btnWarning}>Recharges</button>
+              <button onClick={() => setTab('payroll')} style={styles.btnWarning}>Payroll</button>
+              <button onClick={() => setTab('ledger')} style={styles.btnPrimary}>Customer Ledger</button>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+              <select value={ledgerCustId} onChange={e => setLedgerCustId(e.target.value)} style={styles.input}>
+                <option value="">Select Customer</option>
+                {data.customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            {ledgerCustId && (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr style={{ background: '#f1f5f9' }}><th style={{ padding: '10px', textAlign: 'left' }}>Date</th><th style={{ padding: '10px', textAlign: 'left' }}>Inv No</th><th style={{ padding: '10px', textAlign: 'left' }}>Type</th><th style={{ padding: '10px', textAlign: 'left' }}>Amount</th><th style={{ padding: '10px', textAlign: 'left' }}>Balance Due</th></tr></thead>
+                <tbody>
+                  {ledgerData.map(item => (
+                    <tr key={item.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '10px' }}>{item.invoice_date}</td>
+                      <td style={{ padding: '10px' }}>{item.invoice_no}</td>
+                      <td style={{ padding: '10px', color: item.type === 'Refund' ? '#EF4444' : '#059669' }}>{item.type}</td>
+                      <td style={{ padding: '10px', fontWeight: 'bold' }}>{item.amount?.toFixed(2)}</td>
+                      <td style={{ padding: '10px', fontWeight: 'bold', color: item.balance > 0 ? '#EF4444' : '#333' }}>{item.balance?.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     const repData = getData();
     const totalAmount = repData.reduce((s, i) => s + (i.total || i.amount || 0), 0);
 
@@ -507,6 +582,7 @@ export default function ERPViews(props) {
             <button onClick={() => setTab('expenses')} style={activeTab === 'expenses' ? styles.btnPrimary : styles.btnWarning}>Expenses</button>
             <button onClick={() => setTab('recharges')} style={activeTab === 'recharges' ? styles.btnPrimary : styles.btnWarning}>Recharges</button>
             <button onClick={() => setTab('payroll')} style={activeTab === 'payroll' ? styles.btnPrimary : styles.btnWarning}>Payroll</button>
+            <button onClick={() => setTab('ledger')} style={activeTab === 'ledger' ? styles.btnPrimary : styles.btnWarning}>Customer Ledger</button>
           </div>
           <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
             <input type="date" value={repDate.from} onChange={e => setRepDate({...repDate, from: e.target.value})} style={styles.input} />
