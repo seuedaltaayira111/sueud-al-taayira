@@ -20,7 +20,7 @@ export default function useERP() {
   const [search, setSearch] = useState('');
   const [tblPage, setTblPage] = useState(1);
   const itemsPerPage = 10;
-  const [ledgerCustId, setLedgerCustId] = useState(''); // For Customer Ledger
+  const [ledgerCustId, setLedgerCustId] = useState(''); 
   const [data, setData] = useState({ invoices: [], portals: [], customers: [], corporates: [], creditors: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [], audits: [], investments: [], vendors: [], customFields: [], packages: [], branches: [] });
   const today = new Date().toISOString().split('T')[0];
   
@@ -114,7 +114,8 @@ export default function useERP() {
       discount: inv.discount,
       taxRate: inv.vat > 0 ? '15' : '0',
       payment: inv.payment_method,
-      paid: inv.paid_amount,
+      paid: inv.paid_amount - (inv.used_credit || 0),
+      useCredit: inv.used_credit || 0,
       passengers: inv.passenger_names ? inv.passenger_names.split('\n') : ['']
     });
     setPage('create');
@@ -132,19 +133,19 @@ export default function useERP() {
       const vat = sell * (taxRate / 100); 
       const total = sell + vat; 
       
-      let paid = parseFloat(invForm.paid) || 0;
-      let usedCredit = parseFloat(invForm.useCredit) || 0;
+      const cashPaid = parseFloat(invForm.paid) || 0;
+      const usedCredit = parseFloat(invForm.useCredit) || 0;
+      const totalPaid = cashPaid + usedCredit;
       
       if (usedCredit > 0 && invForm.custId !== 'new') {
         const cust = data.customers.find(c => c.id === invForm.custId);
         if (cust) {
           const newCredit = (cust.store_credit || 0) - usedCredit;
           await supabase.from('customers').update({ store_credit: newCredit }).eq('id', cust.id);
-          paid += usedCredit;
         }
       }
 
-      const due = total - paid; 
+      const due = total - totalPaid; 
       const profit = sell - cost;
       
       let cid = null, corpId = null;
@@ -154,7 +155,19 @@ export default function useERP() {
       let desc = invForm.service === 'Flight Ticket' ? `${invForm.airline} - ${invForm.flightSector}` : invForm.service; 
       const passengerNames = invForm.passengers.filter(p => p).join('\n');
       
-      const payload = { customer_id: cid, corporate_id: corpId, portal_id: portal.id, employee_id: invForm.employeeId || null, booking_date: invForm.bookingDate, invoice_date: invForm.invoiceDate, service_type: invForm.service, flight_type: invForm.flightType, pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty: qty, discount: discount, passenger_names: passengerNames || null, airline: invForm.airline || null, flight_sector: invForm.flightSector || null, total_cost: cost, total_sell: sell, profit, vat, total, paid_amount: paid, due_amount: due, payment_method: invForm.payment, credit_due_date: due > 0 && invForm.payment === 'Credit' ? invForm.creditDueDate : null, creditor_id: invForm.payment === 'Credit' ? (invForm.creditorId || null) : null, tabby_order_no: invForm.payment === 'Tabby' ? invForm.tabbyNo : null, tamara_order_no: invForm.payment === 'Tamara' ? invForm.tamaraNo : null, ticket_status: invForm.ticketStatus };
+      const payload = { 
+        customer_id: cid, corporate_id: corpId, portal_id: portal.id, employee_id: invForm.employeeId || null, 
+        booking_date: invForm.bookingDate, invoice_date: invForm.invoiceDate, service_type: invForm.service, 
+        flight_type: invForm.flightType, pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty: qty, 
+        discount: discount, passenger_names: passengerNames || null, airline: invForm.airline || null, 
+        flight_sector: invForm.flightSector || null, total_cost: cost, total_sell: sell, profit, vat, total, 
+        paid_amount: totalPaid, used_credit: usedCredit, due_amount: due, payment_method: invForm.payment, 
+        credit_due_date: due > 0 && invForm.payment === 'Credit' ? invForm.creditDueDate : null, 
+        creditor_id: invForm.payment === 'Credit' ? (invForm.creditorId || null) : null, 
+        tabby_order_no: invForm.payment === 'Tabby' ? invForm.tabbyNo : null, 
+        tamara_order_no: invForm.payment === 'Tamara' ? invForm.tamaraNo : null, 
+        ticket_status: invForm.ticketStatus 
+      };
       
       if (editInvId) {
         const { data: upInv } = await supabase.from('invoices').update(payload).eq('id', editInvId).select(`*, customers(name), corporates(name)`).single();
@@ -163,8 +176,17 @@ export default function useERP() {
       } else {
         const invNo = `INV-${Date.now()}`;
         const { data: newInv } = await supabase.from('invoices').insert([{ invoice_no: invNo, ...payload }]).select(`*, customers(name), corporates(name)`).single();
-        const newPortalBal = (portal.current_balance || 0) - cost; await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', portal.id); await logAction(`Created Invoice ${invNo}`);
-        let newCashEntry = null; if (paid > 0 && invForm.payment !== 'Credit') { const cbType = invForm.payment === 'Cash' ? 'Cash-In' : (invForm.payment === 'Bank Transfer' ? 'Bank-In' : null); if (cbType) { const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: invForm.invoiceDate, type: cbType, description: `Payment for ${invNo}`, amount: paid }]).select().single(); newCashEntry = nC; } }
+        const newPortalBal = (portal.current_balance || 0) - cost; 
+        await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', portal.id); 
+        await logAction(`Created Invoice ${invNo}`);
+        let newCashEntry = null; 
+        if (cashPaid > 0 && invForm.payment !== 'Credit') { 
+          const cbType = invForm.payment === 'Cash' ? 'Cash-In' : (invForm.payment === 'Bank Transfer' ? 'Bank-In' : null); 
+          if (cbType) { 
+            const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: invForm.invoiceDate, type: cbType, description: `Payment for ${invNo}`, amount: cashPaid }]).select().single(); 
+            newCashEntry = nC; 
+          } 
+        }
         setData(prev => ({ ...prev, invoices: [newInv, ...prev.invoices], portals: prev.portals.map(p => p.id === portal.id ? { ...p, current_balance: newPortalBal } : p), cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook }));
         showToast('Invoice Generated!');
       }
@@ -221,7 +243,6 @@ export default function useERP() {
     const { data: upInv } = await supabase.from('invoices').update({ status: 'refunded', refund_company: compRef, refund_customer: custRef }).eq('id', inv.id).select(`*, customers(name)`).single(); 
     
     const refNo = `REF-${Date.now()}`; 
-    // Copying original invoice details to refund invoice
     const { data: newRefInv } = await supabase.from('invoices').insert([{ 
       invoice_no: refNo, customer_id: inv.customer_id, portal_id: inv.portal_id, booking_date: today, 
       invoice_date: refundForm.date, service_type: `Refund: ${refundForm.reason}`, 
@@ -290,75 +311,81 @@ export default function useERP() {
 
   const getInvoiceHTML = (inv, s, invLang = 'en') => {
     const isAr = invLang === 'ar'; const dir = isAr ? 'rtl' : 'ltr'; const textAlign = isAr ? 'right' : 'left'; const textAlignOpp = isAr ? 'left' : 'right';
+    // A4 Exact Pixel Size for html2canvas
     return `
-    <div style="width:210mm;min-height:297mm;padding:20mm;margin:0 auto;box-sizing:border-box;font-family:'Segoe UI',Tahoma,Arial;background:#fff;color:#333;direction:${dir};text-align:${textAlign};">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1E3A8A;padding-bottom:20px;margin-bottom:30px;">
-        <div style="display:flex;align-items:center;gap:20px;">
+    <div id="invoice-capture" style="width:794px; min-height:1123px; padding:50px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial; direction:${dir}; text-align:${textAlign}; display:flex; flex-direction:column;">
+      
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #1E3A8A; padding-bottom:25px; margin-bottom:40px;">
+        <div style="display:flex; align-items:center; gap:20px;">
           ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:120px;width:auto;object-fit:contain;" />` : ''}
           <div>
-            <h1 style="margin:0;color:#1E3A8A;font-size:28px;font-weight:bold;">${s.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
-            <h2 style="margin:0;color:#D97706;font-size:22px;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
-            <p style="font-size:11px;margin-top:8px;line-height:1.5;color:#555;">
+            <h1 style="margin:0;color:#1E3A8A;font-size:32px;font-weight:bold;">${s.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
+            <h2 style="margin:5px 0 0;color:#D97706;font-size:24px;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
+            <p style="font-size:13px;margin-top:15px;line-height:1.6;color:#555;">
               ${isAr ? 'عنوان: ' : 'Address: '}${s.address_ar || ''}<br/>
               ${isAr ? 'سجل تجاري: ' : 'CR: '}${s.cr_no || ''} | ${isAr ? 'هاتف: ' : 'Ph: '}${s.phone || ''}<br/>
               VAT: ${s.vat_no || ''} | IATA: ${s.iata_no || ''}
             </p>
           </div>
         </div>
-        <div style="text-align:${textAlignOpp};background:#1E3A8A;color:#fff;padding:15px 20px;border-radius:8px;min-width:200px;">
-          <h1 style="margin:0;font-size:22px;">${isAr ? 'فاتورة ضريبية' : 'TAX INVOICE'}</h1>
-          <p style="font-size:12px;margin-top:10px;color:#eee;">Inv No: <b>${inv.invoice_no}</b><br/>Date: ${inv.invoice_date}<br/>Payment: ${inv.payment_method}</p>
+        <div style="text-align:${textAlignOpp};background:#1E3A8A;color:#fff;padding:20px 25px;border-radius:8px;min-width:220px;">
+          <h1 style="margin:0;font-size:26px;">${isAr ? 'فاتورة ضريبية' : 'TAX INVOICE'}</h1>
+          <p style="font-size:14px;margin-top:12px;color:#eee;">Inv No: <b>${inv.invoice_no}</b><br/>Date: ${inv.invoice_date}<br/>Payment: ${inv.payment_method}</p>
         </div>
       </div>
       
-      <div style="margin-bottom:20px;display:flex;justify-content:space-between;background:#f8fafc;padding:15px;border-radius:8px;">
+      <div style="margin-bottom:30px;display:flex;justify-content:space-between;background:#f8fafc;padding:20px;border-radius:8px;">
         <div>
-          <h3 style="margin:0 0 5px;color:#1E3A8A;font-size:14px;">${isAr ? 'الفاتورة إلى:' : 'BILL TO:'}</h3>
-          <p style="margin:0;font-size:15px;font-weight:bold;">${inv.customers?.name || inv.corporates?.name || ''}</p>
-          <p style="margin:0;font-size:11px;color:#666;">${inv.customers?.phone || inv.corporates?.phone || ''} ${inv.corporates?.vat_no ? '| VAT: '+inv.corporates.vat_no : ''}</p>
+          <h3 style="margin:0 0 8px;color:#1E3A8A;font-size:16px;">${isAr ? 'الفاتورة إلى:' : 'BILL TO:'}</h3>
+          <p style="margin:0;font-size:18px;font-weight:bold;">${inv.customers?.name || inv.corporates?.name || ''}</p>
+          <p style="margin:5px 0 0;font-size:13px;color:#666;">${inv.customers?.phone || inv.corporates?.phone || ''} ${inv.corporates?.vat_no ? '| VAT: '+inv.corporates.vat_no : ''}</p>
         </div>
         <div style="text-align:${textAlignOpp};">
-          <p style="margin:0;font-size:12px;"><b>${isAr ? 'الحالة:' : 'Status:'}</b> <span style="color:${inv.due_amount>0?'#EF4444':'#059669'};font-weight:bold;">${inv.due_amount>0?(isAr?'غير مدفوع':'UNPAID'):(isAr?'مدفوع':'PAID')}</span></p>
+          <p style="margin:0;font-size:14px;"><b>${isAr ? 'الحالة:' : 'Status:'}</b> <span style="color:${inv.due_amount>0?'#EF4444':'#059669'};font-weight:bold;">${inv.due_amount>0?(isAr?'غير مدفوع':'UNPAID'):(isAr?'مدفوع':'PAID')}</span></p>
         </div>
       </div>
 
-      ${inv.passenger_names ? `<div style="margin-bottom:20px;padding:10px;background:#fff;border:1px dashed #ddd;"><b style="font-size:12px;">Passengers:</b><br/><span style="font-size:12px;white-space:pre-wrap;">${inv.passenger_names}</span></div>` : ''}
+      ${inv.passenger_names ? `<div style="margin-bottom:30px;padding:15px;background:#fff;border:1px dashed #ddd;border-radius:6px;"><b style="font-size:14px;">Passengers:</b><br/><span style="font-size:14px;white-space:pre-wrap;margin-top:5px;display:inline-block;">${inv.passenger_names}</span></div>` : ''}
 
-      <table style="width:100%;border-collapse:collapse;text-align:center;margin-bottom:30px;">
+      <table style="width:100%;border-collapse:collapse;text-align:center;margin-bottom:40px;">
         <thead>
           <tr style="background:#1E3A8A;color:#fff;">
-            <th style="padding:10px;border:1px solid #1e3a8a;">${isAr ? 'الخدمة / القطاع' : 'Service / Sector'}</th>
-            <th style="padding:10px;border:1px solid #1e3a8a;">${isAr ? 'خطوط الطيران' : 'Airline'}</th>
-            <th style="padding:10px;border:1px solid #1e3a8a;">PNR</th>
-            <th style="padding:10px;border:1px solid #1e3a8a;">${isAr ? 'رقم التذكرة' : 'Ticket No'}</th>
-            <th style="padding:10px;border:1px solid #1e3a8a;">${isAr ? 'الكمية' : 'Qty'}</th>
-            <th style="padding:10px;border:1px solid #1e3a8a;">${isAr ? 'المجموع' : 'Total'}</th>
+            <th style="padding:15px;border:1px solid #1e3a8a;font-size:14px;">${isAr ? 'الخدمة / القطاع' : 'Service / Sector'}</th>
+            <th style="padding:15px;border:1px solid #1e3a8a;font-size:14px;">${isAr ? 'خطوط الطيران' : 'Airline'}</th>
+            <th style="padding:15px;border:1px solid #1e3a8a;font-size:14px;">PNR</th>
+            <th style="padding:15px;border:1px solid #1e3a8a;font-size:14px;">${isAr ? 'رقم التذكرة' : 'Ticket No'}</th>
+            <th style="padding:15px;border:1px solid #1e3a8a;font-size:14px;">${isAr ? 'الكمية' : 'Qty'}</th>
+            <th style="padding:15px;border:1px solid #1e3a8a;font-size:14px;">${isAr ? 'المجموع' : 'Total'}</th>
           </tr>
         </thead>
         <tbody>
           <tr style="background:#fff;">
-            <td style="padding:10px;border:1px solid #ddd;text-align:${textAlign};"><b>${inv.service_type}</b><br/><span style="font-size:10px;color:#666;">${inv.sector || ''}</span></td>
-            <td style="padding:10px;border:1px solid #ddd;">${inv.airline || 'N/A'}</td>
-            <td style="padding:10px;border:1px solid #ddd;">${inv.pnr || 'N/A'}</td>
-            <td style="padding:10px;border:1px solid #ddd;">${inv.ticket_no || 'N/A'}</td>
-            <td style="padding:10px;border:1px solid #ddd;">${inv.qty || 1}</td>
-            <td style="padding:10px;border:1px solid #ddd;font-weight:bold;">${inv.total_sell.toFixed(2)} SAR</td>
+            <td style="padding:15px;border:1px solid #ddd;text-align:${textAlign};font-size:14px;"><b>${inv.service_type}</b><br/><span style="font-size:12px;color:#666;">${inv.sector || ''}</span></td>
+            <td style="padding:15px;border:1px solid #ddd;font-size:14px;">${inv.airline || 'N/A'}</td>
+            <td style="padding:15px;border:1px solid #ddd;font-size:14px;">${inv.pnr || 'N/A'}</td>
+            <td style="padding:15px;border:1px solid #ddd;font-size:14px;">${inv.ticket_no || 'N/A'}</td>
+            <td style="padding:15px;border:1px solid #ddd;font-size:14px;">${inv.qty || 1}</td>
+            <td style="padding:15px;border:1px solid #ddd;font-size:14px;font-weight:bold;">${inv.total_sell.toFixed(2)} SAR</td>
           </tr>
         </tbody>
       </table>
 
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-        <div style="text-align:center;background:#f8fafc;padding:10px;border-radius:8px;border:1px solid #eee;">
-          <p style="margin:0 0 5px;font-size:10px;color:#666;">ZATCA QR</p>
-          <img src="${inv.qrCode || ''}" width="100" height="100" />
+      <div style="margin-top:auto; display:flex;justify-content:space-between;align-items:flex-end;">
+        <div style="text-align:center;background:#f8fafc;padding:15px;border-radius:8px;border:1px solid #eee;width:140px;">
+          <p style="margin:0 0 10px;font-size:12px;color:#666;">ZATCA QR</p>
+          <img src="${inv.qrCode || ''}" width="110" height="110" />
         </div>
-        <div style="width:300px;font-size:14px;">
-          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>${isAr ? 'قبل الضريبة:' : 'Before VAT:'}</span><b>${inv.total_sell.toFixed(2)} SAR</b></div>
-          ${inv.discount > 0 ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;color:#EF4444;"><span>${isAr ? 'الخصم:' : 'Discount:'}</span><b>- ${inv.discount.toFixed(2)} SAR</b></div>` : ''}
-          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>${isAr ? 'ضريبة 15%' : 'VAT 15%:'}</span><b>${inv.vat.toFixed(2)} SAR</b></div>
-          <div style="display:flex;justify-content:space-between;background:#1E3A8A;color:#FBBF24;padding:12px;font-weight:bold;font-size:18px;border-radius:4px;margin-top:5px;"><span>${isAr ? 'المجموع:' : 'TOTAL:'}</span><b>${inv.total.toFixed(2)} SAR</b></div>
-          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;color:#059669;margin-top:10px;"><span>Paid:</span><b>${inv.paid_amount.toFixed(2)} SAR</b></div>
-          <div style="display:flex;justify-content:space-between;padding:12px 0;color:#EF4444;font-weight:bold;font-size:16px;"><span>${isAr ? 'المستحق:' : 'BALANCE DUE:'}</span><b>${inv.due_amount.toFixed(2)} SAR</b></div>
+        <div style="width:360px;font-size:16px;">
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;"><span>${isAr ? 'قبل الضريبة:' : 'Before VAT:'}</span><b>${inv.total_sell.toFixed(2)} SAR</b></div>
+          ${inv.discount > 0 ? `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;color:#EF4444;"><span>${isAr ? 'الخصم:' : 'Discount:'}</span><b>- ${inv.discount.toFixed(2)} SAR</b></div>` : ''}
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;"><span>${isAr ? 'ضريبة 15%' : 'VAT 15%:'}</span><b>${inv.vat.toFixed(2)} SAR</b></div>
+          <div style="display:flex;justify-content:space-between;background:#1E3A8A;color:#FBBF24;padding:15px;font-weight:bold;font-size:20px;border-radius:6px;margin-top:10px;"><span>${isAr ? 'المجموع:' : 'TOTAL:'}</span><b>${inv.total.toFixed(2)} SAR</b></div>
+          
+          ${inv.used_credit > 0 ? `<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee;color:#059669;"><span>${isAr ? 'خ_credit:' : 'Less: Credit Applied:'}</span><b>- ${inv.used_credit.toFixed(2)} SAR</b></div>` : ''}
+          
+          <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee;color:#059669;"><span>${isAr ? 'مدفوع نقدا/بنك:' : 'Cash/Bank Paid:'}</span><b>${(inv.paid_amount - (inv.used_credit || 0)).toFixed(2)} SAR</b></div>
+          
+          <div style="display:flex;justify-content:space-between;padding:15px 0;color:#EF4444;font-weight:bold;font-size:18px;"><span>${isAr ? 'المستحق:' : 'BALANCE DUE:'}</span><b>${inv.due_amount.toFixed(2)} SAR</b></div>
         </div>
       </div>
     </div>`;
@@ -376,11 +403,13 @@ export default function useERP() {
       const html = document.createElement('div'); 
       html.innerHTML = getInvoiceHTML({...inv, qrCode: qr}, s, invLang); 
       document.body.appendChild(html); 
-      const canvas = await html2canvas(html, { useCORS: true, allowTaint: true, scale: 2 }); 
-      const doc = new jsPDF('p', 'mm', 'a4'); // A4 Size Explicit
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 297; // A4 height in mm
+      const canvas = await html2canvas(html, { useCORS: true, allowTaint: true, scale: 2, backgroundColor: '#ffffff' }); 
+      
+      const doc = new jsPDF('p', 'mm', 'a4'); 
+      const imgWidth = 210; 
+      const pageHeight = 297; 
       const imgHeight = canvas.height * imgWidth / canvas.width; 
+      
       let heightLeft = imgHeight;
       let position = 0;
       doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight); 
@@ -411,11 +440,13 @@ export default function useERP() {
       const html = document.createElement('div'); 
       html.innerHTML = getInvoiceHTML({...inv, qrCode: qr}, s, invLang); 
       document.body.appendChild(html); 
-      const canvas = await html2canvas(html, { useCORS: true, allowTaint: true, scale: 2 }); 
+      const canvas = await html2canvas(html, { useCORS: true, allowTaint: true, scale: 2, backgroundColor: '#ffffff' }); 
+      
       const doc = new jsPDF('p', 'mm', 'a4'); 
       const imgWidth = 210; 
       const pageHeight = 297; 
       const imgHeight = canvas.height * imgWidth / canvas.width; 
+      
       let heightLeft = imgHeight;
       let position = 0;
       doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight); 
