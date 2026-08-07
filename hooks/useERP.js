@@ -636,81 +636,88 @@ export default function useERP() {
 
   const getInvoiceHTML = (inv, s, invLang = 'en') => {
     const isAr = invLang === 'ar'; const dir = isAr ? 'rtl' : 'ltr'; const textAlign = isAr ? 'right' : 'left'; const textAlignOpp = isAr ? 'left' : 'right';
-    // Strict A4 dimensions: 794px x 1123px (96 DPI)
+    // A4 dimensions: 794px x 1123px. Using flex space-between to fill the page completely.
     return `
-    <div id="invoice-capture" style="width:794px; height:1123px; padding:50px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial; direction:${dir}; text-align:${textAlign}; display:flex; flex-direction:column;">
+    <div id="invoice-capture" style="width:794px; height:1123px; padding:60px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial; direction:${dir}; text-align:${textAlign}; display:flex; flex-direction:column; justify-content:space-between;">
       
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:4px solid #1E3A8A; padding-bottom:25px; margin-bottom:40px;">
-        <div style="display:flex; align-items:center; gap:20px;">
-          ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:130px;width:auto;object-fit:contain;" />` : ''}
-          <div>
-            <h1 style="margin:0;color:#1E3A8A;font-size:32px;font-weight:bold;">${s.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
-            <h2 style="margin:5px 0 0;color:#D97706;font-size:24px;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
-            <p style="font-size:13px;margin-top:15px;line-height:1.6;color:#555;">
-              ${isAr ? 'عنوان: ' : 'Address: '}${s.address_ar || ''}<br/>
-              ${isAr ? 'سجل تجاري: ' : 'CR: '}${s.cr_no || ''} | ${isAr ? 'هاتف: ' : 'Ph: '}${s.phone || ''}<br/>
-              VAT: ${s.vat_no || ''} | IATA: ${s.iata_no || ''}
-            </p>
+      <!-- HEADER SECTION -->
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:4px solid #1E3A8A; padding-bottom:30px; margin-bottom:40px;">
+          <div style="display:flex; align-items:center; gap:25px;">
+            ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:140px;width:auto;object-fit:contain;" />` : ''}
+            <div>
+              <h1 style="margin:0;color:#1E3A8A;font-size:34px;font-weight:bold;">${s.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
+              <h2 style="margin:5px 0 0;color:#D97706;font-size:26px;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
+              <p style="font-size:14px;margin-top:20px;line-height:1.8;color:#555;">
+                ${isAr ? 'عنوان: ' : 'Address: '}${s.address_ar || ''}<br/>
+                ${isAr ? 'سجل تجاري: ' : 'CR: '}${s.cr_no || ''} | ${isAr ? 'هاتف: ' : 'Ph: '}${s.phone || ''}<br/>
+                VAT: ${s.vat_no || ''} | IATA: ${s.iata_no || ''}
+              </p>
+            </div>
+          </div>
+          <div style="text-align:${textAlignOpp};background:#1E3A8A;color:#fff;padding:25px 30px;border-radius:10px;min-width:240px;">
+            <h1 style="margin:0;font-size:28px;">${isAr ? 'فاتورة ضريبية' : 'TAX INVOICE'}</h1>
+            <p style="font-size:15px;margin-top:15px;color:#eee;">Inv No: <b>${inv.invoice_no}</b><br/>Date: ${inv.invoice_date}<br/>Payment: ${inv.payment_method}</p>
           </div>
         </div>
-        <div style="text-align:${textAlignOpp};background:#1E3A8A;color:#fff;padding:20px 25px;border-radius:8px;min-width:220px;">
-          <h1 style="margin:0;font-size:26px;">${isAr ? 'فاتورة ضريبية' : 'TAX INVOICE'}</h1>
-          <p style="font-size:14px;margin-top:12px;color:#eee;">Inv No: <b>${inv.invoice_no}</b><br/>Date: ${inv.invoice_date}<br/>Payment: ${inv.payment_method}</p>
+        
+        <div style="display:flex;justify-content:space-between;background:#f8fafc;padding:25px;border-radius:10px;">
+          <div>
+            <h3 style="margin:0 0 10px;color:#1E3A8A;font-size:20px;">${isAr ? 'الفاتورة إلى:' : 'BILL TO:'}</h3>
+            <p style="margin:0;font-size:20px;font-weight:bold;">${inv.customers?.name || inv.corporates?.name || ''}</p>
+            <p style="margin:8px 0 0;font-size:15px;color:#666;">${inv.customers?.phone || inv.corporates?.phone || ''} ${inv.corporates?.vat_no ? '| VAT: '+inv.corporates.vat_no : ''}</p>
+          </div>
+          <div style="text-align:${textAlignOpp};">
+            <p style="margin:0;font-size:16px;"><b>${isAr ? 'الحالة:' : 'Status:'}</b> <span style="color:${(inv.due_amount || 0)>0?'#EF4444':'#059669'};font-weight:bold;">${(inv.due_amount || 0)>0?(isAr?'غير مدفوع':'UNPAID'):(isAr?'مدفوع':'PAID')}</span></p>
+          </div>
         </div>
-      </div>
-      
-      <div style="margin-bottom:30px;display:flex;justify-content:space-between;background:#f8fafc;padding:20px;border-radius:8px;">
-        <div>
-          <h3 style="margin:0 0 8px;color:#1E3A8A;font-size:18px;">${isAr ? 'الفاتورة إلى:' : 'BILL TO:'}</h3>
-          <p style="margin:0;font-size:18px;font-weight:bold;">${inv.customers?.name || inv.corporates?.name || ''}</p>
-          <p style="margin:5px 0 0;font-size:14px;color:#666;">${inv.customers?.phone || inv.corporates?.phone || ''} ${inv.corporates?.vat_no ? '| VAT: '+inv.corporates.vat_no : ''}</p>
-        </div>
-        <div style="text-align:${textAlignOpp};">
-          <p style="margin:0;font-size:15px;"><b>${isAr ? 'الحالة:' : 'Status:'}</b> <span style="color:${(inv.due_amount || 0)>0?'#EF4444':'#059669'};font-weight:bold;">${(inv.due_amount || 0)>0?(isAr?'غير مدفوع':'UNPAID'):(isAr?'مدفوع':'PAID')}</span></p>
-        </div>
+
+        ${inv.passenger_names ? `<div style="margin-top:30px;padding:20px;background:#fff;border:1px dashed #ddd;border-radius:8px;"><b style="font-size:16px;">Passengers:</b><br/><span style="font-size:16px;white-space:pre-wrap;margin-top:8px;display:inline-block;">${inv.passenger_names}</span></div>` : ''}
       </div>
 
-      ${inv.passenger_names ? `<div style="margin-bottom:30px;padding:15px;background:#fff;border:1px dashed #ddd;border-radius:6px;"><b style="font-size:15px;">Passengers:</b><br/><span style="font-size:15px;white-space:pre-wrap;margin-top:5px;display:inline-block;">${inv.passenger_names}</span></div>` : ''}
+      <!-- TABLE SECTION -->
+      <div>
+        <table style="width:100%;border-collapse:collapse;text-align:center;">
+          <thead>
+            <tr style="background:#1E3A8A;color:#fff;">
+              <th style="padding:20px 15px;border:1px solid #1e3a8a;font-size:16px;">${isAr ? 'الخدمة / القطاع' : 'Service / Sector'}</th>
+              <th style="padding:20px 15px;border:1px solid #1e3a8a;font-size:16px;">${isAr ? 'خطوط الطيران' : 'Airline'}</th>
+              <th style="padding:20px 15px;border:1px solid #1e3a8a;font-size:16px;">PNR</th>
+              <th style="padding:20px 15px;border:1px solid #1e3a8a;font-size:16px;">${isAr ? 'رقم التذكرة' : 'Ticket No'}</th>
+              <th style="padding:20px 15px;border:1px solid #1e3a8a;font-size:16px;">${isAr ? 'الكمية' : 'Qty'}</th>
+              <th style="padding:20px 15px;border:1px solid #1e3a8a;font-size:16px;">${isAr ? 'المجموع' : 'Total'}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background:#fff;">
+              <td style="padding:20px 15px;border:1px solid #ddd;text-align:${textAlign};font-size:16px;"><b>${inv.service_type}</b><br/><span style="font-size:14px;color:#666;">${inv.sector || ''}</span></td>
+              <td style="padding:20px 15px;border:1px solid #ddd;font-size:16px;">${inv.airline || 'N/A'}</td>
+              <td style="padding:20px 15px;border:1px solid #ddd;font-size:16px;">${inv.pnr || 'N/A'}</td>
+              <td style="padding:20px 15px;border:1px solid #ddd;font-size:16px;">${inv.ticket_no || 'N/A'}</td>
+              <td style="padding:20px 15px;border:1px solid #ddd;font-size:16px;">${inv.qty || 1}</td>
+              <td style="padding:20px 15px;border:1px solid #ddd;font-size:16px;font-weight:bold;">${(inv.total_sell || 0).toFixed(2)} SAR</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-      <table style="width:100%;border-collapse:collapse;text-align:center;margin-bottom:40px;">
-        <thead>
-          <tr style="background:#1E3A8A;color:#fff;">
-            <th style="padding:15px;border:1px solid #1e3a8a;font-size:15px;">${isAr ? 'الخدمة / القطاع' : 'Service / Sector'}</th>
-            <th style="padding:15px;border:1px solid #1e3a8a;font-size:15px;">${isAr ? 'خطوط الطيران' : 'Airline'}</th>
-            <th style="padding:15px;border:1px solid #1e3a8a;font-size:15px;">PNR</th>
-            <th style="padding:15px;border:1px solid #1e3a8a;font-size:15px;">${isAr ? 'رقم التذكرة' : 'Ticket No'}</th>
-            <th style="padding:15px;border:1px solid #1e3a8a;font-size:15px;">${isAr ? 'الكمية' : 'Qty'}</th>
-            <th style="padding:15px;border:1px solid #1e3a8a;font-size:15px;">${isAr ? 'المجموع' : 'Total'}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr style="background:#fff;">
-            <td style="padding:15px;border:1px solid #ddd;text-align:${textAlign};font-size:15px;"><b>${inv.service_type}</b><br/><span style="font-size:13px;color:#666;">${inv.sector || ''}</span></td>
-            <td style="padding:15px;border:1px solid #ddd;font-size:15px;">${inv.airline || 'N/A'}</td>
-            <td style="padding:15px;border:1px solid #ddd;font-size:15px;">${inv.pnr || 'N/A'}</td>
-            <td style="padding:15px;border:1px solid #ddd;font-size:15px;">${inv.ticket_no || 'N/A'}</td>
-            <td style="padding:15px;border:1px solid #ddd;font-size:15px;">${inv.qty || 1}</td>
-            <td style="padding:15px;border:1px solid #ddd;font-size:15px;font-weight:bold;">${(inv.total_sell || 0).toFixed(2)} SAR</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div style="margin-top:auto; display:flex;justify-content:space-between;align-items:flex-end;">
-        <div style="text-align:center;background:#f8fafc;padding:15px;border-radius:8px;border:1px solid #eee;width:150px;">
-          <p style="margin:0 0 10px;font-size:13px;color:#666;">ZATCA QR</p>
-          <img src="${inv.qrCode || ''}" width="120" height="120" />
+      <!-- FOOTER SECTION (Totals & QR) -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+        <div style="text-align:center;background:#f8fafc;padding:20px;border-radius:10px;border:1px solid #eee;width:160px;">
+          <p style="margin:0 0 15px;font-size:14px;color:#666;">ZATCA QR</p>
+          <img src="${inv.qrCode || ''}" width="130" height="130" />
         </div>
-        <div style="width:360px;font-size:16px;">
-          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;"><span>${isAr ? 'قبل الضريبة:' : 'Before VAT:'}</span><b>${(inv.total_sell || 0).toFixed(2)} SAR</b></div>
-          ${(inv.discount || 0) > 0 ? `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;color:#EF4444;"><span>${isAr ? 'الخصم:' : 'Discount:'}</span><b>- ${(inv.discount || 0).toFixed(2)} SAR</b></div>` : ''}
-          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;"><span>${isAr ? 'ضريبة 15%' : 'VAT 15%:'}</span><b>${(inv.vat || 0).toFixed(2)} SAR</b></div>
-          <div style="display:flex;justify-content:space-between;background:#1E3A8A;color:#FBBF24;padding:15px;font-weight:bold;font-size:20px;border-radius:6px;margin-top:10px;"><span>${isAr ? 'المجموع:' : 'TOTAL:'}</span><b>${(inv.total || 0).toFixed(2)} SAR</b></div>
+        <div style="width:380px;font-size:17px;">
+          <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee;"><span>${isAr ? 'قبل الضريبة:' : 'Before VAT:'}</span><b>${(inv.total_sell || 0).toFixed(2)} SAR</b></div>
+          ${(inv.discount || 0) > 0 ? `<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee;color:#EF4444;"><span>${isAr ? 'الخصم:' : 'Discount:'}</span><b>- ${(inv.discount || 0).toFixed(2)} SAR</b></div>` : ''}
+          <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee;"><span>${isAr ? 'ضريبة 15%' : 'VAT 15%:'}</span><b>${(inv.vat || 0).toFixed(2)} SAR</b></div>
+          <div style="display:flex;justify-content:space-between;background:#1E3A8A;color:#FBBF24;padding:20px;font-weight:bold;font-size:22px;border-radius:8px;margin-top:15px;"><span>${isAr ? 'المجموع:' : 'TOTAL:'}</span><b>${(inv.total || 0).toFixed(2)} SAR</b></div>
           
-          ${(inv.used_credit || 0) > 0 ? `<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee;color:#059669;"><span>${isAr ? 'خصم من الرصيد:' : 'Less: Credit Applied:'}</span><b>- ${(inv.used_credit || 0).toFixed(2)} SAR</b></div>` : ''}
+          ${(inv.used_credit || 0) > 0 ? `<div style="display:flex;justify-content:space-between;padding:15px 0;border-bottom:1px solid #eee;color:#059669;"><span>${isAr ? 'خصم من الرصيد:' : 'Less: Credit Applied:'}</span><b>- ${(inv.used_credit || 0).toFixed(2)} SAR</b></div>` : ''}
           
-          <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee;color:#059669;"><span>${isAr ? 'مدفوع نقدا/بنك:' : 'Cash/Bank Paid:'}</span><b>${((inv.paid_amount || 0) - (inv.used_credit || 0)).toFixed(2)} SAR</b></div>
+          <div style="display:flex;justify-content:space-between;padding:15px 0;border-bottom:1px solid #eee;color:#059669;"><span>${isAr ? 'مدفوع نقدا/بنك:' : 'Cash/Bank Paid:'}</span><b>${((inv.paid_amount || 0) - (inv.used_credit || 0)).toFixed(2)} SAR</b></div>
           
-          <div style="display:flex;justify-content:space-between;padding:15px 0;color:#EF4444;font-weight:bold;font-size:18px;"><span>${isAr ? 'المستحق:' : 'BALANCE DUE:'}</span><b>${(inv.due_amount || 0).toFixed(2)} SAR</b></div>
+          <div style="display:flex;justify-content:space-between;padding:20px 0;color:#EF4444;font-weight:bold;font-size:20px;"><span>${isAr ? 'المستحق:' : 'BALANCE DUE:'}</span><b>${(inv.due_amount || 0).toFixed(2)} SAR</b></div>
         </div>
       </div>
     </div>`;
@@ -725,10 +732,15 @@ export default function useERP() {
       const enc = (tag, v) => String.fromCharCode(tag) + String.fromCharCode(v.length) + v; 
       const tlv = enc(1, s.company_name_en||"S") + enc(2, s.vat_no||"V") + enc(3, new Date(inv.created_at).toISOString()) + enc(4, (inv.total || 0).toFixed(2)) + enc(5, (inv.vat || 0).toFixed(2)); 
       const qr = await QRCode.toDataURL(btoa(tlv)); 
+      
       const html = document.createElement('div'); 
+      html.style.width = '794px';
+      html.style.height = '1123px';
       html.innerHTML = getInvoiceHTML({...inv, qrCode: qr}, s, invLang); 
       document.body.appendChild(html); 
-      const canvas = await html2canvas(html, { useCORS: true, allowTaint: true, scale: 2, backgroundColor: '#ffffff' }); 
+      
+      // Force html2canvas to capture exact A4 dimensions
+      const canvas = await html2canvas(html, { useCORS: true, allowTaint: true, scale: 2, backgroundColor: '#ffffff', width: 794, height: 1123 }); 
       
       const doc = new jsPDF('p', 'mm', 'a4'); 
       const imgWidth = 210; 
@@ -762,10 +774,14 @@ export default function useERP() {
       const enc = (tag, v) => String.fromCharCode(tag) + String.fromCharCode(v.length) + v; 
       const tlv = enc(1, s.company_name_en||"S") + enc(2, s.vat_no||"V") + enc(3, new Date(inv.created_at).toISOString()) + enc(4, (inv.total || 0).toFixed(2)) + enc(5, (inv.vat || 0).toFixed(2)); 
       const qr = await QRCode.toDataURL(btoa(tlv)); 
+      
       const html = document.createElement('div'); 
+      html.style.width = '794px';
+      html.style.height = '1123px';
       html.innerHTML = getInvoiceHTML({...inv, qrCode: qr}, s, invLang); 
       document.body.appendChild(html); 
-      const canvas = await html2canvas(html, { useCORS: true, allowTaint: true, scale: 2, backgroundColor: '#ffffff' }); 
+      
+      const canvas = await html2canvas(html, { useCORS: true, allowTaint: true, scale: 2, backgroundColor: '#ffffff', width: 794, height: 1123 }); 
       
       const doc = new jsPDF('p', 'mm', 'a4'); 
       const imgWidth = 210; 
