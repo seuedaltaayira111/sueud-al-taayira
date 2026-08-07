@@ -24,7 +24,7 @@ export default function useERP() {
   const today = new Date().toISOString().split('T')[0];
   
   const [editInvId, setEditInvId] = useState(null);
-  const [invForm, setInvForm] = useState({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: '', bookingDate: today, invoiceDate: today, service: 'Flight Ticket', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' });
+  const [invForm, setInvForm] = useState({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: '', bookingDate: today, invoiceDate: today, service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' });
   
   const [editCorpId, setEditCorpId] = useState(null); const [corpForm, setCorpForm] = useState({ name: '', vat_no: '', phone: '', address: '' });
   const [editCredId, setEditCredId] = useState(null); const [creditorForm, setCreditorForm] = useState({ name: '', phone: '', address: '' });
@@ -103,6 +103,8 @@ export default function useERP() {
       portalId: inv.portal_id,
       service: inv.service_type,
       flightType: inv.flight_type || 'Domestic',
+      flightJourney: inv.flight_journey || 'Single',
+      refundable: inv.refundable_status || 'Refundable',
       flightSector: inv.flight_sector || '',
       airline: inv.airline || '',
       pnr: inv.pnr || '',
@@ -115,6 +117,7 @@ export default function useERP() {
       payment: inv.payment_method,
       paid: (inv.paid_amount || 0) - (inv.used_credit || 0),
       useCredit: inv.used_credit || 0,
+      invoiceDate: inv.invoice_date || today,
       passengers: inv.passenger_names ? inv.passenger_names.split('\n') : ['']
     });
     setPage('create');
@@ -173,7 +176,8 @@ export default function useERP() {
       const payload = { 
         customer_id: cid, corporate_id: corpId, portal_id: portal.id, employee_id: invForm.employeeId || null, 
         booking_date: invForm.bookingDate, invoice_date: invForm.invoiceDate, service_type: invForm.service, 
-        flight_type: invForm.flightType, pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty: qty, 
+        flight_type: invForm.flightType, flight_journey: invForm.flightJourney, refundable_status: invForm.refundable,
+        pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty: qty, 
         discount: discount, passenger_names: passengerNames || null, airline: invForm.airline || null, 
         flight_sector: invForm.flightSector || null, total_cost: cost, total_sell: sell, profit, vat, total, 
         paid_amount: totalPaid, used_credit: usedCredit, due_amount: due, payment_method: invForm.payment, 
@@ -185,13 +189,13 @@ export default function useERP() {
       };
       
       if (editInvId) {
-        const { data: upInv, error: upErr } = await supabase.from('invoices').update(payload).eq('id', editInvId).select(`*, customers(name), corporates(name)`).single();
+        const { data: upInv, error: upErr } = await supabase.from('invoices').update(payload).eq('id', editInvId).select(`*, customers(name), corporates(name), employees(name)`).single();
         if (upErr) throw new Error('Invoice update failed: ' + upErr.message);
         setData(prev => ({ ...prev, invoices: prev.invoices.map(i => i.id === editInvId ? upInv : i) }));
         showToast('Invoice Updated!'); setEditInvId(null);
       } else {
         const invNo = `INV-${Date.now()}`;
-        const { data: newInv, error: invErr } = await supabase.from('invoices').insert([{ invoice_no: invNo, ...payload }]).select(`*, customers(name), corporates(name)`).single();
+        const { data: newInv, error: invErr } = await supabase.from('invoices').insert([{ invoice_no: invNo, ...payload }]).select(`*, customers(name), corporates(name), employees(name)`).single();
         if (invErr) throw new Error('Invoice creation failed: ' + invErr.message);
         
         const newPortalBal = (portal.current_balance || 0) - cost; 
@@ -212,7 +216,7 @@ export default function useERP() {
         showToast('Invoice Generated!');
       }
       
-      setInvForm({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: data.portals[0]?.id || '', bookingDate: today, invoiceDate: today, service: 'Flight Ticket', flightType: 'Domestic', flightSub: 'New Booking', flightJourney: 'Single', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' }); 
+      setInvForm({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: data.portals[0]?.id || '', bookingDate: today, invoiceDate: today, service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' }); 
       setPage('list');
     } catch (err) { 
       showToast('Error: ' + err.message); 
@@ -635,44 +639,53 @@ export default function useERP() {
   const filterData = (arr, dateKey) => { if (!repDate.from || !repDate.to) return arr; return arr.filter(i => (i[dateKey] || i.created_at?.split('T')[0]) >= repDate.from && (i[dateKey] || i.created_at?.split('T')[0]) <= repDate.to); };
 
   const getInvoiceHTML = (inv, s, invLang = 'en') => {
-    const isAr = invLang === 'ar'; const dir = isAr ? 'rtl' : 'ltr'; const textAlign = isAr ? 'right' : 'left'; const textAlignOpp = isAr ? 'left' : 'right';
-    // A4 dimensions: 794px x 1123px. Using flex space-between to fill the page completely.
+    const isAr = invLang === 'ar'; 
+    const dir = isAr ? 'rtl' : 'ltr'; 
+    const textAlign = isAr ? 'right' : 'left'; 
+    const textAlignOpp = isAr ? 'left' : 'right';
+    
+    // Bilingual Invoice with Beautiful Border, Arabic Company Info, Salesperson Signature, and Footer
     return `
-    <div id="invoice-capture" style="width:794px; height:1123px; padding:60px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial; direction:${dir}; text-align:${textAlign}; display:flex; flex-direction:column; justify-content:space-between;">
+    <div id="invoice-capture" style="width:794px; height:1123px; padding:40px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial; direction:${dir}; text-align:${textAlign}; display:flex; flex-direction:column; justify-content:space-between; border: 8px solid #1E3A8A; border-radius: 15px; box-shadow: inset 0 0 0 2px #FBBF24;">
       
       <!-- HEADER SECTION -->
       <div>
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:4px solid #1E3A8A; padding-bottom:30px; margin-bottom:40px;">
-          <div style="display:flex; align-items:center; gap:25px;">
-            ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:140px;width:auto;object-fit:contain;" />` : ''}
-            <div>
-              <h1 style="margin:0;color:#1E3A8A;font-size:34px;font-weight:bold;">${s.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
-              <h2 style="margin:5px 0 0;color:#D97706;font-size:26px;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
-              <p style="font-size:14px;margin-top:20px;line-height:1.8;color:#555;">
-                ${isAr ? 'عنوان: ' : 'Address: '}${s.address_ar || ''}<br/>
-                ${isAr ? 'سجل تجاري: ' : 'CR: '}${s.cr_no || ''} | ${isAr ? 'هاتف: ' : 'Ph: '}${s.phone || ''}<br/>
-                VAT: ${s.vat_no || ''} | IATA: ${s.iata_no || ''}
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #FBBF24; padding-bottom:20px; margin-bottom:20px;">
+          <div style="display:flex; align-items:center; gap:15px;">
+            ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:90px;width:auto;object-fit:contain;" />` : ''}
+            <div style="text-align: right; direction: rtl;">
+              <h1 style="margin:0;color:#1E3A8A;font-size:22px;font-weight:bold;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h1>
+              <p style="font-size:12px;margin-top:5px;line-height:1.6;color:#555;">
+                عنوان: ${s.address_ar || ''} | هاتف: ${s.phone || ''}<br/>
+                سجل تجاري: ${s.cr_no || ''} | ضريبة القيمة المضافة: ${s.vat_no || ''}<br/>
+                رقم الترخيص: ${s.license_no || ''} | ترخيص سياحي: ${s.tourist_license_no || ''}
               </p>
             </div>
           </div>
-          <div style="text-align:${textAlignOpp};background:#1E3A8A;color:#fff;padding:25px 30px;border-radius:10px;min-width:240px;">
-            <h1 style="margin:0;font-size:28px;">${isAr ? 'فاتورة ضريبية' : 'TAX INVOICE'}</h1>
-            <p style="font-size:15px;margin-top:15px;color:#eee;">Inv No: <b>${inv.invoice_no}</b><br/>Date: ${inv.invoice_date}<br/>Payment: ${inv.payment_method}</p>
+          <div style="text-align:${textAlignOpp};background:#1E3A8A;color:#fff;padding:15px 20px;border-radius:8px;min-width:220px;">
+            <h1 style="margin:0;font-size:20px;">TAX INVOICE<br/><span style="font-size:16px; color:#FBBF24;">فاتورة ضريبية</span></h1>
+            <p style="font-size:13px;margin-top:10px;color:#eee; text-align:${textAlignOpp};">
+              Inv No / رقم: <b>${inv.invoice_no}</b><br/>
+              Date / التاريخ: <b>${inv.invoice_date}</b><br/>
+              Payment / الدفع: <b>${inv.payment_method}</b>
+            </p>
           </div>
         </div>
         
-        <div style="display:flex;justify-content:space-between;background:#f8fafc;padding:25px;border-radius:10px;">
+        <div style="display:flex;justify-content:space-between;background:#f8fafc;padding:15px;border-radius:8px; margin-bottom:20px;">
           <div>
-            <h3 style="margin:0 0 10px;color:#1E3A8A;font-size:20px;">${isAr ? 'الفاتورة إلى:' : 'BILL TO:'}</h3>
-            <p style="margin:0;font-size:20px;font-weight:bold;">${inv.customers?.name || inv.corporates?.name || ''}</p>
-            <p style="margin:8px 0 0;font-size:15px;color:#666;">${inv.customers?.phone || inv.corporates?.phone || ''} ${inv.corporates?.vat_no ? '| VAT: '+inv.corporates.vat_no : ''}</p>
+            <h3 style="margin:0 0 5px;color:#1E3A8A;font-size:14px;">BILL TO / الفاتورة إلى:</h3>
+            <p style="margin:0;font-size:16px;font-weight:bold;">${inv.customers?.name || inv.corporates?.name || ''}</p>
+            <p style="margin:3px 0 0;font-size:12px;color:#666;">${inv.customers?.phone || inv.corporates?.phone || ''} ${inv.corporates?.vat_no ? '| VAT: '+inv.corporates.vat_no : ''}</p>
           </div>
           <div style="text-align:${textAlignOpp};">
-            <p style="margin:0;font-size:16px;"><b>${isAr ? 'الحالة:' : 'Status:'}</b> <span style="color:${(inv.due_amount || 0)>0?'#EF4444':'#059669'};font-weight:bold;">${(inv.due_amount || 0)>0?(isAr?'غير مدفوع':'UNPAID'):(isAr?'مدفوع':'PAID')}</span></p>
+            <p style="margin:0;font-size:12px;"><b>Sales Person / الموظف:</b> ${inv.employees?.name || 'N/A'}</p>
+            <p style="margin:3px 0 0;font-size:12px;"><b>Trip Type / نوع الرحلة:</b> ${inv.flight_journey || 'Single'}</p>
+            <p style="margin:3px 0 0;font-size:12px;"><b>Fare Type / نوع الأجرة:</b> ${inv.refundable_status || 'Refundable'}</p>
           </div>
         </div>
 
-        ${inv.passenger_names ? `<div style="margin-top:30px;padding:20px;background:#fff;border:1px dashed #ddd;border-radius:8px;"><b style="font-size:16px;">Passengers:</b><br/><span style="font-size:16px;white-space:pre-wrap;margin-top:8px;display:inline-block;">${inv.passenger_names}</span></div>` : ''}
+        ${inv.passenger_names ? `<div style="margin-bottom:15px;padding:10px;background:#fff;border:1px dashed #ddd;border-radius:6px;"><b style="font-size:12px;">Passengers / الركاب:</b><br/><span style="font-size:13px;white-space:pre-wrap;margin-top:3px;display:inline-block;">${inv.passenger_names}</span></div>` : ''}
       </div>
 
       <!-- TABLE SECTION -->
@@ -680,44 +693,60 @@ export default function useERP() {
         <table style="width:100%;border-collapse:collapse;text-align:center;">
           <thead>
             <tr style="background:#1E3A8A;color:#fff;">
-              <th style="padding:20px 15px;border:1px solid #1e3a8a;font-size:16px;">${isAr ? 'الخدمة / القطاع' : 'Service / Sector'}</th>
-              <th style="padding:20px 15px;border:1px solid #1e3a8a;font-size:16px;">${isAr ? 'خطوط الطيران' : 'Airline'}</th>
-              <th style="padding:20px 15px;border:1px solid #1e3a8a;font-size:16px;">PNR</th>
-              <th style="padding:20px 15px;border:1px solid #1e3a8a;font-size:16px;">${isAr ? 'رقم التذكرة' : 'Ticket No'}</th>
-              <th style="padding:20px 15px;border:1px solid #1e3a8a;font-size:16px;">${isAr ? 'الكمية' : 'Qty'}</th>
-              <th style="padding:20px 15px;border:1px solid #1e3a8a;font-size:16px;">${isAr ? 'المجموع' : 'Total'}</th>
+              <th style="padding:10px;border:1px solid #1e3a8a;font-size:13px;">Service / الخدمة</th>
+              <th style="padding:10px;border:1px solid #1e3a8a;font-size:13px;">Airline / الخطوط</th>
+              <th style="padding:10px;border:1px solid #1e3a8a;font-size:13px;">PNR / الحجز</th>
+              <th style="padding:10px;border:1px solid #1e3a8a;font-size:13px;">Ticket No / التذكرة</th>
+              <th style="padding:10px;border:1px solid #1e3a8a;font-size:13px;">Qty / الكمية</th>
+              <th style="padding:10px;border:1px solid #1e3a8a;font-size:13px;">Total / المجموع</th>
             </tr>
           </thead>
           <tbody>
             <tr style="background:#fff;">
-              <td style="padding:20px 15px;border:1px solid #ddd;text-align:${textAlign};font-size:16px;"><b>${inv.service_type}</b><br/><span style="font-size:14px;color:#666;">${inv.sector || ''}</span></td>
-              <td style="padding:20px 15px;border:1px solid #ddd;font-size:16px;">${inv.airline || 'N/A'}</td>
-              <td style="padding:20px 15px;border:1px solid #ddd;font-size:16px;">${inv.pnr || 'N/A'}</td>
-              <td style="padding:20px 15px;border:1px solid #ddd;font-size:16px;">${inv.ticket_no || 'N/A'}</td>
-              <td style="padding:20px 15px;border:1px solid #ddd;font-size:16px;">${inv.qty || 1}</td>
-              <td style="padding:20px 15px;border:1px solid #ddd;font-size:16px;font-weight:bold;">${(inv.total_sell || 0).toFixed(2)} SAR</td>
+              <td style="padding:10px;border:1px solid #ddd;text-align:${textAlign};font-size:13px;"><b>${inv.service_type}</b><br/><span style="font-size:11px;color:#666;">${inv.sector || ''}</span></td>
+              <td style="padding:10px;border:1px solid #ddd;font-size:13px;">${inv.airline || 'N/A'}</td>
+              <td style="padding:10px;border:1px solid #ddd;font-size:13px;">${inv.pnr || 'N/A'}</td>
+              <td style="padding:10px;border:1px solid #ddd;font-size:13px;">${inv.ticket_no || 'N/A'}</td>
+              <td style="padding:10px;border:1px solid #ddd;font-size:13px;">${inv.qty || 1}</td>
+              <td style="padding:10px;border:1px solid #ddd;font-size:13px;font-weight:bold;">${(inv.total_sell || 0).toFixed(2)}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <!-- FOOTER SECTION (Totals & QR) -->
-      <div style="display:flex;justify-content:space-between;align-items:flex-end;">
-        <div style="text-align:center;background:#f8fafc;padding:20px;border-radius:10px;border:1px solid #eee;width:160px;">
-          <p style="margin:0 0 15px;font-size:14px;color:#666;">ZATCA QR</p>
-          <img src="${inv.qrCode || ''}" width="130" height="130" />
+      <div style="display:flex;justify-content:space-between;align-items:flex-end; margin-top:20px;">
+        <div style="text-align:center;">
+          <img src="${inv.qrCode || ''}" width="100" height="100" style="border:1px solid #eee; padding:5px; border-radius:5px;" />
+          <p style="margin:5px 0 0;font-size:10px;color:#666;">ZATCA QR / رمز الاستجابة السريع</p>
         </div>
-        <div style="width:380px;font-size:17px;">
-          <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee;"><span>${isAr ? 'قبل الضريبة:' : 'Before VAT:'}</span><b>${(inv.total_sell || 0).toFixed(2)} SAR</b></div>
-          ${(inv.discount || 0) > 0 ? `<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee;color:#EF4444;"><span>${isAr ? 'الخصم:' : 'Discount:'}</span><b>- ${(inv.discount || 0).toFixed(2)} SAR</b></div>` : ''}
-          <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee;"><span>${isAr ? 'ضريبة 15%' : 'VAT 15%:'}</span><b>${(inv.vat || 0).toFixed(2)} SAR</b></div>
-          <div style="display:flex;justify-content:space-between;background:#1E3A8A;color:#FBBF24;padding:20px;font-weight:bold;font-size:22px;border-radius:8px;margin-top:15px;"><span>${isAr ? 'المجموع:' : 'TOTAL:'}</span><b>${(inv.total || 0).toFixed(2)} SAR</b></div>
+        <div style="width:320px;font-size:13px;">
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>Before VAT / قبل الضريبة:</span><b>${(inv.total_sell || 0).toFixed(2)} SAR</b></div>
+          ${(inv.discount || 0) > 0 ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;color:#EF4444;"><span>Discount / الخصم:</span><b>- ${(inv.discount || 0).toFixed(2)} SAR</b></div>` : ''}
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>VAT 15% / ضريبة 15%:</span><b>${(inv.vat || 0).toFixed(2)} SAR</b></div>
+          <div style="display:flex;justify-content:space-between;background:#1E3A8A;color:#FBBF24;padding:10px;font-weight:bold;font-size:16px;border-radius:6px;margin-top:10px;"><span>TOTAL / المجموع:</span><b>${(inv.total || 0).toFixed(2)} SAR</b></div>
           
-          ${(inv.used_credit || 0) > 0 ? `<div style="display:flex;justify-content:space-between;padding:15px 0;border-bottom:1px solid #eee;color:#059669;"><span>${isAr ? 'خصم من الرصيد:' : 'Less: Credit Applied:'}</span><b>- ${(inv.used_credit || 0).toFixed(2)} SAR</b></div>` : ''}
+          ${(inv.used_credit || 0) > 0 ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;color:#059669;"><span>Credit Applied / رصيد مستخدم:</span><b>- ${(inv.used_credit || 0).toFixed(2)} SAR</b></div>` : ''}
           
-          <div style="display:flex;justify-content:space-between;padding:15px 0;border-bottom:1px solid #eee;color:#059669;"><span>${isAr ? 'مدفوع نقدا/بنك:' : 'Cash/Bank Paid:'}</span><b>${((inv.paid_amount || 0) - (inv.used_credit || 0)).toFixed(2)} SAR</b></div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;color:#059669;"><span>Paid / مدفوع:</span><b>${((inv.paid_amount || 0) - (inv.used_credit || 0)).toFixed(2)} SAR</b></div>
           
-          <div style="display:flex;justify-content:space-between;padding:20px 0;color:#EF4444;font-weight:bold;font-size:20px;"><span>${isAr ? 'المستحق:' : 'BALANCE DUE:'}</span><b>${(inv.due_amount || 0).toFixed(2)} SAR</b></div>
+          <div style="display:flex;justify-content:space-between;padding:10px 0;color:#EF4444;font-weight:bold;font-size:15px;"><span>BALANCE DUE / المستحق:</span><b>${(inv.due_amount || 0).toFixed(2)} SAR</b></div>
+        </div>
+      </div>
+
+      <!-- SIGNATURE & FOOTER MESSAGE -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-end; margin-top:30px; border-top: 2px solid #1E3A8A; padding-top:15px;">
+        <div style="text-align:center; font-size:11px; color:#555; width: 60%;">
+          <p style="margin:0; font-weight:bold; color:#1E3A8A;">Thank you for choosing us! / شكراً لاختياركم لنا</p>
+          <p style="margin:3px 0;">We look forward to serving you again. / نتطلع لخدمتكم مرة أخرى</p>
+        </div>
+        <div style="text-align:center; border: 2px solid #1E3A8A; border-radius: 8px; padding: 10px 15px; width: 35%; transform: rotate(-2deg); background: #f8fafc;">
+          <p style="margin:0; font-size:14px; font-weight:bold; color:#1E3A8A;">${inv.employees?.name || 'Sales Person'}</p>
+          <p style="margin:0; font-size:10px; color:#555;">Authorized Signature / التوقيع المعتمد</p>
+          <div style="margin-top:5px; border-top: 1px dashed #aaa; padding-top:5px;">
+            <p style="margin:0; font-size:9px; color:#888;">${s.company_name_en || 'SUEUD AL TAAYIRA'}</p>
+            <p style="margin:0; font-size:9px; color:#888;">${s.phone || ''} | ${s.address_ar || ''}</p>
+          </div>
         </div>
       </div>
     </div>`;
@@ -739,7 +768,6 @@ export default function useERP() {
       html.innerHTML = getInvoiceHTML({...inv, qrCode: qr}, s, invLang); 
       document.body.appendChild(html); 
       
-      // Force html2canvas to capture exact A4 dimensions
       const canvas = await html2canvas(html, { useCORS: true, allowTaint: true, scale: 2, backgroundColor: '#ffffff', width: 794, height: 1123 }); 
       
       const doc = new jsPDF('p', 'mm', 'a4'); 
