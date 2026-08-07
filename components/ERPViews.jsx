@@ -31,7 +31,7 @@ export default function ERPViews(props) {
     handleSaveSettings, handleLogoUpload, setForm, setSetForm,
     repDate, setRepDate, reportTab, setReportTab, statementTab, setStatementTab,
     handleDelete, filterData,
-    handleEditInvoice, handleDeleteInvoice, openRefundModal, editInvId,
+    handleEditInvoice, handleDeleteInvoice, openRefundModal, editInvId, openPreview,
     ledgerCustId, setLedgerCustId
   } = props;
 
@@ -288,6 +288,7 @@ export default function ERPViews(props) {
                 <td style={{ padding: '12px' }}>{inv.payment_method}</td>
                 <td style={{ padding: '12px' }}>
                   <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                    <button onClick={() => openPreview(inv)} style={{ ...styles.btnPrimary, padding: '5px 8px', width: 'auto', fontSize: '11px' }}>Preview</button>
                     <button onClick={() => downloadPDF(inv, 'en')} style={{ ...styles.btnPrimary, padding: '5px 8px', width: 'auto', fontSize: '11px' }}>PDF</button>
                     <button onClick={() => printInvoice(inv, 'ar')} style={{ ...styles.btnWarning, padding: '5px 8px', fontSize: '11px' }}>Print</button>
                     <button onClick={() => handleEditInvoice(inv)} style={{ ...styles.btnWarning, padding: '5px 8px', fontSize: '11px' }}>Edit</button>
