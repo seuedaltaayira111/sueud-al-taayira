@@ -7,7 +7,7 @@ const styles = {
   card: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px' } 
 };
 
-export default function ERPLayout({ children, tr, lang, setLang, page, setPage, modal, setModal, passForm, setPassForm, handleChangePassword, handleLogout, handleSendMessage, chatOpen, setChatOpen, chatMessages, chatInput, setChatInput, userProfile, menu, settleForm, setSettleForm, handleSettlePayment, refundForm, setRefundForm, handleRefund }) {
+export default function ERPLayout({ children, tr, lang, setLang, page, setPage, modal, setModal, passForm, setPassForm, handleChangePassword, handleLogout, handleSendMessage, chatOpen, setChatOpen, chatMessages, chatInput, setChatInput, userProfile, menu, settleForm, setSettleForm, handleSettlePayment, refundForm, setRefundForm, handleRefund, previewHTML }) {
   return (
     <div style={{ display: 'flex', height: '100vh', fontFamily: "'Poppins', sans-serif", background: '#F1F5F9', direction: lang === 'ar' ? 'rtl' : 'ltr' }}>
       
@@ -65,6 +65,20 @@ export default function ERPLayout({ children, tr, lang, setLang, page, setPage, 
               <button type="submit" style={styles.btnPrimary}>Process Refund</button>
               <button type="button" onClick={() => setModal({ type: null, data: null })} style={{ ...styles.btnDanger, width: '100%', marginTop: 10 }}>Cancel</button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {modal.type === 'preview' && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: 'white', width: '850px', height: '90vh', borderRadius: '12px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', borderBottom: '1px solid #eee' }}>
+              <h3 style={{ margin: 0 }}>Invoice Preview</h3>
+              <button onClick={() => setModal({ type: null, data: null })} style={{ ...styles.btnDanger, width: 'auto' }}>Close</button>
+            </div>
+            <div style={{ flex: 1, overflow: 'auto', background: '#f1f5f9', display: 'flex', justifyContent: 'center', padding: '20px' }}>
+              <iframe srcDoc={previewHTML} style={{ width: '100%', height: '100%', border: '1px solid #ccc', background: 'white' }}></iframe>
+            </div>
           </div>
         </div>
       )}
