@@ -536,16 +536,17 @@ export default function useERP() {
       const compRef = parseFloat(refundForm.compRefund) || 0; 
       const custRef = parseFloat(refundForm.custRefund) || 0; 
       
-      const { data: upInv, error: invErr } = await supabase.from('invoices').update({ status: 'refunded', refund_company: compRef, refund_customer: custRef }).eq('id', inv.id).select(`*, customers(name)`).single(); 
+      const { data: upInv, error: invErr } = await supabase.from('invoices').update({ status: 'refunded', refund_company: compRef, refund_customer: custRef }).eq('id', inv.id).select(`*, customers(name), employees(name)`).single(); 
       if (invErr) throw invErr;
       
       const refNo = `REF-${Date.now()}`; 
       const { data: newRefInv, error: refErr } = await supabase.from('invoices').insert([{ 
         invoice_no: refNo, customer_id: inv.customer_id, portal_id: inv.portal_id, booking_date: today, 
-        invoice_date: refundForm.date, service_type: `Refund: ${refundForm.reason}`, 
+        invoice_date: refundForm.date, service_type: inv.service_type, 
+        employee_id: inv.employee_id, 
         airline: inv.airline, flight_sector: inv.flight_sector, pnr: inv.pnr, ticket_no: inv.ticket_no, passenger_names: inv.passenger_names,
-        total_sell: -custRef, total: -custRef, paid_amount: -custRef, status: 'refunded', refund_company: compRef, refund_customer: custRef 
-      }]).select(`*, customers(name)`).single(); 
+        total_sell: -custRef, total: -custRef, paid_amount: -custRef, status: 'refunded', refund_company: compRef, refund_customer: custRef, refund_reason: refundForm.reason
+      }]).select(`*, customers(name), employees(name)`).single(); 
       if (refErr) throw refErr;
       
       if (inv.portal_id && compRef > 0) { 
@@ -644,9 +645,10 @@ export default function useERP() {
     const dir = isAr ? 'rtl' : 'ltr'; 
     const textAlign = isAr ? 'right' : 'left'; 
     const textAlignOpp = isAr ? 'left' : 'right';
+    const isRefund = inv.invoice_no.startsWith('REF-');
     
     // Internet-based QR Code API for universal scanning
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent('Invoice No: ' + inv.invoice_no + ' | Total: ' + (inv.total||0).toFixed(2) + ' SAR')}`;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent('Invoice: ' + inv.invoice_no + ' | Total: ' + (inv.total||0).toFixed(2) + ' SAR | Date: ' + inv.invoice_date)}`;
     
     return `
     <div id="invoice-capture" style="width:794px; height:1123px; padding:40px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial; direction:${dir}; text-align:${textAlign}; display:flex; flex-direction:column; justify-content:space-between; border: 8px solid #1E3A8A; border-radius: 15px; box-shadow: inset 0 0 0 2px #FBBF24;">
@@ -669,7 +671,7 @@ export default function useERP() {
             </div>
           </div>
           <div style="text-align:${textAlignOpp};background:#1E3A8A;color:#fff;padding:15px 20px;border-radius:8px;min-width:220px;">
-            <h1 style="margin:0;font-size:20px;">TAX INVOICE<br/><span style="font-size:16px; color:#FBBF24;">فاتورة ضريبية</span></h1>
+            <h1 style="margin:0;font-size:20px;">${isRefund ? 'CREDIT NOTE' : 'TAX INVOICE'}<br/><span style="font-size:16px; color:#FBBF24;">${isRefund ? 'فاتورة إشعار دائن' : 'فاتورة ضريبية'}</span></h1>
             <p style="font-size:13px;margin-top:10px;color:#eee; text-align:${textAlignOpp};">
               Inv No / رقم: <b>${inv.invoice_no}</b><br/>
               Date / التاريخ: <b>${inv.invoice_date}</b><br/>
@@ -686,8 +688,7 @@ export default function useERP() {
           </div>
           <div style="text-align:${textAlignOpp};">
             <p style="margin:0;font-size:12px;"><b>Sales Person / الموظف:</b> ${inv.employees?.name || 'N/A'}</p>
-            <p style="margin:3px 0 0;font-size:12px;"><b>Trip Type / نوع الرحلة:</b> ${inv.flight_journey || 'Single'}</p>
-            <p style="margin:3px 0 0;font-size:12px;"><b>Fare Type / نوع الأجرة:</b> ${inv.refundable_status || 'Refundable'}</p>
+            ${!isRefund ? `<p style="margin:3px 0 0;font-size:12px;"><b>Trip Type / نوع الرحلة:</b> ${inv.flight_journey || 'Single'}</p>` : `<p style="margin:3px 0 0;font-size:12px;color:#EF4444;"><b>Reason / السبب:</b> ${inv.refund_reason || 'N/A'}</p>`}
           </div>
         </div>
 
@@ -732,7 +733,7 @@ export default function useERP() {
           <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>VAT 15% / ضريبة 15%:</span><b>${(inv.vat || 0).toFixed(2)} SAR</b></div>
           <div style="display:flex;justify-content:space-between;background:#1E3A8A;color:#FBBF24;padding:10px;font-weight:bold;font-size:16px;border-radius:6px;margin-top:10px;"><span>TOTAL / المجموع:</span><b>${(inv.total || 0).toFixed(2)} SAR</b></div>
           
-          ${(inv.used_credit || 0) > 0 ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;color:#059669;"><span>Credit Applied / رصيد مستخدم:</span><b>- ${(inv.used_credit || 0).toFixed(2)} SAR</b></div>` : ''}
+          ${(inv.used_credit || 0) > 0 ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;color:#059669;"><span>Previous Refund Adjusted / تعديل من رصيد سابق:</span><b>- ${(inv.used_credit || 0).toFixed(2)} SAR</b></div>` : ''}
           
           <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;color:#059669;"><span>Paid / مدفوع:</span><b>${((inv.paid_amount || 0) - (inv.used_credit || 0)).toFixed(2)} SAR</b></div>
           
@@ -746,14 +747,13 @@ export default function useERP() {
           <p style="margin:0; font-weight:bold; color:#1E3A8A;">Thank you for choosing us! / شكراً لاختياركم لنا</p>
           <p style="margin:3px 0;">We look forward to serving you again. / نتطلع لخدمتكم مرة أخرى</p>
         </div>
-        <div style="text-align:center; border: 2px solid #1E3A8A; border-radius: 8px; padding: 10px 15px; width: 35%; transform: rotate(-2deg); background: #fff; position: relative;">
-          ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:30px;width:auto;object-fit:contain; margin-bottom:5px; opacity: 0.8;" />` : ''}
-          <p style="margin:0; font-size:18px; font-weight:bold; color:#1E3A8A; font-family: 'Brush Script MT', cursive;">${inv.employees?.name || 'Sales Person'}</p>
-          <p style="margin:0; font-size:10px; color:#555;">Authorized Signature / التوقيع المعتمد</p>
-          <div style="margin-top:5px; border-top: 1px dashed #aaa; padding-top:5px;">
-            <p style="margin:0; font-size:9px; color:#888;">${s.company_name_en || 'SUEUD AL TAAYIRA'}</p>
-            <p style="margin:0; font-size:9px; color:#888;">Ph: ${s.phone || ''} | ${s.address_ar || ''}</p>
-          </div>
+        <div style="text-align:center; border: 3px double #1E3A8A; border-radius: 50%; width: 180px; height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: rotate(-5deg); position: relative; opacity: 0.9;">
+          ${s.logo_url ? `<img src="${s.logo_url}" style="height: 40px; width: 40px; object-fit: contain; margin-bottom: 5px;" crossorigin="anonymous"/>` : ''}
+          <h3 style="margin:0; font-size: 16px; color: #1E3A8A; font-family: 'Traditional Arabic', 'Amiri', serif;">${inv.employees?.name || 'N/A'}</h3>
+          <div style="width: 70%; border-top: 1px solid #1E3A8A; margin: 5px 0;"></div>
+          <p style="margin:0; font-size: 10px; color: #1E3A8A; font-family: 'Traditional Arabic', 'Amiri', serif;">${s.company_name_ar || 'صعود الطائرة'}</p>
+          <p style="margin:0; font-size: 9px; color: #555;">${s.phone || ''}</p>
+          <p style="margin:0; font-size: 8px; color: #555;">${s.address_ar || ''}</p>
         </div>
       </div>
     </div>`;
