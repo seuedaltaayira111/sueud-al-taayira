@@ -129,19 +129,12 @@ export default function useERP() {
   const handleCreateInvoice = async (e) => {
     e.preventDefault();
     try {
-      // Duplicate Customer Check
       if (invForm.custType === 'Individual' && invForm.custId === 'new' && invForm.custName) {
         const exists = data.customers.find(c => c.name.toLowerCase() === invForm.custName.toLowerCase() && c.phone === invForm.custPhone);
         if (exists) throw new Error('Customer already exists! Please select from the dropdown.');
       }
-
-      // Validation: Ensure Customer is selected if not new
-      if (invForm.custType === 'Individual' && invForm.custId !== 'new' && !invForm.custId) {
-        throw new Error("Please select a valid Customer from the list.");
-      }
-      if (invForm.custType === 'Corporate' && invForm.corpId !== 'new' && !invForm.corpId) {
-        throw new Error("Please select a valid Corporate from the list.");
-      }
+      if (invForm.custType === 'Individual' && invForm.custId !== 'new' && !invForm.custId) throw new Error("Please select a valid Customer.");
+      if (invForm.custType === 'Corporate' && invForm.corpId !== 'new' && !invForm.corpId) throw new Error("Please select a valid Corporate.");
 
       const qty = parseInt(invForm.qty) || 1; 
       const cost = (parseFloat(invForm.cost) || 0) * qty; 
@@ -167,6 +160,7 @@ export default function useERP() {
           const newCredit = (cust.store_credit || 0) - usedCredit;
           const { error: credErr } = await supabase.from('customers').update({ store_credit: newCredit }).eq('id', cust.id);
           if (credErr) throw new Error('Credit update failed: ' + credErr.message);
+          setData(prev => ({ ...prev, customers: prev.customers.map(c => c.id === cust.id ? { ...c, store_credit: newCredit } : c) }));
         }
       } else {
         if (invForm.custType === 'Individual') { 
@@ -519,10 +513,22 @@ export default function useERP() {
     e.preventDefault(); 
     try {
       const mode = e.target.mode.value; 
-      const { data: newExp, error: expErr } = await supabase.from('expenses').insert([{ category: e.target.cat.value, amount: parseFloat(e.target.amt.value), description: e.target.desc.value, payment_mode: mode }]).select().single(); 
+      const qty = parseFloat(e.target.qty.value) || 1;
+      const unitPrice = parseFloat(e.target.unit_price.value) || 0;
+      const totalAmount = qty * unitPrice;
+      const { data: newExp, error: expErr } = await supabase.from('expenses').insert([{ 
+        category: e.target.vendor_name.value, 
+        item_name: e.target.item_name.value,
+        qty: qty,
+        unit_price: unitPrice,
+        amount: totalAmount, 
+        vendor_vat: e.target.vendor_vat.value,
+        description: e.target.desc.value, 
+        payment_mode: mode 
+      }]).select().single(); 
       if (expErr) throw expErr;
       const cbType = mode === 'Cash' ? 'Cash-Out' : 'Bank-Out'; 
-      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Expense: ${e.target.cat.value}`, amount: parseFloat(e.target.amt.value) }]).select().single(); 
+      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Expense: ${e.target.item_name.value}`, amount: totalAmount }]).select().single(); 
       if (cbErr) throw cbErr;
       setData(prev => ({ ...prev, expenses: [newExp, ...prev.expenses], cashbook: [nC, ...prev.cashbook] })); 
       showToast('Expense Added!'); e.target.reset(); 
@@ -665,20 +671,19 @@ export default function useERP() {
     const isRefund = inv.invoice_no.startsWith('REF-');
     
     const linkedInv = inv.linked_inv_id ? data.invoices.find(i => i.id === inv.linked_inv_id) : null;
-    
     const qrData = inv.pdf_url || `Invoice: ${inv.invoice_no} | Total: ${(inv.total||0).toFixed(2)} SAR`;
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
     
     return `
-    <div id="invoice-capture" style="width:794px; height:1123px; padding:40px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial; direction:${dir}; text-align:${textAlign}; display:flex; flex-direction:column; justify-content:space-between; border: 8px solid #1E3A8A; border-radius: 15px; box-shadow: inset 0 0 0 2px #FBBF24;">
+    <div id="invoice-capture" style="width:794px; height:1123px; padding:40px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial; direction:${dir}; text-align:${textAlign}; display:flex; flex-direction:column; justify-content:space-between; border: 8px solid #1E3A8A; border-radius: 15px; box-shadow: inset 0 0 0 2px #FBBF24; overflow: hidden;">
       
       <div>
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #FBBF24; padding-bottom:20px; margin-bottom:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #FBBF24; padding-bottom:15px; margin-bottom:15px;">
           <div style="display:flex; align-items:center; gap:15px;">
-            ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:90px;width:auto;object-fit:contain;" />` : ''}
+            ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:80px;width:auto;object-fit:contain;" />` : ''}
             <div style="text-align: right; direction: rtl;">
-              <h1 style="margin:0;color:#1E3A8A;font-size:22px;font-weight:bold;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h1>
-              <p style="font-size:12px;margin-top:5px;line-height:1.8;color:#555;">
+              <h1 style="margin:0;color:#1E3A8A;font-size:20px;font-weight:bold;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h1>
+              <p style="font-size:11px;margin-top:5px;line-height:1.6;color:#555;">
                 عنوان: ${s.address_ar || ''}<br/>
                 هاتف: ${s.phone || ''}<br/>
                 سجل تجاري: ${s.cr_no || ''}<br/>
@@ -689,8 +694,8 @@ export default function useERP() {
             </div>
           </div>
           <div style="text-align:${textAlignOpp};background:#1E3A8A;color:#fff;padding:15px 20px;border-radius:8px;min-width:220px;">
-            <h1 style="margin:0;font-size:20px;">${isRefund ? 'CREDIT NOTE' : 'TAX INVOICE'}<br/><span style="font-size:16px; color:#FBBF24;">${isRefund ? 'فاتورة إشعار دائن' : 'فاتورة ضريبية'}</span></h1>
-            <p style="font-size:13px;margin-top:10px;color:#eee; text-align:${textAlignOpp};">
+            <h1 style="margin:0;font-size:18px;">${isRefund ? 'CREDIT NOTE' : 'TAX INVOICE'}<br/><span style="font-size:14px; color:#FBBF24;">${isRefund ? 'فاتورة إشعار دائن' : 'فاتورة ضريبية'}</span></h1>
+            <p style="font-size:12px;margin-top:8px;color:#eee; text-align:${textAlignOpp};">
               Inv No / رقم: <b>${inv.invoice_no}</b><br/>
               Date / التاريخ: <b>${inv.invoice_date}</b><br/>
               Payment / الدفع: <b>${inv.payment_method}</b>
@@ -698,86 +703,86 @@ export default function useERP() {
           </div>
         </div>
         
-        <div style="display:flex;justify-content:space-between;background:#f8fafc;padding:15px;border-radius:8px; margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;background:#f8fafc;padding:10px;border-radius:8px; margin-bottom:15px;">
           <div>
-            <h3 style="margin:0 0 5px;color:#1E3A8A;font-size:14px;">BILL TO / الفاتورة إلى:</h3>
-            <p style="margin:0;font-size:16px;font-weight:bold;">${inv.customers?.name || inv.corporates?.name || ''}</p>
-            <p style="margin:3px 0 0;font-size:12px;color:#666;">${inv.customers?.phone || inv.corporates?.phone || ''} ${inv.corporates?.vat_no ? '| VAT: '+inv.corporates.vat_no : ''}</p>
+            <h3 style="margin:0 0 5px;color:#1E3A8A;font-size:13px;">BILL TO / الفاتورة إلى:</h3>
+            <p style="margin:0;font-size:15px;font-weight:bold;">${inv.customers?.name || inv.corporates?.name || ''}</p>
+            <p style="margin:3px 0 0;font-size:11px;color:#666;">${inv.customers?.phone || inv.corporates?.phone || ''} ${inv.corporates?.vat_no ? '| VAT: '+inv.corporates.vat_no : ''}</p>
           </div>
           <div style="text-align:${textAlignOpp};">
-            <p style="margin:0;font-size:12px;"><b>Sales Person / الموظف:</b> ${inv.employees?.name || 'N/A'}</p>
-            <p style="margin:3px 0 0;font-size:12px;"><b>Booking Type / نوع الحجز:</b> ${inv.booking_type || 'New Booking'}</p>
-            ${!isRefund ? `<p style="margin:3px 0 0;font-size:12px;"><b>Trip Type / نوع الرحلة:</b> ${inv.flight_journey || 'Single'}</p>` : `<p style="margin:3px 0 0;font-size:12px;color:#EF4444;"><b>Reason / السبب:</b> ${inv.refund_reason || 'N/A'}</p>`}
+            <p style="margin:0;font-size:11px;"><b>Sales Person / الموظف:</b> ${inv.employees?.name || 'N/A'}</p>
+            <p style="margin:3px 0 0;font-size:11px;"><b>Booking Type / نوع الحجز:</b> ${inv.booking_type || 'New Booking'}</p>
+            ${!isRefund ? `<p style="margin:3px 0 0;font-size:11px;"><b>Trip Type / نوع الرحلة:</b> ${inv.flight_journey || 'Single'}</p>` : `<p style="margin:3px 0 0;font-size:11px;color:#EF4444;"><b>Reason / السبب:</b> ${inv.refund_reason || 'N/A'}</p>`}
           </div>
         </div>
 
-        ${inv.passenger_names ? `<div style="margin-bottom:15px;padding:10px;background:#fff;border:1px dashed #ddd;border-radius:6px;"><b style="font-size:12px;">Passengers / الركاب:</b><br/><span style="font-size:13px;white-space:pre-wrap;margin-top:3px;display:inline-block;">${inv.passenger_names}</span></div>` : ''}
+        ${inv.passenger_names ? `<div style="margin-bottom:15px;padding:8px;background:#fff;border:1px dashed #ddd;border-radius:6px; max-height: 120px; overflow: hidden;"><b style="font-size:11px;">Passengers / الركاب:</b><br/><span style="font-size:12px;white-space:pre-wrap;margin-top:3px;display:inline-block;">${inv.passenger_names}</span></div>` : ''}
       </div>
 
-      <div>
+      <div style="flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center;">
         ${linkedInv ? `
-          <h4 style="margin:0 0 10px; color:#1E3A8A; font-size:14px;">Previous Booking Details / تفاصيل الحجز السابق</h4>
-          <table style="width:100%;border-collapse:collapse;text-align:center;margin-bottom:20px;font-size:12px;">
-            <thead><tr style="background:#f1f5f9;color:#333;"><th style="padding:8px;border:1px solid #ddd;">Old Inv No</th><th style="padding:8px;border:1px solid #ddd;">Old PNR</th><th style="padding:8px;border:1px solid #ddd;">Old Ticket</th><th style="padding:8px;border:1px solid #ddd;">Old Total</th><th style="padding:8px;border:1px solid #ddd;">Refund/Credit Used</th></tr></thead>
-            <tbody><tr><td style="padding:8px;border:1px solid #ddd;">${linkedInv.invoice_no}</td><td style="padding:8px;border:1px solid #ddd;">${linkedInv.pnr || 'N/A'}</td><td style="padding:8px;border:1px solid #ddd;">${linkedInv.ticket_no || 'N/A'}</td><td style="padding:8px;border:1px solid #ddd;">${(linkedInv.total || 0).toFixed(2)}</td><td style="padding:8px;border:1px solid #ddd;color:#059669;font-weight:bold;">- ${(inv.used_credit || 0).toFixed(2)}</td></tr></tbody>
+          <h4 style="margin:0 0 8px; color:#1E3A8A; font-size:12px;">Previous Booking Details / تفاصيل الحجز السابق</h4>
+          <table style="width:100%;border-collapse:collapse;text-align:center;margin-bottom:15px;font-size:11px;">
+            <thead><tr style="background:#f1f5f9;color:#333;"><th style="padding:6px;border:1px solid #ddd;">Old Inv No</th><th style="padding:6px;border:1px solid #ddd;">Old PNR</th><th style="padding:6px;border:1px solid #ddd;">Old Ticket</th><th style="padding:6px;border:1px solid #ddd;">Old Total</th><th style="padding:6px;border:1px solid #ddd;">Refund/Credit Used</th></tr></thead>
+            <tbody><tr><td style="padding:6px;border:1px solid #ddd;">${linkedInv.invoice_no}</td><td style="padding:6px;border:1px solid #ddd;">${linkedInv.pnr || 'N/A'}</td><td style="padding:6px;border:1px solid #ddd;">${linkedInv.ticket_no || 'N/A'}</td><td style="padding:6px;border:1px solid #ddd;">${(linkedInv.total || 0).toFixed(2)}</td><td style="padding:6px;border:1px solid #ddd;color:#059669;font-weight:bold;">- ${(inv.used_credit || 0).toFixed(2)}</td></tr></tbody>
           </table>
         ` : ''}
 
-        <h4 style="margin:0 0 10px; color:#1E3A8A; font-size:14px;">Current Booking / الحجز الحالي</h4>
+        <h4 style="margin:0 0 8px; color:#1E3A8A; font-size:12px;">Current Booking / الحجز الحالي</h4>
         <table style="width:100%;border-collapse:collapse;text-align:center;">
           <thead>
             <tr style="background:#1E3A8A;color:#fff;">
-              <th style="padding:10px;border:1px solid #1e3a8a;font-size:13px;">Service / الخدمة</th>
-              <th style="padding:10px;border:1px solid #1e3a8a;font-size:13px;">Airline / الخطوط</th>
-              <th style="padding:10px;border:1px solid #1e3a8a;font-size:13px;">PNR / الحجز</th>
-              <th style="padding:10px;border:1px solid #1e3a8a;font-size:13px;">Ticket No / التذكرة</th>
-              <th style="padding:10px;border:1px solid #1e3a8a;font-size:13px;">Qty / الكمية</th>
-              <th style="padding:10px;border:1px solid #1e3a8a;font-size:13px;">Total / المجموع</th>
+              <th style="padding:8px;border:1px solid #1e3a8a;font-size:11px;">Service / الخدمة</th>
+              <th style="padding:8px;border:1px solid #1e3a8a;font-size:11px;">Airline / الخطوط</th>
+              <th style="padding:8px;border:1px solid #1e3a8a;font-size:11px;">PNR / الحجز</th>
+              <th style="padding:8px;border:1px solid #1e3a8a;font-size:11px;">Ticket No / التذكرة</th>
+              <th style="padding:8px;border:1px solid #1e3a8a;font-size:11px;">Qty / الكمية</th>
+              <th style="padding:8px;border:1px solid #1e3a8a;font-size:11px;">Total / المجموع</th>
             </tr>
           </thead>
           <tbody>
             <tr style="background:#fff;">
-              <td style="padding:10px;border:1px solid #ddd;text-align:${textAlign};font-size:13px;"><b>${inv.service_type}</b><br/><span style="font-size:11px;color:#666;">${inv.sector || ''}</span></td>
-              <td style="padding:10px;border:1px solid #ddd;font-size:13px;">${inv.airline || 'N/A'}</td>
-              <td style="padding:10px;border:1px solid #ddd;font-size:13px;">${inv.pnr || 'N/A'}</td>
-              <td style="padding:10px;border:1px solid #ddd;font-size:13px;">${inv.ticket_no || 'N/A'}</td>
-              <td style="padding:10px;border:1px solid #ddd;font-size:13px;">${inv.qty || 1}</td>
-              <td style="padding:10px;border:1px solid #ddd;font-size:13px;font-weight:bold;">${(inv.total_sell || 0).toFixed(2)}</td>
+              <td style="padding:8px;border:1px solid #ddd;text-align:${textAlign};font-size:11px;"><b>${inv.service_type}</b><br/><span style="font-size:10px;color:#666;">${inv.sector || ''}</span></td>
+              <td style="padding:8px;border:1px solid #ddd;font-size:11px;">${inv.airline || 'N/A'}</td>
+              <td style="padding:8px;border:1px solid #ddd;font-size:11px;">${inv.pnr || 'N/A'}</td>
+              <td style="padding:8px;border:1px solid #ddd;font-size:11px;">${inv.ticket_no || 'N/A'}</td>
+              <td style="padding:8px;border:1px solid #ddd;font-size:11px;">${inv.qty || 1}</td>
+              <td style="padding:8px;border:1px solid #ddd;font-size:11px;font-weight:bold;">${(inv.total_sell || 0).toFixed(2)}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div style="display:flex;justify-content:space-between;align-items:flex-end; margin-top:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end; margin-top:15px;">
         <div style="text-align:center;">
-          <img src="${qrUrl}" width="100" height="100" style="border:1px solid #eee; padding:5px; border-radius:5px;" crossorigin="anonymous" />
-          <p style="margin:5px 0 0;font-size:10px;color:#666;">Scan to Verify/Download / مسح للتحقق</p>
+          <img src="${qrUrl}" width="80" height="80" style="border:1px solid #eee; padding:3px; border-radius:5px;" crossorigin="anonymous" />
+          <p style="margin:3px 0 0;font-size:9px;color:#666;">Scan to Verify/Download / مسح للتحقق</p>
         </div>
-        <div style="width:320px;font-size:13px;">
-          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>Before VAT / قبل الضريبة:</span><b>${(inv.total_sell || 0).toFixed(2)} SAR</b></div>
-          ${(inv.discount || 0) > 0 ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;color:#EF4444;"><span>Discount / الخصم:</span><b>- ${(inv.discount || 0).toFixed(2)} SAR</b></div>` : ''}
-          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>VAT 15% / ضريبة 15%:</span><b>${(inv.vat || 0).toFixed(2)} SAR</b></div>
-          <div style="display:flex;justify-content:space-between;background:#1E3A8A;color:#FBBF24;padding:10px;font-weight:bold;font-size:16px;border-radius:6px;margin-top:10px;"><span>TOTAL / المجموع:</span><b>${(inv.total || 0).toFixed(2)} SAR</b></div>
+        <div style="width:300px;font-size:12px;">
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;"><span>Before VAT / قبل الضريبة:</span><b>${(inv.total_sell || 0).toFixed(2)} SAR</b></div>
+          ${(inv.discount || 0) > 0 ? `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;color:#EF4444;"><span>Discount / الخصم:</span><b>- ${(inv.discount || 0).toFixed(2)} SAR</b></div>` : ''}
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;"><span>VAT 15% / ضريبة 15%:</span><b>${(inv.vat || 0).toFixed(2)} SAR</b></div>
+          <div style="display:flex;justify-content:space-between;background:#1E3A8A;color:#FBBF24;padding:8px;font-weight:bold;font-size:14px;border-radius:6px;margin-top:8px;"><span>TOTAL / المجموع:</span><b>${(inv.total || 0).toFixed(2)} SAR</b></div>
           
-          ${(inv.used_credit || 0) > 0 ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;color:#059669;"><span>Previous Refund Adjusted / تعديل من رصيد سابق:</span><b>- ${(inv.used_credit || 0).toFixed(2)} SAR</b></div>` : ''}
+          ${(inv.used_credit || 0) > 0 ? `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;color:#059669;"><span>Previous Refund Adjusted / تعديل من رصيد سابق:</span><b>- ${(inv.used_credit || 0).toFixed(2)} SAR</b></div>` : ''}
           
-          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;color:#059669;"><span>Paid / مدفوع:</span><b>${((inv.paid_amount || 0) - (inv.used_credit || 0)).toFixed(2)} SAR</b></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;color:#059669;"><span>Paid / مدفوع:</span><b>${((inv.paid_amount || 0) - (inv.used_credit || 0)).toFixed(2)} SAR</b></div>
           
-          <div style="display:flex;justify-content:space-between;padding:10px 0;color:#EF4444;font-weight:bold;font-size:15px;"><span>BALANCE DUE / المستحق:</span><b>${(inv.due_amount || 0).toFixed(2)} SAR</b></div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;color:#EF4444;font-weight:bold;font-size:13px;"><span>BALANCE DUE / المستحق:</span><b>${(inv.due_amount || 0).toFixed(2)} SAR</b></div>
         </div>
       </div>
 
-      <div style="display:flex;justify-content:space-between;align-items:flex-end; margin-top:30px; border-top: 2px solid #1E3A8A; padding-top:15px;">
-        <div style="text-align:center; font-size:11px; color:#555; width: 60%;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end; margin-top:15px; border-top: 2px solid #1E3A8A; padding-top:10px;">
+        <div style="text-align:center; font-size:10px; color:#555; width: 60%;">
           <p style="margin:0; font-weight:bold; color:#1E3A8A;">Thank you for choosing us! / شكراً لاختياركم لنا</p>
           <p style="margin:3px 0;">We look forward to serving you again. / نتطلع لخدمتكم مرة أخرى</p>
         </div>
-        <div style="text-align:center; border: 4px double #1E3A8A; border-radius: 50%; width: 180px; height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: rotate(-10deg); position: relative; opacity: 0.9; background: rgba(255,255,255,0.8);">
-          ${s.logo_url ? `<img src="${s.logo_url}" style="height: 40px; width: 40px; object-fit: contain; margin-bottom: 5px;" crossorigin="anonymous"/>` : ''}
-          <h3 style="margin:0; font-size: 16px; color: #1E3A8A; font-family: 'Traditional Arabic', 'Amiri', serif;">${s.company_name_ar || 'صعود الطائرة'}</h3>
-          <div style="width: 70%; border-top: 1px solid #1E3A8A; margin: 5px 0;"></div>
-          <p style="margin:0; font-size: 10px; color: #555; font-family: 'Traditional Arabic', 'Amiri', serif;">${s.address_ar || ''}</p>
-          <p style="margin:0; font-size: 10px; color: #555;">${s.phone || ''}</p>
+        <div style="text-align:center; border: 4px solid #dc2626; color: #dc2626; border-radius: 50%; width: 140px; height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: rotate(-15deg); box-shadow: 0 0 0 2px #dc2626 inset, 2px 2px 5px rgba(0,0,0,0.2); font-family: 'Brush Script MT', cursive; background: rgba(255,255,255,0.9);">
+          ${s.logo_url ? `<img src="${s.logo_url}" style="height: 30px; width: 30px; object-fit: contain; margin-bottom: 3px;" crossorigin="anonymous"/>` : ''}
+          <h3 style="margin:0; font-size: 14px; font-weight: bold;">${s.company_name_ar || 'صعود الطائرة'}</h3>
+          <div style="width: 60%; border-top: 1px solid #dc2626; margin: 4px 0;"></div>
+          <p style="margin:0; font-size: 9px;">${s.address_ar || ''}</p>
+          <p style="margin:0; font-size: 9px;">${s.phone || ''}</p>
         </div>
       </div>
     </div>`;
