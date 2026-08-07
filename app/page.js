@@ -44,6 +44,7 @@ export default function Home() {
         userProfile={erp.userProfile} menu={menu}
         settleForm={erp.settleForm} setSettleForm={erp.setSettleForm} handleSettlePayment={erp.handleSettlePayment}
         refundForm={erp.refundForm} setRefundForm={erp.setRefundForm} handleRefund={erp.handleRefund}
+        previewHTML={erp.previewHTML}
       >
         <ERPViews 
           // Core Data & State
@@ -59,7 +60,7 @@ export default function Home() {
           payFilter={erp.payFilter} setPayFilter={erp.setPayFilter}
           handleEditInvoice={erp.handleEditInvoice} 
           handleDeleteInvoice={erp.handleDeleteInvoice} 
-          openRefundModal={erp.openRefundModal} 
+          openRefundModal={erp.openRefundModal} openPreview={erp.openPreview}
           editInvId={erp.editInvId}
           
           // Customer & Corp & Creditors
