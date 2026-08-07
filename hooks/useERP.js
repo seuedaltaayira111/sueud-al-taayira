@@ -118,6 +118,7 @@ export default function useERP() {
       paid: (inv.paid_amount || 0) - (inv.used_credit || 0),
       useCredit: inv.used_credit || 0,
       invoiceDate: inv.invoice_date || today,
+      employeeId: inv.employee_id || '',
       passengers: inv.passenger_names ? inv.passenger_names.split('\n') : ['']
     });
     setPage('create');
@@ -644,7 +645,9 @@ export default function useERP() {
     const textAlign = isAr ? 'right' : 'left'; 
     const textAlignOpp = isAr ? 'left' : 'right';
     
-    // Bilingual Invoice with Beautiful Border, Arabic Company Info, Salesperson Signature, and Footer
+    // Internet-based QR Code API for universal scanning
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent('Invoice No: ' + inv.invoice_no + ' | Total: ' + (inv.total||0).toFixed(2) + ' SAR')}`;
+    
     return `
     <div id="invoice-capture" style="width:794px; height:1123px; padding:40px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial; direction:${dir}; text-align:${textAlign}; display:flex; flex-direction:column; justify-content:space-between; border: 8px solid #1E3A8A; border-radius: 15px; box-shadow: inset 0 0 0 2px #FBBF24;">
       
@@ -655,10 +658,13 @@ export default function useERP() {
             ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:90px;width:auto;object-fit:contain;" />` : ''}
             <div style="text-align: right; direction: rtl;">
               <h1 style="margin:0;color:#1E3A8A;font-size:22px;font-weight:bold;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h1>
-              <p style="font-size:12px;margin-top:5px;line-height:1.6;color:#555;">
-                عنوان: ${s.address_ar || ''} | هاتف: ${s.phone || ''}<br/>
-                سجل تجاري: ${s.cr_no || ''} | ضريبة القيمة المضافة: ${s.vat_no || ''}<br/>
-                رقم الترخيص: ${s.license_no || ''} | ترخيص سياحي: ${s.tourist_license_no || ''}
+              <p style="font-size:12px;margin-top:5px;line-height:1.8;color:#555;">
+                عنوان: ${s.address_ar || ''}<br/>
+                هاتف: ${s.phone || ''}<br/>
+                سجل تجاري: ${s.cr_no || ''}<br/>
+                ضريبة القيمة المضافة: ${s.vat_no || ''}<br/>
+                رقم الترخيص: ${s.license_no || ''}<br/>
+                ترخيص سياحي: ${s.tourist_license_no || ''}
               </p>
             </div>
           </div>
@@ -717,8 +723,8 @@ export default function useERP() {
       <!-- FOOTER SECTION (Totals & QR) -->
       <div style="display:flex;justify-content:space-between;align-items:flex-end; margin-top:20px;">
         <div style="text-align:center;">
-          <img src="${inv.qrCode || ''}" width="100" height="100" style="border:1px solid #eee; padding:5px; border-radius:5px;" />
-          <p style="margin:5px 0 0;font-size:10px;color:#666;">ZATCA QR / رمز الاستجابة السريع</p>
+          <img src="${qrUrl}" width="100" height="100" style="border:1px solid #eee; padding:5px; border-radius:5px;" crossorigin="anonymous" />
+          <p style="margin:5px 0 0;font-size:10px;color:#666;">Scan to Verify / مسح للتحقق</p>
         </div>
         <div style="width:320px;font-size:13px;">
           <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>Before VAT / قبل الضريبة:</span><b>${(inv.total_sell || 0).toFixed(2)} SAR</b></div>
@@ -740,12 +746,13 @@ export default function useERP() {
           <p style="margin:0; font-weight:bold; color:#1E3A8A;">Thank you for choosing us! / شكراً لاختياركم لنا</p>
           <p style="margin:3px 0;">We look forward to serving you again. / نتطلع لخدمتكم مرة أخرى</p>
         </div>
-        <div style="text-align:center; border: 2px solid #1E3A8A; border-radius: 8px; padding: 10px 15px; width: 35%; transform: rotate(-2deg); background: #f8fafc;">
-          <p style="margin:0; font-size:14px; font-weight:bold; color:#1E3A8A;">${inv.employees?.name || 'Sales Person'}</p>
+        <div style="text-align:center; border: 2px solid #1E3A8A; border-radius: 8px; padding: 10px 15px; width: 35%; transform: rotate(-2deg); background: #fff; position: relative;">
+          ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:30px;width:auto;object-fit:contain; margin-bottom:5px; opacity: 0.8;" />` : ''}
+          <p style="margin:0; font-size:18px; font-weight:bold; color:#1E3A8A; font-family: 'Brush Script MT', cursive;">${inv.employees?.name || 'Sales Person'}</p>
           <p style="margin:0; font-size:10px; color:#555;">Authorized Signature / التوقيع المعتمد</p>
           <div style="margin-top:5px; border-top: 1px dashed #aaa; padding-top:5px;">
             <p style="margin:0; font-size:9px; color:#888;">${s.company_name_en || 'SUEUD AL TAAYIRA'}</p>
-            <p style="margin:0; font-size:9px; color:#888;">${s.phone || ''} | ${s.address_ar || ''}</p>
+            <p style="margin:0; font-size:9px; color:#888;">Ph: ${s.phone || ''} | ${s.address_ar || ''}</p>
           </div>
         </div>
       </div>
@@ -756,16 +763,12 @@ export default function useERP() {
     try { 
       const { default: html2canvas } = await import('html2canvas'); 
       const { default: jsPDF } = await import('jspdf'); 
-      const { default: QRCode } = await import('qrcode'); 
       const s = data.settings; 
-      const enc = (tag, v) => String.fromCharCode(tag) + String.fromCharCode(v.length) + v; 
-      const tlv = enc(1, s.company_name_en||"S") + enc(2, s.vat_no||"V") + enc(3, new Date(inv.created_at).toISOString()) + enc(4, (inv.total || 0).toFixed(2)) + enc(5, (inv.vat || 0).toFixed(2)); 
-      const qr = await QRCode.toDataURL(btoa(tlv)); 
       
       const html = document.createElement('div'); 
       html.style.width = '794px';
       html.style.height = '1123px';
-      html.innerHTML = getInvoiceHTML({...inv, qrCode: qr}, s, invLang); 
+      html.innerHTML = getInvoiceHTML(inv, s, invLang); 
       document.body.appendChild(html); 
       
       const canvas = await html2canvas(html, { useCORS: true, allowTaint: true, scale: 2, backgroundColor: '#ffffff', width: 794, height: 1123 }); 
@@ -797,16 +800,12 @@ export default function useERP() {
     try { 
       const { default: html2canvas } = await import('html2canvas'); 
       const { default: jsPDF } = await import('jspdf'); 
-      const { default: QRCode } = await import('qrcode'); 
       const s = data.settings; 
-      const enc = (tag, v) => String.fromCharCode(tag) + String.fromCharCode(v.length) + v; 
-      const tlv = enc(1, s.company_name_en||"S") + enc(2, s.vat_no||"V") + enc(3, new Date(inv.created_at).toISOString()) + enc(4, (inv.total || 0).toFixed(2)) + enc(5, (inv.vat || 0).toFixed(2)); 
-      const qr = await QRCode.toDataURL(btoa(tlv)); 
       
       const html = document.createElement('div'); 
       html.style.width = '794px';
       html.style.height = '1123px';
-      html.innerHTML = getInvoiceHTML({...inv, qrCode: qr}, s, invLang); 
+      html.innerHTML = getInvoiceHTML(inv, s, invLang); 
       document.body.appendChild(html); 
       
       const canvas = await html2canvas(html, { useCORS: true, allowTaint: true, scale: 2, backgroundColor: '#ffffff', width: 794, height: 1123 }); 
