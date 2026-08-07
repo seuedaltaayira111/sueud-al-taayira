@@ -195,6 +195,26 @@ export default function ERPViews(props) {
             </select>
           </div>
 
+          {/* NEW FIELDS: Invoice Date, Journey Type, Fare Type */}
+          <div><label style={styles.label}>Invoice Date (Backdate Allowed)</label><input type="date" value={invForm.invoiceDate} onChange={e => setInvForm({...invForm, invoiceDate: e.target.value})} style={styles.input} required /></div>
+          
+          <div>
+            <label style={styles.label}>Journey Type</label>
+            <select value={invForm.flightJourney} onChange={e => setInvForm({...invForm, flightJourney: e.target.value})} style={styles.input}>
+              <option>Single</option>
+              <option>Round Trip</option>
+              <option>Multi-city</option>
+            </select>
+          </div>
+
+          <div>
+            <label style={styles.label}>Fare Type</label>
+            <select value={invForm.refundable} onChange={e => setInvForm({...invForm, refundable: e.target.value})} style={styles.input}>
+              <option>Refundable</option>
+              <option>Non-Refundable</option>
+            </select>
+          </div>
+
           <div>
             <label style={styles.label}>Payment Method</label>
             <select value={invForm.payment} onChange={e => setInvForm({...invForm, payment: e.target.value, useCredit: 0, creditCustId: ''})} style={styles.input}>
