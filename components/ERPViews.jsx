@@ -215,6 +215,15 @@ export default function ERPViews(props) {
             </select>
           </div>
 
+          {/* Sales Person Dropdown */}
+          <div>
+            <label style={styles.label}>Sales Person</label>
+            <select value={invForm.employeeId} onChange={e => setInvForm({...invForm, employeeId: e.target.value})} style={styles.input} required>
+              <option value="">Select Sales Person</option>
+              {data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+            </select>
+          </div>
+
           <div>
             <label style={styles.label}>Payment Method</label>
             <select value={invForm.payment} onChange={e => setInvForm({...invForm, payment: e.target.value, useCredit: 0, creditCustId: ''})} style={styles.input}>
@@ -313,7 +322,7 @@ export default function ERPViews(props) {
                     <button onClick={() => printInvoice(inv, 'ar')} style={{ ...styles.btnWarning, padding: '5px 8px', fontSize: '11px' }}>Print</button>
                     <button onClick={() => handleEditInvoice(inv)} style={{ ...styles.btnWarning, padding: '5px 8px', fontSize: '11px' }}>Edit</button>
                     <button onClick={() => handleDeleteInvoice(inv)} style={{ ...styles.btnDanger, padding: '5px 8px', fontSize: '11px' }}>Delete</button>
-                    {isInvoices && (inv.due_amount || 0) > 0 && <button onClick={() => openRefundModal(inv)} style={{ ...styles.btnDanger, padding: '5px 8px', fontSize: '11px' }}>Refund</button>}
+                    {isInvoices && <button onClick={() => openRefundModal(inv)} style={{ ...styles.btnDanger, padding: '5px 8px', fontSize: '11px' }}>Refund</button>}
                   </div>
                 </td>
               </tr>
