@@ -135,6 +135,14 @@ export default function useERP() {
         if (exists) throw new Error('Customer already exists! Please select from the dropdown.');
       }
 
+      // Validation: Ensure Customer is selected if not new
+      if (invForm.custType === 'Individual' && invForm.custId !== 'new' && !invForm.custId) {
+        throw new Error("Please select a valid Customer from the list.");
+      }
+      if (invForm.custType === 'Corporate' && invForm.corpId !== 'new' && !invForm.corpId) {
+        throw new Error("Please select a valid Corporate from the list.");
+      }
+
       const qty = parseInt(invForm.qty) || 1; 
       const cost = (parseFloat(invForm.cost) || 0) * qty; 
       let sell = (parseFloat(invForm.sell) || 0) * qty; 
@@ -656,17 +664,14 @@ export default function useERP() {
     const textAlignOpp = isAr ? 'left' : 'right';
     const isRefund = inv.invoice_no.startsWith('REF-');
     
-    // Fetch Linked Invoice Details if exists
     const linkedInv = inv.linked_inv_id ? data.invoices.find(i => i.id === inv.linked_inv_id) : null;
     
-    // QR Code URL (Uses PDF URL if available, else fallback to API)
     const qrData = inv.pdf_url || `Invoice: ${inv.invoice_no} | Total: ${(inv.total||0).toFixed(2)} SAR`;
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
     
     return `
     <div id="invoice-capture" style="width:794px; height:1123px; padding:40px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial; direction:${dir}; text-align:${textAlign}; display:flex; flex-direction:column; justify-content:space-between; border: 8px solid #1E3A8A; border-radius: 15px; box-shadow: inset 0 0 0 2px #FBBF24;">
       
-      <!-- HEADER SECTION -->
       <div>
         <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #FBBF24; padding-bottom:20px; margin-bottom:20px;">
           <div style="display:flex; align-items:center; gap:15px;">
@@ -709,7 +714,6 @@ export default function useERP() {
         ${inv.passenger_names ? `<div style="margin-bottom:15px;padding:10px;background:#fff;border:1px dashed #ddd;border-radius:6px;"><b style="font-size:12px;">Passengers / الركاب:</b><br/><span style="font-size:13px;white-space:pre-wrap;margin-top:3px;display:inline-block;">${inv.passenger_names}</span></div>` : ''}
       </div>
 
-      <!-- TABLE SECTION -->
       <div>
         ${linkedInv ? `
           <h4 style="margin:0 0 10px; color:#1E3A8A; font-size:14px;">Previous Booking Details / تفاصيل الحجز السابق</h4>
@@ -744,7 +748,6 @@ export default function useERP() {
         </table>
       </div>
 
-      <!-- FOOTER SECTION (Totals & QR) -->
       <div style="display:flex;justify-content:space-between;align-items:flex-end; margin-top:20px;">
         <div style="text-align:center;">
           <img src="${qrUrl}" width="100" height="100" style="border:1px solid #eee; padding:5px; border-radius:5px;" crossorigin="anonymous" />
@@ -764,13 +767,11 @@ export default function useERP() {
         </div>
       </div>
 
-      <!-- SIGNATURE & FOOTER MESSAGE -->
       <div style="display:flex;justify-content:space-between;align-items:flex-end; margin-top:30px; border-top: 2px solid #1E3A8A; padding-top:15px;">
         <div style="text-align:center; font-size:11px; color:#555; width: 60%;">
           <p style="margin:0; font-weight:bold; color:#1E3A8A;">Thank you for choosing us! / شكراً لاختياركم لنا</p>
           <p style="margin:3px 0;">We look forward to serving you again. / نتطلع لخدمتكم مرة أخرى</p>
         </div>
-        <!-- STYLISH COMPANY STAMP -->
         <div style="text-align:center; border: 4px double #1E3A8A; border-radius: 50%; width: 180px; height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: rotate(-10deg); position: relative; opacity: 0.9; background: rgba(255,255,255,0.8);">
           ${s.logo_url ? `<img src="${s.logo_url}" style="height: 40px; width: 40px; object-fit: contain; margin-bottom: 5px;" crossorigin="anonymous"/>` : ''}
           <h3 style="margin:0; font-size: 16px; color: #1E3A8A; font-family: 'Traditional Arabic', 'Amiri', serif;">${s.company_name_ar || 'صعود الطائرة'}</h3>
@@ -814,7 +815,6 @@ export default function useERP() {
       
       document.body.removeChild(html); 
       
-      // Upload to Supabase Storage
       const pdfBlob = doc.output('blob');
       const fileName = `${inv.invoice_no}.pdf`;
       const { error: upErr } = await supabase.storage.from('invoices').upload(fileName, pdfBlob, { contentType: 'application/pdf', upsert: true });
@@ -822,8 +822,6 @@ export default function useERP() {
       if (!upErr) {
         const { data: urlData } = supabase.storage.from('invoices').getPublicUrl(fileName);
         const pdfUrl = urlData.publicUrl;
-        
-        // Update invoice record with PDF URL
         await supabase.from('invoices').update({ pdf_url: pdfUrl }).eq('id', inv.id);
         setData(prev => ({ ...prev, invoices: prev.invoices.map(i => i.id === inv.id ? { ...i, pdf_url: pdfUrl } : i) }));
         return doc;
