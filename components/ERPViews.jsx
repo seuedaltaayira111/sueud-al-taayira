@@ -215,6 +215,35 @@ export default function ERPViews(props) {
             </select>
           </div>
 
+          {/* Booking Type & Previous Booking Linkage */}
+          <div>
+            <label style={styles.label}>Booking Type</label>
+            <select value={invForm.bookingType} onChange={e => setInvForm({...invForm, bookingType: e.target.value, linkedInvId: ''})} style={styles.input}>
+              <option>New Booking</option>
+              <option>Reissue</option>
+              <option>Extra Luggage</option>
+              <option>Previous Booking</option>
+            </select>
+          </div>
+
+          {invForm.bookingType === 'Previous Booking' && (
+            <div>
+              <label style={styles.label}>Select Previous Booking (To use Credit)</label>
+              <select 
+                value={invForm.linkedInvId} 
+                onChange={e => {
+                  const linkedInv = data.invoices.find(i => i.id === e.target.value);
+                  setInvForm({...invForm, linkedInvId: e.target.value, custId: linkedInv?.customer_id || 'new', useCredit: linkedInv?.refund_customer || 0});
+                }} 
+                style={styles.input} 
+                required
+              >
+                <option value="">Select Old Invoice</option>
+                {data.invoices.filter(i => i.invoice_no.startsWith('REF-') || (i.refund_customer > 0)).map(i => <option key={i.id} value={i.id}>{i.invoice_no} - {i.customers?.name} (Refund: {i.refund_customer || 0})</option>)}
+              </select>
+            </div>
+          )}
+
           {/* Sales Person Dropdown */}
           <div>
             <label style={styles.label}>Sales Person</label>
