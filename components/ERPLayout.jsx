@@ -59,8 +59,17 @@ export default function ERPLayout({ children, tr, lang, setLang, page, setPage, 
                 <option value="Credit">Credit (Store for next booking)</option>
               </select>
 
-              <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Reason</label>
-              <input type="text" value={refundForm.reason} onChange={e => setRefundForm({...refundForm, reason: e.target.value})} style={styles.input} required />
+              <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Refund Reason / سبب الاسترجاع</label>
+              <select value={refundForm.reason} onChange={e => setRefundForm({...refundForm, reason: e.target.value})} style={styles.input} required>
+                <option value="">Select Reason</option>
+                <option value="Cancel by Airline">Cancel by Airline / إلغاء من قبل الخطوط الجوية</option>
+                <option value="Cancel by Customer">Cancel by Customer / إلغاء من قبل العميل</option>
+                <option value="Date Change">Date Change / تغيير التاريخ</option>
+                <option value="No Show">No Show / عدم الحضور</option>
+                <option value="Duplicate Booking">Duplicate Booking / حجز مكرر</option>
+                <option value="Visa Rejected">Visa Rejected / رفض التأشيرة</option>
+                <option value="Other">Other / أخرى</option>
+              </select>
               
               <button type="submit" style={styles.btnPrimary}>Process Refund</button>
               <button type="button" onClick={() => setModal({ type: null, data: null })} style={{ ...styles.btnDanger, width: '100%', marginTop: 10 }}>Cancel</button>
