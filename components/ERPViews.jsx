@@ -36,19 +36,36 @@ export default function ERPViews(props) {
   } = props;
 
   if (page === 'dashboard') {
+    const s = data.settings || {};
     const activeInv = data.invoices.filter(i => !i.invoice_no.startsWith('REF-'));
     const tSales = activeInv.reduce((s,i) => s + (i.total || 0), 0);
     const tProfit = activeInv.reduce((s,i) => s + (i.profit || 0), 0);
     const cashBal = data.cashbook.filter(c => c.type === 'Cash-In').reduce((s,c) => s + (c.amount || 0), 0) - data.cashbook.filter(c => c.type === 'Cash-Out').reduce((s,c) => s + (c.amount || 0), 0);
     const bankBal = data.cashbook.filter(c => c.type === 'Bank-In').reduce((s,c) => s + (c.amount || 0), 0) - data.cashbook.filter(c => c.type === 'Bank-Out').reduce((s,c) => s + (c.amount || 0), 0);
+    const totalOutstanding = activeInv.reduce((s,i) => s + (i.due_amount || 0), 0);
+    const lowBalPortals = data.portals.filter(p => (p.current_balance || 0) < 1000);
+
     return (
       <div>
-        <h2>{tr.dash}</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '20px' }}>
+        <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+        <div style={{ textAlign: 'center', marginBottom: '30px', animation: 'fadeIn 1s ease-in-out' }}>
+          <h1 style={{ margin: 0, color: '#1E3A8A', fontSize: '32px' }}>{s.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
+          <h2 style={{ margin: '5px 0', color: '#D97706', fontSize: '24px' }}>{s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
+          <p style={{ color: '#555', fontSize: '14px' }}>{s.address_ar || ''} | {s.phone || ''}</p>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '20px' }}>
           <div style={{...styles.card, borderLeft: '5px solid #1E3A8A'}}><h3>Total Sales</h3><h2>{tSales.toFixed(2)} SAR</h2></div>
           <div style={{...styles.card, borderLeft: '5px solid #059669'}}><h3>Total Profit</h3><h2>{tProfit.toFixed(2)} SAR</h2></div>
+          <div style={{...styles.card, borderLeft: '5px solid #EF4444'}}><h3>Outstanding</h3><h2>{totalOutstanding.toFixed(2)} SAR</h2></div>
           <div style={{...styles.card, borderLeft: '5px solid #D97706'}}><h3>Cash Balance</h3><h2>{cashBal.toFixed(2)} SAR</h2></div>
-          <div style={{...styles.card, borderLeft: '5px solid #EF4444'}}><h3>Bank Balance</h3><h2>{bankBal.toFixed(2)} SAR</h2></div>
+          <div style={{...styles.card, borderLeft: '5px solid #2563EB'}}><h3>Bank Balance</h3><h2>{bankBal.toFixed(2)} SAR</h2></div>
+          <div style={{...styles.card, borderLeft: '5px solid #dc2626'}}>
+            <h3 style={{ color: '#dc2626' }}>Low Portal Alerts</h3>
+            {lowBalPortals.length === 0 ? <p style={{fontSize: '14px', color: '#059669'}}>All portals are healthy.</p> : 
+              lowBalPortals.map(p => <p key={p.id} style={{fontSize: '14px', margin: '5px 0', color: '#dc2626'}}>{p.name} - {p.current_balance.toFixed(2)} SAR</p>)
+            }
+          </div>
         </div>
       </div>
     );
@@ -533,11 +550,37 @@ export default function ERPViews(props) {
 
       <div style={styles.card}><h3>Pay Salary</h3><form onSubmit={handlePaySalary} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr auto', gap: '10px' }}><select name="emp" style={styles.input} required>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select><input type="number" step="0.01" name="amt" placeholder="Amount" style={styles.input} required /><input type="text" name="month" placeholder="Month (e.g. Oct 2023)" style={styles.input} required /><select name="mode" style={styles.input}><option>Cash</option><option>Bank Transfer</option></select><button type="submit" style={styles.btnPrimary}>Pay</button></form></div>
 
-      <div style={styles.card}><h3>Add Expense</h3><form onSubmit={handleAddExpense} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr auto', gap: '10px' }}><input name="cat" placeholder="Category" style={styles.input} required /><input type="number" step="0.01" name="amt" placeholder="Amount" style={styles.input} required /><input name="desc" placeholder="Desc" style={styles.input} /><select name="mode" style={styles.input}><option>Cash</option><option>Bank Transfer</option></select><button type="submit" style={styles.btnPrimary}>Add</button></form></div>
+      <div style={styles.card}>
+        <h3>Add Office Expense / Purchase</h3>
+        <form onSubmit={handleAddExpense} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '15px' }}>
+          <div><label style={styles.label}>Vendor Name</label><input name="vendor_name" placeholder="Vendor Name" style={styles.input} required /></div>
+          <div><label style={styles.label}>Vendor VAT</label><input name="vendor_vat" placeholder="VAT No" style={styles.input} /></div>
+          <div><label style={styles.label}>Item Name</label><input name="item_name" placeholder="Item Name" style={styles.input} required /></div>
+          <div><label style={styles.label}>Qty</label><input type="number" name="qty" placeholder="Qty" style={styles.input} required /></div>
+          <div><label style={styles.label}>Unit Price</label><input type="number" step="0.01" name="unit_price" placeholder="Unit Price" style={styles.input} required /></div>
+          <div><label style={styles.label}>Payment Mode</label><select name="mode" style={styles.input}><option>Cash</option><option>Bank Transfer</option></select></div>
+          <div><label style={styles.label}>Desc</label><input name="desc" placeholder="Desc" style={styles.input} /></div>
+          <button type="submit" style={{ ...styles.btnPrimary, gridColumn: '1 / -1', marginTop: '15px' }}>Add Expense</button>
+        </form>
+      </div>
 
-      <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
-        <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Role</th><th style={{ padding: '12px' }}>Salary</th><th style={{ padding: '12px' }}>Actions</th></tr></thead>
-        <tbody>{data.employees.map(e => <tr key={e.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{e.name}</td><td style={{ padding: '12px' }}>{e.role}</td><td style={{ padding: '12px' }}>{e.salary || 0}</td><td style={{ padding: '12px' }}><button onClick={() => handleEditEmp(e)} style={styles.btnWarning}>Edit</button><button onClick={() => handleDelete('employees', e.id)} style={{...styles.btnDanger, marginLeft: '5px'}}>Delete</button></td></tr>)}</tbody>
+      <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', marginTop: '20px' }}>
+        <thead><tr style={{ background: '#1E3A8A', color: 'white' }}>
+          <th style={{ padding: '12px', textAlign: 'left' }}>Item</th>
+          <th style={{ padding: '12px' }}>Vendor</th>
+          <th style={{ padding: '12px' }}>Qty</th>
+          <th style={{ padding: '12px' }}>Price</th>
+          <th style={{ padding: '12px' }}>Total</th>
+          <th style={{ padding: '12px' }}>Action</th>
+        </tr></thead>
+        <tbody>{data.expenses.map(e => <tr key={e.id} style={{ borderBottom: '1px solid #E2E8F0' }}>
+          <td style={{ padding: '12px' }}>{e.item_name || e.category}</td>
+          <td style={{ padding: '12px' }}>{e.category}</td>
+          <td style={{ padding: '12px' }}>{e.qty || 1}</td>
+          <td style={{ padding: '12px' }}>{e.unit_price || e.amount}</td>
+          <td style={{ padding: '12px', fontWeight: 'bold' }}>{e.amount.toFixed(2)}</td>
+          <td style={{ padding: '12px' }}><button onClick={() => handleDelete('expenses', e.id)} style={styles.btnDanger}>Delete</button></td>
+        </tr>)}</tbody>
       </table>
     </div>
   );
