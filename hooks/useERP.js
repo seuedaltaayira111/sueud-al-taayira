@@ -24,7 +24,7 @@ export default function useERP() {
   const today = new Date().toISOString().split('T')[0];
   
   const [editInvId, setEditInvId] = useState(null);
-  const [invForm, setInvForm] = useState({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: '', bookingDate: today, invoiceDate: today, service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' });
+  const [invForm, setInvForm] = useState({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: '', bookingDate: today, invoiceDate: today, bookingType: 'New Booking', linkedInvId: '', service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' });
   
   const [editCorpId, setEditCorpId] = useState(null); const [corpForm, setCorpForm] = useState({ name: '', vat_no: '', phone: '', address: '' });
   const [editCredId, setEditCredId] = useState(null); const [creditorForm, setCreditorForm] = useState({ name: '', phone: '', address: '' });
@@ -105,6 +105,8 @@ export default function useERP() {
       flightType: inv.flight_type || 'Domestic',
       flightJourney: inv.flight_journey || 'Single',
       refundable: inv.refundable_status || 'Refundable',
+      bookingType: inv.booking_type || 'New Booking',
+      linkedInvId: inv.linked_inv_id || '',
       flightSector: inv.flight_sector || '',
       airline: inv.airline || '',
       pnr: inv.pnr || '',
@@ -127,6 +129,12 @@ export default function useERP() {
   const handleCreateInvoice = async (e) => {
     e.preventDefault();
     try {
+      // Duplicate Customer Check
+      if (invForm.custType === 'Individual' && invForm.custId === 'new' && invForm.custName) {
+        const exists = data.customers.find(c => c.name.toLowerCase() === invForm.custName.toLowerCase() && c.phone === invForm.custPhone);
+        if (exists) throw new Error('Customer already exists! Please select from the dropdown.');
+      }
+
       const qty = parseInt(invForm.qty) || 1; 
       const cost = (parseFloat(invForm.cost) || 0) * qty; 
       let sell = (parseFloat(invForm.sell) || 0) * qty; 
@@ -178,6 +186,7 @@ export default function useERP() {
         customer_id: cid, corporate_id: corpId, portal_id: portal.id, employee_id: invForm.employeeId || null, 
         booking_date: invForm.bookingDate, invoice_date: invForm.invoiceDate, service_type: invForm.service, 
         flight_type: invForm.flightType, flight_journey: invForm.flightJourney, refundable_status: invForm.refundable,
+        booking_type: invForm.bookingType, linked_inv_id: invForm.linkedInvId || null,
         pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty: qty, 
         discount: discount, passenger_names: passengerNames || null, airline: invForm.airline || null, 
         flight_sector: invForm.flightSector || null, total_cost: cost, total_sell: sell, profit, vat, total, 
@@ -217,7 +226,7 @@ export default function useERP() {
         showToast('Invoice Generated!');
       }
       
-      setInvForm({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: data.portals[0]?.id || '', bookingDate: today, invoiceDate: today, service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' }); 
+      setInvForm({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: data.portals[0]?.id || '', bookingDate: today, invoiceDate: today, bookingType: 'New Booking', linkedInvId: '', service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' }); 
       setPage('list');
     } catch (err) { 
       showToast('Error: ' + err.message); 
@@ -647,8 +656,12 @@ export default function useERP() {
     const textAlignOpp = isAr ? 'left' : 'right';
     const isRefund = inv.invoice_no.startsWith('REF-');
     
-    // Internet-based QR Code API for universal scanning
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent('Invoice: ' + inv.invoice_no + ' | Total: ' + (inv.total||0).toFixed(2) + ' SAR | Date: ' + inv.invoice_date)}`;
+    // Fetch Linked Invoice Details if exists
+    const linkedInv = inv.linked_inv_id ? data.invoices.find(i => i.id === inv.linked_inv_id) : null;
+    
+    // QR Code URL (Uses PDF URL if available, else fallback to API)
+    const qrData = inv.pdf_url || `Invoice: ${inv.invoice_no} | Total: ${(inv.total||0).toFixed(2)} SAR`;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
     
     return `
     <div id="invoice-capture" style="width:794px; height:1123px; padding:40px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial; direction:${dir}; text-align:${textAlign}; display:flex; flex-direction:column; justify-content:space-between; border: 8px solid #1E3A8A; border-radius: 15px; box-shadow: inset 0 0 0 2px #FBBF24;">
@@ -688,6 +701,7 @@ export default function useERP() {
           </div>
           <div style="text-align:${textAlignOpp};">
             <p style="margin:0;font-size:12px;"><b>Sales Person / الموظف:</b> ${inv.employees?.name || 'N/A'}</p>
+            <p style="margin:3px 0 0;font-size:12px;"><b>Booking Type / نوع الحجز:</b> ${inv.booking_type || 'New Booking'}</p>
             ${!isRefund ? `<p style="margin:3px 0 0;font-size:12px;"><b>Trip Type / نوع الرحلة:</b> ${inv.flight_journey || 'Single'}</p>` : `<p style="margin:3px 0 0;font-size:12px;color:#EF4444;"><b>Reason / السبب:</b> ${inv.refund_reason || 'N/A'}</p>`}
           </div>
         </div>
@@ -697,6 +711,15 @@ export default function useERP() {
 
       <!-- TABLE SECTION -->
       <div>
+        ${linkedInv ? `
+          <h4 style="margin:0 0 10px; color:#1E3A8A; font-size:14px;">Previous Booking Details / تفاصيل الحجز السابق</h4>
+          <table style="width:100%;border-collapse:collapse;text-align:center;margin-bottom:20px;font-size:12px;">
+            <thead><tr style="background:#f1f5f9;color:#333;"><th style="padding:8px;border:1px solid #ddd;">Old Inv No</th><th style="padding:8px;border:1px solid #ddd;">Old PNR</th><th style="padding:8px;border:1px solid #ddd;">Old Ticket</th><th style="padding:8px;border:1px solid #ddd;">Old Total</th><th style="padding:8px;border:1px solid #ddd;">Refund/Credit Used</th></tr></thead>
+            <tbody><tr><td style="padding:8px;border:1px solid #ddd;">${linkedInv.invoice_no}</td><td style="padding:8px;border:1px solid #ddd;">${linkedInv.pnr || 'N/A'}</td><td style="padding:8px;border:1px solid #ddd;">${linkedInv.ticket_no || 'N/A'}</td><td style="padding:8px;border:1px solid #ddd;">${(linkedInv.total || 0).toFixed(2)}</td><td style="padding:8px;border:1px solid #ddd;color:#059669;font-weight:bold;">- ${(inv.used_credit || 0).toFixed(2)}</td></tr></tbody>
+          </table>
+        ` : ''}
+
+        <h4 style="margin:0 0 10px; color:#1E3A8A; font-size:14px;">Current Booking / الحجز الحالي</h4>
         <table style="width:100%;border-collapse:collapse;text-align:center;">
           <thead>
             <tr style="background:#1E3A8A;color:#fff;">
@@ -725,7 +748,7 @@ export default function useERP() {
       <div style="display:flex;justify-content:space-between;align-items:flex-end; margin-top:20px;">
         <div style="text-align:center;">
           <img src="${qrUrl}" width="100" height="100" style="border:1px solid #eee; padding:5px; border-radius:5px;" crossorigin="anonymous" />
-          <p style="margin:5px 0 0;font-size:10px;color:#666;">Scan to Verify / مسح للتحقق</p>
+          <p style="margin:5px 0 0;font-size:10px;color:#666;">Scan to Verify/Download / مسح للتحقق</p>
         </div>
         <div style="width:320px;font-size:13px;">
           <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>Before VAT / قبل الضريبة:</span><b>${(inv.total_sell || 0).toFixed(2)} SAR</b></div>
@@ -747,20 +770,20 @@ export default function useERP() {
           <p style="margin:0; font-weight:bold; color:#1E3A8A;">Thank you for choosing us! / شكراً لاختياركم لنا</p>
           <p style="margin:3px 0;">We look forward to serving you again. / نتطلع لخدمتكم مرة أخرى</p>
         </div>
-        <div style="text-align:center; border: 3px double #1E3A8A; border-radius: 50%; width: 180px; height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: rotate(-5deg); position: relative; opacity: 0.9;">
+        <!-- STYLISH COMPANY STAMP -->
+        <div style="text-align:center; border: 4px double #1E3A8A; border-radius: 50%; width: 180px; height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: rotate(-10deg); position: relative; opacity: 0.9; background: rgba(255,255,255,0.8);">
           ${s.logo_url ? `<img src="${s.logo_url}" style="height: 40px; width: 40px; object-fit: contain; margin-bottom: 5px;" crossorigin="anonymous"/>` : ''}
-          <h3 style="margin:0; font-size: 16px; color: #1E3A8A; font-family: 'Traditional Arabic', 'Amiri', serif;">${inv.employees?.name || 'N/A'}</h3>
+          <h3 style="margin:0; font-size: 16px; color: #1E3A8A; font-family: 'Traditional Arabic', 'Amiri', serif;">${s.company_name_ar || 'صعود الطائرة'}</h3>
           <div style="width: 70%; border-top: 1px solid #1E3A8A; margin: 5px 0;"></div>
-          <p style="margin:0; font-size: 10px; color: #1E3A8A; font-family: 'Traditional Arabic', 'Amiri', serif;">${s.company_name_ar || 'صعود الطائرة'}</p>
-          <p style="margin:0; font-size: 9px; color: #555;">${s.phone || ''}</p>
-          <p style="margin:0; font-size: 8px; color: #555;">${s.address_ar || ''}</p>
+          <p style="margin:0; font-size: 10px; color: #555; font-family: 'Traditional Arabic', 'Amiri', serif;">${s.address_ar || ''}</p>
+          <p style="margin:0; font-size: 10px; color: #555;">${s.phone || ''}</p>
         </div>
       </div>
     </div>`;
   };
 
-  const downloadPDF = async (inv, invLang = 'en') => { 
-    try { 
+  const generateAndUploadPDF = async (inv, invLang = 'en') => {
+    try {
       const { default: html2canvas } = await import('html2canvas'); 
       const { default: jsPDF } = await import('jspdf'); 
       const s = data.settings; 
@@ -788,49 +811,44 @@ export default function useERP() {
         doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight); 
         heightLeft -= pageHeight;
       }
-      doc.save(`${inv.invoice_no}-${invLang}.pdf`); 
+      
       document.body.removeChild(html); 
-      showToast('PDF Downloaded!'); 
+      
+      // Upload to Supabase Storage
+      const pdfBlob = doc.output('blob');
+      const fileName = `${inv.invoice_no}.pdf`;
+      const { error: upErr } = await supabase.storage.from('invoices').upload(fileName, pdfBlob, { contentType: 'application/pdf', upsert: true });
+      
+      if (!upErr) {
+        const { data: urlData } = supabase.storage.from('invoices').getPublicUrl(fileName);
+        const pdfUrl = urlData.publicUrl;
+        
+        // Update invoice record with PDF URL
+        await supabase.from('invoices').update({ pdf_url: pdfUrl }).eq('id', inv.id);
+        setData(prev => ({ ...prev, invoices: prev.invoices.map(i => i.id === inv.id ? { ...i, pdf_url: pdfUrl } : i) }));
+        return doc;
+      }
+      return doc;
     } catch (err) { 
       showToast('PDF Error: ' + err.message); 
+      return null;
     } 
+  };
+
+  const downloadPDF = async (inv, invLang = 'en') => { 
+    const doc = await generateAndUploadPDF(inv, invLang);
+    if (doc) {
+      doc.save(`${inv.invoice_no}-${invLang}.pdf`);
+      showToast('PDF Downloaded & Link Saved for QR!');
+    }
   };
   
   const printInvoice = async (inv, invLang = 'en') => { 
-    try { 
-      const { default: html2canvas } = await import('html2canvas'); 
-      const { default: jsPDF } = await import('jspdf'); 
-      const s = data.settings; 
-      
-      const html = document.createElement('div'); 
-      html.style.width = '794px';
-      html.style.height = '1123px';
-      html.innerHTML = getInvoiceHTML(inv, s, invLang); 
-      document.body.appendChild(html); 
-      
-      const canvas = await html2canvas(html, { useCORS: true, allowTaint: true, scale: 2, backgroundColor: '#ffffff', width: 794, height: 1123 }); 
-      
-      const doc = new jsPDF('p', 'mm', 'a4'); 
-      const imgWidth = 210; 
-      const pageHeight = 297; 
-      const imgHeight = canvas.height * imgWidth / canvas.width; 
-      
-      let heightLeft = imgHeight;
-      let position = 0;
-      doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight); 
-      heightLeft -= pageHeight;
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        doc.addPage();
-        doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight); 
-        heightLeft -= pageHeight;
-      }
-      document.body.removeChild(html); 
+    const doc = await generateAndUploadPDF(inv, invLang);
+    if (doc) {
       doc.autoPrint(); 
       window.open(doc.output('bloburl'), '_blank'); 
-    } catch (err) { 
-      showToast('Print Error: ' + err.message); 
-    } 
+    }
   };
 
   return {
