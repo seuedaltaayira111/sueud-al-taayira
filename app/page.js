@@ -73,10 +73,14 @@ export default function Home() {
           handleAddEditPkg={erp.handleAddEditPkg} pkgForm={erp.pkgForm} setPkgForm={erp.setPkgForm} handleEditPkg={erp.handleEditPkg} editPkgId={erp.editPkgId}
           handleAddEditBrn={erp.handleAddEditBrn} brnForm={erp.brnForm} setBrnForm={erp.setBrnForm} handleEditBrn={erp.handleEditBrn} editBrnId={erp.editBrnId}
           
-          // HR & Employees & Services
+          // HR & Employees & Services & Dynamic Expenses
           handleAddEditEmp={erp.handleAddEditEmp} empForm={erp.empForm} setEmpForm={erp.setEmpForm} handleEditEmp={erp.handleEditEmp} editEmpId={erp.editEmpId}
           handleAddEditSrv={erp.handleAddEditSrv} srvForm={erp.srvForm} setSrvForm={erp.setSrvForm} handleEditSrv={erp.handleEditSrv} editSrvId={erp.editSrvId}
           handlePaySalary={erp.handlePaySalary} 
+          expForm={erp.expForm} setExpForm={erp.setExpForm} 
+          handleAddExpItem={erp.handleAddExpItem} 
+          handleRemoveExpItem={erp.handleRemoveExpItem} 
+          handleExpItemChange={erp.handleExpItemChange} 
           handleAddExpense={erp.handleAddExpense}
           
           // Portals & Investors & Transfers
