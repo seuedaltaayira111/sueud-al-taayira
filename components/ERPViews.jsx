@@ -537,7 +537,37 @@ export default function ERPViews(props) {
   );
 
   if (page === 'invest') return (
-    <div><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}><h2>{tr.invest}</h2><button onClick={() => exportToExcel(data.investments, 'Investments')} style={styles.btnSuccess}>{tr.download_excel}</button></div><div style={styles.card}><form onSubmit={handleAddInvestment} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '10px', alignItems: 'flex-end' }}><div><label style={styles.label}>Name</label><input value={investForm.name} onChange={e => setInvestForm({...investForm, name: e.target.value})} style={styles.input} required /></div><div><label style={styles.label}>Amount</label><input type="number" step="0.01" value={investForm.amount} onChange={e => setInvestForm({...investForm, amount: e.target.value})} style={styles.input} required /></div><div><label style={styles.label}>Mode</label><select value={investForm.mode} onChange={e => setInvestForm({...investForm, mode: e.target.value})} style={styles.input}><option>Cash</option><option>Bank Transfer</option></select></div><button type="submit" style={styles.btnPrimary}>Add</button></form></div><table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}><thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Amount</th><th style={{ padding: '12px' }}>Date</th><th style={{ padding: '12px' }}>Action</th></tr></thead><tbody>{data.investments.map(i => <tr key={i.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{i.investor_name}</td><td style={{ padding: '12px' }}>{(i.amount || 0).toFixed(2)}</td><td style={{ padding: '12px' }}>{i.invest_date}</td><td style={{ padding: '12px' }}><button onClick={() => handleDelete('investments', i.id)} style={styles.btnDanger}>Delete</button></td></tr>)}</tbody></table></div>
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}><h2>{tr.invest}</h2><button onClick={() => exportToExcel(data.investments, 'Investments')} style={styles.btnSuccess}>{tr.download_excel}</button></div>
+      <div style={styles.card}>
+        <form onSubmit={handleAddInvestment} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr auto', gap: '10px', alignItems: 'flex-end' }}>
+          <div><label style={styles.label}>Investor Name</label><input value={investForm.name} onChange={e => setInvestForm({...investForm, name: e.target.value})} style={styles.input} required /></div>
+          <div><label style={styles.label}>Amount</label><input type="number" step="0.01" value={investForm.amount} onChange={e => setInvestForm({...investForm, amount: e.target.value})} style={styles.input} required /></div>
+          <div><label style={styles.label}>Date of Investment</label><input type="date" value={investForm.date} onChange={e => setInvestForm({...investForm, date: e.target.value})} style={styles.input} required /></div>
+          <div><label style={styles.label}>Mode</label><select value={investForm.mode} onChange={e => setInvestForm({...investForm, mode: e.target.value})} style={styles.input}><option>Cash</option><option>Bank Transfer</option></select></div>
+          <div><label style={styles.label}>Reason</label><select value={investForm.reason} onChange={e => setInvestForm({...investForm, reason: e.target.value})} style={styles.input}><option>Other</option><option>Recharge for Portal</option><option>Office Expense</option><option>Salary</option></select></div>
+          {investForm.reason === 'Other' && <div><label style={styles.label}>Specify Reason</label><input value={investForm.otherReason} onChange={e => setInvestForm({...investForm, otherReason: e.target.value})} style={styles.input} required /></div>}
+          <div><label style={styles.label}>Desc</label><input value={investForm.desc} onChange={e => setInvestForm({...investForm, desc: e.target.value})} style={styles.input} /></div>
+          <button type="submit" style={styles.btnPrimary}>Add</button>
+        </form>
+      </div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
+        <thead><tr style={{ background: '#1E3A8A', color: 'white' }}>
+          <th style={{ padding: '12px', textAlign: 'left' }}>Name</th>
+          <th style={{ padding: '12px' }}>Amount</th>
+          <th style={{ padding: '12px' }}>Date</th>
+          <th style={{ padding: '12px' }}>Reason</th>
+          <th style={{ padding: '12px' }}>Action</th>
+        </tr></thead>
+        <tbody>{data.investments.map(i => <tr key={i.id} style={{ borderBottom: '1px solid #E2E8F0' }}>
+          <td style={{ padding: '12px' }}>{i.investor_name}</td>
+          <td style={{ padding: '12px' }}>{(i.amount || 0).toFixed(2)}</td>
+          <td style={{ padding: '12px' }}>{i.invest_date}</td>
+          <td style={{ padding: '12px' }}>{i.reason || 'N/A'}</td>
+          <td style={{ padding: '12px' }}><button onClick={() => handleDelete('investments', i.id)} style={styles.btnDanger}>Delete</button></td>
+        </tr>)}</tbody>
+      </table>
+    </div>
   );
 
   if (page === 'hr') return (
@@ -555,18 +585,21 @@ export default function ERPViews(props) {
         <form onSubmit={handleAddExpense} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '15px' }}>
           <div><label style={styles.label}>Vendor Name</label><input name="vendor_name" placeholder="Vendor Name" style={styles.input} required /></div>
           <div><label style={styles.label}>Vendor VAT</label><input name="vendor_vat" placeholder="VAT No" style={styles.input} /></div>
+          <div><label style={styles.label}>Expense Date</label><input type="date" name="expense_date" defaultValue={today} style={styles.input} required /></div>
+          <div><label style={styles.label}>Expense Type</label><select name="expense_type" style={styles.input}><option>Office Supplies</option><option>Electricity</option><option>Rent</option><option>Internet</option><option>Maintenance</option><option>Other</option></select></div>
           <div><label style={styles.label}>Item Name</label><input name="item_name" placeholder="Item Name" style={styles.input} required /></div>
-          <div><label style={styles.label}>Qty</label><input type="number" name="qty" placeholder="Qty" style={styles.input} required /></div>
+          <div><label style={styles.label}>Qty</label><input type="number" name="qty" placeholder="Qty" defaultValue="1" style={styles.input} required /></div>
           <div><label style={styles.label}>Unit Price</label><input type="number" step="0.01" name="unit_price" placeholder="Unit Price" style={styles.input} required /></div>
-          <div><label style={styles.label}>Payment Mode</label><select name="mode" style={styles.input}><option>Cash</option><option>Bank Transfer</option></select></div>
-          <div><label style={styles.label}>Desc</label><input name="desc" placeholder="Desc" style={styles.input} /></div>
-          <button type="submit" style={{ ...styles.btnPrimary, gridColumn: '1 / -1', marginTop: '15px' }}>Add Expense</button>
+          <div><label style={styles.label}>Payment Mode</label><select name="mode" style={styles.input}><option>Cash</option><option>Bank Transfer</option><option>Investor</option></select></div>
+          <div style={{ gridColumn: '1 / -1' }}><label style={styles.label}>Desc</label><input name="desc" placeholder="Desc" style={styles.input} /></div>
+          <button type="submit" style={{ ...styles.btnPrimary, gridColumn: '1 / -1', marginTop: '15px' }}>Add Expense & Generate Invoice</button>
         </form>
       </div>
 
       <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', marginTop: '20px' }}>
         <thead><tr style={{ background: '#1E3A8A', color: 'white' }}>
-          <th style={{ padding: '12px', textAlign: 'left' }}>Item</th>
+          <th style={{ padding: '12px', textAlign: 'left' }}>Exp Inv No</th>
+          <th style={{ padding: '12px' }}>Item</th>
           <th style={{ padding: '12px' }}>Vendor</th>
           <th style={{ padding: '12px' }}>Qty</th>
           <th style={{ padding: '12px' }}>Price</th>
@@ -574,8 +607,9 @@ export default function ERPViews(props) {
           <th style={{ padding: '12px' }}>Action</th>
         </tr></thead>
         <tbody>{data.expenses.map(e => <tr key={e.id} style={{ borderBottom: '1px solid #E2E8F0' }}>
+          <td style={{ padding: '12px' }}>{e.invoice_no || 'N/A'}</td>
           <td style={{ padding: '12px' }}>{e.item_name || e.category}</td>
-          <td style={{ padding: '12px' }}>{e.category}</td>
+          <td style={{ padding: '12px' }}>{e.vendor_name || e.category}</td>
           <td style={{ padding: '12px' }}>{e.qty || 1}</td>
           <td style={{ padding: '12px' }}>{e.unit_price || e.amount}</td>
           <td style={{ padding: '12px', fontWeight: 'bold' }}>{e.amount.toFixed(2)}</td>
@@ -622,7 +656,7 @@ export default function ERPViews(props) {
       if (activeTab === 'refunds') return filterData(data.invoices.filter(i => i.invoice_no.startsWith('REF-')), 'invoice_date');
       if (activeTab === 'cashbook') return filterData(data.cashbook, 'trans_date');
       if (activeTab === 'investments') return filterData(data.investments, 'invest_date');
-      if (activeTab === 'expenses') return filterData(data.expenses, 'created_at');
+      if (activeTab === 'expenses') return filterData(data.expenses, 'expense_date');
       if (activeTab === 'recharges') return filterData(data.recharges, 'recharge_date');
       if (activeTab === 'payroll') return filterData(data.payroll, 'created_at');
       return [];
@@ -709,8 +743,8 @@ export default function ERPViews(props) {
             <tbody>
               {repData.slice(0, 20).map(item => (
                 <tr key={item.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '10px' }}>{item.invoice_date || item.trans_date || item.invest_date || item.created_at?.split('T')[0]}</td>
-                  <td style={{ padding: '10px' }}>{item.invoice_no || item.description || item.category}</td>
+                  <td style={{ padding: '10px' }}>{item.invoice_date || item.trans_date || item.invest_date || item.expense_date || item.created_at?.split('T')[0]}</td>
+                  <td style={{ padding: '10px' }}>{item.invoice_no || item.description || item.category || item.item_name}</td>
                   <td style={{ padding: '10px', fontWeight: 'bold' }}>{(item.total || item.amount || 0).toFixed(2)}</td>
                 </tr>
               ))}
