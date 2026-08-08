@@ -23,7 +23,9 @@ export default function ERPViews(props) {
     handleAddEditBrn, brnForm, setBrnForm, handleEditBrn, editBrnId,
     handleAddEditEmp, empForm, setEmpForm, handleEditEmp, editEmpId,
     handleAddEditSrv, srvForm, setSrvForm, handleEditSrv, editSrvId,
-    handlePaySalary, handleAddExpense,
+    handlePaySalary, 
+    // Dynamic Expense Props
+    expForm, setExpForm, handleAddExpItem, handleRemoveExpItem, handleExpItemChange, handleAddExpense,
     handleAddPortal, portalForm, setPortalForm,
     handleAddInvestment, investForm, setInvestForm,
     handleRecharge, handleTransfer, transferForm, setTransferForm,
@@ -35,6 +37,11 @@ export default function ERPViews(props) {
     ledgerCustId, setLedgerCustId
   } = props;
 
+  // Dynamic Expense Calculation Helpers
+  const expSubTotal = expForm?.items?.reduce((sum, item) => sum + ((parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0)), 0) || 0;
+  const expVat = expSubTotal * ((parseFloat(expForm?.taxRate) || 0) / 100);
+  const expGrandTotal = expSubTotal + expVat;
+
   if (page === 'dashboard') {
     const s = data.settings || {};
     const activeInv = data.invoices.filter(i => !i.invoice_no.startsWith('REF-'));
@@ -43,6 +50,7 @@ export default function ERPViews(props) {
     const cashBal = data.cashbook.filter(c => c.type === 'Cash-In').reduce((s,c) => s + (c.amount || 0), 0) - data.cashbook.filter(c => c.type === 'Cash-Out').reduce((s,c) => s + (c.amount || 0), 0);
     const bankBal = data.cashbook.filter(c => c.type === 'Bank-In').reduce((s,c) => s + (c.amount || 0), 0) - data.cashbook.filter(c => c.type === 'Bank-Out').reduce((s,c) => s + (c.amount || 0), 0);
     const totalOutstanding = activeInv.reduce((s,i) => s + (i.due_amount || 0), 0);
+    const tExpenses = data.expenses.reduce((s,e) => s + (e.amount || 0), 0);
     const lowBalPortals = data.portals.filter(p => (p.current_balance || 0) < 1000);
 
     return (
@@ -66,6 +74,7 @@ export default function ERPViews(props) {
               lowBalPortals.map(p => <p key={p.id} style={{fontSize: '14px', margin: '5px 0', color: '#dc2626'}}>{p.name} - {p.current_balance.toFixed(2)} SAR</p>)
             }
           </div>
+          <div style={{...styles.card, borderLeft: '5px solid #7c3aed'}}><h3>Total Expenses</h3><h2>{tExpenses.toFixed(2)} SAR</h2></div>
         </div>
       </div>
     );
@@ -580,18 +589,50 @@ export default function ERPViews(props) {
 
       <div style={styles.card}><h3>Pay Salary</h3><form onSubmit={handlePaySalary} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr auto', gap: '10px' }}><select name="emp" style={styles.input} required>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select><input type="number" step="0.01" name="amt" placeholder="Amount" style={styles.input} required /><input type="text" name="month" placeholder="Month (e.g. Oct 2023)" style={styles.input} required /><select name="mode" style={styles.input}><option>Cash</option><option>Bank Transfer</option></select><button type="submit" style={styles.btnPrimary}>Pay</button></form></div>
 
+      {/* DYNAMIC EXPENSE FORM */}
       <div style={styles.card}>
-        <h3>Add Office Expense / Purchase</h3>
+        <h3>Add Office Expense / Purchase Invoice</h3>
         <form onSubmit={handleAddExpense} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '15px' }}>
-          <div><label style={styles.label}>Vendor Name</label><input name="vendor_name" placeholder="Vendor Name" style={styles.input} required /></div>
-          <div><label style={styles.label}>Vendor VAT</label><input name="vendor_vat" placeholder="VAT No" style={styles.input} /></div>
-          <div><label style={styles.label}>Expense Date</label><input type="date" name="expense_date" defaultValue={today} style={styles.input} required /></div>
-          <div><label style={styles.label}>Expense Type</label><select name="expense_type" style={styles.input}><option>Office Supplies</option><option>Electricity</option><option>Rent</option><option>Internet</option><option>Maintenance</option><option>Other</option></select></div>
-          <div><label style={styles.label}>Item Name</label><input name="item_name" placeholder="Item Name" style={styles.input} required /></div>
-          <div><label style={styles.label}>Qty</label><input type="number" name="qty" placeholder="Qty" defaultValue="1" style={styles.input} required /></div>
-          <div><label style={styles.label}>Unit Price</label><input type="number" step="0.01" name="unit_price" placeholder="Unit Price" style={styles.input} required /></div>
-          <div><label style={styles.label}>Payment Mode</label><select name="mode" style={styles.input}><option>Cash</option><option>Bank Transfer</option><option>Investor</option></select></div>
-          <div style={{ gridColumn: '1 / -1' }}><label style={styles.label}>Desc</label><input name="desc" placeholder="Desc" style={styles.input} /></div>
+          <div><label style={styles.label}>Vendor Name</label><input value={expForm.vendor_name} onChange={e => setExpForm({...expForm, vendor_name: e.target.value})} style={styles.input} required /></div>
+          <div><label style={styles.label}>Vendor VAT</label><input value={expForm.vendor_vat} onChange={e => setExpForm({...expForm, vendor_vat: e.target.value})} style={styles.input} /></div>
+          <div><label style={styles.label}>Expense Date</label><input type="date" value={expForm.expense_date} onChange={e => setExpForm({...expForm, expense_date: e.target.value})} style={styles.input} required /></div>
+          <div><label style={styles.label}>Expense Type</label><select value={expForm.expense_type} onChange={e => setExpForm({...expForm, expense_type: e.target.value})} style={styles.input}><option>Office Supplies</option><option>Electricity</option><option>Rent</option><option>Internet</option><option>Maintenance</option><option>Other</option></select></div>
+          
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={styles.label}>Items List</label>
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10px' }}>
+              <thead>
+                <tr style={{ background: '#f1f5f9' }}>
+                  <th style={{ padding: '10px', textAlign: 'left', width: '50%' }}>Item Name</th>
+                  <th style={{ padding: '10px', textAlign: 'left', width: '15%' }}>Qty</th>
+                  <th style={{ padding: '10px', textAlign: 'left', width: '15%' }}>Unit Price</th>
+                  <th style={{ padding: '10px', textAlign: 'left', width: '15%' }}>Total</th>
+                  <th style={{ padding: '10px', width: '5%' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {expForm.items.map((item, index) => (
+                  <tr key={index}>
+                    <td style={{ padding: '5px' }}><input value={item.name} onChange={e => handleExpItemChange(index, 'name', e.target.value)} style={styles.input} required /></td>
+                    <td style={{ padding: '5px' }}><input type="number" value={item.qty} onChange={e => handleExpItemChange(index, 'qty', e.target.value)} style={styles.input} required /></td>
+                    <td style={{ padding: '5px' }}><input type="number" step="0.01" value={item.price} onChange={e => handleExpItemChange(index, 'price', e.target.value)} style={styles.input} required /></td>
+                    <td style={{ padding: '5px', fontWeight: 'bold' }}>{((parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0)).toFixed(2)}</td>
+                    <td style={{ padding: '5px', textAlign: 'center' }}>{expForm.items.length > 1 && <button type="button" onClick={() => handleRemoveExpItem(index)} style={{...styles.btnDanger, width: 'auto', padding: '5px 8px'}}>X</button>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <button type="button" onClick={handleAddExpItem} style={{...styles.btnWarning, width: 'auto'}}>+ Add Item</button>
+          </div>
+
+          <div><label style={styles.label}>VAT Rate</label><select value={expForm.taxRate} onChange={e => setExpForm({...expForm, taxRate: e.target.value})} style={styles.input}><option value="0">0% VAT (Without VAT)</option><option value="15">15% VAT (With VAT)</option></select></div>
+          <div><label style={styles.label}>Payment Mode</label><select value={expForm.payment_mode} onChange={e => setExpForm({...expForm, payment_mode: e.target.value})} style={styles.input}><option>Cash</option><option>Bank Transfer</option><option>Investor</option></select></div>
+          <div style={{ gridColumn: '1 / -1' }}><label style={styles.label}>Desc</label><input value={expForm.desc} onChange={e => setExpForm({...expForm, desc: e.target.value})} style={styles.input} /></div>
+          
+          <div style={{ gridColumn: '1 / -1', textAlign: 'right', fontSize: '16px', fontWeight: 'bold', marginTop: '10px' }}>
+            Subtotal: {expSubTotal.toFixed(2)} SAR | VAT: {expVat.toFixed(2)} SAR | Grand Total: {expGrandTotal.toFixed(2)} SAR
+          </div>
+
           <button type="submit" style={{ ...styles.btnPrimary, gridColumn: '1 / -1', marginTop: '15px' }}>Add Expense & Generate Invoice</button>
         </form>
       </div>
@@ -599,19 +640,17 @@ export default function ERPViews(props) {
       <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', marginTop: '20px' }}>
         <thead><tr style={{ background: '#1E3A8A', color: 'white' }}>
           <th style={{ padding: '12px', textAlign: 'left' }}>Exp Inv No</th>
-          <th style={{ padding: '12px' }}>Item</th>
+          <th style={{ padding: '12px' }}>Items</th>
           <th style={{ padding: '12px' }}>Vendor</th>
-          <th style={{ padding: '12px' }}>Qty</th>
-          <th style={{ padding: '12px' }}>Price</th>
+          <th style={{ padding: '12px' }}>Date</th>
           <th style={{ padding: '12px' }}>Total</th>
           <th style={{ padding: '12px' }}>Action</th>
         </tr></thead>
         <tbody>{data.expenses.map(e => <tr key={e.id} style={{ borderBottom: '1px solid #E2E8F0' }}>
           <td style={{ padding: '12px' }}>{e.invoice_no || 'N/A'}</td>
-          <td style={{ padding: '12px' }}>{e.item_name || e.category}</td>
+          <td style={{ padding: '12px' }}>{e.items ? e.items.map(i => `${i.name} (x${i.qty})`).join(', ') : (e.item_name || e.category)}</td>
           <td style={{ padding: '12px' }}>{e.vendor_name || e.category}</td>
-          <td style={{ padding: '12px' }}>{e.qty || 1}</td>
-          <td style={{ padding: '12px' }}>{e.unit_price || e.amount}</td>
+          <td style={{ padding: '12px' }}>{e.expense_date || 'N/A'}</td>
           <td style={{ padding: '12px', fontWeight: 'bold' }}>{e.amount.toFixed(2)}</td>
           <td style={{ padding: '12px' }}><button onClick={() => handleDelete('expenses', e.id)} style={styles.btnDanger}>Delete</button></td>
         </tr>)}</tbody>
