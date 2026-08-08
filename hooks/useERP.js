@@ -26,6 +26,9 @@ export default function useERP() {
   const [editInvId, setEditInvId] = useState(null);
   const [invForm, setInvForm] = useState({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: '', bookingDate: today, invoiceDate: today, bookingType: 'New Booking', linkedInvId: '', service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' });
   
+  // Dynamic Expense Form State
+  const [expForm, setExpForm] = useState({ vendor_name: '', vendor_vat: '', expense_date: today, expense_type: 'Office Supplies', payment_mode: 'Cash', items: [{ name: '', qty: 1, price: 0 }], taxRate: '15', desc: '' });
+
   const [editCorpId, setEditCorpId] = useState(null); const [corpForm, setCorpForm] = useState({ name: '', vat_no: '', phone: '', address: '' });
   const [editCredId, setEditCredId] = useState(null); const [creditorForm, setCreditorForm] = useState({ name: '', phone: '', address: '' });
   const [editCustId, setEditCustId] = useState(null); const [custForm, setCustForm] = useState({ name: '', phone: '', store_credit: 0 });
@@ -245,6 +248,52 @@ export default function useERP() {
     await supabase.from('invoices').delete().eq('id', inv.id);
     setData(prev => ({ ...prev, invoices: prev.invoices.filter(i => i.id !== inv.id), portals: prev.portals.map(p => p.id === inv.portal_id ? { ...p, current_balance: (p.current_balance || 0) + (inv.total_cost || 0) } : p) }));
     showToast('Invoice Deleted & Portal Balance Reversed!');
+  };
+
+  // --- DYNAMIC EXPENSE ITEMS HANDLERS ---
+  const handleAddExpItem = () => setExpForm(prev => ({ ...prev, items: [...prev.items, { name: '', qty: 1, price: 0 }] }));
+  const handleRemoveExpItem = (index) => setExpForm(prev => ({ ...prev, items: prev.items.filter((_, i) => i !== index) }));
+  const handleExpItemChange = (index, field, value) => {
+    setExpForm(prev => {
+      const items = [...prev.items];
+      items[index] = { ...items[index], [field]: value };
+      return { ...prev, items };
+    });
+  };
+
+  const handleAddExpense = async (e) => {
+    e.preventDefault();
+    try {
+      const subTotal = expForm.items.reduce((sum, item) => sum + ((parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0)), 0);
+      const taxRate = parseFloat(expForm.taxRate) || 0;
+      const vat = subTotal * (taxRate / 100);
+      const totalAmount = subTotal + vat;
+
+      const expNo = `EXP-${Date.now()}`;
+      const { data: newExp, error: expErr } = await supabase.from('expenses').insert([{
+        invoice_no: expNo,
+        vendor_name: expForm.vendor_name,
+        vendor_vat: expForm.vendor_vat,
+        expense_date: expForm.expense_date,
+        expense_type: expForm.expense_type,
+        item_name: expForm.items.map(i => i.name).join(', '),
+        items: expForm.items,
+        amount: totalAmount,
+        description: expForm.desc,
+        payment_mode: expForm.payment_mode
+      }]).select().single();
+      if (expErr) throw expErr;
+
+      const cbType = expForm.payment_mode === 'Cash' ? 'Cash-Out' : (expForm.payment_mode === 'Bank Transfer' ? 'Bank-Out' : 'Investor-Out');
+      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: expForm.expense_date || today, type: cbType, description: `Expense: ${expForm.vendor_name} (${expNo})`, amount: totalAmount }]).select().single();
+      if (cbErr) throw cbErr;
+
+      setData(prev => ({ ...prev, expenses: [newExp, ...prev.expenses], cashbook: [nC, ...prev.cashbook] }));
+      showToast('Expense Added & Invoice Generated!');
+      setExpForm({ vendor_name: '', vendor_vat: '', expense_date: today, expense_type: 'Office Supplies', payment_mode: 'Cash', items: [{ name: '', qty: 1, price: 0 }], taxRate: '15', desc: '' });
+    } catch (err) {
+      showToast('Error: ' + err.message);
+    }
   };
 
   const handleAddEditCust = async (e) => { 
@@ -510,36 +559,6 @@ export default function useERP() {
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
-  const handleAddExpense = async (e) => { 
-    e.preventDefault(); 
-    try {
-      const mode = e.target.mode.value; 
-      const qty = parseFloat(e.target.qty.value) || 1;
-      const unitPrice = parseFloat(e.target.unit_price.value) || 0;
-      const totalAmount = qty * unitPrice;
-      const expNo = `EXP-${Date.now()}`;
-      const { data: newExp, error: expErr } = await supabase.from('expenses').insert([{ 
-        invoice_no: expNo,
-        vendor_name: e.target.vendor_name.value,
-        vendor_vat: e.target.vendor_vat.value,
-        expense_date: e.target.expense_date.value,
-        expense_type: e.target.expense_type.value,
-        item_name: e.target.item_name.value,
-        qty: qty,
-        unit_price: unitPrice,
-        amount: totalAmount, 
-        description: e.target.desc.value, 
-        payment_mode: mode 
-      }]).select().single(); 
-      if (expErr) throw expErr;
-      const cbType = mode === 'Cash' ? 'Cash-Out' : (mode === 'Bank Transfer' ? 'Bank-Out' : 'Investor-Out'); 
-      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: e.target.expense_date.value || today, type: cbType, description: `Expense: ${e.target.item_name.value} (${expNo})`, amount: totalAmount }]).select().single(); 
-      if (cbErr) throw cbErr;
-      setData(prev => ({ ...prev, expenses: [newExp, ...prev.expenses], cashbook: [nC, ...prev.cashbook] })); 
-      showToast('Expense Added & Invoice Generated!'); 
-    } catch (err) { showToast('Error: ' + err.message); }
-  };
-
   const handleSettlePayment = async (e) => { 
     e.preventDefault(); 
     try {
@@ -773,7 +792,7 @@ export default function useERP() {
           
           <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;color:#059669;"><span>Paid / مدفوع:</span><b>${((inv.paid_amount || 0) - (inv.used_credit || 0)).toFixed(2)} SAR</b></div>
           
-          <div style="display:flex;justify-content:space-between;padding:8px 0;color:#EF4444;font-weight:bold;font-size:13px.<span>BALANCE DUE / المستحق:</span><b>${(inv.due_amount || 0).toFixed(2)} SAR</b></div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;color:#EF4444;font-weight:bold;font-size:13px;"><span>BALANCE DUE / المستحق:</span><b>${(inv.due_amount || 0).toFixed(2)} SAR</b></div>
         </div>
       </div>
 
@@ -862,6 +881,7 @@ export default function useERP() {
   return {
     user, userProfile, lang, setLang, page, setPage, payFilter, setPayFilter, toast, modal, setModal, passForm, setPassForm, chatOpen, setChatOpen, chatMessages, chatInput, setChatInput, search, setSearch, tblPage, setTblPage, itemsPerPage, ledgerCustId, setLedgerCustId, previewHTML, data, today, 
     invForm, setInvForm, editInvId, setEditInvId, handleEditInvoice, handleCreateInvoice, handleDeleteInvoice, openPreview, 
+    expForm, setExpForm, handleAddExpItem, handleRemoveExpItem, handleExpItemChange, handleAddExpense,
     corpForm, setCorpForm, editCorpId, setEditCorpId, creditorForm, setCreditorForm, editCredId, setEditCredId, 
     custForm, setCustForm, editCustId, setEditCustId, vendorForm, setVendorForm, editVendId, setEditVendId, 
     pkgForm, setPkgForm, editPkgId, setEditPkgId, brnForm, setBrnForm, editBrnId, setEditBrnId, 
@@ -880,7 +900,7 @@ export default function useERP() {
     handleAddEditSrv, handleEditSrv: (c) => { setEditSrvId(c.id); setSrvForm({ name: c.name }); }, 
     handleAddPortal, handleAddInvestment, handleDelete, handleRecharge, handleTransfer, 
     handleSettlePayment, handleRefund, openRefundModal, handleLogoUpload, handleSaveSettings, 
-    handleAddUser, handleEditUser, handleUpdateUser, handlePaySalary, handleAddExpense, 
+    handleAddUser, handleEditUser, handleUpdateUser, handlePaySalary, 
     filterData, exportToExcel, downloadPDF, printInvoice
   };
 }
