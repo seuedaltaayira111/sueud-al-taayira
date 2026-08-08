@@ -36,7 +36,7 @@ export default function useERP() {
   const [editSrvId, setEditSrvId] = useState(null); const [srvForm, setSrvForm] = useState({ name: '' });
   const [editUserId, setEditUserId] = useState(null); 
   
-  const [investForm, setInvestForm] = useState({ name: '', amount: '', date: today, desc: '', mode: 'Cash' });
+  const [investForm, setInvestForm] = useState({ name: '', amount: '', date: today, desc: '', mode: 'Cash', reason: 'Other', otherReason: '' });
   const [settleForm, setSettleForm] = useState({ id: '', date: today, mode: 'Cash' });
   const [refundForm, setRefundForm] = useState({ id: '', date: today, compRefund: 0, custRefund: 0, mode: 'Cash', reason: '', portalId: '' });
   const [transferForm, setTransferForm] = useState({ from: 'Cash', to: 'Bank', amount: '', date: today });
@@ -407,14 +407,15 @@ export default function useERP() {
     e.preventDefault(); 
     try {
       const mode = investForm.mode; 
-      const { data: newInv, error: invErr } = await supabase.from('investments').insert([{ investor_name: investForm.name, amount: parseFloat(investForm.amount), invest_date: investForm.date, description: investForm.desc, payment_mode: mode }]).select().single(); 
+      const finalReason = investForm.reason === 'Other' ? investForm.otherReason : investForm.reason;
+      const { data: newInv, error: invErr } = await supabase.from('investments').insert([{ investor_name: investForm.name, amount: parseFloat(investForm.amount), invest_date: investForm.date, description: investForm.desc, payment_mode: mode, reason: finalReason }]).select().single(); 
       if (invErr) throw invErr;
       const cbType = mode === 'Cash' ? 'Cash-In' : 'Bank-In'; 
-      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: investForm.date, type: cbType, description: `Investment by ${investForm.name}`, amount: parseFloat(investForm.amount) }]).select().single(); 
+      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: investForm.date, type: cbType, description: `Investment by ${investForm.name} (${finalReason})`, amount: parseFloat(investForm.amount) }]).select().single(); 
       if (cbErr) throw cbErr;
       setData(prev => ({ ...prev, investments: [newInv, ...prev.investments], cashbook: [nC, ...prev.cashbook] })); 
       showToast('Investor Added!'); 
-      setInvestForm({ name: '', amount: '', date: today, desc: '', mode: 'Cash' }); 
+      setInvestForm({ name: '', amount: '', date: today, desc: '', mode: 'Cash', reason: 'Other', otherReason: '' }); 
     } catch (err) { showToast('Error: ' + err.message); }
   };
   
@@ -516,22 +517,26 @@ export default function useERP() {
       const qty = parseFloat(e.target.qty.value) || 1;
       const unitPrice = parseFloat(e.target.unit_price.value) || 0;
       const totalAmount = qty * unitPrice;
+      const expNo = `EXP-${Date.now()}`;
       const { data: newExp, error: expErr } = await supabase.from('expenses').insert([{ 
-        category: e.target.vendor_name.value, 
+        invoice_no: expNo,
+        vendor_name: e.target.vendor_name.value,
+        vendor_vat: e.target.vendor_vat.value,
+        expense_date: e.target.expense_date.value,
+        expense_type: e.target.expense_type.value,
         item_name: e.target.item_name.value,
         qty: qty,
         unit_price: unitPrice,
         amount: totalAmount, 
-        vendor_vat: e.target.vendor_vat.value,
         description: e.target.desc.value, 
         payment_mode: mode 
       }]).select().single(); 
       if (expErr) throw expErr;
-      const cbType = mode === 'Cash' ? 'Cash-Out' : 'Bank-Out'; 
-      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Expense: ${e.target.item_name.value}`, amount: totalAmount }]).select().single(); 
+      const cbType = mode === 'Cash' ? 'Cash-Out' : (mode === 'Bank Transfer' ? 'Bank-Out' : 'Investor-Out'); 
+      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: e.target.expense_date.value || today, type: cbType, description: `Expense: ${e.target.item_name.value} (${expNo})`, amount: totalAmount }]).select().single(); 
       if (cbErr) throw cbErr;
       setData(prev => ({ ...prev, expenses: [newExp, ...prev.expenses], cashbook: [nC, ...prev.cashbook] })); 
-      showToast('Expense Added!'); e.target.reset(); 
+      showToast('Expense Added & Invoice Generated!'); 
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
@@ -768,7 +773,7 @@ export default function useERP() {
           
           <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;color:#059669;"><span>Paid / مدفوع:</span><b>${((inv.paid_amount || 0) - (inv.used_credit || 0)).toFixed(2)} SAR</b></div>
           
-          <div style="display:flex;justify-content:space-between;padding:8px 0;color:#EF4444;font-weight:bold;font-size:13px;"><span>BALANCE DUE / المستحق:</span><b>${(inv.due_amount || 0).toFixed(2)} SAR</b></div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;color:#EF4444;font-weight:bold;font-size:13px.<span>BALANCE DUE / المستحق:</span><b>${(inv.due_amount || 0).toFixed(2)} SAR</b></div>
         </div>
       </div>
 
