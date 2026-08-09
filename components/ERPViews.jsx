@@ -1,7 +1,7 @@
 import React from 'react';
 import ERPViewsCore from './ERPViewsCore';
-import ERPViewsAdmin from './ERPViewsAdmin';
-import ERPViewsSystem from './ERPViewsSystem';
+import ERPViewsAdmin from './views/ERPViewsAdmin'; // FIX: views folder ka path add kiya
+import ERPViewsSystem from './views/ERPViewsSystem'; // FIX: views folder ka path add kiya
 
 export default function ERPViews(props) {
   const { page } = props;
