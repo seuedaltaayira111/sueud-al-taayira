@@ -1,7 +1,7 @@
 import React from 'react';
-import ERPViewsCore from './views/ERPViewsCore';
-import ERPViewsAdmin from './views/ERPViewsAdmin';
-import ERPViewsSystem from './views/ERPViewsSystem';
+import ERPViewsCore from './ERPViewsCore';
+import ERPViewsAdmin from './ERPViewsAdmin';
+import ERPViewsSystem from './ERPViewsSystem';
 
 export default function ERPViews(props) {
   const { page } = props;
