@@ -518,7 +518,7 @@ export default function ERPViews(props) {
         </form>
       </div>
       <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
-        <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ paddingE padding: '12px' }}>Location</th><th style={{ padding: '12px' }}>Manager</th><th style={{ padding: '12px' }}>Status</th><th style={{ padding: '12px' }}>Actions</th></tr></thead>
+        <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Location</th><th style={{ padding: '12px' }}>Manager</th><th style={{ padding: '12px' }}>Status</th><th style={{ padding: '12px' }}>Actions</th></tr></thead>
         <tbody>{data.branches.map(c => <tr key={c.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{c.name}</td><td style={{ padding: '12px' }}>{c.location}</td><td style={{ padding: '12px' }}>{c.manager}</td><td style={{ padding: '12px' }}>{c.status}</td><td style={{ padding: '12px' }}><button onClick={() => handleEditBrn(c)} style={styles.btnWarning}>Edit</button><button onClick={() => handleDelete('branches', c.id)} style={{...styles.btnDanger, marginLeft: '5px'}}>Delete</button></td></tr>)}</tbody>
       </table>
     </div>
@@ -539,7 +539,7 @@ export default function ERPViews(props) {
       </div>
       <button onClick={() => exportToExcel(data.cashbook, 'Cashbook')} style={styles.btnSuccess}>{tr.download_excel}</button>
       <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', marginTop: '20px' }}>
-        <thead><tr style={{ background: '#1E3A8>tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px', textAlign: 'left' }}>Type</th><th style={{ padding: '12px', textAlign: 'left' }}>Desc</th><th style={{ padding: '12px', textAlign: 'left' }}>Amount</th><th style={{ padding: '12px', textAlign: 'left' }}>Action</th></tr></thead>
+        <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px', textAlign: 'left' }}>Type</th><th style={{ padding: '12px', textAlign: 'left' }}>Desc</th><th style={{ padding: '12px', textAlign: 'left' }}>Amount</th><th style={{ padding: '12px', textAlign: 'left' }}>Action</th></tr></thead>
         <tbody>{data.cashbook.slice(0, 20).map(c => <tr key={c.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{c.trans_date}</td><td style={{ padding: '12px' }}>{c.type}</td><td style={{ padding: '12px' }}>{c.description}</td><td style={{ padding: '12px', color: c.type.includes('In') ? '#059669' : '#EF4444', fontWeight: 'bold' }}>{(c.amount || 0).toFixed(2)}</td><td style={{ padding: '12px' }}><button onClick={() => handleDelete('cashbook', c.id)} style={styles.btnDanger}>Delete</button></td></tr>)}</tbody>
       </table>
     </div>
@@ -589,56 +589,72 @@ export default function ERPViews(props) {
 
       <div style={styles.card}><h3>Pay Salary</h3><form onSubmit={handlePaySalary} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr auto', gap: '10px' }}><select name="emp" style={styles.input} required>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select><input type="number" step="0.01" name="amt" placeholder="Amount" style={styles.input} required /><input type="text" name="month" placeholder="Month (e.g. Oct 2023)" style={styles.input} required /><select name="mode" style={styles.input}><option>Cash</option><option>Bank Transfer</option></select><button type="submit" style={styles.btnPrimary}>Pay</button></form></div>
 
-      {/* DYNAMIC EXPENSE FORM (FIXED CUT-OFF) */}
+      {/* DYNAMIC EXPENSE FORM */}
       <div style={styles.card}>
         <h3>Add Office Expense / Purchase Invoice</h3>
         <form onSubmit={handleAddExpense} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '15px' }}>
           <div><label style={styles.label}>Vendor Name</label><input value={expForm.vendor_name} onChange={e => setExpForm({...expForm, vendor_name: e.target.value})} style={styles.input} required /></div>
-          <div><label style={styles.label}>Vendor VAT</label><input value={expForm.vendor_vat} onChange={e => setExpForm({...expForm, vendor_vat: e.target.value})} placeholder="Vendor VAT" style={styles.input} /></div>
+          <div><label style={styles.label}>Vendor VAT</label><input value={expForm.vendor_vat} onChange={e => setExpForm({...expForm, vendor_vat: e.target.value})} style={styles.input} /></div>
           <div><label style={styles.label}>Expense Date</label><input type="date" value={expForm.expense_date} onChange={e => setExpForm({...expForm, expense_date: e.target.value})} style={styles.input} required /></div>
-          <div><label style={styles.label}>Payment Mode</label><select value={expForm.payment_mode} onChange={e => setExpForm({...expForm, payment_mode: e.target.value})} style={styles.input}><option>Cash</option><option>Bank Transfer</option></select></div>
+          <div><label style={styles.label}>Expense Type</label><select value={expForm.expense_type} onChange={e => setExpForm({...expForm, expense_type: e.target.value})} style={styles.input}><option>Office Supplies</option><option>Electricity</option><option>Rent</option><option>Internet</option><option>Maintenance</option><option>Other</option></select></div>
           
           <div style={{ gridColumn: '1 / -1' }}>
-            <label style={styles.label}>Expense Items</label>
-            {expForm.items.map((item, index) => (
-              <div key={index} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '10px', marginBottom: '10px' }}>
-                <input value={item.name} onChange={e => handleExpItemChange(index, 'name', e.target.value)} placeholder="Item Name" style={styles.input} required />
-                <input type="number" value={item.qty} onChange={e => handleExpItemChange(index, 'qty', e.target.value)} placeholder="Qty" style={styles.input} required />
-                <input type="number" step="0.01" value={item.price} onChange={e => handleExpItemChange(index, 'price', e.target.value)} placeholder="Price" style={styles.input} required />
-                <button type="button" onClick={() => handleRemoveExpItem(index)} style={styles.btnDanger}>X</button>
-              </div>
-            ))}
+            <label style={styles.label}>Items List</label>
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10px' }}>
+              <thead>
+                <tr style={{ background: '#f1f5f9' }}>
+                  <th style={{ padding: '10px', textAlign: 'left', width: '50%' }}>Item Name</th>
+                  <th style={{ padding: '10px', textAlign: 'left', width: '15%' }}>Qty</th>
+                  <th style={{ padding: '10px', textAlign: 'left', width: '15%' }}>Unit Price</th>
+                  <th style={{ padding: '10px', textAlign: 'left', width: '15%' }}>Total</th>
+                  <th style={{ padding: '10px', width: '5%' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {expForm.items.map((item, index) => (
+                  <tr key={index}>
+                    <td style={{ padding: '5px' }}><input value={item.name} onChange={e => handleExpItemChange(index, 'name', e.target.value)} style={styles.input} required /></td>
+                    <td style={{ padding: '5px' }}><input type="number" value={item.qty} onChange={e => handleExpItemChange(index, 'qty', e.target.value)} style={styles.input} required /></td>
+                    <td style={{ padding: '5px' }}><input type="number" step="0.01" value={item.price} onChange={e => handleExpItemChange(index, 'price', e.target.value)} style={styles.input} required /></td>
+                    <td style={{ padding: '5px', fontWeight: 'bold' }}>{((parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0)).toFixed(2)}</td>
+                    <td style={{ padding: '5px', textAlign: 'center' }}>{expForm.items.length > 1 && <button type="button" onClick={() => handleRemoveExpItem(index)} style={{...styles.btnDanger, width: 'auto', padding: '5px 8px'}}>X</button>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
             <button type="button" onClick={handleAddExpItem} style={{...styles.btnWarning, width: 'auto'}}>+ Add Item</button>
           </div>
 
-          <div><label style={styles.label}>Tax Rate (%)</label><input type="number" value={expForm.taxRate} onChange={e => setExpForm({...expForm, taxRate: e.target.value})} style={styles.input} /></div>
-          <div><label style={styles.label}>Grand Total</label><input type="text" value={expGrandTotal.toFixed(2)} readOnly style={{...styles.input, background: '#f1f5f9', fontWeight: 'bold'}} /></div>
-          <div style={{ gridColumn: '1 / -1' }}><label style={styles.label}>Description</label><input value={expForm.desc} onChange={e => setExpForm({...expForm, desc: e.target.value})} style={styles.input} /></div>
-          <button type="submit" style={{...styles.btnPrimary, gridColumn: '1 / -1'}}>Add Expense</button>
+          <div><label style={styles.label}>VAT Rate</label><select value={expForm.taxRate} onChange={e => setExpForm({...expForm, taxRate: e.target.value})} style={styles.input}><option value="0">0% VAT (Without VAT)</option><option value="15">15% VAT (With VAT)</option></select></div>
+          <div><label style={styles.label}>Payment Mode</label><select value={expForm.payment_mode} onChange={e => setExpForm({...expForm, payment_mode: e.target.value})} style={styles.input}><option>Cash</option><option>Bank Transfer</option><option>Investor</option></select></div>
+          <div style={{ gridColumn: '1 / -1' }}><label style={styles.label}>Desc</label><input value={expForm.desc} onChange={e => setExpForm({...expForm, desc: e.target.value})} style={styles.input} /></div>
+          
+          <div style={{ gridColumn: '1 / -1', textAlign: 'right', fontSize: '16px', fontWeight: 'bold', marginTop: '10px' }}>
+            Subtotal: {expSubTotal.toFixed(2)} SAR | VAT: {expVat.toFixed(2)} SAR | Grand Total: {expGrandTotal.toFixed(2)} SAR
+          </div>
+
+          <button type="submit" style={{ ...styles.btnPrimary, gridColumn: '1 / -1', marginTop: '15px' }}>Add Expense & Generate Invoice</button>
         </form>
       </div>
 
-      <div style={styles.card}><h3>Employees</h3><table style={{ width: '100%', borderCollapse: 'collapse' }}><thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Role</th><th style={{ padding: '12px' }}>Salary</th><th style={{ padding: '12px' }}>Actions</th></tr></thead><tbody>{data.employees.map(e => <tr key={e.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{e.name}</td><td style={{ padding: '12px' }}>{e.role}</td><td style={{ padding: '12px' }}>{e.salary}</td><td style={{ padding: '12px' }}><button onClick={() => handleEditEmp(e)} style={styles.btnWarning}>Edit</button><button onClick={() => handleDelete('employees', e.id)} style={{...styles.btnDanger, marginLeft: '5px'}}>Delete</button></td></tr>)}</tbody></table></div>
-      <div style={styles.card}><h3>Services</h3><table style={{ width: '100%', borderCollapse: 'collapse' }}><thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Actions</th></tr></thead><tbody>{data.services.map(s => <tr key={s.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{s.name}</td><td style={{ padding: '12px' }}><button onClick={() => handleEditSrv(s)} style={styles.btnWarning}>Edit</button><button onClick={() => handleDelete('services', s.id)} style={{...styles.btnDanger, marginLeft: '5px'}}>Delete</button></td></tr>)}</tbody></table></div>
-    </div>
-  );
-
-  if (page === 'settings') return (
-    <div>
-      <h2>{tr.settings}</h2>
-      <div style={styles.card}>
-        <form onSubmit={handleSaveSettings} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-          <div><label style={styles.label}>Company Name (EN)</label><input value={setForm.company_name_en} onChange={e => setSetForm({...setForm, company_name_en: e.target.value})} style={styles.input} /></div>
-          <div><label style={styles.label}>Company Name (AR)</label><input value={setForm.company_name_ar} onChange={e => setSetForm({...setForm, company_name_ar: e.target.value})} style={styles.input} /></div>
-          <div><label style={styles.label}>VAT No</label><input value={setForm.vat_no} onChange={e => setSetForm({...setForm, vat_no: e.target.value})} style={styles.input} /></div>
-          <div><label style={styles.label}>CR No</label><input value={setForm.cr_no} onChange={e => setSetForm({...setForm, cr_no: e.target.value})} style={styles.input} /></div>
-          <div><label style={styles.label}>Phone</label><input value={setForm.phone} onChange={e => setSetForm({...setForm, phone: e.target.value})} style={styles.input} /></div>
-          <div><label style={styles.label}>Address (AR)</label><input value={setForm.address_ar} onChange={e => setSetForm({...setForm, address_ar: e.target.value})} style={styles.input} /></div>
-          <div><label style={styles.label}>Invoice Footer</label><input value={setForm.invoice_footer} onChange={e => setSetForm({...setForm, invoice_footer: e.target.value})} style={styles.input} /></div>
-          <div><label style={styles.label}>Logo</label><input type="file" accept="image/*" onChange={handleLogoUpload} style={styles.input} /></div>
-          <button type="submit" style={{...styles.btnPrimary, gridColumn: '1 / -1'}}>Save Settings</button>
-        </form>
-      </div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', marginTop: '20px' }}>
+        <thead><tr style={{ background: '#1E3A8A', color: 'white' }}>
+          <th style={{ padding: '12px', textAlign: 'left' }}>Exp Inv No</th>
+          <th style={{ padding: '12px' }}>Items</th>
+          <th style={{ padding: '12px' }}>Vendor</th>
+          <th style={{ padding: '12px' }}>Date</th>
+          <th style={{ padding: '12px' }}>Total</th>
+          <th style={{ padding: '12px' }}>Action</th>
+        </tr></thead>
+        <tbody>{data.expenses.map(e => <tr key={e.id} style={{ borderBottom: '1px solid #E2E8F0' }}>
+          <td style={{ padding: '12px' }}>{e.invoice_no || 'N/A'}</td>
+          <td style={{ padding: '12px' }}>{e.items ? e.items.map(i => `${i.name} (x${i.qty})`).join(', ') : (e.item_name || e.category)}</td>
+          <td style={{ padding: '12px' }}>{e.vendor_name || e.category}</td>
+          <td style={{ padding: '12px' }}>{e.expense_date || 'N/A'}</td>
+          <td style={{ padding: '12px', fontWeight: 'bold' }}>{e.amount.toFixed(2)}</td>
+          <td style={{ padding: '12px' }}><button onClick={() => handleDelete('expenses', e.id)} style={styles.btnDanger}>Delete</button></td>
+        </tr>)}</tbody>
+      </table>
     </div>
   );
 
@@ -646,16 +662,167 @@ export default function ERPViews(props) {
     <div>
       <h2>{tr.users}</h2>
       <div style={styles.card}>
-        <form onSubmit={editUserId ? handleUpdateUser : handleAddUser} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '10px' }}>
-          <input value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} placeholder="Email" style={styles.input} required />
-          <input value={userForm.username} onChange={e => setUserForm({...userForm, username: e.target.value})} placeholder="Username" style={styles.input} required />
-          <select value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})} style={styles.input}><option>Sales</option><option>Accountant</option><option>Admin</option></select>
-          <button type="submit" style={styles.btnPrimary}>{editUserId ? 'Update' : 'Add'}</button>
+        <h3>{editUserId ? 'Edit User' : 'Add User'}</h3>
+        <form onSubmit={editUserId ? handleUpdateUser : handleAddUser} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+          <div><label style={styles.label}>Email</label><input type="email" value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} style={styles.input} required /></div>
+          <div><label style={styles.label}>Username</label><input value={userForm.username} onChange={e => setUserForm({...userForm, username: e.target.value})} style={styles.input} required /></div>
+          <div><label style={styles.label}>Role</label><select value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})} style={styles.input}><option>Sales</option><option>Accountant</option><option>Manager</option></select></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '10px' }}>
+            <label><input type="checkbox" checked={userForm.is_admin} onChange={e => setUserForm({...userForm, is_admin: e.target.checked})} /> Is Admin</label>
+            <label><input type="checkbox" checked={userForm.can_access_invoices} onChange={e => setUserForm({...userForm, can_access_invoices: e.target.checked})} /> Access Invoices</label>
+            <label><input type="checkbox" checked={userForm.can_access_bank} onChange={e => setUserForm({...userForm, can_access_bank: e.target.checked})} /> Access Bank</label>
+            <label><input type="checkbox" checked={userForm.can_access_hr} onChange={e => setUserForm({...userForm, can_access_hr: e.target.checked})} /> Access HR</label>
+            <label><input type="checkbox" checked={userForm.can_access_reports} onChange={e => setUserForm({...userForm, can_access_reports: e.target.checked})} /> Access Reports</label>
+            <label><input type="checkbox" checked={userForm.can_access_settings} onChange={e => setUserForm({...userForm, can_access_settings: e.target.checked})} /> Access Settings</label>
+          </div>
+          <button type="submit" style={{...styles.btnPrimary, gridColumn: '1 / -1'}}>{editUserId ? 'Update User' : 'Add User'}</button>
         </form>
       </div>
-      <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}><thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Email</th><th style={{ padding: '12px' }}>Role</th><th style={{ padding: '12px' }}>Actions</th></tr></thead><tbody>{data.appUsers.map(u => <tr key={u.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{u.email}</td><td style={{ padding: '12px' }}>{u.role}</td><td style={{ padding: '12px' }}><button onClick={() => handleEditUser(u)} style={styles.btnWarning}>Edit</button></td></tr>)}</tbody></table>
+      <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
+        <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Email</th><th style={{ padding: '12px' }}>Role</th><th style={{ padding: '12px' }}>Admin</th><th style={{ padding: '12px' }}>Actions</th></tr></thead>
+        <tbody>{data.appUsers.map(u => <tr key={u.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{u.email}</td><td style={{ padding: '12px' }}>{u.role}</td><td style={{ padding: '12px' }}>{u.is_admin ? 'Yes' : 'No'}</td><td style={{ padding: '12px' }}><button onClick={() => handleEditUser(u)} style={styles.btnWarning}>Edit</button><button onClick={() => handleDelete('app_users', u.id)} style={{...styles.btnDanger, marginLeft: '5px'}}>Delete</button></td></tr>)}</tbody>
+      </table>
     </div>
   );
 
-  return <div>Select a page</div>;
+  if (page === 'reports' || page === 'statements') {
+    const isReport = page === 'reports';
+    const activeTab = isReport ? reportTab : statementTab;
+    const setTab = isReport ? setReportTab : setStatementTab;
+    
+    const getData = () => {
+      if (activeTab === 'sales') return filterData(data.invoices.filter(i => !i.invoice_no.startsWith('REF-')), 'invoice_date');
+      if (activeTab === 'refunds') return filterData(data.invoices.filter(i => i.invoice_no.startsWith('REF-')), 'invoice_date');
+      if (activeTab === 'cashbook') return filterData(data.cashbook, 'trans_date');
+      if (activeTab === 'investments') return filterData(data.investments, 'invest_date');
+      if (activeTab === 'expenses') return filterData(data.expenses, 'expense_date');
+      if (activeTab === 'recharges') return filterData(data.recharges, 'recharge_date');
+      if (activeTab === 'payroll') return filterData(data.payroll, 'created_at');
+      return [];
+    };
+    
+    if (activeTab === 'ledger') {
+      const custInvs = data.invoices.filter(i => i.customer_id === ledgerCustId).sort((a,b) => new Date(a.invoice_date) - new Date(b.invoice_date));
+      let runningBalance = 0;
+      const ledgerData = custInvs.map(inv => {
+        if (inv.invoice_no.startsWith('REF-')) {
+          runningBalance -= inv.refund_customer || 0;
+          return { ...inv, type: 'Refund', amount: inv.refund_customer, balance: runningBalance };
+        } else {
+          runningBalance += inv.due_amount || 0;
+          return { ...inv, type: 'Invoice', amount: inv.total, balance: runningBalance };
+        }
+      });
+
+      return (
+        <div>
+          <h2>{isReport ? tr.reports : tr.statements}</h2>
+          <div style={styles.card}>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              <button onClick={() => setTab('sales')} style={styles.btnWarning}>Sales</button>
+              <button onClick={() => setTab('refunds')} style={styles.btnWarning}>Refunds</button>
+              <button onClick={() => setTab('cashbook')} style={styles.btnWarning}>Cashbook</button>
+              <button onClick={() => setTab('investments')} style={styles.btnWarning}>Investments</button>
+              <button onClick={() => setTab('expenses')} style={styles.btnWarning}>Expenses</button>
+              <button onClick={() => setTab('recharges')} style={styles.btnWarning}>Recharges</button>
+              <button onClick={() => setTab('payroll')} style={styles.btnWarning}>Payroll</button>
+              <button onClick={() => setTab('ledger')} style={styles.btnPrimary}>Customer Ledger</button>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+              <select value={ledgerCustId} onChange={e => setLedgerCustId(e.target.value)} style={styles.input}>
+                <option value="">Select Customer</option>
+                {data.customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            {ledgerCustId && (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr style={{ background: '#f1f5f9' }}><th style={{ padding: '10px', textAlign: 'left' }}>Date</th><th style={{ padding: '10px', textAlign: 'left' }}>Inv No</th><th style={{ padding: '10px', textAlign: 'left' }}>Type</th><th style={{ padding: '10px', textAlign: 'left' }}>Amount</th><th style={{ padding: '10px', textAlign: 'left' }}>Balance Due</th></tr></thead>
+                <tbody>
+                  {ledgerData.map(item => (
+                    <tr key={item.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '10px' }}>{item.invoice_date}</td>
+                      <td style={{ padding: '10px' }}>{item.invoice_no}</td>
+                      <td style={{ padding: '10px', color: item.type === 'Refund' ? '#EF4444' : '#059669' }}>{item.type}</td>
+                      <td style={{ padding: '10px', fontWeight: 'bold' }}>{(item.amount || 0).toFixed(2)}</td>
+                      <td style={{ padding: '10px', fontWeight: 'bold', color: item.balance > 0 ? '#EF4444' : '#333' }}>{(item.balance || 0).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    const repData = getData();
+    const totalAmount = repData.reduce((s, i) => s + (i.total || i.amount || 0), 0);
+
+    return (
+      <div>
+        <h2>{isReport ? tr.reports : tr.statements}</h2>
+        <div style={styles.card}>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+            <button onClick={() => setTab('sales')} style={activeTab === 'sales' ? styles.btnPrimary : styles.btnWarning}>Sales</button>
+            <button onClick={() => setTab('refunds')} style={activeTab === 'refunds' ? styles.btnPrimary : styles.btnWarning}>Refunds</button>
+            <button onClick={() => setTab('cashbook')} style={activeTab === 'cashbook' ? styles.btnPrimary : styles.btnWarning}>Cashbook</button>
+            <button onClick={() => setTab('investments')} style={activeTab === 'investments' ? styles.btnPrimary : styles.btnWarning}>Investments</button>
+            <button onClick={() => setTab('expenses')} style={activeTab === 'expenses' ? styles.btnPrimary : styles.btnWarning}>Expenses</button>
+            <button onClick={() => setTab('recharges')} style={activeTab === 'recharges' ? styles.btnPrimary : styles.btnWarning}>Recharges</button>
+            <button onClick={() => setTab('payroll')} style={activeTab === 'payroll' ? styles.btnPrimary : styles.btnWarning}>Payroll</button>
+            <button onClick={() => setTab('ledger')} style={activeTab === 'ledger' ? styles.btnPrimary : styles.btnWarning}>Customer Ledger</button>
+          </div>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+            <input type="date" value={repDate.from} onChange={e => setRepDate({...repDate, from: e.target.value})} style={styles.input} />
+            <input type="date" value={repDate.to} onChange={e => setRepDate({...repDate, to: e.target.value})} style={styles.input} />
+            <button onClick={() => exportToExcel(repData, activeTab)} style={styles.btnSuccess}>Export Excel</button>
+          </div>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr style={{ background: '#f1f5f9' }}><th style={{ padding: '10px', textAlign: 'left' }}>Date</th><th style={{ padding: '10px', textAlign: 'left' }}>Desc/Inv</th><th style={{ padding: '10px', textAlign: 'left' }}>Amount</th></tr></thead>
+            <tbody>
+              {repData.slice(0, 20).map(item => (
+                <tr key={item.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <td style={{ padding: '10px' }}>{item.invoice_date || item.trans_date || item.invest_date || item.expense_date || item.created_at?.split('T')[0]}</td>
+                  <td style={{ padding: '10px' }}>{item.invoice_no || item.description || item.category || item.item_name}</td>
+                  <td style={{ padding: '10px', fontWeight: 'bold' }}>{(item.total || item.amount || 0).toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr style={{ background: '#1E3A8A', color: 'white' }}>
+                <td colSpan="2" style={{ padding: '12px', textAlign: 'right' }}><b>Total:</b></td>
+                <td style={{ padding: '12px' }}><b>{totalAmount.toFixed(2)} SAR</b></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  if (page === 'audit') return (
+    <div>
+      <h2>{tr.audit}</h2>
+      <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
+        <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>User</th><th style={{ padding: '12px' }}>Action</th><th style={{ padding: '12px' }}>Time</th></tr></thead>
+        <tbody>{data.audits.map(a => <tr key={a.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{a.user_email}</td><td style={{ padding: '12px' }}>{a.action}</td><td style={{ padding: '12px' }}>{new Date(a.created_at).toLocaleString()}</td></tr>)}</tbody>
+      </table>
+    </div>
+  );
+
+  if (page === 'settings') return (
+    <div style={styles.card}><h2>{tr.settings}</h2><form onSubmit={handleSaveSettings}><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+      <div><label style={styles.label}>Company Name (EN)</label><input value={setForm.company_name_en || ''} onChange={e => setSetForm({...setForm, company_name_en: e.target.value})} style={styles.input} /></div>
+      <div><label style={styles.label}>Company Name (AR)</label><input value={setForm.company_name_ar || ''} onChange={e => setSetForm({...setForm, company_name_ar: e.target.value})} style={styles.input} /></div>
+      <div><label style={styles.label}>Address (AR)</label><input value={setForm.address_ar || ''} onChange={e => setSetForm({...setForm, address_ar: e.target.value})} style={styles.input} /></div>
+      <div><label style={styles.label}>CR No</label><input value={setForm.cr_no || ''} onChange={e => setSetForm({...setForm, cr_no: e.target.value})} style={styles.input} /></div>
+      <div><label style={styles.label}>Phone</label><input value={setForm.phone || ''} onChange={e => setSetForm({...setForm, phone: e.target.value})} style={styles.input} /></div>
+      <div><label style={styles.label}>License No</label><input value={setForm.license_no || ''} onChange={e => setSetForm({...setForm, license_no: e.target.value})} style={styles.input} /></div>
+      <div><label style={styles.label}>Tourist License</label><input value={setForm.tourist_license_no || ''} onChange={e => setSetForm({...setForm, tourist_license_no: e.target.value})} style={styles.input} /></div>
+      <div><label style={styles.label}>VAT No</label><input value={setForm.vat_no || ''} onChange={e => setSetForm({...setForm, vat_no: e.target.value})} style={styles.input} /></div>
+      <div style={{ gridColumn: '1 / -1' }}><label style={styles.label}>Logo</label><input type="file" accept="image/*" onChange={handleLogoUpload} style={styles.input} />{setForm.logo_url && <img src={setForm.logo_url} style={{ height: 100, marginTop: 10, borderRadius: 8 }} />}</div>
+    </div><button type="submit" style={{ ...styles.btnPrimary, marginTop: '20px' }}>Save</button></form></div>
+  );
+
+  return <div><h2>{page}</h2><p>Section under development.</p></div>;
 }
