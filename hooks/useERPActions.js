@@ -3,7 +3,7 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
 export default function useERPActions(state) {
-  const { user, data, setData, showToast, logAction, fetchAll, invForm, setInvForm, expForm, setExpForm, corpForm, setCorpForm, creditorForm, setCreditorForm, custForm, setCustForm, vendorForm, setVendorForm, pkgForm, setPkgForm, brnForm, setBrnForm, empForm, setEmpForm, srvForm, setSrvForm, investForm, setInvestForm, settleForm, setSettleForm, refundForm, setRefundForm, transferForm, setTransferForm, setForm, setSetForm, userForm, setUserForm, portalForm, setPortalForm, editInvId, setEditInvId, editExpId, setEditExpId, editCorpId, setEditCorpId, editCredId, setEditCredId, editCustId, setEditCustId, editVendId, setEditVendId, editPkgId, setEditPkgId, editBrnId, setEditBrnId, editEmpId, setEditEmpId, editSrvId, setEditSrvId, editUserId, setEditUserId, modal, setModal, passForm, setPassForm, chatInput, setChatInput, chatMessages, setChatMessages, previewHTML, setPreviewHTML, getInvoiceHTML, getExpenseHTML, getContractHTML, today, router, contractCorpName } = state;
+  const { user, data, setData, showToast, logAction, fetchAll, invForm, setInvForm, expForm, setExpForm, corpForm, setCorpForm, creditorForm, setCreditorForm, custForm, setCustForm, vendorForm, setVendorForm, pkgForm, setPkgForm, brnForm, setBrnForm, empForm, setEmpForm, srvForm, setSrvForm, investForm, setInvestForm, settleForm, setSettleForm, refundForm, setRefundForm, transferForm, setTransferForm, setForm, setSetForm, userForm, setUserForm, portalForm, setPortalForm, editInvId, setEditInvId, editExpId, setEditExpId, editCorpId, setEditCorpId, editCredId, setEditCredId, editCustId, setEditCustId, editVendId, setEditVendId, editPkgId, setEditPkgId, editBrnId, setEditBrnId, editEmpId, setEditEmpId, editSrvId, setEditSrvId, editUserId, setEditUserId, modal, setModal, passForm, setPassForm, chatInput, setChatInput, chatMessages, setChatMessages, previewHTML, setPreviewHTML, getInvoiceHTML, getExpenseHTML, getContractHTML, today, router, contractCorpName, contractType, contractMarkup, contractTerms } = state;
 
   const handleLogout = () => { supabase.auth.signOut(); router.push('/login'); };
   const handleChangePassword = async (e) => { e.preventDefault(); const { error } = await supabase.auth.updateUser({ password: passForm.newPass }); if (error) return showToast('Error: ' + error.message); showToast('Password Updated!'); setModal({ type: null, data: null }); setPassForm({ newPass: '' }); };
@@ -55,7 +55,7 @@ export default function useERPActions(state) {
     e.preventDefault();
     if (!contractCorpName) return showToast('Enter Corporate Name');
     const s = data.settings;
-    const html = getContractHTML(s, contractCorpName, today, false);
+    const html = getContractHTML(s, contractCorpName, today, false, contractType, contractMarkup, contractTerms);
     setPreviewHTML(html);
     setModal({ type: 'preview', data: null });
   };
@@ -64,7 +64,7 @@ export default function useERPActions(state) {
     e.preventDefault();
     if (!contractCorpName) return showToast('Enter Corporate Name');
     const s = data.settings;
-    const html = getContractHTML(s, contractCorpName, today, true);
+    const html = getContractHTML(s, contractCorpName, today, true, contractType, contractMarkup, contractTerms);
     setPreviewHTML(html);
     setModal({ type: 'preview', data: null });
   };
