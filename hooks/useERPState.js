@@ -118,161 +118,255 @@ export default function useERPState() {
     const titleAr = isOffer ? "عرض الشركات الخاص" : "اتفاقية السفر للشركات";
     
     return `
-    <div style="width:794px; min-height:1123px; padding:50px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial; border: 8px solid #1E3A8A; border-radius: 15px; box-shadow: inset 0 0 0 2px #FBBF24; overflow: hidden;">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #FBBF24; padding-bottom:15px; margin-bottom:30px;">
-        <div style="display:flex; align-items:center; gap:15px;">
-          ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:80px;width:auto;object-fit:contain;" />` : '<div style="width:80px;height:80px;"></div>'}
-          <div style="text-align: right; direction: rtl;">
-            <h1 style="margin:0;color:#1E3A8A;font-size:20px;font-weight:bold;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h1>
-            <p style="font-size:11px;margin-top:5px;line-height:1.6;color:#555;">
-              عنوان: ${s.address_ar || ''}<br/>هاتف: ${s.phone || ''}<br/>سجل تجاري: ${s.cr_no || ''}<br/>ضريبة القيمة المضافة: ${s.vat_no || ''}
-            </p>
+    <div style="width:794px; min-height:1123px; padding:50px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial; position: relative;">
+      <div style="border: 4px solid #1E3A8A; padding: 40px; height: 100%; box-sizing: border-box;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #1E3A8A; padding-bottom:20px; margin-bottom:40px;">
+          <div style="display:flex; align-items:center; gap:20px;">
+            ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:90px;width:auto;object-fit:contain;" />` : '<div style="width:90px;height:90px;"></div>'}
+            <div style="text-align: right; direction: rtl;">
+              <h1 style="margin:0;color:#1E3A8A;font-size:22px;font-weight:bold;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h1>
+              <p style="font-size:12px;margin-top:5px;line-height:1.6;color:#555;">
+                عنوان: ${s.address_ar || ''}<br/>هاتف: ${s.phone || ''}<br/>سجل تجاري: ${s.cr_no || ''}<br/>ضريبة القيمة المضافة: ${s.vat_no || ''}
+              </p>
+            </div>
           </div>
         </div>
-        <div style="text-align:left; background:#1E3A8A; color:#fff; padding:15px 20px; border-radius:8px; min-width:220px;">
-          <h1 style="margin:0;font-size:18px;">${titleEn}<br/><span style="font-size:14px; color:#FBBF24;">${titleAr}</span></h1>
+        
+        <div style="text-align: center; margin-bottom: 40px;">
+          <h1 style="margin:0; font-size: 24px; color:#1E3A8A; text-transform: uppercase;">${titleEn}</h1>
+          <h2 style="margin:5px 0 0; font-size: 20px; color:#555; direction: rtl;">${titleAr}</h2>
+          <div style="width: 100px; height: 3px; background: #1E3A8A; margin: 15px auto;"></div>
         </div>
-      </div>
-      
-      <div style="margin-bottom: 40px;">
-        <p style="font-size: 14px; line-height: 1.8;">
-          This ${isOffer ? 'offer' : 'agreement'} is made on <b>${dateStr}</b> between <b>${s.company_name_en || 'Our Company'}</b> (Hereinafter referred to as "Provider") and <b>${corpName}</b> (Hereinafter referred to as "Client").
-        </p>
-        <p style="font-size: 14px; line-height: 1.8; direction: rtl; text-align: right;">
-          تم إبرام هذه ${isOffer ? 'العرض' : 'الاتفاقية'} في <b>${dateStr}</b> بين <b>${s.company_name_ar || 'شركتنا'}</b> (المشار إليها بـ "المزود") و <b>${corpName}</b> (المشار إليها بـ "العميل").
-        </p>
-      </div>
-
-      <h3 style="color:#1E3A8A; border-bottom:1px solid #ddd; padding-bottom:5px; font-size:16px;">Terms & Conditions / الشروط والأحكام</h3>
-      <ul style="font-size: 14px; line-height: 1.8; margin-bottom: 20px;">
-        <li>Provider agrees to supply flight tickets and travel services to the Client at the most competitive rates.</li>
-        <li>Provider guarantees the <b>cheapest fares</b> in the market for all bookings.</li>
-        <li>A flat service fee of <b>20 SAR per ticket</b> will be charged over the base cost price.</li>
-        <li>Invoices will be issued monthly or per booking, inclusive of VAT where applicable.</li>
-      </ul>
-      <ul style="font-size: 14px; line-height: 1.8; direction: rtl; text-align: right; margin-bottom: 40px;">
-        <li>يوافق المزود على توفير تذاكر الطيران وخدمات السفر للعميل بأفضل الأسعار التنافسية.</li>
-        <li>يضمن المزود <b>أرخص الأسعار</b> في السوق لجميع الحجوزات.</li>
-        <li>سيتم فرض رسوم خدمة ثابتة قدرها <b>20 ريال سعودي لكل تذكرة</b> بالإضافة إلى سعر التكلفة الأساسي.</li>
-        <li>سيتم إصدار الفواتير شهرياً أو لكل حجز، شاملةً لضريبة القيمة المضافة عند الاقتضاء.</li>
-      </ul>
-
-      <div style="margin-top: 80px; display: flex; justify-content: space-between;">
-        <div style="text-align: center;">
-          <div style="border-top: 1px solid #333; width: 250px; margin-bottom: 5px;"></div>
-          <b>Authorized Signatory</b><br/>
-          <span style="font-size: 12px; color:#666;">${s.company_name_en || 'Provider'}</span>
+        
+        <div style="margin-bottom: 40px; background: #f8fafc; padding: 20px; border-left: 4px solid #1E3A8A;">
+          <p style="font-size: 15px; line-height: 1.8; margin: 0;">
+            This ${isOffer ? 'offer' : 'agreement'} is made on <b>${dateStr}</b> between <b>${s.company_name_en || 'Our Company'}</b> (Hereinafter referred to as "Provider") and <b>${corpName}</b> (Hereinafter referred to as "Client").
+          </p>
+          <p style="font-size: 15px; line-height: 1.8; direction: rtl; text-align: right; margin-top: 15px;">
+            تم إبرام هذه ${isOffer ? 'العرض' : 'الاتفاقية'} في <b>${dateStr}</b> بين <b>${s.company_name_ar || 'شركتنا'}</b> (المشار إليها بـ "المزود") و <b>${corpName}</b> (المشار إليها بـ "العميل").
+          </p>
         </div>
-        <div style="text-align: center;">
-          <div style="border-top: 1px solid #333; width: 250px; margin-bottom: 5px;"></div>
-          <b>Client Signature</b><br/>
-          <span style="font-size: 12px; color:#666;">${corpName}</span>
+
+        <h3 style="color:#1E3A8A; border-bottom:1px solid #ddd; padding-bottom:10px; font-size:18px;">Terms & Conditions / الشروط والأحكام</h3>
+        <ul style="font-size: 14px; line-height: 2; margin-bottom: 20px; padding-right: 20px;">
+          <li>Provider agrees to supply flight tickets and travel services to the Client at the most competitive rates.</li>
+          <li>Provider guarantees the <b>cheapest fares</b> in the market for all bookings.</li>
+          <li>A flat service fee of <b>20 SAR per ticket</b> will be charged over the base cost price.</li>
+          <li>Invoices will be issued monthly or per booking, inclusive of VAT where applicable.</li>
+        </ul>
+        <ul style="font-size: 14px; line-height: 2; direction: rtl; text-align: right; margin-bottom: 50px; padding-left: 20px;">
+          <li>يوافق المزود على توفير تذاكر الطيران وخدمات السفر للعميل بأفضل الأسعار التنافسية.</li>
+          <li>يضمن المزود <b>أرخص الأسعار</b> في السوق لجميع الحجوزات.</li>
+          <li>سيتم فرض رسوم خدمة ثابتة قدرها <b>20 ريال سعودي لكل تذكرة</b> بالإضافة إلى سعر التكلفة الأساسي.</li>
+          <li>سيتم إصدار الفواتير شهرياً أو لكل حجز، شاملةً لضريبة القيمة المضافة عند الاقتضاء.</li>
+        </ul>
+
+        <div style="margin-top: 80px; display: flex; justify-content: space-between;">
+          <div style="text-align: center;">
+            <div style="border-top: 1px solid #333; width: 250px; margin-bottom: 5px;"></div>
+            <b>Authorized Signatory</b><br/>
+            <span style="font-size: 12px; color:#666;">${s.company_name_en || 'Provider'}</span>
+          </div>
+          <div style="text-align: center;">
+            <div style="border-top: 1px solid #333; width: 250px; margin-bottom: 5px;"></div>
+            <b>Client Signature</b><br/>
+            <span style="font-size: 12px; color:#666;">${corpName}</span>
+          </div>
         </div>
       </div>
     </div>`;
   };
 
+  // EXPENSE HTML (PURCHASE BILL)
+  const getExpenseHTML = (exp, s) => {
+    const subTotal = (exp.items || []).reduce((sum, item) => sum + ((parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0)), 0);
+    const taxRate = subTotal > 0 && exp.amount > subTotal ? 15 : 0;
+    const vat = subTotal * (taxRate / 100);
+    
+    const qrUrl = `https://bwipjs-api.glitch.me/?bcid=code128&text=${encodeURIComponent(exp.invoice_no || 'EXP')}&scale=2`;
+    
+    return `
+    <div style="width:794px; min-height:1123px; padding:40px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #1E3A8A; padding-bottom:20px; margin-bottom:30px;">
+        <div style="display:flex; align-items:center; gap:20px;">
+          ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:90px;width:auto;object-fit:contain;" />` : '<div style="width:90px;height:90px;"></div>'}
+          <div>
+            <h1 style="margin:0;color:#1E3A8A;font-size:24px;font-weight:bold;">${s.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
+            <h2 style="margin:5px 0;color:#555;font-size:18px;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
+            <p style="font-size:12px;margin-top:5px;line-height:1.6;color:#555;">
+              ${s.address_ar || ''}<br/>Phone: ${s.phone || ''} | VAT: ${s.vat_no || ''}
+            </p>
+          </div>
+        </div>
+        <div style="text-align:right; background:#1E3A8A; color:#fff; padding:15px 25px; border-radius:8px; min-width:250px;">
+          <h1 style="margin:0;font-size:22px;">PURCHASE BILL</h1>
+          <h2 style="margin:5px 0;font-size:18px;color:#93C5FD;">فاتورة مشتريات</h2>
+          <p style="font-size:12px;margin-top:10px;color:#eee;">
+            Bill No: <b>${exp.invoice_no}</b><br/>Date: <b>${exp.expense_date}</b><br/>Paid Via: <b>${exp.payment_mode}</b>
+          </p>
+        </div>
+      </div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:30px;">
+        <div style="background:#f1f5f9;padding:15px;border-radius:8px;border-left:4px solid #1E3A8A;">
+          <h3 style="margin:0 0 5px;color:#1E3A8A;font-size:14px;">VENDOR / المورد</h3>
+          <p style="margin:0;font-size:16px;font-weight:bold;">${exp.vendor_name || 'N/A'}</p>
+          <p style="margin:3px 0 0;font-size:12px;color:#666;">VAT: ${exp.vendor_vat || 'N/A'}</p>
+        </div>
+        <div style="background:#f1f5f9;padding:15px;border-radius:8px;border-left:4px solid #1E3A8A;text-align:right;">
+          <h3 style="margin:0 0 5px;color:#1E3A8A;font-size:14px;">BILL TO / الفاتورة إلى</h3>
+          <p style="margin:0;font-size:16px;font-weight:bold;">${s.company_name_en || 'Our Company'}</p>
+          <p style="margin:3px 0 0;font-size:12px;color:#666;">${s.address_ar || ''}</p>
+        </div>
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;text-align:center;margin-bottom:30px;">
+        <thead>
+          <tr style="background:#1E3A8A;color:#fff;">
+            <th style="padding:12px;text-align:left;font-size:13px;">Item Description / الوصف</th>
+            <th style="padding:12px;font-size:13px;">Qty / الكمية</th>
+            <th style="padding:12px;font-size:13px;">Unit Price / السعر</th>
+            <th style="padding:12px;font-size:13px;">Total / الإجمالي</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${exp.items && exp.items.length > 0 ? exp.items.map(item => `
+            <tr style="border-bottom:1px solid #e2e8f0;">
+              <td style="padding:12px;text-align:left;font-size:13px;">${item.name}</td>
+              <td style="padding:12px;font-size:13px;">${item.qty}</td>
+              <td style="padding:12px;font-size:13px;">${parseFloat(item.price).toFixed(2)}</td>
+              <td style="padding:12px;font-size:13px;font-weight:bold;">${(parseFloat(item.qty)*parseFloat(item.price)).toFixed(2)}</td>
+            </tr>
+          `).join('') : `<tr><td colspan="4" style="padding:20px;">No Items</td></tr>`}
+        </tbody>
+      </table>
+
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div style="text-align:center;">
+          <img src="${qrUrl}" alt="Barcode" style="height:60px;"/>
+          <p style="font-size:10px;color:#666;margin:5px 0 0;">${exp.invoice_no}</p>
+        </div>
+        <div style="text-align:right;min-width:280px;">
+          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>Subtotal:</span> <b>${subTotal.toFixed(2)} SAR</b></p>
+          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>VAT (${taxRate}%):</span> <b>${vat.toFixed(2)} SAR</b></p>
+          <p style="margin:10px 0 0;font-size:20px;color:#1E3A8A;font-weight:bold;display:flex;justify-content:space-between;padding:10px 0;background:#f1f5f9;padding-right:10px;">
+            <span style="background:#1E3A8A;color:#fff;padding:10px;border-radius:0 8px 8px 0;margin-left:10px;">Grand Total:</span> 
+            <span style="padding:10px;">${exp.amount.toFixed(2)} SAR</span>
+          </p>
+        </div>
+      </div>
+
+      <div style="margin-top:60px; border-top:1px solid #e2e8f0; padding-top:20px;">
+        <p style="font-size:11px;color:#888;text-align:center;margin:0;">${s.invoice_footer || 'Thank you for your business!'}</p>
+      </div>
+    </div>`;
+  };
+
+  // SALES INVOICE HTML
   const getInvoiceHTML = (inv, s, invLang = 'en') => {
     const isAr = invLang === 'ar'; 
     const dir = isAr ? 'rtl' : 'ltr'; 
     const textAlign = isAr ? 'right' : 'left'; 
     const textAlignOpp = isAr ? 'left' : 'right';
     const isRefund = inv.invoice_no && inv.invoice_no.startsWith('REF-');
-    const isExpense = inv.invoice_no && inv.invoice_no.startsWith('EXP-');
     
-    const qrData = inv.invoice_no || `Inv: ${inv.id}`;
-    const qrUrl = `https://bwipjs-api.glitch.me/?bcid=code128&text=${encodeURIComponent(qrData)}&scale=3`;
+    const qrUrl = `https://bwipjs-api.glitch.me/?bcid=code128&text=${encodeURIComponent(inv.invoice_no)}&scale=2`;
     
-    const titleEn = isRefund ? 'CREDIT NOTE' : (isExpense ? 'EXPENSE INVOICE' : 'TAX INVOICE');
-    const titleAr = isRefund ? 'فاتورة إشعار دائن' : (isExpense ? 'فاتورة مصروفات' : 'فاتورة ضريبية');
+    const titleEn = isRefund ? 'CREDIT NOTE' : 'TAX INVOICE';
+    const titleAr = isRefund ? 'فاتورة إشعار دائن' : 'فاتورة ضريبية';
     
     const empName = inv.employees?.name || 'N/A';
     const empPhone = inv.employees?.phone || 'N/A';
-    const custPhone = inv.customers?.phone || inv.corporates?.phone || inv.vendor_vat || 'N/A';
-    const paxNames = inv.passenger_names ? inv.passenger_names.split('\n').map(p => `<div>${p}</div>`).join('') : 'N/A';
+    const custPhone = inv.customers?.phone || inv.corporates?.phone || 'N/A';
+    const paxNames = inv.passenger_names ? inv.passenger_names.split('\n').map(p => `<div style="padding:2px 0;">• ${p}</div>`).join('') : 'N/A';
     
     return `
-    <div style="width:794px; min-height:1123px; padding:40px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial; direction:${dir}; text-align:${textAlign}; display:flex; flex-direction:column; justify-content:space-between; border: 8px solid #1E3A8A; border-radius: 15px; box-shadow: inset 0 0 0 2px #FBBF24; overflow: hidden;">
-      <div>
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #FBBF24; padding-bottom:15px; margin-bottom:15px;">
-          <div style="display:flex; align-items:center; gap:15px;">
-            ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:80px;width:auto;object-fit:contain;" />` : '<div style="width:80px;height:80px;"></div>'}
-            <div style="text-align: right; direction: rtl;">
-              <h1 style="margin:0;color:#1E3A8A;font-size:20px;font-weight:bold;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h1>
-              <p style="font-size:11px;margin-top:5px;line-height:1.6;color:#555;">
-                عنوان: ${s.address_ar || ''}<br/>هاتف: ${s.phone || ''}<br/>سجل تجاري: ${s.cr_no || ''}<br/>ضريبة القيمة المضافة: ${s.vat_no || ''}
-              </p>
-            </div>
-          </div>
-          <div style="text-align:${textAlignOpp};background:#1E3A8A;color:#fff;padding:15px 20px;border-radius:8px;min-width:220px;">
-            <h1 style="margin:0;font-size:18px;">${titleEn}<br/><span style="font-size:14px; color:#FBBF24;">${titleAr}</span></h1>
-            <p style="font-size:12px;margin-top:8px;color:#eee; text-align:${textAlignOpp};">
-              Inv No / رقم: <b>${inv.invoice_no}</b><br/>Date / التاريخ: <b>${inv.invoice_date}</b><br/>Payment / الدفع: <b>${inv.payment_method || inv.payment_mode}</b>
+    <div style="width:794px; min-height:1123px; padding:40px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial; direction:${dir}; text-align:${textAlign};">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #1E3A8A; padding-bottom:20px; margin-bottom:30px;">
+        <div style="display:flex; align-items:center; gap:20px;">
+          ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:90px;width:auto;object-fit:contain;" />` : '<div style="width:90px;height:90px;"></div>'}
+          <div style="text-align: right; direction: rtl;">
+            <h1 style="margin:0;color:#1E3A8A;font-size:22px;font-weight:bold;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h1>
+            <p style="font-size:12px;margin-top:5px;line-height:1.6;color:#555;">
+              عنوان: ${s.address_ar || ''}<br/>هاتف: ${s.phone || ''}<br/>سجل تجاري: ${s.cr_no || ''}<br/>ضريبة القيمة المضافة: ${s.vat_no || ''}
             </p>
           </div>
         </div>
-        
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
-          <div style="background:#f8fafc;padding:15px;border-radius:8px;">
-            <h3 style="margin:0 0 5px;color:#1E3A8A;font-size:13px;">BILL TO / الفاتورة إلى:</h3>
-            <p style="margin:0;font-size:15px;font-weight:bold;">${inv.customers?.name || inv.corporates?.name || inv.vendor_name || ''}</p>
-            <p style="margin:3px 0 0;font-size:11px;color:#666;">Phone: ${custPhone} ${inv.corporates?.vat_no ? '| VAT: '+inv.corporates.vat_no : ''}</p>
-          </div>
-          <div style="background:#f8fafc;padding:15px;border-radius:8px;text-align:${textAlignOpp};">
-            <h3 style="margin:0 0 5px;color:#1E3A8A;font-size:13px;">SALES PERSON / الموظف:</h3>
-            <p style="margin:0;font-size:15px;font-weight:bold;">${empName}</p>
-            <p style="margin:3px 0 0;font-size:11px;color:#666;">Contact: ${empPhone}</p>
-          </div>
+        <div style="text-align:${textAlignOpp}; background:#1E3A8A; color:#fff; padding:15px 25px; border-radius:8px; min-width:250px;">
+          <h1 style="margin:0;font-size:22px;">${titleEn}</h1>
+          <h2 style="margin:5px 0;font-size:18px;color:#93C5FD;">${titleAr}</h2>
+          <p style="font-size:12px;margin-top:10px;color:#eee; text-align:${textAlignOpp};">
+            Inv No: <b>${inv.invoice_no}</b><br/>Date: <b>${inv.invoice_date}</b><br/>Payment: <b>${inv.payment_method}</b>
+          </p>
         </div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;border:1px solid #e2e8f0;padding:15px;border-radius:8px;">
-          ${inv.service_type && !isExpense ? `<div><b style="color:#1E3A8A;font-size:12px;">Service:</b> <span style="font-size:12px;">${inv.service_type}</span></div>` : ''}
-          ${inv.airline && !isExpense ? `<div><b style="color:#1E3A8A;font-size:12px;">Airline:</b> <span style="font-size:12px;">${inv.airline}</span></div>` : ''}
-          ${inv.flight_sector && !isExpense ? `<div><b style="color:#1E3A8A;font-size:12px;">Sector:</b> <span style="font-size:12px;">${inv.flight_sector}</span></div>` : ''}
-          ${inv.pnr && !isExpense ? `<div><b style="color:#1E3A8A;font-size:12px;">PNR:</b> <span style="font-size:12px;">${inv.pnr}</span></div>` : ''}
-          ${inv.ticket_no && !isExpense ? `<div><b style="color:#1E3A8A;font-size:12px;">Ticket No:</b> <span style="font-size:12px;">${inv.ticket_no}</span></div>` : ''}
-          ${inv.flight_journey && !isExpense ? `<div><b style="color:#1E3A8A;font-size:12px;">Journey:</b> <span style="font-size:12px;">${inv.flight_journey}</span></div>` : ''}
-          ${isExpense && inv.expense_type ? `<div><b style="color:#1E3A8A;font-size:12px;">Expense Type:</b> <span style="font-size:12px;">${inv.expense_type}</span></div>` : ''}
-          ${isExpense && inv.vendor_vat ? `<div><b style="color:#1E3A8A;font-size:12px;">Vendor VAT:</b> <span style="font-size:12px;">${inv.vendor_vat}</span></div>` : ''}
+      </div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:30px;">
+        <div style="background:#f1f5f9;padding:15px;border-radius:8px;border-left:4px solid #1E3A8A;">
+          <h3 style="margin:0 0 5px;color:#1E3A8A;font-size:14px;">BILL TO / الفاتورة إلى:</h3>
+          <p style="margin:0;font-size:16px;font-weight:bold;">${inv.customers?.name || inv.corporates?.name || ''}</p>
+          <p style="margin:3px 0 0;font-size:12px;color:#666;">Phone: ${custPhone} ${inv.corporates?.vat_no ? '| VAT: '+inv.corporates.vat_no : ''}</p>
         </div>
-
-        ${!isExpense && inv.passenger_names ? `<div style="margin-bottom:20px;border:1px solid #e2e8f0;padding:15px;border-radius:8px;"><b style="color:#1E3A8A;font-size:13px;">Passengers / المسافرون:</b><div style="font-size:12px;margin-top:5px;display:grid;grid-template-columns:1fr 1fr;gap:5px;">${paxNames}</div></div>` : ''}
-
-        <table style="width:100%;border-collapse:collapse;text-align:center;margin-bottom:20px;">
-          <thead>
-            <tr style="background:#1E3A8A;color:#fff;">
-              <th style="padding:10px;border:1px solid #1e3a8a;font-size:11px;">Desc / الوصف</th>
-              <th style="padding:10px;border:1px solid #1e3a8a;font-size:11px;">Qty / الكمية</th>
-              <th style="padding:10px;border:1px solid #1e3a8a;font-size:11px;">Unit Price / السعر</th>
-              <th style="padding:10px;border:1px solid #1e3a8a;font-size:11px;">Total / الإجمالي</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${isExpense && inv.items ? inv.items.map(item => `<tr style="background:#ffffff;"><td style="padding:10px;border:1px solid #ddd;">${item.name}</td><td style="padding:10px;border:1px solid #ddd;">${item.qty}</td><td style="padding:10px;border:1px solid #ddd;">${parseFloat(item.price).toFixed(2)}</td><td style="padding:10px;border:1px solid #ddd;font-weight:bold;">${(parseFloat(item.qty)*parseFloat(item.price)).toFixed(2)}</td></tr>`).join('') : `<tr style="background:#ffffff;"><td style="padding:10px;border:1px solid #ddd;">${inv.sector || inv.description || inv.item_name || 'N/A'}</td><td style="padding:10px;border:1px solid #ddd;">${inv.qty || 1}</td><td style="padding:10px;border:1px solid #ddd;">${((inv.total_sell || inv.amount || 0) / (inv.qty || 1)).toFixed(2)}</td><td style="padding:10px;border:1px solid #ddd;font-weight:bold;">${(inv.total_sell || inv.amount || 0).toFixed(2)}</td></tr>`}
-          </tbody>
-        </table>
-
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-          <div style="text-align:center;">
-            <img src="${qrUrl}" alt="QR" style="width:100px;height:100px;"/>
-            <p style="font-size:10px;color:#666;margin:5px 0 0;">Scan to verify</p>
-          </div>
-          <div style="text-align:${textAlignOpp};min-width:250px;">
-            <p style="margin:0;font-size:12px;display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee;"><span>Subtotal:</span> <b>${(inv.total_sell || inv.amount || 0).toFixed(2)} SAR</b></p>
-            <p style="margin:0;font-size:12px;display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee;"><span>VAT (15%):</span> <b>${(inv.vat || 0).toFixed(2)} SAR</b></p>
-            <p style="margin:5px 0 0;font-size:18px;color:#1E3A8A;font-weight:bold;display:flex;justify-content:space-between;padding:5px 0;border-top:2px solid #1E3A8A;">Grand Total: <span>${(inv.total || inv.amount || 0).toFixed(2)} SAR</span></p>
-          </div>
+        <div style="background:#f1f5f9;padding:15px;border-radius:8px;border-left:4px solid #1E3A8A;text-align:${textAlignOpp};">
+          <h3 style="margin:0 0 5px;color:#1E3A8A;font-size:14px;">SALES PERSON / الموظف:</h3>
+          <p style="margin:0;font-size:16px;font-weight:bold;">${empName}</p>
+          <p style="margin:3px 0 0;font-size:12px;color:#666;">Contact: ${empPhone}</p>
         </div>
       </div>
 
-      <div style="border-top:2px solid #FBBF24; padding-top:15px; margin-top:20px;">
-        <p style="font-size:10px;color:#888;text-align:center;margin:0 0 5px;">${s.invoice_footer || 'Thank you for choosing us!'}</p>
-        <p style="font-size:9px;color:#aaa;text-align:center;margin:0;">Terms & Conditions: All fares are subject to availability and airline rules. Non-refundable tickets cannot be refunded. Service charges apply.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;margin-bottom:20px;border:1px solid #e2e8f0;padding:15px;border-radius:8px;background:#fff;">
+        ${inv.service_type ? `<div><b style="color:#1E3A8A;font-size:11px;display:block;margin-bottom:3px;">Service / الخدمة</b><span style="font-size:13px;">${inv.service_type}</span></div>` : ''}
+        ${inv.airline ? `<div><b style="color:#1E3A8A;font-size:11px;display:block;margin-bottom:3px;">Airline / الخطوط الجوية</b><span style="font-size:13px;">${inv.airline}</span></div>` : ''}
+        ${inv.flight_sector ? `<div><b style="color:#1E3A8A;font-size:11px;display:block;margin-bottom:3px;">Sector / القطاع</b><span style="font-size:13px;">${inv.flight_sector}</span></div>` : ''}
+        ${inv.pnr ? `<div><b style="color:#1E3A8A;font-size:11px;display:block;margin-bottom:3px;">PNR / رقم الحجز</b><span style="font-size:13px;">${inv.pnr}</span></div>` : ''}
+        ${inv.ticket_no ? `<div><b style="color:#1E3A8A;font-size:11px;display:block;margin-bottom:3px;">Ticket No / رقم التذكرة</b><span style="font-size:13px;">${inv.ticket_no}</span></div>` : ''}
+        ${inv.flight_journey ? `<div><b style="color:#1E3A8A;font-size:11px;display:block;margin-bottom:3px;">Journey / الرحلة</b><span style="font-size:13px;">${inv.flight_journey}</span></div>` : ''}
+      </div>
+
+      ${inv.passenger_names ? `<div style="margin-bottom:20px;border:1px solid #e2e8f0;padding:15px;border-radius:8px;"><b style="color:#1E3A8A;font-size:14px;">Passengers / المسافرون:</b><div style="font-size:13px;margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:5px;">${paxNames}</div></div>` : ''}
+
+      <table style="width:100%;border-collapse:collapse;text-align:center;margin-bottom:30px;">
+        <thead>
+          <tr style="background:#1E3A8A;color:#fff;">
+            <th style="padding:12px;text-align:left;font-size:13px;">Desc / الوصف</th>
+            <th style="padding:12px;font-size:13px;">Qty / الكمية</th>
+            <th style="padding:12px;font-size:13px;">Unit Price / السعر</th>
+            <th style="padding:12px;font-size:13px;">Total / الإجمالي</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid #e2e8f0;">
+            <td style="padding:12px;text-align:left;font-size:13px;">${inv.sector || inv.description || 'N/A'}</td>
+            <td style="padding:12px;font-size:13px;">${inv.qty || 1}</td>
+            <td style="padding:12px;font-size:13px;">${((inv.total_sell || 0) / (inv.qty || 1)).toFixed(2)}</td>
+            <td style="padding:12px;font-size:13px;font-weight:bold;">${(inv.total_sell || 0).toFixed(2)}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div style="text-align:center;">
+          <img src="${qrUrl}" alt="Barcode" style="height:60px;"/>
+          <p style="font-size:10px;color:#666;margin:5px 0 0;">Scan to verify</p>
+        </div>
+        <div style="text-align:${textAlignOpp};min-width:280px;">
+          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>Subtotal:</span> <b>${(inv.total_sell || 0).toFixed(2)} SAR</b></p>
+          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>VAT (15%):</span> <b>${(inv.vat || 0).toFixed(2)} SAR</b></p>
+          <p style="margin:10px 0 0;font-size:20px;color:#1E3A8A;font-weight:bold;display:flex;justify-content:space-between;padding:10px 0;background:#f1f5f9;padding-right:10px;">
+            <span style="background:#1E3A8A;color:#fff;padding:10px;border-radius:0 8px 8px 0;margin-left:10px;">Grand Total:</span> 
+            <span style="padding:10px;">${(inv.total || 0).toFixed(2)} SAR</span>
+          </p>
+        </div>
+      </div>
+
+      <div style="margin-top:60px; border-top:1px solid #e2e8f0; padding-top:20px;">
+        <p style="font-size:11px;color:#888;text-align:center;margin:0 0 5px;">${s.invoice_footer || 'Thank you for choosing us!'}</p>
+        <p style="font-size:10px;color:#aaa;text-align:center;margin:0;">Terms & Conditions: All fares are subject to availability and airline rules. Non-refundable tickets cannot be refunded. Service charges apply.</p>
       </div>
     </div>`;
   };
 
   return {
-    user, setUser, userProfile, setUserProfile, lang, setLang, page, setPage, payFilter, setPayFilter, router, toast, setToast, modal, setModal, passForm, setPassForm, chatOpen, setChatOpen, chatMessages, setChatMessages, chatInput, setChatInput, search, setSearch, tblPage, setTblPage, itemsPerPage, ledgerCustId, setLedgerCustId, previewHTML, setPreviewHTML, data, setData, today, editInvId, setEditInvId, invForm, setInvForm, expForm, setExpForm, editExpId, setEditExpId, editCorpId, setEditCorpId, corpForm, setCorpForm, editCredId, setEditCredId, creditorForm, setCreditorForm, editCustId, setEditCustId, custForm, setCustForm, editVendId, setEditVendId, vendorForm, setVendorForm, editPkgId, setEditPkgId, pkgForm, setPkgForm, editBrnId, setEditBrnId, brnForm, setBrnForm, editEmpId, setEditEmpId, empForm, setEmpForm, editSrvId, setEditSrvId, srvForm, setSrvForm, editUserId, setEditUserId, investForm, setInvestForm, settleForm, setSettleForm, refundForm, setRefundForm, transferForm, setTransferForm, repDate, setRepDate, reportTab, setReportTab, statementTab, setStatementTab, setForm, setSetForm, userForm, setUserForm, portalForm, setPortalForm, tr, t, showToast, logAction, fetchAll, exportToExcel, filterData, getInvoiceHTML, getContractHTML, contractCorpName, setContractCorpName
+    user, setUser, userProfile, setUserProfile, lang, setLang, page, setPage, payFilter, setPayFilter, router, toast, setToast, modal, setModal, passForm, setPassForm, chatOpen, setChatOpen, chatMessages, setChatMessages, chatInput, setChatInput, search, setSearch, tblPage, setTblPage, itemsPerPage, ledgerCustId, setLedgerCustId, previewHTML, setPreviewHTML, data, setData, today, editInvId, setEditInvId, invForm, setInvForm, expForm, setExpForm, editExpId, setEditExpId, editCorpId, setEditCorpId, corpForm, setCorpForm, editCredId, setEditCredId, creditorForm, setCreditorForm, editCustId, setEditCustId, custForm, setCustForm, editVendId, setEditVendId, vendorForm, setVendorForm, editPkgId, setEditPkgId, pkgForm, setPkgForm, editBrnId, setEditBrnId, brnForm, setBrnForm, editEmpId, setEditEmpId, empForm, setEmpForm, editSrvId, setEditSrvId, srvForm, setSrvForm, editUserId, setEditUserId, investForm, setInvestForm, settleForm, setSettleForm, refundForm, setRefundForm, transferForm, setTransferForm, repDate, setRepDate, reportTab, setReportTab, statementTab, setStatementTab, setForm, setSetForm, userForm, setUserForm, portalForm, setPortalForm, tr, t, showToast, logAction, fetchAll, exportToExcel, filterData, getInvoiceHTML, getExpenseHTML, getContractHTML, contractCorpName, setContractCorpName
   };
 }
