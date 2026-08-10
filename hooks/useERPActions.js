@@ -9,6 +9,15 @@ export default function useERPActions(state) {
   const handleChangePassword = async (e) => { e.preventDefault(); const { error } = await supabase.auth.updateUser({ password: passForm.newPass }); if (error) return showToast('Error: ' + error.message); showToast('Password Updated!'); setModal({ type: null, data: null }); setPassForm({ newPass: '' }); };
   const handleSendMessage = () => { if (!chatInput.trim()) return; setChatMessages(prev => [...prev, { sender: 'user', text: chatInput }]); setChatInput(''); setTimeout(() => { setChatMessages(prev => [...prev, { sender: 'bot', text: "I can help with Invoices. (يمكنني المساعدة في الفواتير)" }]); }, 600); };
 
+  // Custom Field Handlers
+  const handleAddCustomField = () => setSetForm(prev => ({ ...prev, custom_fields: [...(prev.custom_fields || []), { key: '', value: '' }] }));
+  const handleRemoveCustomField = (index) => setSetForm(prev => ({ ...prev, custom_fields: prev.custom_fields.filter((_, i) => i !== index) }));
+  const handleCustomFieldChange = (index, type, value) => setSetForm(prev => {
+    const cf = [...prev.custom_fields];
+    cf[index][type] = value;
+    return { ...prev, custom_fields: cf };
+  });
+
   const downloadPDF = async (htmlContent, filename = 'document.pdf') => {
     try {
       const div = document.createElement('div');
@@ -354,6 +363,6 @@ export default function useERPActions(state) {
   const handleSaveSettings = async (e) => { e.preventDefault(); try { const { error } = await supabase.from('settings').upsert([{ id: 1, ...setForm }]).eq('id', 1); if (error) throw error; setData(prev => ({ ...prev, settings: setForm })); showToast('Settings Saved!'); } catch (err) { showToast('Error: ' + err.message); } };
 
   return {
-    handleLogout, handleChangePassword, handleSendMessage, handleEditInvoice, handleCreateInvoice, handleDeleteInvoice, handleAddExpItem, handleRemoveExpItem, handleExpItemChange, handleAddExpense, handleEditExpense, handleDeleteExpense, handlePreviewExpense, handleAddEditCust, handleAddEditCorp, handleAddEditCred, handleAddEditVend, handleAddEditPkg, handleAddEditBrn, handleAddEditEmp, handleAddEditSrv, handleAddPortal, handleAddInvestment, handleDelete, handleRecharge, handleTransfer, handleAddUser, handleEditUser, handleUpdateUser, handlePaySalary, handleSettlePayment, handleQuickSettle, openSettleModal, handleRefund, openRefundModal, openPreview, handleLogoUpload, handleSaveSettings, downloadPDF, handleGenerateContract, handleGenerateOffer
+    handleLogout, handleChangePassword, handleSendMessage, handleEditInvoice, handleCreateInvoice, handleDeleteInvoice, handleAddExpItem, handleRemoveExpItem, handleExpItemChange, handleAddExpense, handleEditExpense, handleDeleteExpense, handlePreviewExpense, handleAddEditCust, handleAddEditCorp, handleAddEditCred, handleAddEditVend, handleAddEditPkg, handleAddEditBrn, handleAddEditEmp, handleAddEditSrv, handleAddPortal, handleAddInvestment, handleDelete, handleRecharge, handleTransfer, handleAddUser, handleEditUser, handleUpdateUser, handlePaySalary, handleSettlePayment, handleQuickSettle, openSettleModal, handleRefund, openRefundModal, openPreview, handleLogoUpload, handleSaveSettings, downloadPDF, handleGenerateContract, handleGenerateOffer, handleAddCustomField, handleRemoveCustomField, handleCustomFieldChange
   };
 }
