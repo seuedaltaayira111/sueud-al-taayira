@@ -8,9 +8,11 @@ export default function Home() {
 
   if (!erp.user) return <div style={{ padding: 50, textAlign: 'center' }}>Loading ERP...</div>;
 
-  // SuperAdmin Emails list for failsafe
-  const superAdminEmails = ['atallahalanazi@sueudaltaayira.com', 'hamdan@sueudaltaayira.com'];
-  const isSuperAdmin = erp.userProfile?.role === 'SuperAdmin' || superAdminEmails.includes(erp.user?.email) || superAdminEmails.includes(erp.userProfile?.email);
+  // Failsafe Check: Agar role SuperAdmin hai, YA is_admin true hai, YA email match karti hai
+  const isSuperAdmin = erp.userProfile?.role === 'SuperAdmin' || 
+                       erp.userProfile?.is_admin === true || 
+                       erp.userProfile?.username === 'atallah@sueud.com' || 
+                       erp.userProfile?.username === 'hamdan@sueud.com';
 
   const menu = [
     { id: 'dashboard', label: erp.tr.dash, show: true },
