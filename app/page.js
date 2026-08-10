@@ -10,6 +10,7 @@ export default function Home() {
 
   const menu = [
     { id: 'dashboard', label: erp.tr.dash, show: true },
+    { id: 'superadmin', label: 'SuperAdmin Panel', show: erp.userProfile.role === 'SuperAdmin' },
     { id: 'create', label: erp.tr.create, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'list', label: erp.tr.list, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'refunds', label: erp.tr.refunds, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
@@ -108,6 +109,10 @@ export default function Home() {
           contractMarkup={erp.contractMarkup} setContractMarkup={erp.setContractMarkup}
           contractTerms={erp.contractTerms} setContractTerms={erp.setContractTerms}
           handleGenerateContract={erp.handleGenerateContract} handleGenerateOffer={erp.handleGenerateOffer}
+          
+          // SaaS Props
+          tenantForm={erp.tenantForm} setTenantForm={erp.setTenantForm}
+          handleAddTenant={erp.handleAddTenant} handleToggleSubscription={erp.handleToggleSubscription} handleDeleteTenant={erp.handleDeleteTenant}
         />
       </ERPLayout>
     </>
