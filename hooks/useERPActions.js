@@ -3,11 +3,26 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
 export default function useERPActions(state) {
-  const { user, data, setData, showToast, logAction, fetchAll, userProfile, invForm, setInvForm, expForm, setExpForm, corpForm, setCorpForm, creditorForm, setCreditorForm, custForm, setCustForm, vendorForm, setVendorForm, pkgForm, setPkgForm, brnForm, setBrnForm, empForm, setEmpForm, srvForm, setSrvForm, investForm, setInvestForm, settleForm, setSettleForm, refundForm, setRefundForm, transferForm, setTransferForm, setForm, setSetForm, userForm, setUserForm, portalForm, setPortalForm, editInvId, setEditInvId, editExpId, setEditExpId, editCorpId, setEditCorpId, editCredId, setEditCredId, editCustId, setEditCustId, editVendId, setEditVendId, editPkgId, setEditPkgId, editBrnId, setEditBrnId, editEmpId, setEditEmpId, editSrvId, setEditSrvId, editUserId, setEditUserId, modal, setModal, passForm, setPassForm, chatInput, setChatInput, chatMessages, setChatMessages, previewHTML, setPreviewHTML, getInvoiceHTML, getExpenseHTML, getContractHTML, today, router, contractCorpName, contractType, contractMarkup, contractTerms, tenantForm, setTenantForm } = state;
+  const { user, data, setData, userProfile, showToast, logAction, fetchAll, invForm, setInvForm, expForm, setExpForm, corpForm, setCorpForm, creditorForm, setCreditorForm, custForm, setCustForm, vendorForm, setVendorForm, pkgForm, setPkgForm, brnForm, setBrnForm, empForm, setEmpForm, srvForm, setSrvForm, investForm, setInvestForm, settleForm, setSettleForm, refundForm, setRefundForm, transferForm, setTransferForm, setForm, setSetForm, userForm, setUserForm, portalForm, setPortalForm, editInvId, setEditInvId, editExpId, setEditExpId, editCorpId, setEditCorpId, editCredId, setEditCredId, editCustId, setEditCustId, editVendId, setEditVendId, editPkgId, setEditPkgId, editBrnId, setEditBrnId, editEmpId, setEditEmpId, editSrvId, setEditSrvId, editUserId, setEditUserId, modal, setModal, passForm, setPassForm, chatInput, setChatInput, chatMessages, setChatMessages, previewHTML, setPreviewHTML, getInvoiceHTML, getExpenseHTML, getContractHTML, today, router, contractCorpName, contractType, contractMarkup, contractTerms, tenantForm, setTenantForm } = state;
 
   const handleLogout = () => { supabase.auth.signOut(); router.push('/login'); };
-  const handleChangePassword = async (e) => { e.preventDefault(); const { error } = await supabase.auth.updateUser({ password: passForm.newPass }); if (error) return showToast('Error: ' + error.message); showToast('Password Updated!'); setModal({ type: null, data: null }); setPassForm({ newPass: '' }); };
-  const handleSendMessage = () => { if (!chatInput.trim()) return; setChatMessages(prev => [...prev, { sender: 'user', text: chatInput }]); setChatInput(''); setTimeout(() => { setChatMessages(prev => [...prev, { sender: 'bot', text: "I can help with Invoices. (يمكنني المساعدة في الفواتير)" }]); }, 600); };
+  
+  const handleChangePassword = async (e) => { 
+    e.preventDefault(); 
+    if (!passForm.newPass) return showToast('Please enter a new password!');
+    const { error } = await supabase.auth.updateUser({ password: passForm.newPass }); 
+    if (error) return showToast('Error: ' + error.message); 
+    showToast('Password Updated Successfully!'); 
+    setModal({ type: null, data: null }); 
+    setPassForm({ newPass: '' }); 
+  };
+  
+  const handleSendMessage = () => { 
+    if (!chatInput.trim()) return; 
+    setChatMessages(prev => [...prev, { sender: 'user', text: chatInput }]); 
+    setChatInput(''); 
+    setTimeout(() => { setChatMessages(prev => [...prev, { sender: 'bot', text: "I can help with Invoices. (يمكنني المساعدة في الفواتير)" }]); }, 600); 
+  };
 
   // Custom Field Handlers
   const handleAddCustomField = () => setSetForm(prev => ({ ...prev, custom_fields: [...(prev.custom_fields || []), { key: '', value: '' }] }));
@@ -22,17 +37,20 @@ export default function useERPActions(state) {
   const handleAddTenant = async (e) => {
     e.preventDefault();
     try {
-      const { data: newTenant, error } = await supabase.from('tenants').insert([{ 
-        agency_name: tenantForm.agency_name, 
-        owner_email: tenantForm.owner_email, 
-        is_paid: true, 
-        subscription_end_date: tenantForm.subscription_end_date 
-      }]).select().single();
-      if (error) throw error;
-      showToast('Agency Created! Ask them to sign up with the provided email.');
+      const tempPass = Math.random().toString(36).slice(-8) + 'A1!';
+      const res = await fetch('/api/create-tenant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...tenantForm, temp_password: tempPass })
+      });
+      const resData = await res.json();
+      if (resData.error) throw new Error(resData.error);
+      showToast(`✅ Agency Created! Email: ${tenantForm.owner_email} | Pass: ${tempPass}`);
       setTenantForm({ agency_name: '', owner_email: '', subscription_end_date: '' });
       fetchAll();
-    } catch (err) { showToast('Error: ' + err.message); }
+    } catch (err) { 
+      showToast('Error: ' + err.message); 
+    }
   };
 
   const handleToggleSubscription = async (tenant) => {
