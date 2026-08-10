@@ -94,6 +94,7 @@ export default function Home() {
           handleAddUser={erp.handleAddUser} handleEditUser={erp.handleEditUser} handleUpdateUser={erp.handleUpdateUser} userForm={erp.userForm} setUserForm={erp.setUserForm} editUserId={erp.editUserId}
           handleSaveSettings={erp.handleSaveSettings} handleLogoUpload={erp.handleLogoUpload} 
           setForm={erp.setForm} setSetForm={erp.setSetForm} 
+          handleAddCustomField={erp.handleAddCustomField} handleRemoveCustomField={erp.handleRemoveCustomField} handleCustomFieldChange={erp.handleCustomFieldChange}
           
           repDate={erp.repDate} setRepDate={erp.setRepDate} 
           reportTab={erp.reportTab} setReportTab={erp.setReportTab} 
@@ -103,6 +104,9 @@ export default function Home() {
           handleDelete={erp.handleDelete}
 
           contractCorpName={erp.contractCorpName} setContractCorpName={erp.setContractCorpName}
+          contractType={erp.contractType} setContractType={erp.setContractType}
+          contractMarkup={erp.contractMarkup} setContractMarkup={erp.setContractMarkup}
+          contractTerms={erp.contractTerms} setContractTerms={erp.setContractTerms}
           handleGenerateContract={erp.handleGenerateContract} handleGenerateOffer={erp.handleGenerateOffer}
         />
       </ERPLayout>
