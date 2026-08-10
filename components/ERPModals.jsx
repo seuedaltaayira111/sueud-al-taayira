@@ -3,11 +3,12 @@ import React from 'react';
 const styles = { 
   input: { width: '100%', padding: '10px', margin: '5px 0', border: '1px solid #cbd5e1', borderRadius: '6px', outline: 'none', boxSizing: 'border-box' }, 
   btnPrimary: { padding: '10px 15px', background: '#1E3A8A', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }, 
+  btnSuccess: { padding: '8px 12px', background: '#059669', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
   btnDanger: { padding: '8px 12px', background: '#EF4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
   card: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px' } 
 };
 
-export default function ERPModals({ modal, setModal, passForm, setPassForm, handleChangePassword, settleForm, setSettleForm, handleSettlePayment, refundForm, setRefundForm, handleRefund, previewHTML }) {
+export default function ERPModals({ modal, setModal, passForm, setPassForm, handleChangePassword, settleForm, setSettleForm, handleSettlePayment, refundForm, setRefundForm, handleRefund, previewHTML, downloadPDF }) {
   return (
     <>
       {modal.type === 'password' && (
@@ -79,10 +80,13 @@ export default function ERPModals({ modal, setModal, passForm, setPassForm, hand
 
       {modal.type === 'preview' && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'white', width: '850px', height: '90vh', borderRadius: '12px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ background: 'white', width: '900px', height: '95vh', borderRadius: '12px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', borderBottom: '1px solid #eee' }}>
-              <h3 style={{ margin: 0 }}>Invoice Preview</h3>
-              <button onClick={() => setModal({ type: null, data: null })} style={{ ...styles.btnDanger, width: 'auto' }}>Close</button>
+              <h3 style={{ margin: 0 }}>Document Preview</h3>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button onClick={() => downloadPDF(previewHTML, 'document.pdf')} style={{ ...styles.btnSuccess, width: 'auto' }}>Download PDF</button>
+                <button onClick={() => setModal({ type: null, data: null })} style={{ ...styles.btnDanger, width: 'auto' }}>Close</button>
+              </div>
             </div>
             <div style={{ flex: 1, overflow: 'auto', background: '#f1f5f9', display: 'flex', justifyContent: 'center', padding: '20px' }}>
               <iframe srcDoc={previewHTML} style={{ width: '100%', height: '100%', border: '1px solid #ccc', background: 'white' }}></iframe>
