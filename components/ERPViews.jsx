@@ -6,14 +6,9 @@ import ERPViewsSystem from './views/ERPViewsSystem';
 export default function ERPViews(props) {
   const { page } = props;
 
-  // Core Pages: Dashboard, Invoices, Customers, Corporates, Creditors, Credit Balances
   const isCorePage = ['dashboard', 'create', 'list', 'refunds', 'customers', 'corporates', 'creditors', 'credit'].includes(page);
-  
-  // Admin/Finance Pages: Vendors, Packages, Branches, Portals, Bank, Invest, HR
   const isAdminPage = ['vendors', 'packages', 'branches', 'portals', 'bank', 'invest', 'hr'].includes(page);
-  
-  // System Pages: Users, Settings, Reports, Audit, Statements, Contract, Offer
-  const isSystemPage = ['users', 'settings', 'reports', 'audit', 'statements', 'contract', 'offer'].includes(page);
+  const isSystemPage = ['users', 'settings', 'reports', 'audit', 'statements', 'contract', 'offer', 'superadmin'].includes(page);
 
   return (
     <>
