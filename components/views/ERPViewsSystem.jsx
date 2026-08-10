@@ -6,7 +6,8 @@ const styles = {
   btnSuccess: { padding: '8px 12px', background: '#059669', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
   btnDanger: { padding: '8px 12px', background: '#EF4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
   btnWarning: { padding: '8px 12px', background: '#FBBF24', color: '#1E3A8A', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
-  card: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px' },1 label: { fontSize: '14px', fontWeight: 'bold', color: '#333', marginBottom: '5px', display: 'block', marginTop: '10px' } 
+  card: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px' }, 
+  label: { fontSize: '14px', fontWeight: 'bold', color: '#333', marginBottom: '5px', display: 'block', marginTop: '10px' } 
 };
 
 export default function ERPViewsSystem(props) {
@@ -88,7 +89,7 @@ export default function ERPViewsSystem(props) {
         <h2>{tr.reports}</h2>
         <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
           <input type="date" value={repDate.from} onChange={e => setRepDate({...repDate, from: e.target.value})} style={styles.input} />
-          <input type="date" value={repDate.to} onChange={@repDate, to: e.target.value})} style={styles.input} />
+          <input type="date" value={repDate.to} onChange={e => setRepDate({...repDate, to: e.target.value})} style={styles.input} />
           <button onClick={() => setReportTab('sales')} style={{...styles.btnPrimary, width: 'auto', background: reportTab === 'sales' ? '#1E3A8A' : '#ccc'}}>Sales</button>
           <button onClick={() => setReportTab('expenses')} style={{...styles.btnPrimary, width: 'auto', background: reportTab === 'expenses' ? '#1E3A8A' : '#ccc'}}>Expenses</button>
           <button onClick={() => setReportTab('portals')} style={{...styles.btnPrimary, width: 'auto', background: reportTab === 'portals' ? '#1E3A8A' : '#ccc'}}>Portals</button>
