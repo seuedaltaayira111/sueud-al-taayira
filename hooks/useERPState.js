@@ -27,6 +27,7 @@ export default function useERPState() {
   const [invForm, setInvForm] = useState({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: '', bookingDate: today, invoiceDate: today, bookingType: 'New Booking', linkedInvId: '', service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' });
   
   const [expForm, setExpForm] = useState({ vendor_name: '', vendor_vat: '', expense_date: today, expense_type: 'Office Supplies', payment_mode: 'Cash', items: [{ name: '', qty: 1, price: 0 }], taxRate: '15', desc: '' });
+  const [editExpId, setEditExpId] = useState(null); // NEW: For editing expenses
 
   const [editCorpId, setEditCorpId] = useState(null); const [corpForm, setCorpForm] = useState({ name: '', vat_no: '', phone: '', address: '' });
   const [editCredId, setEditCredId] = useState(null); const [creditorForm, setCreditorForm] = useState({ name: '', phone: '', address: '' });
@@ -116,7 +117,7 @@ export default function useERPState() {
     const dir = isAr ? 'rtl' : 'ltr'; 
     const textAlign = isAr ? 'right' : 'left'; 
     const textAlignOpp = isAr ? 'left' : 'right';
-    const isRefund = inv.invoice_no.startsWith('REF-');
+    const isRefund = inv.invoice_no && inv.invoice_no.startsWith('REF-');
     
     const linkedInv = inv.linked_inv_id ? data.invoices.find(i => i.id === inv.linked_inv_id) : null;
     const qrData = inv.pdf_url || `Invoice: ${inv.invoice_no} | Total: ${(inv.total||0).toFixed(2)} SAR`;
@@ -124,7 +125,6 @@ export default function useERPState() {
     
     return `
     <div id="invoice-capture" style="width:794px; height:1123px; padding:40px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial; direction:${dir}; text-align:${textAlign}; display:flex; flex-direction:column; justify-content:space-between; border: 8px solid #1E3A8A; border-radius: 15px; box-shadow: inset 0 0 0 2px #FBBF24; overflow: hidden;">
-      
       <div>
         <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #FBBF24; padding-bottom:15px; margin-bottom:15px;">
           <div style="display:flex; align-items:center; gap:15px;">
@@ -132,58 +132,35 @@ export default function useERPState() {
             <div style="text-align: right; direction: rtl;">
               <h1 style="margin:0;color:#1E3A8A;font-size:20px;font-weight:bold;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h1>
               <p style="font-size:11px;margin-top:5px;line-height:1.6;color:#555;">
-                عنوان: ${s.address_ar || ''}<br/>
-                هاتف: ${s.phone || ''}<br/>
-                سجل تجاري: ${s.cr_no || ''}<br/>
-                ضريبة القيمة المضافة: ${s.vat_no || ''}<br/>
-                رقم الترخيص: ${s.license_no || ''}<br/>
-                ترخيص سياحي: ${s.tourist_license_no || ''}
+                عنوان: ${s.address_ar || ''}<br/>هاتف: ${s.phone || ''}<br/>سجل تجاري: ${s.cr_no || ''}<br/>ضريبة القيمة المضافة: ${s.vat_no || ''}<br/>رقم الترخيص: ${s.license_no || ''}<br/>ترخيص سياحي: ${s.tourist_license_no || ''}
               </p>
             </div>
           </div>
           <div style="text-align:${textAlignOpp};background:#1E3A8A;color:#fff;padding:15px 20px;border-radius:8px;min-width:220px;">
             <h1 style="margin:0;font-size:18px;">${isRefund ? 'CREDIT NOTE' : 'TAX INVOICE'}<br/><span style="font-size:14px; color:#FBBF24;">${isRefund ? 'فاتورة إشعار دائن' : 'فاتورة ضريبية'}</span></h1>
             <p style="font-size:12px;margin-top:8px;color:#eee; text-align:${textAlignOpp};">
-              Inv No / رقم: <b>${inv.invoice_no}</b><br/>
-              Date / التاريخ: <b>${inv.invoice_date}</b><br/>
-              Payment / الدفع: <b>${inv.payment_method}</b>
+              Inv No / رقم: <b>${inv.invoice_no}</b><br/>Date / التاريخ: <b>${inv.invoice_date}</b><br/>Payment / الدفع: <b>${inv.payment_method}</b>
             </p>
           </div>
         </div>
-        
         <div style="display:flex;justify-content:space-between;background:#f8fafc;padding:10px;border-radius:8px; margin-bottom:15px;">
           <div>
             <h3 style="margin:0 0 5px;color:#1E3A8A;font-size:13px;">BILL TO / الفاتورة إلى:</h3>
-            <p style="margin:0;font-size:15px;font-weight:bold;">${inv.customers?.name || inv.corporates?.name || ''}</p>
-            <p style="margin:3px 0 0;font-size:11px;color:#666;">${inv.customers?.phone || inv.corporates?.phone || ''} ${inv.corporates?.vat_no ? '| VAT: '+inv.corporates.vat_no : ''}</p>
+            <p style="margin:0;font-size:15px;font-weight:bold;">${inv.customers?.name || inv.corporates?.name || inv.vendor_name || ''}</p>
+            <p style="margin:3px 0 0;font-size:11px;color:#666;">${inv.customers?.phone || inv.corporates?.phone || ''} ${inv.corporates?.vat_no ? '| VAT: '+inv.corporates.vat_no : ''} ${inv.vendor_vat ? '| VAT: '+inv.vendor_vat : ''}</p>
           </div>
           <div style="text-align:${textAlignOpp};">
             <p style="margin:0;font-size:11px;"><b>Sales Person / الموظف:</b> ${inv.employees?.name || 'N/A'}</p>
-            <p style="margin:3px 0 0;font-size:11px;"><b>Booking Type / نوع الحجز:</b> ${inv.booking_type || 'New Booking'}</p>
-            ${!isRefund ? `<p style="margin:3px 0 0;font-size:11px;"><b>Trip Type / نوع الرحلة:</b> ${inv.flight_journey || 'Single'}</p>` : `<p style="margin:3px 0 0;font-size:11px;color:#EF4444;"><b>Reason / السبب:</b> ${inv.refund_reason || 'N/A'}</p>`}
           </div>
         </div>
-
-        ${inv.passenger_names ? `<div style="margin-bottom:15px;padding:8px;background:#fff;border:1px dashed #ddd;border-radius:6px; max-height: 120px; overflow: hidden;"><b style="font-size:11px;">Passengers / الركاب:</b><br/><span style="font-size:12px;white-space:pre-wrap;margin-top:3px;display:inline-block;">${inv.passenger_names}</span></div>` : ''}
       </div>
-
       <div style="flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center;">
-        ${linkedInv ? `
-          <h4 style="margin:0 0 8px; color:#1E3A8A; font-size:12px;">Previous Booking Details / تفاصيل الحجز السابق</h4>
-          <table style="width:100%;border-collapse:collapse;text-align:center;margin-bottom:15px;font-size:11px;">
-            <thead><tr style="background:#f1f5f9;color:#333;"><th style="padding:6px;border:1px solid #ddd;">Old Inv No</th><th style="padding:6px;border:1px solid #ddd;">Old PNR</th><th style="padding:6px;border:1px solid #ddd;">Old Ticket</th><th style="padding:6px;border:1px solid #ddd;">Old Total</th><th style="padding:6px;border:1px solid #ddd;">Refund/Credit Used</th></tr></thead>
-            <tbody><tr><td style="padding:6px;border:1px solid #ddd;">${linkedInv.invoice_no}</td><td style="padding:6px;border:1px solid #ddd;">${linkedInv.pnr || 'N/A'}</td><td style="padding:6px;border:1px solid #ddd;">${linkedInv.ticket_no || 'N/A'}</td><td style="padding:6px;border:1px solid #ddd;">${(linkedInv.total || 0).toFixed(2)}</td><td style="padding:6px;border:1px solid #ddd;color:#059669;font-weight:bold;">- ${(inv.used_credit || 0).toFixed(2)}</td></tr></tbody>
-          </table>
-        ` : ''}
-
-        <h4 style="margin:0 0 8px; color:#1E3A8A; font-size:12px;">Current Booking / الحجز الحالي</h4>
+        <h4 style="margin:0 0 8px; color:#1E3A8A; font-size:12px;">Booking Details / تفاصيل الحجز</h4>
         <table style="width:100%;border-collapse:collapse;text-align:center;">
           <thead>
             <tr style="background:#1E3A8A;color:#fff;">
-              <th style="padding:8px;border:1px solid #1e3a8a;font-size:11px;">Service / الخدمة</th>
-              <th style="padding:8px;border:1px solid #1e3a8a;font-size:11px;">Sector / القطاع</th>
-              <th style="padding:8px;border:1px solid #1e3a8a;font-size:11px;">PNR</th>
-              <th style="padding:8px;border:1px solid #1e3a8a;font-size:11px;">Ticket #</th>
+              <th style="padding:8px;border:1px solid #1e3a8a;font-size:11px;">Service</th>
+              <th style="padding:8px;border:1px solid #1e3a8a;font-size:11px;">Sector / Desc</th>
               <th style="padding:8px;border:1px solid #1e3a8a;font-size:11px;">Qty</th>
               <th style="padding:8px;border:1px solid #1e3a8a;font-size:11px;">Cost</th>
               <th style="padding:8px;border:1px solid #1e3a8a;font-size:11px;">Sell</th>
@@ -193,27 +170,21 @@ export default function useERPState() {
           </thead>
           <tbody>
             <tr style="background:#ffffff;">
-              <td style="padding:8px;border:1px solid #ddd;">${inv.service_type}</td>
-              <td style="padding:8px;border:1px solid #ddd;">${inv.flight_sector || inv.sector || 'N/A'}</td>
-              <td style="padding:8px;border:1px solid #ddd;">${inv.pnr || 'N/A'}</td>
-              <td style="padding:8px;border:1px solid #ddd;">${inv.ticket_no || 'N/A'}</td>
+              <td style="padding:8px;border:1px solid #ddd;">${inv.service_type || inv.expense_type || 'N/A'}</td>
+              <td style="padding:8px;border:1px solid #ddd;">${inv.flight_sector || inv.sector || inv.description || 'N/A'}</td>
               <td style="padding:8px;border:1px solid #ddd;">${inv.qty || 1}</td>
               <td style="padding:8px;border:1px solid #ddd;">${(inv.total_cost || 0).toFixed(2)}</td>
-              <td style="padding:8px;border:1px solid #ddd;">${(inv.total_sell || 0).toFixed(2)}</td>
+              <td style="padding:8px;border:1px solid #ddd;">${(inv.total_sell || inv.amount || 0).toFixed(2)}</td>
               <td style="padding:8px;border:1px solid #ddd;">${(inv.vat || 0).toFixed(2)}</td>
-              <td style="padding:8px;border:1px solid #ddd;font-weight:bold;">${(inv.total || 0).toFixed(2)}</td>
+              <td style="padding:8px;border:1px solid #ddd;font-weight:bold;">${(inv.total || inv.amount || 0).toFixed(2)}</td>
             </tr>
           </tbody>
         </table>
       </div>
-
       <div style="border-top:2px solid #FBBF24; padding-top:15px; margin-top:20px; display:flex; justify-content:space-between; align-items:flex-end;">
-        <div style="text-align:center;">
-          <img src="${qrUrl}" alt="QR" style="width:100px;height:100px;"/>
-        </div>
+        <div style="text-align:center;"><img src="${qrUrl}" alt="QR" style="width:100px;height:100px;"/></div>
         <div style="text-align:${textAlignOpp};">
-          <p style="margin:0;font-size:18px;color:#1E3A8A;font-weight:bold;">Total / الإجمالي: <span style="color:#EF4444;">${(inv.total || 0).toFixed(2)} SAR</span></p>
-          <p style="margin:5px 0 0;font-size:12px;color:#555;">Paid / المدفوع: ${(inv.paid_amount || 0).toFixed(2)} | Due / المتبقي: <b style="color:#EF4444;">${(inv.due_amount || 0).toFixed(2)}</b></p>
+          <p style="margin:0;font-size:18px;color:#1E3A8A;font-weight:bold;">Total / الإجمالي: <span style="color:#EF4444;">${(inv.total || inv.amount || 0).toFixed(2)} SAR</span></p>
           <p style="margin:10px 0 0;font-size:11px;color:#888;">${s.invoice_footer || 'Thank you for choosing us!'}</p>
         </div>
       </div>
@@ -221,6 +192,6 @@ export default function useERPState() {
   };
 
   return {
-    user, setUser, userProfile, setUserProfile, lang, setLang, page, setPage, payFilter, setPayFilter, router, toast, setToast, modal, setModal, passForm, setPassForm, chatOpen, setChatOpen, chatMessages, setChatMessages, chatInput, setChatInput, search, setSearch, tblPage, setTblPage, itemsPerPage, ledgerCustId, setLedgerCustId, previewHTML, setPreviewHTML, data, setData, today, editInvId, setEditInvId, invForm, setInvForm, expForm, setExpForm, editCorpId, setEditCorpId, corpForm, setCorpForm, editCredId, setEditCredId, creditorForm, setCreditorForm, editCustId, setEditCustId, custForm, setCustForm, editVendId, setEditVendId, vendorForm, setVendorForm, editPkgId, setEditPkgId, pkgForm, setPkgForm, editBrnId, setEditBrnId, brnForm, setBrnForm, editEmpId, setEditEmpId, empForm, setEmpForm, editSrvId, setEditSrvId, srvForm, setSrvForm, editUserId, setEditUserId, investForm, setInvestForm, settleForm, setSettleForm, refundForm, setRefundForm, transferForm, setTransferForm, repDate, setRepDate, reportTab, setReportTab, statementTab, setStatementTab, setForm, setSetForm, userForm, setUserForm, portalForm, setPortalForm, tr, t, showToast, logAction, fetchAll, exportToExcel, filterData, getInvoiceHTML
+    user, setUser, userProfile, setUserProfile, lang, setLang, page, setPage, payFilter, setPayFilter, router, toast, setToast, modal, setModal, passForm, setPassForm, chatOpen, setChatOpen, chatMessages, setChatMessages, chatInput, setChatInput, search, setSearch, tblPage, setTblPage, itemsPerPage, ledgerCustId, setLedgerCustId, previewHTML, setPreviewHTML, data, setData, today, editInvId, setEditInvId, invForm, setInvForm, expForm, setExpForm, editExpId, setEditExpId, editCorpId, setEditCorpId, corpForm, setCorpForm, editCredId, setEditCredId, creditorForm, setCreditorForm, editCustId, setEditCustId, custForm, setCustForm, editVendId, setEditVendId, vendorForm, setVendorForm, editPkgId, setEditPkgId, pkgForm, setPkgForm, editBrnId, setEditBrnId, brnForm, setBrnForm, editEmpId, setEditEmpId, empForm, setEmpForm, editSrvId, setEditSrvId, srvForm, setSrvForm, editUserId, setEditUserId, investForm, setInvestForm, settleForm, setSettleForm, refundForm, setRefundForm, transferForm, setTransferForm, repDate, setRepDate, reportTab, setReportTab, statementTab, setStatementTab, setForm, setSetForm, userForm, setUserForm, portalForm, setPortalForm, tr, t, showToast, logAction, fetchAll, exportToExcel, filterData, getInvoiceHTML
   };
 }
