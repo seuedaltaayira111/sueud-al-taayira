@@ -11,10 +11,11 @@ const styles = {
 };
 
 export default function ERPViewsSystem(props) {
-  const { page, data, tr, handleAddUser, handleEditUser, handleUpdateUser, userForm, setUserForm, editUserId, handleSaveSettings, handleLogoUpload, setForm, setSetForm, repDate, setRepDate, reportTab, setReportTab, statementTab, setStatementTab, handleDelete, filterData, exportToExcel, ledgerCustId, setLedgerCustId, contractCorpName, setContractCorpName, handleGenerateContract, handleGenerateOffer } = props;
+  const { page, data, tr, handleAddUser, handleEditUser, handleUpdateUser, userForm, setUserForm, editUserId, handleSaveSettings, handleLogoUpload, setForm, setSetForm, repDate, setRepDate, reportTab, setReportTab, statementTab, setStatementTab, handleDelete, filterData, exportToExcel, ledgerCustId, setLedgerCustId, contractCorpName, setContractCorpName, contractType, setContractType, contractMarkup, setContractMarkup, contractTerms, setContractTerms, handleGenerateContract, handleGenerateOffer } = props;
   
-  const [statementType, setStatementType] = useState('customer');
+  const [statementType, setStatementType] = useState('sales');
 
+  // 1. USERS PAGE
   if (page === 'users') return (
     <div>
       <h2>{tr.users}</h2>
@@ -39,6 +40,7 @@ export default function ERPViewsSystem(props) {
     </div>
   );
 
+  // 2. SETTINGS PAGE
   if (page === 'settings') return (
     <div>
       <h2>{tr.settings}</h2>
@@ -59,6 +61,7 @@ export default function ERPViewsSystem(props) {
     </div>
   );
 
+  // 3. CONTRACT & OFFER PAGE
   if (page === 'contract' || page === 'offer') {
     const isContract = page === 'contract';
     return (
@@ -66,34 +69,48 @@ export default function ERPViewsSystem(props) {
         <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', padding: '30px', borderRadius: '12px', marginBottom: '20px' }}>
           <h2 style={{ margin: 0, fontSize: '24px' }}>{isContract ? 'Corporate Contract Generator' : 'Corporate Offer Generator'}</h2>
           <p style={{ margin: '5px 0 0', opacity: 0.9 }}>
-            {isContract ? "Generate a formal agreement guaranteeing 20 SAR markup per ticket." : "Generate a special offer letter for corporate clients."}
+            {isContract ? "Generate a formal dynamic agreement for corporate clients." : "Generate a special dynamic offer letter for corporate clients."}
           </p>
         </div>
         
         <div style={{...styles.card, borderTop: '4px solid #FBBF24'}}>
-          <form onSubmit={isContract ? handleGenerateContract : handleGenerateOffer}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', maxWidth: '500px', margin: '0 auto' }}>
-              <div>
-                <label style={styles.label}>Corporate Company Name</label>
-                <input 
-                  type="text" 
-                  value={contractCorpName} 
-                  onChange={e => setContractCorpName(e.target.value)} 
-                  style={{...styles.input, padding: '15px', fontSize: '16px'}} 
-                  required 
-                  placeholder="e.g. Saudi Aramco" 
-                />
-              </div>
-              <button type="submit" style={{ ...styles.btnPrimary, width: '100%', padding: '15px', fontSize: '16px' }}>
-                Generate {isContract ? 'Contract' : 'Offer'} PDF
-              </button>
+          <form onSubmit={isContract ? handleGenerateContract : handleGenerateOffer} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={styles.label}>Corporate Company Name</label>
+              <input type="text" value={contractCorpName} onChange={e => setContractCorpName(e.target.value)} style={{...styles.input, padding: '15px', fontSize: '16px'}} required placeholder="e.g. Saudi Aramco" />
             </div>
+            
+            <div>
+              <label style={styles.label}>Service Type / نوع الخدمة</label>
+              <select value={contractType} onChange={e => setContractType(e.target.value)} style={{...styles.input, padding: '15px'}}>
+                <option>Flight Tickets</option>
+                <option>Hotel Booking</option>
+                <option>Visa Services</option>
+                <option>Hajj/Umrah Packages</option>
+                <option>Complete Travel Management</option>
+              </select>
+            </div>
+            
+            <div>
+              <label style={styles.label}>Service Fee / Markup (SAR)</label>
+              <input type="number" value={contractMarkup} onChange={e => setContractMarkup(e.target.value)} style={{...styles.input, padding: '15px'}} required />
+            </div>
+            
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={styles.label}>Custom Terms & Conditions (One per line)</label>
+              <textarea rows="4" value={contractTerms} onChange={e => setContractTerms(e.target.value)} style={{...styles.input, padding: '15px', resize: 'vertical'}}></textarea>
+            </div>
+            
+            <button type="submit" style={{ ...styles.btnPrimary, gridColumn: '1 / -1', padding: '15px', fontSize: '16px' }}>
+              Generate {isContract ? 'Contract' : 'Offer'} PDF
+            </button>
           </form>
         </div>
       </div>
     );
   }
 
+  // 4. REPORTS PAGE
   if (page === 'reports') {
     const filteredInvoices = filterData(data.invoices.filter(i => !i.invoice_no.startsWith('REF-')), 'invoice_date');
     const filteredExpenses = filterData(data.expenses, 'expense_date');
@@ -103,9 +120,9 @@ export default function ERPViewsSystem(props) {
     return (
       <div>
         <h2>{tr.reports}</h2>
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-          <input type="date" value={repDate.from} onChange={e => setRepDate({...repDate, from: e.target.value})} style={styles.input} />
-          <input type="date" value={repDate.to} onChange={e => setRepDate({...repDate, to: e.target.value})} style={styles.input} />
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          <input type="date" value={repDate.from} onChange={e => setRepDate({...repDate, from: e.target.value})} style={{...styles.input, maxWidth: '200px'}} />
+          <input type="date" value={repDate.to} onChange={e => setRepDate({...repDate, to: e.target.value})} style={{...styles.input, maxWidth: '200px'}} />
           <button onClick={() => setReportTab('sales')} style={{...styles.btnPrimary, width: 'auto', background: reportTab === 'sales' ? '#1E3A8A' : '#ccc'}}>Sales</button>
           <button onClick={() => setReportTab('expenses')} style={{...styles.btnPrimary, width: 'auto', background: reportTab === 'expenses' ? '#1E3A8A' : '#ccc'}}>Expenses</button>
           <button onClick={() => setReportTab('portals')} style={{...styles.btnPrimary, width: 'auto', background: reportTab === 'portals' ? '#1E3A8A' : '#ccc'}}>Portals</button>
@@ -148,13 +165,27 @@ export default function ERPViewsSystem(props) {
         {reportTab === 'outstanding' && (
           <div>
             <h3>Outstanding Dues Report</h3>
-            {(() => { const outInvs = data.invoices.filter(i => (i.due_amount || 0) > 0); const totalDue = outInvs.reduce((s, i) => s + i.due_amount, 0); return ( <><p>Total Outstanding: <b>{totalDue.toFixed(2)} SAR</b></p><button onClick={() => exportToExcel(outInvs.map(i => ({ Inv: i.invoice_no, Customer: i.customers?.name, Due: i.due_amount })), 'OutstandingReport')} style={styles.btnSuccess}>Export</button><table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', marginTop: '20px' }}><thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Inv</th><th style={{ padding: '12px' }}>Customer</th><th style={{ padding: '12px' }}>Due</th></tr></thead><tbody>{outInvs.map(i => (<tr key={i.id}><td style={{ padding: '12px' }}>{i.invoice_no}</td><td style={{ padding: '12px' }}>{i.customers?.name || 'N/A'}</td><td style={{ padding: '12px', color: '#EF4444', fontWeight: 'bold' }}>{(i.due_amount || 0).toFixed(2)}</td></tr>))}</tbody></table></>); })()}
+            {(() => { 
+              const outInvs = data.invoices.filter(i => (i.due_amount || 0) > 0); 
+              const totalDue = outInvs.reduce((s, i) => s + i.due_amount, 0); 
+              return ( 
+                <>
+                  <p>Total Outstanding: <b>{totalDue.toFixed(2)} SAR</b></p>
+                  <button onClick={() => exportToExcel(outInvs.map(i => ({ Inv: i.invoice_no, Customer: i.customers?.name, Due: i.due_amount })), 'OutstandingReport')} style={styles.btnSuccess}>Export</button>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', marginTop: '20px' }}>
+                    <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Inv</th><th style={{ padding: '12px' }}>Customer</th><th style={{ padding: '12px' }}>Due</th></tr></thead>
+                    <tbody>{outInvs.map(i => (<tr key={i.id}><td style={{ padding: '12px' }}>{i.invoice_no}</td><td style={{ padding: '12px' }}>{i.customers?.name || 'N/A'}</td><td style={{ padding: '12px', color: '#EF4444', fontWeight: 'bold' }}>{(i.due_amount || 0).toFixed(2)}</td></tr>))}</tbody>
+                  </table>
+                </>
+              ); 
+            })()}
           </div>
         )}
       </div>
     );
   }
 
+  // 5. AUDIT LOGS PAGE
   if (page === 'audit') return (
     <div>
       <h2>{tr.audit}</h2>
@@ -165,46 +196,107 @@ export default function ERPViewsSystem(props) {
     </div>
   );
 
+  // 6. STATEMENTS PAGE (ALL TYPES)
   if (page === 'statements') {
     return (
       <div>
         <h2>{tr.statements}</h2>
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-          <button onClick={() => setStatementType('customer')} style={{...styles.btnPrimary, width: 'auto', background: statementType === 'customer' ? '#1E3A8A' : '#ccc'}}>Customer Ledger</button>
-          <button onClick={() => setStatementType('creditor')} style={{...styles.btnPrimary, width: 'auto', background: statementType === 'creditor' ? '#1E3A8A' : '#ccc'}}>Creditor Ledger</button>
-          <button onClick={() => setStatementType('outstanding')} style={{...styles.btnPrimary, width: 'auto', background: statementType === 'outstanding' ? '#1E3A8A' : '#ccc'}}>Outstanding Invoices</button>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
+          <button onClick={() => setStatementType('sales')} style={{...styles.btnPrimary, width: 'auto', background: statementType === 'sales' ? '#1E3A8A' : '#ccc'}}>Sales</button>
+          <button onClick={() => setStatementType('portals')} style={{...styles.btnPrimary, width: 'auto', background: statementType === 'portals' ? '#1E3A8A' : '#ccc'}}>Portals</button>
+          <button onClick={() => setStatementType('vendors')} style={{...styles.btnPrimary, width: 'auto', background: statementType === 'vendors' ? '#1E3A8A' : '#ccc'}}>Vendors</button>
+          <button onClick={() => setStatementType('salary')} style={{...styles.btnPrimary, width: 'auto', background: statementType === 'salary' ? '#1E3A8A' : '#ccc'}}>Salary</button>
+          <button onClick={() => setStatementType('expenses')} style={{...styles.btnPrimary, width: 'auto', background: statementType === 'expenses' ? '#1E3A8A' : '#ccc'}}>Expenses</button>
+          <button onClick={() => setStatementType('customers')} style={{...styles.btnPrimary, width: 'auto', background: statementType === 'customers' ? '#1E3A8A' : '#ccc'}}>Customers</button>
+          <button onClick={() => setStatementType('creditors')} style={{...styles.btnPrimary, width: 'auto', background: statementType === 'creditors' ? '#1E3A8A' : '#ccc'}}>Creditors</button>
+          <button onClick={() => setStatementType('credit')} style={{...styles.btnPrimary, width: 'auto', background: statementType === 'credit' ? '#1E3A8A' : '#ccc'}}>Credit Balances</button>
+          <button onClick={() => setStatementType('branches')} style={{...styles.btnPrimary, width: 'auto', background: statementType === 'branches' ? '#1E3A8A' : '#ccc'}}>Branches</button>
+          <button onClick={() => setStatementType('cash')} style={{...styles.btnPrimary, width: 'auto', background: statementType === 'cash' ? '#1E3A8A' : '#ccc'}}>Cash</button>
+          <button onClick={() => setStatementType('bank')} style={{...styles.btnPrimary, width: 'auto', background: statementType === 'bank' ? '#1E3A8A' : '#ccc'}}>Bank</button>
+          <button onClick={() => setStatementType('investor')} style={{...styles.btnPrimary, width: 'auto', background: statementType === 'investor' ? '#1E3A8A' : '#ccc'}}>Investors</button>
         </div>
 
-        {statementType === 'customer' && (
-          <div>
-            <select value={ledgerCustId} onChange={e => setLedgerCustId(e.target.value)} style={styles.input}>
-              <option value="">Select Customer</option>
-              {data.customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', marginTop: '20px' }}>
-              <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px' }}>Inv No</th><th style={{ padding: '12px' }}>Total</th><th style={{ padding: '12px' }}>Paid</th><th style={{ padding: '12px' }}>Due</th></tr></thead>
-              <tbody>{data.invoices.filter(i => i.customer_id === ledgerCustId).map(i => (<tr key={i.id}><td style={{ padding: '12px' }}>{i.invoice_date}</td><td style={{ padding: '12px' }}>{i.invoice_no}</td><td style={{ padding: '12px' }}>{(i.total || 0).toFixed(2)}</td><td style={{ padding: '12px' }}>{(i.paid_amount || 0).toFixed(2)}</td><td style={{ padding: '12px', color: (i.due_amount || 0) > 0 ? '#EF4444' : '#059669', fontWeight: 'bold' }}>{(i.due_amount || 0).toFixed(2)}</td></tr>))}</tbody>
-            </table>
-          </div>
+        {statementType === 'sales' && (
+          <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
+            <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px' }}>Inv No</th><th style={{ padding: '12px' }}>Customer</th><th style={{ padding: '12px' }}>Total</th><th style={{ padding: '12px' }}>Due</th></tr></thead>
+            <tbody>{data.invoices.filter(i => !i.invoice_no.startsWith('REF-')).map(i => (<tr key={i.id}><td style={{ padding: '12px' }}>{i.invoice_date}</td><td style={{ padding: '12px' }}>{i.invoice_no}</td><td style={{ padding: '12px' }}>{i.customers?.name || i.corporates?.name}</td><td style={{ padding: '12px' }}>{(i.total || 0).toFixed(2)}</td><td style={{ padding: '12px', color: (i.due_amount || 0) > 0 ? '#EF4444' : '#059669', fontWeight: 'bold' }}>{(i.due_amount || 0).toFixed(2)}</td></tr>))}</tbody>
+          </table>
         )}
 
-        {statementType === 'creditor' && (
-          <div>
-            <select value={ledgerCustId} onChange={e => setLedgerCustId(e.target.value)} style={styles.input}>
-              <option value="">Select Creditor</option>
-              {data.creditors.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', marginTop: '20px' }}>
-              <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px' }}>Inv No</th><th style={{ padding: '12px' }}>Total</th><th style={{ padding: '12px' }}>Due</th></tr></thead>
-              <tbody>{data.invoices.filter(i => i.creditor_id === ledgerCustId && i.payment_method === 'Credit').map(i => (<tr key={i.id}><td style={{ padding: '12px' }}>{i.invoice_date}</td><td style={{ padding: '12px' }}>{i.invoice_no}</td><td style={{ padding: '12px' }}>{(i.total || 0).toFixed(2)}</td><td style={{ padding: '12px', color: '#EF4444', fontWeight: 'bold' }}>{(i.due_amount || 0).toFixed(2)}</td></tr>))}</tbody>
-            </table>
-          </div>
+        {statementType === 'portals' && (
+          <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
+            <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Portal</th><th style={{ padding: '12px' }}>Balance (SAR)</th></tr></thead>
+            <tbody>{data.portals.map(p => (<tr key={p.id}><td style={{ padding: '12px' }}>{p.name}</td><td style={{ padding: '12px', fontWeight: 'bold', color: (p.current_balance || 0) < 0 ? '#EF4444' : '#059669' }}>{(p.current_balance || 0).toFixed(2)}</td></tr>))}</tbody>
+          </table>
         )}
 
-        {statementType === 'outstanding' && (
-          <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', marginTop: '20px' }}>
-            <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px' }}>Inv No</th><th style={{ padding: '12px' }}>Customer</th><th style={{ padding: '12px' }}>Due</th></tr></thead>
-            <tbody>{data.invoices.filter(i => (i.due_amount || 0) > 0).map(i => (<tr key={i.id}><td style={{ padding: '12px' }}>{i.invoice_date}</td><td style={{ padding: '12px' }}>{i.invoice_no}</td><td style={{ padding: '12px' }}>{i.customers?.name || 'N/A'}</td><td style={{ padding: '12px', color: '#EF4444', fontWeight: 'bold' }}>{(i.due_amount || 0).toFixed(2)}</td></tr>))}</tbody>
+        {statementType === 'vendors' && (
+          <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
+            <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Vendor</th><th style={{ padding: '12px' }}>Phone</th><th style={{ padding: '12px' }}>Balance</th></tr></thead>
+            <tbody>{data.vendors.map(v => (<tr key={v.id}><td style={{ padding: '12px' }}>{v.name}</td><td style={{ padding: '12px' }}>{v.phone}</td><td style={{ padding: '12px' }}>{v.balance}</td></tr>))}</tbody>
+          </table>
+        )}
+
+        {statementType === 'salary' && (
+          <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
+            <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Employee</th><th style={{ padding: '12px' }}>Month</th><th style={{ padding: '12px' }}>Amount</th><th style={{ padding: '12px' }}>Mode</th></tr></thead>
+            <tbody>{data.payroll.map(p => (<tr key={p.id}><td style={{ padding: '12px' }}>{p.employees?.name}</td><td style={{ padding: '12px' }}>{p.month}</td><td style={{ padding: '12px' }}>{p.amount}</td><td style={{ padding: '12px' }}>{p.payment_mode}</td></tr>))}</tbody>
+          </table>
+        )}
+
+        {statementType === 'expenses' && (
+          <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
+            <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px' }}>Vendor</th><th style={{ padding: '12px' }}>Type</th><th style={{ padding: '12px' }}>Amount</th></tr></thead>
+            <tbody>{data.expenses.map(e => (<tr key={e.id}><td style={{ padding: '12px' }}>{e.expense_date}</td><td style={{ padding: '12px' }}>{e.vendor_name}</td><td style={{ padding: '12px' }}>{e.expense_type}</td><td style={{ padding: '12px' }}>{(e.amount || 0).toFixed(2)}</td></tr>))}</tbody>
+          </table>
+        )}
+
+        {statementType === 'customers' && (
+          <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
+            <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Phone</th><th style={{ padding: '12px' }}>Credit</th></tr></thead>
+            <tbody>{data.customers.map(c => (<tr key={c.id}><td style={{ padding: '12px' }}>{c.name}</td><td style={{ padding: '12px' }}>{c.phone}</td><td style={{ padding: '12px' }}>{c.store_credit || 0}</td></tr>))}</tbody>
+          </table>
+        )}
+
+        {statementType === 'creditors' && (
+          <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
+            <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Phone</th></tr></thead>
+            <tbody>{data.creditors.map(c => (<tr key={c.id}><td style={{ padding: '12px' }}>{c.name}</td><td style={{ padding: '12px' }}>{c.phone}</td></tr>))}</tbody>
+          </table>
+        )}
+
+        {statementType === 'credit' && (
+          <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
+            <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Available Credit</th></tr></thead>
+            <tbody>{data.customers.filter(c => (c.store_credit || 0) > 0).map(c => (<tr key={c.id}><td style={{ padding: '12px' }}>{c.name}</td><td style={{ padding: '12px', color: '#059669', fontWeight: 'bold' }}>{(c.store_credit || 0).toFixed(2)}</td></tr>))}</tbody>
+          </table>
+        )}
+
+        {statementType === 'branches' && (
+          <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
+            <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Location</th><th style={{ padding: '12px' }}>Manager</th><th style={{ padding: '12px' }}>Status</th></tr></thead>
+            <tbody>{data.branches.map(b => (<tr key={b.id}><td style={{ padding: '12px' }}>{b.name}</td><td style={{ padding: '12px' }}>{b.location}</td><td style={{ padding: '12px' }}>{b.manager}</td><td style={{ padding: '12px' }}>{b.status}</td></tr>))}</tbody>
+          </table>
+        )}
+
+        {statementType === 'cash' && (
+          <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
+            <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px' }}>Desc</th><th style={{ padding: '12px' }}>Amount</th></tr></thead>
+            <tbody>{data.cashbook.filter(c => c.type.includes('Cash')).map(c => (<tr key={c.id}><td style={{ padding: '12px' }}>{c.trans_date}</td><td style={{ padding: '12px' }}>{c.description}</td><td style={{ padding: '12px', color: c.type.includes('In') ? '#059669' : '#EF4444' }}>{(c.amount || 0).toFixed(2)}</td></tr>))}</tbody>
+          </table>
+        )}
+
+        {statementType === 'bank' && (
+          <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
+            <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px' }}>Desc</th><th style={{ padding: '12px' }}>Amount</th></tr></thead>
+            <tbody>{data.cashbook.filter(c => c.type.includes('Bank')).map(c => (<tr key={c.id}><td style={{ padding: '12px' }}>{c.trans_date}</td><td style={{ padding: '12px' }}>{c.description}</td><td style={{ padding: '12px', color: c.type.includes('In') ? '#059669' : '#EF4444' }}>{(c.amount || 0).toFixed(2)}</td></tr>))}</tbody>
+          </table>
+        )}
+
+        {statementType === 'investor' && (
+          <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
+            <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px' }}>Investor</th><th style={{ padding: '12px' }}>Amount</th><th style={{ padding: '12px' }}>Reason</th></tr></thead>
+            <tbody>{data.investments.map(i => (<tr key={i.id}><td style={{ padding: '12px' }}>{i.invest_date}</td><td style={{ padding: '12px' }}>{i.investor_name}</td><td style={{ padding: '12px' }}>{(i.amount || 0).toFixed(2)}</td><td style={{ padding: '12px' }}>{i.reason || 'N/A'}</td></tr>))}</tbody>
           </table>
         )}
       </div>
