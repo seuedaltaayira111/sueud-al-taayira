@@ -1,7 +1,7 @@
 import React from 'react';
 import ERPModals from './ERPModals';
 
-export default function ERPLayout({ children, tr, lang, setLang, page, setPage, modal, setModal, passForm, setPassForm, handleChangePassword, handleLogout, handleSendMessage, chatOpen, setChatOpen, chatMessages, chatInput, setChatInput, userProfile, menu, settleForm, setSettleForm, handleSettlePayment, refundForm, setRefundForm, handleRefund, previewHTML }) {
+export default function ERPLayout({ children, tr, lang, setLang, page, setPage, modal, setModal, passForm, setPassForm, handleChangePassword, handleLogout, handleSendMessage, chatOpen, setChatOpen, chatMessages, chatInput, setChatInput, userProfile, menu, settleForm, setSettleForm, handleSettlePayment, refundForm, setRefundForm, handleRefund, previewHTML, downloadPDF }) {
   return (
     <div style={{ display: 'flex', height: '100vh', fontFamily: "'Poppins', sans-serif", background: '#F1F5F9', direction: lang === 'ar' ? 'rtl' : 'ltr' }}>
       
@@ -9,7 +9,7 @@ export default function ERPLayout({ children, tr, lang, setLang, page, setPage, 
         modal={modal} setModal={setModal} passForm={passForm} setPassForm={setPassForm} 
         handleChangePassword={handleChangePassword} settleForm={settleForm} setSettleForm={setSettleForm} 
         handleSettlePayment={handleSettlePayment} refundForm={refundForm} setRefundForm={setRefundForm} 
-        handleRefund={handleRefund} previewHTML={previewHTML}
+        handleRefund={handleRefund} previewHTML={previewHTML} downloadPDF={downloadPDF}
       />
 
       <div style={{ width: '260px', background: '#1E3A8A', color: 'white', padding: '20px', display: 'flex', flexDirection: 'column', boxShadow: '5px 0 15px rgba(0,0,0,0.1)' }}>
