@@ -11,9 +11,9 @@ const styles = {
 };
 
 export default function ERPViewsSystem(props) {
-  const { page, data, tr, handleAddUser, handleEditUser, handleUpdateUser, userForm, setUserForm, editUserId, handleSaveSettings, handleLogoUpload, setForm, setSetForm, repDate, setRepDate, reportTab, setReportTab, statementTab, setStatementTab, handleDelete, filterData, exportToExcel, ledgerCustId, setLedgerCustId } = props;
+  const { page, data, tr, handleAddUser, handleEditUser, handleUpdateUser, userForm, setUserForm, editUserId, handleSaveSettings, handleLogoUpload, setForm, setSetForm, repDate, setRepDate, reportTab, setReportTab, statementTab, setStatementTab, handleDelete, filterData, exportToExcel, ledgerCustId, setLedgerCustId, contractCorpName, setContractCorpName, handleGenerateContract, handleGenerateOffer } = props;
   
-  const [statementType, setStatementType] = useState('customer'); // 'customer', 'creditor', 'outstanding'
+  const [statementType, setStatementType] = useState('customer');
 
   if (page === 'users') return (
     <div>
@@ -33,27 +33,8 @@ export default function ERPViewsSystem(props) {
         </form>
       </div>
       <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
-        <thead>
-          <tr style={{ background: '#1E3A8A', color: 'white' }}>
-            <th style={{ padding: '12px', textAlign: 'left' }}>Email</th>
-            <th style={{ padding: '12px' }}>Role</th>
-            <th style={{ padding: '12px' }}>Admin</th>
-            <th style={{ padding: '12px' }}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.appUsers.map(u => (
-            <tr key={u.id} style={{ borderBottom: '1px solid #E2E8F0' }}>
-              <td style={{ padding: '12px' }}>{u.email}</td>
-              <td style={{ padding: '12px' }}>{u.role}</td>
-              <td style={{ padding: '12px' }}>{u.is_admin ? '✅' : '❌'}</td>
-              <td style={{ padding: '12px' }}>
-                <button onClick={() => handleEditUser(u)} style={styles.btnWarning}>Edit</button>
-                <button onClick={() => handleDelete('app_users', u.id)} style={{...styles.btnDanger, marginLeft: '5px'}}>Delete</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
+        <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Email</th><th style={{ padding: '12px' }}>Role</th><th style={{ padding: '12px' }}>Admin</th><th style={{ padding: '12px' }}>Actions</th></tr></thead>
+        <tbody>{data.appUsers.map(u => (<tr key={u.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{u.email}</td><td style={{ padding: '12px' }}>{u.role}</td><td style={{ padding: '12px' }}>{u.is_admin ? '✅' : '❌'}</td><td style={{ padding: '12px' }}><button onClick={() => handleEditUser(u)} style={styles.btnWarning}>Edit</button><button onClick={() => handleDelete('app_users', u.id)} style={{...styles.btnDanger, marginLeft: '5px'}}>Delete</button></td></tr>))}</tbody>
       </table>
     </div>
   );
@@ -77,6 +58,41 @@ export default function ERPViewsSystem(props) {
       </div>
     </div>
   );
+
+  if (page === 'contract' || page === 'offer') {
+    const isContract = page === 'contract';
+    return (
+      <div>
+        <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', padding: '30px', borderRadius: '12px', marginBottom: '20px' }}>
+          <h2 style={{ margin: 0, fontSize: '24px' }}>{isContract ? 'Corporate Contract Generator' : 'Corporate Offer Generator'}</h2>
+          <p style={{ margin: '5px 0 0', opacity: 0.9 }}>
+            {isContract ? "Generate a formal agreement guaranteeing 20 SAR markup per ticket." : "Generate a special offer letter for corporate clients."}
+          </p>
+        </div>
+        
+        <div style={{...styles.card, borderTop: '4px solid #FBBF24'}}>
+          <form onSubmit={isContract ? handleGenerateContract : handleGenerateOffer}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', maxWidth: '500px', margin: '0 auto' }}>
+              <div>
+                <label style={styles.label}>Corporate Company Name</label>
+                <input 
+                  type="text" 
+                  value={contractCorpName} 
+                  onChange={e => setContractCorpName(e.target.value)} 
+                  style={{...styles.input, padding: '15px', fontSize: '16px'}} 
+                  required 
+                  placeholder="e.g. Saudi Aramco" 
+                />
+              </div>
+              <button type="submit" style={{ ...styles.btnPrimary, width: '100%', padding: '15px', fontSize: '16px' }}>
+                Generate {isContract ? 'Contract' : 'Offer'} PDF
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   if (page === 'reports') {
     const filteredInvoices = filterData(data.invoices.filter(i => !i.invoice_no.startsWith('REF-')), 'invoice_date');
