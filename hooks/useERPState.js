@@ -20,7 +20,13 @@ export default function useERPState() {
   const itemsPerPage = 10;
   const [ledgerCustId, setLedgerCustId] = useState(''); 
   const [previewHTML, setPreviewHTML] = useState(''); 
+  
+  // Contract States
   const [contractCorpName, setContractCorpName] = useState('');
+  const [contractType, setContractType] = useState('Flight Tickets');
+  const [contractMarkup, setContractMarkup] = useState('20');
+  const [contractTerms, setContractTerms] = useState('Provider guarantees the cheapest fares. A flat service fee will be charged over the base cost price. Invoices will be issued monthly or per booking, inclusive of VAT where applicable.');
+
   const [data, setData] = useState({ invoices: [], portals: [], customers: [], corporates: [], creditors: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [], audits: [], investments: [], vendors: [], customFields: [], packages: [], branches: [] });
   const today = new Date().toISOString().split('T')[0];
   
@@ -113,7 +119,7 @@ export default function useERPState() {
 
   const filterData = (arr, dateKey) => { if (!repDate.from || !repDate.to) return arr; return arr.filter(i => (i[dateKey] || i.created_at?.split('T')[0]) >= repDate.from && (i[dateKey] || i.created_at?.split('T')[0]) <= repDate.to); };
 
-  const getContractHTML = (s, corpName, dateStr, isOffer) => {
+  const getContractHTML = (s, corpName, dateStr, isOffer, cType, markup, terms) => {
     const titleEn = isOffer ? "SPECIAL CORPORATE OFFER" : "CORPORATE TRAVEL AGREEMENT";
     const titleAr = isOffer ? "عرض الشركات الخاص" : "اتفاقية السفر للشركات";
     
@@ -147,18 +153,14 @@ export default function useERPState() {
           </p>
         </div>
 
+        <h3 style="color:#1E3A8A; border-bottom:1px solid #ddd; padding-bottom:10px; font-size:18px;">Service Type / نوع الخدمة</h3>
+        <p style="font-size: 16px; font-weight: bold; margin-bottom: 20px;">${cType}</p>
+
         <h3 style="color:#1E3A8A; border-bottom:1px solid #ddd; padding-bottom:10px; font-size:18px;">Terms & Conditions / الشروط والأحكام</h3>
-        <ul style="font-size: 14px; line-height: 2; margin-bottom: 20px; padding-right: 20px;">
-          <li>Provider agrees to supply flight tickets and travel services to the Client at the most competitive rates.</li>
-          <li>Provider guarantees the <b>cheapest fares</b> in the market for all bookings.</li>
-          <li>A flat service fee of <b>20 SAR per ticket</b> will be charged over the base cost price.</li>
-          <li>Invoices will be issued monthly or per booking, inclusive of VAT where applicable.</li>
-        </ul>
-        <ul style="font-size: 14px; line-height: 2; direction: rtl; text-align: right; margin-bottom: 50px; padding-left: 20px;">
-          <li>يوافق المزود على توفير تذاكر الطيران وخدمات السفر للعميل بأفضل الأسعار التنافسية.</li>
-          <li>يضمن المزود <b>أرخص الأسعار</b> في السوق لجميع الحجوزات.</li>
-          <li>سيتم فرض رسوم خدمة ثابتة قدرها <b>20 ريال سعودي لكل تذكرة</b> بالإضافة إلى سعر التكلفة الأساسي.</li>
-          <li>سيتم إصدار الفواتير شهرياً أو لكل حجز، شاملةً لضريبة القيمة المضافة عند الاقتضاء.</li>
+        <ul style="font-size: 14px; line-height: 2; margin-bottom: 20px; padding-right: 20px; list-style-type: disc;">
+          <li>Provider agrees to supply ${cType} to the Client at the most competitive rates.</li>
+          <li>A flat service fee of <b>${markup} SAR</b> will be charged over the base cost price.</li>
+          ${terms.split('\n').map(t => `<li>${t}</li>`).join('')}
         </ul>
 
         <div style="margin-top: 80px; display: flex; justify-content: space-between;">
@@ -177,11 +179,13 @@ export default function useERPState() {
     </div>`;
   };
 
-  // EXPENSE HTML (PURCHASE BILL)
   const getExpenseHTML = (exp, s) => {
     const subTotal = (exp.items || []).reduce((sum, item) => sum + ((parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0)), 0);
     const taxRate = subTotal > 0 && exp.amount > subTotal ? 15 : 0;
     const vat = subTotal * (taxRate / 100);
+    const total = subTotal + vat;
+    const paid = exp.amount || 0;
+    const due = total - paid;
     
     const qrUrl = `https://bwipjs-api.glitch.me/?bcid=code128&text=${encodeURIComponent(exp.invoice_no || 'EXP')}&scale=2`;
     
@@ -247,12 +251,11 @@ export default function useERPState() {
           <p style="font-size:10px;color:#666;margin:5px 0 0;">${exp.invoice_no}</p>
         </div>
         <div style="text-align:right;min-width:280px;">
-          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>Subtotal:</span> <b>${subTotal.toFixed(2)} SAR</b></p>
-          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>VAT (${taxRate}%):</span> <b>${vat.toFixed(2)} SAR</b></p>
-          <p style="margin:10px 0 0;font-size:20px;color:#1E3A8A;font-weight:bold;display:flex;justify-content:space-between;padding:10px 0;background:#f1f5f9;padding-right:10px;">
-            <span style="background:#1E3A8A;color:#fff;padding:10px;border-radius:0 8px 8px 0;margin-left:10px;">Grand Total:</span> 
-            <span style="padding:10px;">${exp.amount.toFixed(2)} SAR</span>
-          </p>
+          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>Total Before VAT / المجموع قبل الضريبة:</span> <b>${subTotal.toFixed(2)} SAR</b></p>
+          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>VAT (${taxRate}% ${taxRate === 0 ? 'معفاء' : ''}) / ضريبة القيمة المضافة:</span> <b>${vat.toFixed(2)} SAR</b></p>
+          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>Total After VAT / الإجمالي بعد الضريبة:</span> <b>${total.toFixed(2)} SAR</b></p>
+          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;color:#059669;"><span>Paid / مدفوع:</span> <b>${paid.toFixed(2)} SAR</b></p>
+          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;color:#EF4444;"><span>Due Amount / المتبقي:</span> <b>${due.toFixed(2)} SAR</b></p>
         </div>
       </div>
 
@@ -262,23 +265,31 @@ export default function useERPState() {
     </div>`;
   };
 
-  // SALES INVOICE HTML
   const getInvoiceHTML = (inv, s, invLang = 'en') => {
     const isAr = invLang === 'ar'; 
     const dir = isAr ? 'rtl' : 'ltr'; 
     const textAlign = isAr ? 'right' : 'left'; 
     const textAlignOpp = isAr ? 'left' : 'right';
     const isRefund = inv.invoice_no && inv.invoice_no.startsWith('REF-');
+    const isCorporate = !!inv.corporate_id;
     
-    const qrUrl = `https://bwipjs-api.glitch.me/?bcid=code128&text=${encodeURIComponent(inv.invoice_no)}&scale=2`;
+    const barcodePrefix = isCorporate ? 'CORP' : 'IND';
+    const qrUrl = `https://bwipjs-api.glitch.me/?bcid=code128&text=${encodeURIComponent(`https://yourdomain.com/invoice/${barcodePrefix}-${inv.invoice_no}`)}&scale=2`;
     
-    const titleEn = isRefund ? 'CREDIT NOTE' : 'TAX INVOICE';
-    const titleAr = isRefund ? 'فاتورة إشعار دائن' : 'فاتورة ضريبية';
+    const titleEn = isRefund ? 'CREDIT NOTE' : (isCorporate ? 'TAX INVOICE' : 'SIMPLIFIED TAX INVOICE');
+    const titleAr = isRefund ? 'فاتورة إشعار دائن' : (isCorporate ? 'فاتورة ضريبية' : 'فاتورة ضريبية مبسطة');
     
     const empName = inv.employees?.name || 'N/A';
     const empPhone = inv.employees?.phone || 'N/A';
     const custPhone = inv.customers?.phone || inv.corporates?.phone || 'N/A';
     const paxNames = inv.passenger_names ? inv.passenger_names.split('\n').map(p => `<div style="padding:2px 0;">• ${p}</div>`).join('') : 'N/A';
+    
+    const subtotal = (inv.total_sell || 0);
+    const vat = (inv.vat || 0);
+    const total = (inv.total || 0);
+    const paid = (inv.paid_amount || 0);
+    const due = (inv.due_amount || 0);
+    const taxRate = inv.vat > 0 ? 15 : 0;
     
     return `
     <div style="width:794px; min-height:1123px; padding:40px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial; direction:${dir}; text-align:${textAlign};">
@@ -350,12 +361,11 @@ export default function useERPState() {
           <p style="font-size:10px;color:#666;margin:5px 0 0;">Scan to verify</p>
         </div>
         <div style="text-align:${textAlignOpp};min-width:280px;">
-          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>Subtotal:</span> <b>${(inv.total_sell || 0).toFixed(2)} SAR</b></p>
-          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>VAT (15%):</span> <b>${(inv.vat || 0).toFixed(2)} SAR</b></p>
-          <p style="margin:10px 0 0;font-size:20px;color:#1E3A8A;font-weight:bold;display:flex;justify-content:space-between;padding:10px 0;background:#f1f5f9;padding-right:10px;">
-            <span style="background:#1E3A8A;color:#fff;padding:10px;border-radius:0 8px 8px 0;margin-left:10px;">Grand Total:</span> 
-            <span style="padding:10px;">${(inv.total || 0).toFixed(2)} SAR</span>
-          </p>
+          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>Total Before VAT / المجموع قبل الضريبة:</span> <b>${subtotal.toFixed(2)} SAR</b></p>
+          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>VAT (${taxRate}% ${taxRate === 0 ? 'معفاء' : ''}) / ضريبة القيمة المضافة:</span> <b>${vat.toFixed(2)} SAR</b></p>
+          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>Total After VAT / الإجمالي بعد الضريبة:</span> <b>${total.toFixed(2)} SAR</b></p>
+          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;color:#059669;"><span>Paid / مدفوع:</span> <b>${paid.toFixed(2)} SAR</b></p>
+          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;color:#EF4444;"><span>Due Amount / المتبقي:</span> <b>${due.toFixed(2)} SAR</b></p>
         </div>
       </div>
 
@@ -367,6 +377,7 @@ export default function useERPState() {
   };
 
   return {
-    user, setUser, userProfile, setUserProfile, lang, setLang, page, setPage, payFilter, setPayFilter, router, toast, setToast, modal, setModal, passForm, setPassForm, chatOpen, setChatOpen, chatMessages, setChatMessages, chatInput, setChatInput, search, setSearch, tblPage, setTblPage, itemsPerPage, ledgerCustId, setLedgerCustId, previewHTML, setPreviewHTML, data, setData, today, editInvId, setEditInvId, invForm, setInvForm, expForm, setExpForm, editExpId, setEditExpId, editCorpId, setEditCorpId, corpForm, setCorpForm, editCredId, setEditCredId, creditorForm, setCreditorForm, editCustId, setEditCustId, custForm, setCustForm, editVendId, setEditVendId, vendorForm, setVendorForm, editPkgId, setEditPkgId, pkgForm, setPkgForm, editBrnId, setEditBrnId, brnForm, setBrnForm, editEmpId, setEditEmpId, empForm, setEmpForm, editSrvId, setEditSrvId, srvForm, setSrvForm, editUserId, setEditUserId, investForm, setInvestForm, settleForm, setSettleForm, refundForm, setRefundForm, transferForm, setTransferForm, repDate, setRepDate, reportTab, setReportTab, statementTab, setStatementTab, setForm, setSetForm, userForm, setUserForm, portalForm, setPortalForm, tr, t, showToast, logAction, fetchAll, exportToExcel, filterData, getInvoiceHTML, getExpenseHTML, getContractHTML, contractCorpName, setContractCorpName
+    user, setUser, userProfile, setUserProfile, lang, setLang, page, setPage, payFilter, setPayFilter, router, toast, setToast, modal, setModal, passForm, setPassForm, chatOpen, setChatOpen, chatMessages, setChatMessages, chatInput, setChatInput, search, setSearch, tblPage, setTblPage, itemsPerPage, ledgerCustId, setLedgerCustId, previewHTML, setPreviewHTML, data, setData, today, editInvId, setEditInvId, invForm, setInvForm, expForm, setExpForm, editExpId, setEditExpId, editCorpId, setEditCorpId, corpForm, setCorpForm, editCredId, setEditCredId, creditorForm, setCreditorForm, editCustId, setEditCustId, custForm, setCustForm, editVendId, setEditVendId, vendorForm, setVendorForm, editPkgId, setEditPkgId, pkgForm, setPkgForm, editBrnId, setEditBrnId, brnForm, setBrnForm, editEmpId, setEditEmpId, empForm, setEmpForm, editSrvId, setEditSrvId, srvForm, setSrvForm, editUserId, setEditUserId, investForm, setInvestForm, settleForm, setSettleForm, refundForm, setRefundForm, transferForm, setTransferForm, repDate, setRepDate, reportTab, setReportTab, statementTab, setStatementTab, setForm, setSetForm, userForm, setUserForm, portalForm, setPortalForm, tr, t, showToast, logAction, fetchAll, exportToExcel, filterData, getInvoiceHTML, getExpenseHTML, getContractHTML, 
+    contractCorpName, setContractCorpName, contractType, setContractType, contractMarkup, setContractMarkup, contractTerms, setContractTerms
   };
 }
