@@ -8,9 +8,13 @@ export default function Home() {
 
   if (!erp.user) return <div style={{ padding: 50, textAlign: 'center' }}>Loading ERP...</div>;
 
+  // SuperAdmin Emails list for failsafe
+  const superAdminEmails = ['atallahalanazi@sueudaltaayira.com', 'hamdan@sueudaltaayira.com'];
+  const isSuperAdmin = erp.userProfile?.role === 'SuperAdmin' || superAdminEmails.includes(erp.user?.email) || superAdminEmails.includes(erp.userProfile?.email);
+
   const menu = [
     { id: 'dashboard', label: erp.tr.dash, show: true },
-    { id: 'superadmin', label: 'SuperAdmin Panel', show: erp.userProfile.role === 'SuperAdmin' },
+    { id: 'superadmin', label: '👑 SuperAdmin Panel', show: isSuperAdmin },
     { id: 'create', label: erp.tr.create, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'list', label: erp.tr.list, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'refunds', label: erp.tr.refunds, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
