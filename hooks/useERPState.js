@@ -51,7 +51,7 @@ export default function useERPState() {
   const [refundForm, setRefundForm] = useState({ id: '', date: today, compRefund: 0, custRefund: 0, mode: 'Cash', reason: '', portalId: '' });
   const [transferForm, setTransferForm] = useState({ from: 'Cash', to: 'Bank', amount: '', date: today });
   const [repDate, setRepDate] = useState({ from: '', to: '' }); const [reportTab, setReportTab] = useState('sales'); const [statementTab, setStatementTab] = useState('sales');
-  const [setForm, setSetForm] = useState({ company_name_en: 'SUEUD AL TAAYIRA', company_name_ar: 'صعود الطائرة للسفر السياحة', vat_no: '', cr_no: '', iata_no: '', phone: '', address_ar: 'طريق ملك عبدالعزيز عرعر', license_no: '', tourist_license_no: '', logo_url: '', invoice_footer: 'Thank you for choosing us!' });
+  const [setForm, setSetForm] = useState({ company_name_en: 'SUEUD AL TAAYIRA', company_name_ar: 'صعود الطائرة للسفر السياحة', vat_no: '', cr_no: '', iata_no: '', phone: '', address_ar: 'طريق ملك عبدالعزيز عرعر', license_no: '', tourist_license_no: '', logo_url: '', invoice_footer: 'Thank you for choosing us!', custom_fields: [] });
   const [userForm, setUserForm] = useState({ email: '', username: '', role: 'Sales', is_admin: false, can_access_invoices: true, can_access_bank: false, can_access_hr: false, can_access_reports: false, can_access_settings: false });
   const [portalForm, setPortalForm] = useState({ name: '', balance: 0 });
 
@@ -97,7 +97,7 @@ export default function useERPState() {
     setData({ invoices: inv.data || [], portals: portalsData, customers: cus.data || [], corporates: corp.data || [], creditors: crd.data || [], recharges: rec.data || [], settings: settingsData, employees: emp.data || [], payroll: pay.data || [], appUsers: usr.data || [], expenses: exp.data || [], services: srv.data || [], cashbook: cbk.data || [], audits: aud.data || [], investments: invstmnt.data || [], vendors: vnd.data || [], customFields: [], packages: pkgs.data || [], branches: brns.data || [] });
     
     if (portalsData.length > 0) setInvForm(f => ({ ...f, portalId: f.portalId || portalsData[0].id }));
-    if (settingsData) setSetForm(settingsData);
+    if (settingsData) setSetForm(prev => ({ ...prev, ...settingsData, custom_fields: settingsData.custom_fields || [] }));
   };
 
   const exportToExcel = (csvData, filename) => { 
@@ -187,7 +187,7 @@ export default function useERPState() {
     const paid = exp.amount || 0;
     const due = total - paid;
     
-    const qrUrl = `https://bwipjs-api.glitch.me/?bcid=code128&text=${encodeURIComponent(exp.invoice_no || 'EXP')}&scale=2`;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(exp.invoice_no || 'EXP')}`;
     
     return `
     <div style="width:794px; min-height:1123px; padding:40px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial;">
@@ -198,7 +198,8 @@ export default function useERPState() {
             <h1 style="margin:0;color:#1E3A8A;font-size:24px;font-weight:bold;">${s.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
             <h2 style="margin:5px 0;color:#555;font-size:18px;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
             <p style="font-size:12px;margin-top:5px;line-height:1.6;color:#555;">
-              ${s.address_ar || ''}<br/>Phone: ${s.phone || ''} | VAT: ${s.vat_no || ''}
+              ${s.address_ar || ''}<br/>Phone: ${s.phone || ''} | VAT: ${s.vat_no || ''}<br/>
+              License: ${s.license_no || ''} | Tourist License: ${s.tourist_license_no || ''}
             </p>
           </div>
         </div>
@@ -247,7 +248,7 @@ export default function useERPState() {
 
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div style="text-align:center;">
-          <img src="${qrUrl}" alt="Barcode" style="height:60px;"/>
+          <img src="${qrUrl}" alt="QR Code" style="height:100px;width:100px;"/>
           <p style="font-size:10px;color:#666;margin:5px 0 0;">${exp.invoice_no}</p>
         </div>
         <div style="text-align:right;min-width:280px;">
@@ -273,8 +274,8 @@ export default function useERPState() {
     const isRefund = inv.invoice_no && inv.invoice_no.startsWith('REF-');
     const isCorporate = !!inv.corporate_id;
     
-    const barcodePrefix = isCorporate ? 'CORP' : 'IND';
-    const qrUrl = `https://bwipjs-api.glitch.me/?bcid=code128&text=${encodeURIComponent(`https://yourdomain.com/invoice/${barcodePrefix}-${inv.invoice_no}`)}&scale=2`;
+    const qrData = `${s.company_name_en}|${inv.invoice_no}|${inv.invoice_date}|${inv.total}`;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
     
     const titleEn = isRefund ? 'CREDIT NOTE' : (isCorporate ? 'TAX INVOICE' : 'SIMPLIFIED TAX INVOICE');
     const titleAr = isRefund ? 'فاتورة إشعار دائن' : (isCorporate ? 'فاتورة ضريبية' : 'فاتورة ضريبية مبسطة');
@@ -291,6 +292,10 @@ export default function useERPState() {
     const due = (inv.due_amount || 0);
     const taxRate = inv.vat > 0 ? 15 : 0;
     
+    const linkedInv = inv.linked_inv_id ? data.invoices.find(i => i.id === inv.linked_inv_id) : null;
+    
+    const customFieldsHtml = s.custom_fields && s.custom_fields.length > 0 ? s.custom_fields.map(cf => `${cf.key}: ${cf.value}<br/>`).join('') : '';
+    
     return `
     <div style="width:794px; min-height:1123px; padding:40px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial; direction:${dir}; text-align:${textAlign};">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #1E3A8A; padding-bottom:20px; margin-bottom:30px;">
@@ -299,7 +304,8 @@ export default function useERPState() {
           <div style="text-align: right; direction: rtl;">
             <h1 style="margin:0;color:#1E3A8A;font-size:22px;font-weight:bold;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h1>
             <p style="font-size:12px;margin-top:5px;line-height:1.6;color:#555;">
-              عنوان: ${s.address_ar || ''}<br/>هاتف: ${s.phone || ''}<br/>سجل تجاري: ${s.cr_no || ''}<br/>ضريبة القيمة المضافة: ${s.vat_no || ''}
+              عنوان: ${s.address_ar || ''}<br/>هاتف: ${s.phone || ''}<br/>سجل تجاري: ${s.cr_no || ''}<br/>ضريبة القيمة المضافة: ${s.vat_no || ''}<br/>ترخيص: ${s.license_no || ''}<br/>ترخيص سياحي: ${s.tourist_license_no || ''}
+              ${customFieldsHtml}
             </p>
           </div>
         </div>
@@ -329,10 +335,22 @@ export default function useERPState() {
         ${inv.service_type ? `<div><b style="color:#1E3A8A;font-size:11px;display:block;margin-bottom:3px;">Service / الخدمة</b><span style="font-size:13px;">${inv.service_type}</span></div>` : ''}
         ${inv.airline ? `<div><b style="color:#1E3A8A;font-size:11px;display:block;margin-bottom:3px;">Airline / الخطوط الجوية</b><span style="font-size:13px;">${inv.airline}</span></div>` : ''}
         ${inv.flight_sector ? `<div><b style="color:#1E3A8A;font-size:11px;display:block;margin-bottom:3px;">Sector / القطاع</b><span style="font-size:13px;">${inv.flight_sector}</span></div>` : ''}
+        ${inv.flight_type ? `<div><b style="color:#1E3A8A;font-size:11px;display:block;margin-bottom:3px;">Flight Type / نوع الرحلة</b><span style="font-size:13px;">${inv.flight_type}</span></div>` : ''}
+        ${inv.booking_type ? `<div><b style="color:#1E3A8A;font-size:11px;display:block;margin-bottom:3px;">Booking Type / نوع الحجز</b><span style="font-size:13px;">${inv.booking_type}</span></div>` : ''}
         ${inv.pnr ? `<div><b style="color:#1E3A8A;font-size:11px;display:block;margin-bottom:3px;">PNR / رقم الحجز</b><span style="font-size:13px;">${inv.pnr}</span></div>` : ''}
         ${inv.ticket_no ? `<div><b style="color:#1E3A8A;font-size:11px;display:block;margin-bottom:3px;">Ticket No / رقم التذكرة</b><span style="font-size:13px;">${inv.ticket_no}</span></div>` : ''}
         ${inv.flight_journey ? `<div><b style="color:#1E3A8A;font-size:11px;display:block;margin-bottom:3px;">Journey / الرحلة</b><span style="font-size:13px;">${inv.flight_journey}</span></div>` : ''}
       </div>
+
+      ${linkedInv ? `
+        <div style="margin-bottom:20px;border:1px dashed #1E3A8A;padding:15px;border-radius:8px;background:#EFF6FF;">
+          <h4 style="margin:0 0 5px;color:#1E3A8A;font-size:12px;">PREVIOUS BOOKING DETAILS / تفاصيل الحجز السابق</h4>
+          <p style="margin:0;font-size:12px;color:#555;">
+            Old Inv: <b>${linkedInv.invoice_no}</b> | Date: <b>${linkedInv.invoice_date}</b><br/>
+            Passenger: <b>${linkedInv.passenger_names || 'N/A'}</b> | Old Total: <b>${(linkedInv.total || 0).toFixed(2)}</b>
+          </p>
+        </div>
+      ` : ''}
 
       ${inv.passenger_names ? `<div style="margin-bottom:20px;border:1px solid #e2e8f0;padding:15px;border-radius:8px;"><b style="color:#1E3A8A;font-size:14px;">Passengers / المسافرون:</b><div style="font-size:13px;margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:5px;">${paxNames}</div></div>` : ''}
 
@@ -357,7 +375,7 @@ export default function useERPState() {
 
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div style="text-align:center;">
-          <img src="${qrUrl}" alt="Barcode" style="height:60px;"/>
+          <img src="${qrUrl}" alt="QR Code" style="height:100px;width:100px;"/>
           <p style="font-size:10px;color:#666;margin:5px 0 0;">Scan to verify</p>
         </div>
         <div style="text-align:${textAlignOpp};min-width:280px;">
