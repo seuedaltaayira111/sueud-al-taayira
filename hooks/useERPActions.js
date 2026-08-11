@@ -414,7 +414,26 @@ export default function useERPActions(state) {
   const openSettleModal = (inv) => { setSettleForm({ id: inv.id, date: today, mode: 'Cash' }); setModal({ type: 'settle', data: inv }); };
   const openPreview = (inv) => { const s = data.settings; const html = getInvoiceHTML(inv, s, 'en'); setPreviewHTML(html); setModal({ type: 'preview', data: inv }); };
   const handleLogoUpload = async (e) => { try { const file = e.target.files[0]; if (!file) return; const fileName = `logo-${Date.now()}.${file.name.split('.').pop()}`; const { error } = await supabase.storage.from('logos').upload(fileName, file); if (error) throw error; const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName); setSetForm(prev => ({ ...prev, logo_url: urlData.publicUrl })); showToast('Logo Uploaded!'); } catch (err) { showToast('Error: ' + err.message); } };
-  const handleSaveSettings = async (e) => { e.preventDefault(); try { const { error } = await supabase.from('settings').upsert([{ id: userProfile.tenant_id, tenant_id: userProfile.tenant_id, ...setForm }]).eq('tenant_id', userProfile.tenant_id); if (error) throw error; setData(prev => ({ ...prev, settings: setForm })); showToast('Settings Saved!'); } catch (err) { showToast('Error: ' + err.message); } };
+  
+  // FIXED handleSaveSettings
+  const handleSaveSettings = async (e) => { 
+    e.preventDefault(); 
+    try { 
+      if (setForm.id) {
+        // Update existing
+        const { error } = await supabase.from('settings').update(setForm).eq('id', setForm.id); 
+        if (error) throw error;
+      } else {
+        // Insert new
+        const { error } = await supabase.from('settings').insert([{ ...setForm, tenant_id: userProfile.tenant_id }]); 
+        if (error) throw error;
+      }
+      setData(prev => ({ ...prev, settings: setForm })); 
+      showToast('Settings Saved!'); 
+    } catch (err) { 
+      showToast('Error: ' + err.message); 
+    } 
+  };
 
   return {
     handleLogout, handleChangePassword, handleSendMessage, handleEditInvoice, handleCreateInvoice, handleDeleteInvoice, handleAddExpItem, handleRemoveExpItem, handleExpItemChange, handleAddExpense, handleEditExpense, handleDeleteExpense, handlePreviewExpense, handleAddEditCust, handleAddEditCorp, handleAddEditCred, handleAddEditVend, handleAddEditPkg, handleAddEditBrn, handleAddEditEmp, handleAddEditSrv, handleAddPortal, handleAddInvestment, handleDelete, handleRecharge, handleTransfer, handleAddUser, handleEditUser, handleUpdateUser, handlePaySalary, handleSettlePayment, handleQuickSettle, openSettleModal, handleRefund, openRefundModal, openPreview, handleLogoUpload, handleSaveSettings, downloadPDF, handleGenerateContract, handleGenerateOffer, handleAddCustomField, handleRemoveCustomField, handleCustomFieldChange, 
