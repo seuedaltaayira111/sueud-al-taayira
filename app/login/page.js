@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [mode, setMode] = useState('login'); // 'login' or 'forgot'
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -15,27 +14,14 @@ export default function Login() {
     e.preventDefault();
     setMsg('');
     setLoading(true);
-
-    if (mode === 'forgot') {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, { 
-        redirectTo: `${window.location.origin}/` 
-      });
-      setLoading(false);
-      if (error) return setMsg('⚠️ Error: ' + error.message);
-      setMsg('✨ Magic Link sent! Check your email to reset password.');
-      setTimeout(() => setMode('login'), 3000); // Switch back to login after 3s
-      return;
-    }
-
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (error) return setMsg('⚠️ Invalid credentials. Please try again.');
+    if (error) return setMsg('Error: ' + error.message);
     router.push('/');
   };
 
   return (
     <div style={styles.body}>
-      {/* Injected CSS for Advanced Animations */}
       <style>{`
         @keyframes fly {
           0% { transform: translateX(-200px) translateY(20px) rotate(-10deg); opacity: 0; }
@@ -47,10 +33,6 @@ export default function Login() {
         @keyframes pulseGlow {
           0%, 100% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.2), 0 0 40px rgba(37, 99, 235, 0.1); }
           50% { box-shadow: 0 0 40px rgba(251, 191, 36, 0.4), 0 0 80px rgba(37, 99, 235, 0.2); }
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
         }
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(20px); }
@@ -65,27 +47,17 @@ export default function Login() {
           transform: translateY(-2px);
           box-shadow: 0 10px 25px rgba(30, 58, 138, 0.4) !important;
         }
-        .erp-btn:active {
-          transform: translateY(0);
-        }
       `}</style>
 
-      {/* Flying Airplane Animation */}
       <div style={styles.aircraft}>✈️</div>
-      
-      {/* Background Glowing Orbs */}
       <div style={styles.orbTop}></div>
       <div style={styles.orbBottom}></div>
-      
-      {/* Floating Clouds */}
-      <div style={{...styles.cloud, top: '15%', left: '10%', opacity: 0.1, transform: 'scale(1.5)'}}>☁️</div>
-      <div style={{...styles.cloud, bottom: '20%', right: '15%', opacity: 0.1, transform: 'scale(1.2)'}}>☁️</div>
 
       <div style={styles.loginCard}>
         <div style={styles.logoBox}>
           <div style={styles.logoContainer}>
-            {/* Company Logo */}
-            <img src="https://z-cdn-media.chatglm.cn/files/6e1b74e6-faa1-463e-854c-08f2485326b1.jpeg" alt="Company Logo" style={styles.logo} />
+            {/* Fixed Working Logo Link */}
+            <img src="https://uat.saudia.com/etc.clientlibs/saudia/clientlibs/clientlib-air-mfe/resources/assets/images/logo.svg" alt="Company Logo" style={styles.logo} onError={(e) => e.target.style.display='none'} />
           </div>
           <h1 style={styles.titleEn}>SUEUD AL TAIYYARAH</h1>
           <h2 style={styles.titleAr}>صعود الطائرة للسفر و السياحة</h2>
@@ -97,7 +69,7 @@ export default function Login() {
             <span style={styles.inputIcon}>📧</span>
             <input 
               type="email" 
-              placeholder={mode === 'forgot' ? "Enter your registered email" : "Email Address"} 
+              placeholder="Email Address" 
               value={email} 
               onChange={(e) => setEmail(e.target.value)} 
               required 
@@ -106,20 +78,18 @@ export default function Login() {
             />
           </div>
           
-          {mode === 'login' && (
-            <div style={styles.inputGroup}>
-              <span style={styles.inputIcon}>🔒</span>
-              <input 
-                type="password" 
-                placeholder="Password" 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                required 
-                style={styles.input} 
-                className="erp-input"
-              />
-            </div>
-          )}
+          <div style={styles.inputGroup}>
+            <span style={styles.inputIcon}>🔒</span>
+            <input 
+              type="password" 
+              placeholder="Password" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              required 
+              style={styles.input} 
+              className="erp-input"
+            />
+          </div>
 
           <button 
             type="submit" 
@@ -127,16 +97,12 @@ export default function Login() {
             className="erp-btn"
             disabled={loading}
           >
-            {loading ? '⏳ Please wait...' : (mode === 'login' ? 'Secure Login →' : 'Send Magic Link ✨')}
+            {loading ? '⏳ Please wait...' : 'Secure Login →'}
           </button>
         </form>
 
-        {msg && <p style={{...styles.msg, color: msg.includes('✨') ? '#059669' : '#ef4444'}}>{msg}</p>}
+        {msg && <p style={{...styles.msg, color: '#ef4444'}}>{msg}</p>}
         
-        <button onClick={() => { setMode(mode === 'login' ? 'forgot' : 'login'); setMsg(''); }} style={styles.linkBtn}>
-          {mode === 'login' ? '🔒 Forgot Password?' : '← Back to Login'}
-        </button>
-
         <div style={styles.footerText}>
           <p>Protected by Enterprise Security</p>
           <p>© 2024 Sueud Al Taayira ERP. All rights reserved.</p>
@@ -188,12 +154,6 @@ const styles = {
     borderRadius: '50%',
     zIndex: 0
   },
-  cloud: {
-    position: 'absolute',
-    fontSize: '100px',
-    animation: 'float 8s ease-in-out infinite',
-    zIndex: 0
-  },
   loginCard: { 
     background: 'rgba(255, 255, 255, 0.95)', 
     padding: '50px 40px', 
@@ -227,10 +187,11 @@ const styles = {
   logo: { 
     width: '100px', 
     height: '100px', 
-    objectFit: 'cover',
+    objectFit: 'contain',
     borderRadius: '50%', 
     display: 'block', 
-    border: '3px solid white'
+    background: 'white',
+    padding: '10px'
   },
   titleEn: { 
     margin: 0, 
@@ -310,17 +271,6 @@ const styles = {
     padding: '10px',
     borderRadius: '8px',
     background: 'rgba(239, 68, 68, 0.05)'
-  },
-  linkBtn: { 
-    background: 'none', 
-    border: 'none', 
-    color: '#2563EB', 
-    cursor: 'pointer', 
-    marginTop: '20px', 
-    textDecoration: 'none', 
-    fontSize: '14px', 
-    fontWeight: '600',
-    transition: 'color 0.2s'
   },
   footerText: {
     marginTop: '30px',
