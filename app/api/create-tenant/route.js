@@ -4,23 +4,22 @@ export async function POST(req) {
   try {
     const body = await req.json();
     
-    // Supabase Admin Client (Service Role Key se)
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // 1. Auth me User Create karo with Password
+    // 1. Create Auth User
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: body.owner_email,
       password: body.temp_password,
-      email_confirm: true, // Jaise hi login kare
+      email_confirm: true,
     });
 
     if (authError) throw new Error(authError.message);
     const userId = authData.user.id;
 
-    // 2. Tenant (Agency) Create karo
+    // 2. Create Tenant
     const { data: tenantData, error: tenantError } = await supabaseAdmin
       .from('tenants')
       .insert([{ 
@@ -33,11 +32,11 @@ export async function POST(req) {
 
     if (tenantError) throw new Error(tenantError.message);
 
-    // 3. app_users me entry karo aur Tenant ID link karo
+    // 3. Create App User Link
     const { error: appUserError } = await supabaseAdmin
       .from('app_users')
       .insert([{
-        id: userId, // Auth wala ID yahan link hoga
+        id: userId,
         email: body.owner_email,
         username: body.agency_name,
         tenant_id: tenantData.id,
@@ -51,6 +50,18 @@ export async function POST(req) {
       }]);
 
     if (appUserError) throw new Error(appUserError.message);
+
+    // 4. Create Blank Settings for this Agency (FIX FOR ERROR)
+    const { error: settingsError } = await supabaseAdmin
+      .from('settings')
+      .insert([{ 
+        tenant_id: tenantData.id,
+        company_name_en: body.agency_name,
+        company_name_ar: body.agency_name,
+        invoice_footer: 'Thank you for choosing us!'
+      }]);
+
+    if (settingsError) throw new Error(settingsError.message);
 
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (error) {
