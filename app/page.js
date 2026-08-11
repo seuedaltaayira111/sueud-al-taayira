@@ -8,9 +8,8 @@ export default function Home() {
 
   if (!erp.user) return <div style={{ padding: 50, textAlign: 'center' }}>Loading ERP...</div>;
 
-  // Failsafe Check: Agar role SuperAdmin hai, YA is_admin true hai, YA email match karti hai
+  // FIX: 'is_admin === true' ko hata diya gaya hai. Ab sirf role SuperAdmin hone ya specific emails match hone par hi panel dikhega.
   const isSuperAdmin = erp.userProfile?.role === 'SuperAdmin' || 
-                       erp.userProfile?.is_admin === true || 
                        erp.userProfile?.username === 'atallah@sueud.com' || 
                        erp.userProfile?.username === 'hamdan@sueud.com';
 
