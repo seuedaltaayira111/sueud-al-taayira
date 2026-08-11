@@ -8,10 +8,10 @@ export default function Home() {
 
   if (!erp.user) return <div style={{ padding: 50, textAlign: 'center' }}>Loading ERP...</div>;
 
-  // FIX: 'is_admin === true' ko hata diya gaya hai. Ab sirf role SuperAdmin hone ya specific emails match hone par hi panel dikhega.
+  // Strict & Failsafe SuperAdmin Check
   const isSuperAdmin = erp.userProfile?.role === 'SuperAdmin' || 
-                       erp.userProfile?.username === 'atallah@sueud.com' || 
-                       erp.userProfile?.username === 'hamdan@sueud.com';
+                       erp.user?.email === 'atallahalanazi@sueudaltaayira.com' || 
+                       erp.user?.email === 'hamdan@sueudaltaayira.com';
 
   const menu = [
     { id: 'dashboard', label: erp.tr.dash, show: true },
