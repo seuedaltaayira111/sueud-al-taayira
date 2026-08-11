@@ -36,20 +36,13 @@ export default function AgencySetup() {
     e.preventDefault();
     setLoading(true);
     try {
+      // Insert settings without forcing ID
       const { error } = await supabase.from('settings').insert([{ 
-        id: tenantId, 
         tenant_id: tenantId, 
         ...form 
       }]);
       
-      if (error) {
-        // If already exists, update it
-        if (error.code === '23505') {
-           await supabase.from('settings').update(form).eq('tenant_id', tenantId);
-        } else {
-           throw error;
-        }
-      }
+      if (error) throw error;
       
       alert('Agency Setup Complete! Redirecting to Dashboard...');
       router.push('/');
