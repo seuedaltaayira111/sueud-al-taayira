@@ -415,33 +415,28 @@ export default function useERPActions(state) {
   const openPreview = (inv) => { const s = data.settings; const html = getInvoiceHTML(inv, s, 'en'); setPreviewHTML(html); setModal({ type: 'preview', data: inv }); };
   const handleLogoUpload = async (e) => { try { const file = e.target.files[0]; if (!file) return; const fileName = `logo-${Date.now()}.${file.name.split('.').pop()}`; const { error } = await supabase.storage.from('logos').upload(fileName, file); if (error) throw error; const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName); setSetForm(prev => ({ ...prev, logo_url: urlData.publicUrl })); showToast('Logo Uploaded!'); } catch (err) { showToast('Error: ' + err.message); } };
   
-  // 100% Bulletproof handleSaveSettings
+  // 100% Bulletproof handleSaveSettings using UPSERT
   const handleSaveSettings = async (e) => { 
     e.preventDefault(); 
     try { 
-      // Remove 'id' to prevent primary key conflict, rely on tenant_id for upsert
       const { id, ...settingsData } = setForm;
       const tId = userProfile.tenant_id;
       
       if (!tId) return showToast('Error: Tenant ID missing!');
       
-      // Check if settings already exist for this tenant
-      const { data: existing } = await supabase.from('settings').select('id').eq('tenant_id', tId).maybeSingle();
+      const { data: upsertedData, error } = await supabase
+        .from('settings')
+        .upsert({ 
+          ...settingsData, 
+          tenant_id: tId 
+        }, { onConflict: 'tenant_id' })
+        .select()
+        .single();
+        
+      if (error) throw error;
       
-      if (existing && existing.id) {
-        // Update existing
-        const { data: updatedData, error } = await supabase.from('settings').update({ ...settingsData }).eq('id', existing.id).select().single(); 
-        if (error) throw error;
-        setSetForm(prev => ({ ...prev, ...updatedData, id: existing.id }));
-        setData(prev => ({ ...prev, settings: updatedData }));
-      } else {
-        // Insert new
-        const { data: insertedData, error } = await supabase.from('settings').insert([{ ...settingsData, tenant_id: tId }]).select().single(); 
-        if (error) throw error;
-        setSetForm(prev => ({ ...prev, ...insertedData }));
-        setData(prev => ({ ...prev, settings: insertedData }));
-      }
-      
+      setSetForm(prev => ({ ...prev, ...upsertedData }));
+      setData(prev => ({ ...prev, settings: upsertedData })); 
       showToast('Settings Saved Successfully!'); 
     } catch (err) { 
       showToast('Error: ' + err.message); 
