@@ -51,17 +51,8 @@ export async function POST(req) {
 
     if (appUserError) throw new Error(appUserError.message);
 
-    // 4. Create Blank Settings for this Agency (FIX FOR ERROR)
-    const { error: settingsError } = await supabaseAdmin
-      .from('settings')
-      .insert([{ 
-        tenant_id: tenantData.id,
-        company_name_en: body.agency_name,
-        company_name_ar: body.agency_name,
-        invoice_footer: 'Thank you for choosing us!'
-      }]);
-
-    if (settingsError) throw new Error(settingsError.message);
+    // NOTE: Yahan settings pehle se create nahi karenge. 
+    // Agency login karega toh use /setup page milega wahan wo apna data save karega.
 
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (error) {
