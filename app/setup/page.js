@@ -36,15 +36,16 @@ export default function AgencySetup() {
     e.preventDefault();
     setLoading(true);
     try {
-      // UPSERT FIX: No more duplicate key error. Agar hai toh update, nahi hai toh insert.
-      const { error } = await supabase
-        .from('settings')
-        .upsert({ 
-          tenant_id: tenantId, 
-          ...form 
-        }, { onConflict: 'tenant_id' });
-        
-      if (error) throw error;
+      // Robust Check: Agar tenant ke naam se setting pehle se hai toh update karo, warna naya banao
+      const { data: existing } = await supabase.from('settings').select('id').eq('tenant_id', tenantId).maybeSingle();
+      
+      if (existing && existing.id) {
+        const { error } = await supabase.from('settings').update(form).eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('settings').insert([{ tenant_id: tenantId, ...form }]);
+        if (error) throw error;
+      }
       
       alert('Agency Setup Complete! Redirecting to Dashboard...');
       router.push('/');
