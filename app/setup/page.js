@@ -36,15 +36,13 @@ export default function AgencySetup() {
     e.preventDefault();
     setLoading(true);
     try {
-      // FIX: Check if settings already exist for this tenant
-      const { data: existingSettings } = await supabase.from('settings').select('id').eq('tenant_id', tenantId).maybeSingle();
+      // Robust Check: Agar tenant ke naam se setting pehle se hai toh update karo, warna naya banao
+      const { data: existing } = await supabase.from('settings').select('id').eq('tenant_id', tenantId).maybeSingle();
       
-      if (existingSettings && existingSettings.id) {
-        // Agar pehle se hai, toh Update karo
-        const { error } = await supabase.from('settings').update(form).eq('id', existingSettings.id);
+      if (existing && existing.id) {
+        const { error } = await supabase.from('settings').update(form).eq('id', existing.id);
         if (error) throw error;
       } else {
-        // Agar nahi hai, toh Insert karo
         const { error } = await supabase.from('settings').insert([{ tenant_id: tenantId, ...form }]);
         if (error) throw error;
       }
