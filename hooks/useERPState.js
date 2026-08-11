@@ -27,8 +27,17 @@ export default function useERPState() {
   const [contractMarkup, setContractMarkup] = useState('20');
   const [contractTerms, setContractTerms] = useState('Provider guarantees the cheapest fares. A flat service fee will be charged over the base cost price. Invoices will be issued monthly or per booking, inclusive of VAT where applicable.');
 
-  // SaaS Tenant State
-  const [tenantForm, setTenantForm] = useState({ agency_name: '', owner_email: '', subscription_end_date: '' });
+  // SaaS Tenant State (Added all fields for pre-fill)
+  const [tenantForm, setTenantForm] = useState({ 
+    agency_name: '', 
+    owner_email: '', 
+    subscription_end_date: '',
+    company_name_ar: '',
+    vat_no: '',
+    cr_no: '',
+    phone: '',
+    address_ar: ''
+  });
 
   const [data, setData] = useState({ tenants: [], invoices: [], portals: [], customers: [], corporates: [], creditors: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [], audits: [], investments: [], vendors: [], customFields: [], packages: [], branches: [] });
   const today = new Date().toISOString().split('T')[0];
@@ -70,36 +79,16 @@ export default function useERPState() {
       const { data: uData } = await supabase.from('app_users').select('*').eq('email', session.user.email).maybeSingle();
       if (uData) {
         setUserProfile(uData);
-        // SuperAdmin Subscription Check
         if (uData.role !== 'SuperAdmin') {
           const { data: tenant } = await supabase.from('tenants').select('*').eq('id', uData.tenant_id).single();
           if (!tenant || !tenant.is_paid || new Date(tenant.subscription_end_date) < new Date()) {
             router.push('/subscription');
             return;
           }
-          
-          // Check if Agency Setup is Done
-          const { data: settingsData } = await supabase.from('settings').select('*').eq('tenant_id', uData.tenant_id).maybeSingle();
-          if (!settingsData || !settingsData.company_name_en) {
-            router.push('/setup');
-            return; // Stop here, don't load dashboard yet
-          }
         }
       }
       fetchAll();
     });
-
-    // Magic Link Recovery Handler
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setModal({ type: 'password', data: null });
-        showToast('Please set your new password.');
-      }
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
   }, [router]);
 
   const logAction = async (action) => { if (user) await supabase.from('audit_logs').insert([{ user_email: user.email, action, tenant_id: userProfile.tenant_id }]); };
@@ -107,7 +96,6 @@ export default function useERPState() {
   const fetchAll = async () => {
     const tenantId = userProfile.tenant_id;
     
-    // Fetch Tenants if SuperAdmin
     let tenantsData = [];
     if (userProfile.role === 'SuperAdmin') {
       const { data: tData } = await supabase.from('tenants').select('*').order('created_at', { ascending: false });
