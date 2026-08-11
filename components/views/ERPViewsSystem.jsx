@@ -21,12 +21,17 @@ export default function ERPViewsSystem(props) {
       <div>
         <h2>SuperAdmin Panel - Manage Agencies</h2>
         <div style={styles.card}>
-          <h3>Add New Travel Agency</h3>
-          <form onSubmit={handleAddTenant} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '15px', alignItems: 'flex-end' }}>
-            <div><label style={styles.label}>Agency Name</label><input value={tenantForm.agency_name} onChange={e => setTenantForm({...tenantForm, agency_name: e.target.value})} style={styles.input} required /></div>
+          <h3>Add New Travel Agency (Fill All Details)</h3>
+          <form onSubmit={handleAddTenant} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+            <div><label style={styles.label}>Agency Name (English)</label><input value={tenantForm.agency_name} onChange={e => setTenantForm({...tenantForm, agency_name: e.target.value})} style={styles.input} required /></div>
+            <div><label style={styles.label}>Company Name (Arabic)</label><input value={tenantForm.company_name_ar} onChange={e => setTenantForm({...tenantForm, company_name_ar: e.target.value})} style={styles.input} /></div>
             <div><label style={styles.label}>Owner Email</label><input type="email" value={tenantForm.owner_email} onChange={e => setTenantForm({...tenantForm, owner_email: e.target.value})} style={styles.input} required /></div>
             <div><label style={styles.label}>Subscription End Date</label><input type="date" value={tenantForm.subscription_end_date} onChange={e => setTenantForm({...tenantForm, subscription_end_date: e.target.value})} style={styles.input} required /></div>
-            <button type="submit" style={{...styles.btnPrimary, height: '42px'}}>Create Agency</button>
+            <div><label style={styles.label}>VAT Number</label><input value={tenantForm.vat_no} onChange={e => setTenantForm({...tenantForm, vat_no: e.target.value})} style={styles.input} /></div>
+            <div><label style={styles.label}>CR Number</label><input value={tenantForm.cr_no} onChange={e => setTenantForm({...tenantForm, cr_no: e.target.value})} style={styles.input} /></div>
+            <div><label style={styles.label}>Phone</label><input value={tenantForm.phone} onChange={e => setTenantForm({...tenantForm, phone: e.target.value})} style={styles.input} /></div>
+            <div><label style={styles.label}>Address</label><input value={tenantForm.address_ar} onChange={e => setTenantForm({...tenantForm, address_ar: e.target.value})} style={styles.input} /></div>
+            <button type="submit" style={{ ...styles.btnPrimary, gridColumn: '1 / -1', marginTop: '10px' }}>Create Agency & Generate Password</button>
           </form>
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
@@ -77,7 +82,7 @@ export default function ERPViewsSystem(props) {
     </div>
   );
 
-  // 3. SETTINGS PAGE (FIXED & RESTORED)
+  // 3. SETTINGS PAGE
   if (page === 'settings') return (
     <div>
       <h2>{tr.settings}</h2>
