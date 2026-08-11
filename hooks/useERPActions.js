@@ -415,19 +415,25 @@ export default function useERPActions(state) {
   const openPreview = (inv) => { const s = data.settings; const html = getInvoiceHTML(inv, s, 'en'); setPreviewHTML(html); setModal({ type: 'preview', data: inv }); };
   const handleLogoUpload = async (e) => { try { const file = e.target.files[0]; if (!file) return; const fileName = `logo-${Date.now()}.${file.name.split('.').pop()}`; const { error } = await supabase.storage.from('logos').upload(fileName, file); if (error) throw error; const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName); setSetForm(prev => ({ ...prev, logo_url: urlData.publicUrl })); showToast('Logo Uploaded!'); } catch (err) { showToast('Error: ' + err.message); } };
   
-  // FIXED handleSaveSettings
+  // FIXED handleSaveSettings to prevent duplicate key error
   const handleSaveSettings = async (e) => { 
     e.preventDefault(); 
     try { 
-      if (setForm.id) {
+      // Check if settings already exist for this tenant
+      const { data: existing } = await supabase.from('settings').select('id').eq('tenant_id', userProfile.tenant_id).maybeSingle();
+      
+      if (existing && existing.id) {
         // Update existing
-        const { error } = await supabase.from('settings').update(setForm).eq('id', setForm.id); 
+        const { error } = await supabase.from('settings').update({ ...setForm, tenant_id: userProfile.tenant_id }).eq('id', existing.id); 
         if (error) throw error;
       } else {
         // Insert new
-        const { error } = await supabase.from('settings').insert([{ ...setForm, tenant_id: userProfile.tenant_id }]); 
+        const { data: newSet, error } = await supabase.from('settings').insert([{ ...setForm, tenant_id: userProfile.tenant_id }]).select().single(); 
         if (error) throw error;
+        // Update local state with new ID
+        setSetForm(prev => ({ ...prev, id: newSet.id }));
       }
+      
       setData(prev => ({ ...prev, settings: setForm })); 
       showToast('Settings Saved!'); 
     } catch (err) { 
