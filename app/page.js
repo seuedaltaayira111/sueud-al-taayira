@@ -8,10 +8,12 @@ export default function Home() {
 
   if (!erp.user) return <div style={{ padding: 50, textAlign: 'center' }}>Loading ERP...</div>;
 
-  // Strict & Failsafe SuperAdmin Check
+  // Failsafe Check: Role, Email, ya Username teeno se check karega
   const isSuperAdmin = erp.userProfile?.role === 'SuperAdmin' || 
                        erp.user?.email === 'atallahalanazi@sueudaltaayira.com' || 
-                       erp.user?.email === 'hamdan@sueudaltaayira.com';
+                       erp.user?.email === 'hamdan@sueudaltaayira.com' ||
+                       erp.userProfile?.username === 'atallah@sueud.com' || 
+                       erp.userProfile?.username === 'hamdan@sueud.com';
 
   const menu = [
     { id: 'dashboard', label: erp.tr.dash, show: true },
