@@ -77,10 +77,29 @@ export default function useERPState() {
             router.push('/subscription');
             return;
           }
+          
+          // Check if Agency Setup is Done
+          const { data: settingsData } = await supabase.from('settings').select('*').eq('tenant_id', uData.tenant_id).maybeSingle();
+          if (!settingsData || !settingsData.company_name_en) {
+            router.push('/setup');
+            return; // Stop here, don't load dashboard yet
+          }
         }
       }
       fetchAll();
     });
+
+    // Magic Link Recovery Handler
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setModal({ type: 'password', data: null });
+        showToast('Please set your new password.');
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, [router]);
 
   const logAction = async (action) => { if (user) await supabase.from('audit_logs').insert([{ user_email: user.email, action, tenant_id: userProfile.tenant_id }]); };
