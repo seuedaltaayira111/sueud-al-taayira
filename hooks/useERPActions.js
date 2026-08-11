@@ -46,7 +46,7 @@ export default function useERPActions(state) {
       const resData = await res.json();
       if (resData.error) throw new Error(resData.error);
       showToast(`✅ Agency Created! Email: ${tenantForm.owner_email} | Pass: ${tempPass}`);
-      setTenantForm({ agency_name: '', owner_email: '', subscription_end_date: '' });
+      setTenantForm({ agency_name: '', owner_email: '', subscription_end_date: '', company_name_ar: '', vat_no: '', cr_no: '', phone: '', address_ar: '' });
       fetchAll();
     } catch (err) { 
       showToast('Error: ' + err.message); 
@@ -415,7 +415,7 @@ export default function useERPActions(state) {
   const openPreview = (inv) => { const s = data.settings; const html = getInvoiceHTML(inv, s, 'en'); setPreviewHTML(html); setModal({ type: 'preview', data: inv }); };
   const handleLogoUpload = async (e) => { try { const file = e.target.files[0]; if (!file) return; const fileName = `logo-${Date.now()}.${file.name.split('.').pop()}`; const { error } = await supabase.storage.from('logos').upload(fileName, file); if (error) throw error; const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName); setSetForm(prev => ({ ...prev, logo_url: urlData.publicUrl })); showToast('Logo Uploaded!'); } catch (err) { showToast('Error: ' + err.message); } };
   
-  // 100% Bulletproof handleSaveSettings
+  // 100% Bulletproof handleSaveSettings (No duplicate key, No tenant missing)
   const handleSaveSettings = async (e) => { 
     e.preventDefault(); 
     try { 
