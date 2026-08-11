@@ -36,13 +36,18 @@ export default function AgencySetup() {
     e.preventDefault();
     setLoading(true);
     try {
-      // Insert settings without forcing ID
-      const { error } = await supabase.from('settings').insert([{ 
-        tenant_id: tenantId, 
-        ...form 
-      }]);
+      // FIX: Check if settings already exist for this tenant
+      const { data: existingSettings } = await supabase.from('settings').select('id').eq('tenant_id', tenantId).maybeSingle();
       
-      if (error) throw error;
+      if (existingSettings && existingSettings.id) {
+        // Agar pehle se hai, toh Update karo
+        const { error } = await supabase.from('settings').update(form).eq('id', existingSettings.id);
+        if (error) throw error;
+      } else {
+        // Agar nahi hai, toh Insert karo
+        const { error } = await supabase.from('settings').insert([{ tenant_id: tenantId, ...form }]);
+        if (error) throw error;
+      }
       
       alert('Agency Setup Complete! Redirecting to Dashboard...');
       router.push('/');
