@@ -77,7 +77,7 @@ export default function ERPViewsSystem(props) {
     </div>
   );
 
-  // 3. SETTINGS PAGE
+  // 3. SETTINGS PAGE (FIXED & RESTORED)
   if (page === 'settings') return (
     <div>
       <h2>{tr.settings}</h2>
