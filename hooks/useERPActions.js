@@ -415,26 +415,27 @@ export default function useERPActions(state) {
   const openPreview = (inv) => { const s = data.settings; const html = getInvoiceHTML(inv, s, 'en'); setPreviewHTML(html); setModal({ type: 'preview', data: inv }); };
   const handleLogoUpload = async (e) => { try { const file = e.target.files[0]; if (!file) return; const fileName = `logo-${Date.now()}.${file.name.split('.').pop()}`; const { error } = await supabase.storage.from('logos').upload(fileName, file); if (error) throw error; const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName); setSetForm(prev => ({ ...prev, logo_url: urlData.publicUrl })); showToast('Logo Uploaded!'); } catch (err) { showToast('Error: ' + err.message); } };
   
-  // FIXED handleSaveSettings to prevent duplicate key error
+  // FIXED handleSaveSettings using UPSERT
   const handleSaveSettings = async (e) => { 
     e.preventDefault(); 
     try { 
-      // Check if settings already exist for this tenant
-      const { data: existing } = await supabase.from('settings').select('id').eq('tenant_id', userProfile.tenant_id).maybeSingle();
+      // Remove id from setForm to prevent primary key conflict, we will rely on tenant_id
+      const { id, ...settingsData } = setForm;
       
-      if (existing && existing.id) {
-        // Update existing
-        const { error } = await supabase.from('settings').update({ ...setForm, tenant_id: userProfile.tenant_id }).eq('id', existing.id); 
-        if (error) throw error;
-      } else {
-        // Insert new
-        const { data: newSet, error } = await supabase.from('settings').insert([{ ...setForm, tenant_id: userProfile.tenant_id }]).select().single(); 
-        if (error) throw error;
-        // Update local state with new ID
-        setSetForm(prev => ({ ...prev, id: newSet.id }));
-      }
+      const { data: upsertedData, error } = await supabase
+        .from('settings')
+        .upsert({ 
+          ...settingsData, 
+          tenant_id: userProfile.tenant_id 
+        }, { onConflict: 'tenant_id' })
+        .select()
+        .single();
+        
+      if (error) throw error;
       
-      setData(prev => ({ ...prev, settings: setForm })); 
+      // Update local state with the new/updated data
+      setSetForm(prev => ({ ...prev, ...upsertedData }));
+      setData(prev => ({ ...prev, settings: upsertedData })); 
       showToast('Settings Saved!'); 
     } catch (err) { 
       showToast('Error: ' + err.message); 
