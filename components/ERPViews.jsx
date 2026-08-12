@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import ERPViewsCore from './ERPViewsCore';
 import ERPViewsAdmin from './views/ERPViewsAdmin';
