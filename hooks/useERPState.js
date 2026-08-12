@@ -20,6 +20,7 @@ export default function useERPState() {
   const itemsPerPage = 10;
   const [ledgerCustId, setLedgerCustId] = useState(''); 
   const [previewHTML, setPreviewHTML] = useState(''); 
+  const [ledgerEmpId, setLedgerEmpId] = useState(''); // For Employee Ledger
   
   const [contractCorpName, setContractCorpName] = useState('');
   const [contractType, setContractType] = useState('Flight Tickets');
@@ -43,7 +44,11 @@ export default function useERPState() {
   const [editVendId, setEditVendId] = useState(null); const [vendorForm, setVendorForm] = useState({ name: '', phone: '', balance: 0 });
   const [editPkgId, setEditPkgId] = useState(null); const [pkgForm, setPkgForm] = useState({ name: '', price: '', desc: '', duration: '', inclusions: '' });
   const [editBrnId, setEditBrnId] = useState(null); const [brnForm, setBrnForm] = useState({ name: '', location: '', phone: '', manager: '', email: '', timing: '', status: 'Active' });
-  const [editEmpId, setEditEmpId] = useState(null); const [empForm, setEmpForm] = useState({ name: '', role: 'Sales', salary: 0, phone: '', commission_rate: 0 });
+  
+  // Employee Form Updated with Iqama & Roles
+  const [editEmpId, setEditEmpId] = useState(null); 
+  const [empForm, setEmpForm] = useState({ name: '', role: 'Sales', salary: 0, phone: '', commission_rate: 0, iqama_no: '', iqama_expiry: '' });
+  
   const [editSrvId, setEditSrvId] = useState(null); const [srvForm, setSrvForm] = useState({ name: '' });
   const [editUserId, setEditUserId] = useState(null); 
   
@@ -56,12 +61,9 @@ export default function useERPState() {
   const [userForm, setUserForm] = useState({ email: '', username: '', role: 'Sales', is_admin: false, can_access_invoices: true, can_access_bank: false, can_access_hr: false, can_access_reports: false, can_access_settings: false });
   const [portalForm, setPortalForm] = useState({ name: '', balance: 0 });
   
-  // Profile Form Enhanced
   const [profileForm, setProfileForm] = useState({ username: '', avatar_url: '', phone: '', address: '' });
-  // AI Marketing State
-  const [marketingText, setMarketingText] = useState('');
 
-  const t = { en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices List', refunds: 'Refund Invoices', customers: 'Customer List', corporates: 'Corporate Accounts', creditors: 'Creditors', portals: 'Portals & Recharge', bank: 'Bank & Cash', invest: 'Investors', hr: 'HR & Accounts', users: 'User Management', reports: 'Financial Reports', audit: 'Audit Logs', settings: 'Settings', vendors: 'Vendors (B2B)', packages: 'Tour Packages', branches: 'Branches', logout: 'Logout', search: 'Search...', changePass: 'Change Password', statements: 'Statements', download_excel: 'Download Excel', credit: 'Credit Balances', profile: 'My Profile', marketing: 'AI Marketing Hub' }, ar: { dash: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'قائمة الفواتير', refunds: 'فواتير الاسترجاع', customers: 'قائمة العملاء', corporates: 'حسابات الشركات', creditors: 'الدائنون', portals: 'البوابات والرصيد', bank: 'البنك والكاش', invest: 'المستثمرون', hr: 'الموارد البشرية', users: 'إدارة المستخدمين', reports: 'التقارير المالية', audit: 'سجلات التدقيق', settings: 'الإعدادات', vendors: 'الموردون', packages: 'باقات سياحية', branches: 'الفروع', logout: 'تسجيل الخروج', search: 'بحث...', changePass: 'تغيير كلمة المرور', statements: 'كشوف الحسابات', download_excel: 'تحميل إكسل', credit: 'أرصدة الائتمان', profile: 'حسابي', marketing: 'التسويق الذكي' } };
+  const t = { en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices List', refunds: 'Refund Invoices', customers: 'Customer List', corporates: 'Corporate Accounts', creditors: 'Creditors', portals: 'Portals & Recharge', bank: 'Bank & Cash', invest: 'Investors', hr: 'HR & Employees', users: 'User Management', reports: 'Financial Reports', audit: 'Audit Logs', settings: 'Settings', vendors: 'Vendors (B2B)', packages: 'Tour Packages', branches: 'Branches', logout: 'Logout', search: 'Search...', changePass: 'Change Password', statements: 'Statements', download_excel: 'Download Excel', credit: 'Credit Balances', profile: 'My Profile', profitability: 'Profit Analyzer' }, ar: { dash: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'قائمة الفواتير', refunds: 'فواتير الاسترجاع', customers: 'قائمة العملاء', corporates: 'حسابات الشركات', creditors: 'الدائنون', portals: 'البوابات والرصيد', bank: 'البنك والكاش', invest: 'المستثمرون', hr: 'الموارد البشرية', users: 'إدارة المستخدمين', reports: 'التقارير المالية', audit: 'سجلات التدقيق', settings: 'الإعدادات', vendors: 'الموردون', packages: 'باقات سياحية', branches: 'الفروع', logout: 'تسجيل الخروج', search: 'بحث...', changePass: 'تغيير كلمة المرور', statements: 'كشوف الحسابات', download_excel: 'تحميل إكسل', credit: 'أرصدة الائتمان', profile: 'حسابي', profitability: 'محلل الأرباح' } };
   const tr = t[lang];
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
@@ -88,7 +90,6 @@ export default function useERPState() {
 
   const logAction = async (action) => { if (user) await supabase.from('audit_logs').insert([{ user_email: user.email, action, tenant_id: userProfile.tenant_id }]); };
 
-  // BULLETPROOF FETCH: Agar koi table missing hua ya error aaya, toh app crash nahi hogi
   const fetchAll = async () => {
     const tenantId = userProfile.tenant_id;
     
@@ -125,26 +126,10 @@ export default function useERPState() {
 
     const settingsData = setRes || {};
     setData({ 
-      tenants: tenantsData, 
-      invoices: invData, 
-      portals: porData, 
-      customers: cusData, 
-      corporates: corpData, 
-      creditors: crdData, 
-      recharges: recData, 
-      settings: settingsData, 
-      employees: empData, 
-      payroll: payData, 
-      appUsers: usrData, 
-      expenses: expData, 
-      services: srvData, 
-      cashbook: cbkData, 
-      audits: audData, 
-      investments: invstmntData, 
-      vendors: vndData, 
-      customFields: [], 
-      packages: pkgsData, 
-      branches: brnsData,
+      tenants: tenantsData, invoices: invData, portals: porData, customers: cusData, corporates: corpData, 
+      creditors: crdData, recharges: recData, settings: settingsData, employees: empData, payroll: payData, 
+      appUsers: usrData, expenses: expData, services: srvData, cashbook: cbkData, audits: audData, 
+      investments: invstmntData, vendors: vndData, customFields: [], packages: pkgsData, branches: brnsData,
       empAdvances: advData
     });
     
@@ -169,7 +154,7 @@ export default function useERPState() {
 
   const filterData = (arr, dateKey) => { if (!repDate.from || !repDate.to) return arr; return arr.filter(i => (i[dateKey] || i.created_at?.split('T')[0]) >= repDate.from && (i[dateKey] || i.created_at?.split('T')[0]) <= repDate.to); };
 
-  // Unified Invoice Template (Dark Slate & Amber Theme)
+  // FIXED INVOICE TEMPLATE: White Background, Black Text for Perfect Print
   const getInvoiceHTML = (inv, s, invLang = 'en') => {
     const isAr = invLang === 'ar'; 
     const dir = isAr ? 'rtl' : 'ltr'; 
@@ -192,40 +177,41 @@ export default function useERPState() {
     const taxRate = inv.vat > 0 ? 15 : 0;
     const linkedInv = inv.linked_inv_id ? data.invoices.find(i => i.id === inv.linked_inv_id) : null;
     const customFieldsHtml = s.custom_fields && s.custom_fields.length > 0 ? s.custom_fields.map(cf => `${cf.key}: ${cf.value}<br/>`).join('') : '';
+    
     return `
-    <div style="width:794px; min-height:1123px; padding:40px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial; direction:${dir}; text-align:${textAlign};">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #0F172A; padding-bottom:20px; margin-bottom:30px;">
+    <div style="width:794px; min-height:1123px; padding:40px; background-color:#FFFFFF; color:#000000; font-family:'Segoe UI', Tahoma, Arial; direction:${dir}; text-align:${textAlign};">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #1E3A8A; padding-bottom:20px; margin-bottom:30px;">
         <div style="display:flex; align-items:center; gap:20px;">
           ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:90px;width:auto;object-fit:contain;" />` : '<div style="width:90px;height:90px;"></div>'}
           <div style="text-align: right; direction: rtl;">
-            <h1 style="margin:0;color:#0F172A;font-size:22px;font-weight:bold;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h1>
-            <p style="font-size:12px;margin-top:5px;line-height:1.6;color:#555;">عنوان: ${s.address_ar || ''}<br/>هاتف: ${s.phone || ''}<br/>سجل تجاري: ${s.cr_no || ''}<br/>ضريبة القيمة المضافة: ${s.vat_no || ''}<br/>ترخيص: ${s.license_no || ''}<br/>ترخيص سياحي: ${s.tourist_license_no || ''} ${customFieldsHtml}</p>
+            <h1 style="margin:0;color:#1E3A8A;font-size:22px;font-weight:bold;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h1>
+            <p style="font-size:12px;margin-top:5px;line-height:1.6;color:#333;">عنوان: ${s.address_ar || ''}<br/>هاتف: ${s.phone || ''}<br/>سجل تجاري: ${s.cr_no || ''}<br/>ضريبة القيمة المضافة: ${s.vat_no || ''}<br/>ترخيص: ${s.license_no || ''}<br/>ترخيص سياحي: ${s.tourist_license_no || ''} ${customFieldsHtml}</p>
           </div>
         </div>
-        <div style="text-align:${textAlignOpp}; background:linear-gradient(135deg, #0F172A, #1E293B); color:#fff; padding:15px 25px; border-radius:8px; min-width:250px;">
+        <div style="text-align:${textAlignOpp}; background:#1E3A8A; color:#fff; padding:15px 25px; border-radius:8px; min-width:250px;">
           <h1 style="margin:0;font-size:22px;">${titleEn}</h1>
-          <h2 style="margin:5px 0;font-size:18px;color:#F59E0B;">${titleAr}</h2>
+          <h2 style="margin:5px 0;font-size:18px;color:#FBBF24;">${titleAr}</h2>
           <p style="font-size:12px;margin-top:10px;color:#eee; text-align:${textAlignOpp};">Inv No: <b>${inv.invoice_no}</b><br/>Date: <b>${inv.invoice_date}</b><br/>Payment: <b>${inv.payment_method}</b></p>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:30px;">
-        <div style="background:#f1f5f9;padding:15px;border-radius:8px;border-left:4px solid #0F172A;"><h3 style="margin:0 0 5px;color:#0F172A;font-size:14px;">BILL TO / الفاتورة إلى:</h3><p style="margin:0;font-size:16px;font-weight:bold;">${inv.customers?.name || inv.corporates?.name || ''}</p><p style="margin:3px 0 0;font-size:12px;color:#666;">Phone: ${custPhone} ${inv.corporates?.vat_no ? '| VAT: '+inv.corporates.vat_no : ''}</p></div>
-        <div style="background:#f1f5f9;padding:15px;border-radius:8px;border-left:4px solid #0F172A;text-align:${textAlignOpp};"><h3 style="margin:0 0 5px;color:#0F172A;font-size:14px;">SALES PERSON / الموظف:</h3><p style="margin:0;font-size:16px;font-weight:bold;">${empName}</p><p style="margin:3px 0 0;font-size:12px;color:#666;">Contact: ${empPhone}</p></div>
+        <div style="background:#F8FAFC;padding:15px;border-radius:8px;border-left:4px solid #1E3A8A;"><h3 style="margin:0 0 5px;color:#1E3A8A;font-size:14px;">BILL TO / الفاتورة إلى:</h3><p style="margin:0;font-size:16px;font-weight:bold;">${inv.customers?.name || inv.corporates?.name || ''}</p><p style="margin:3px 0 0;font-size:12px;color:#666;">Phone: ${custPhone} ${inv.corporates?.vat_no ? '| VAT: '+inv.corporates.vat_no : ''}</p></div>
+        <div style="background:#F8FAFC;padding:15px;border-radius:8px;border-left:4px solid #1E3A8A;text-align:${textAlignOpp};"><h3 style="margin:0 0 5px;color:#1E3A8A;font-size:14px;">SALES PERSON / الموظف:</h3><p style="margin:0;font-size:16px;font-weight:bold;">${empName}</p><p style="margin:3px 0 0;font-size:12px;color:#666;">Contact: ${empPhone}</p></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;margin-bottom:20px;border:1px solid #e2e8f0;padding:15px;border-radius:8px;background:#fff;">
-        ${inv.service_type ? `<div><b style="color:#0F172A;font-size:11px;">Service</b><br/><span style="font-size:13px;">${inv.service_type}</span></div>` : ''}
-        ${inv.airline ? `<div><b style="color:#0F172A;font-size:11px;">Airline</b><br/><span style="font-size:13px;">${inv.airline}</span></div>` : ''}
-        ${inv.flight_sector ? `<div><b style="color:#0F172A;font-size:11px;">Sector</b><br/><span style="font-size:13px;">${inv.flight_sector}</span></div>` : ''}
-        ${inv.flight_type ? `<div><b style="color:#0F172A;font-size:11px;">Flight Type</b><br/><span style="font-size:13px;">${inv.flight_type}</span></div>` : ''}
-        ${inv.booking_type ? `<div><b style="color:#0F172A;font-size:11px;">Booking Type</b><br/><span style="font-size:13px;">${inv.booking_type}</span></div>` : ''}
-        ${inv.pnr ? `<div><b style="color:#0F172A;font-size:11px;">PNR</b><br/><span style="font-size:13px;">${inv.pnr}</span></div>` : ''}
-        ${inv.ticket_no ? `<div><b style="color:#0F172A;font-size:11px;">Ticket No</b><br/><span style="font-size:13px;">${inv.ticket_no}</span></div>` : ''}
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;margin-bottom:20px;border:1px solid #E2E8F0;padding:15px;border-radius:8px;background:#FFFFFF;">
+        ${inv.service_type ? `<div><b style="color:#1E3A8A;font-size:11px;">Service</b><br/><span style="font-size:13px;">${inv.service_type}</span></div>` : ''}
+        ${inv.airline ? `<div><b style="color:#1E3A8A;font-size:11px;">Airline</b><br/><span style="font-size:13px;">${inv.airline}</span></div>` : ''}
+        ${inv.flight_sector ? `<div><b style="color:#1E3A8A;font-size:11px;">Sector</b><br/><span style="font-size:13px;">${inv.flight_sector}</span></div>` : ''}
+        ${inv.flight_type ? `<div><b style="color:#1E3A8A;font-size:11px;">Flight Type</b><br/><span style="font-size:13px;">${inv.flight_type}</span></div>` : ''}
+        ${inv.booking_type ? `<div><b style="color:#1E3A8A;font-size:11px;">Booking Type</b><br/><span style="font-size:13px;">${inv.booking_type}</span></div>` : ''}
+        ${inv.pnr ? `<div><b style="color:#1E3A8A;font-size:11px;">PNR</b><br/><span style="font-size:13px;">${inv.pnr}</span></div>` : ''}
+        ${inv.ticket_no ? `<div><b style="color:#1E3A8A;font-size:11px;">Ticket No</b><br/><span style="font-size:13px;">${inv.ticket_no}</span></div>` : ''}
       </div>
-      ${linkedInv ? `<div style="margin-bottom:20px;border:1px dashed #0F172A;padding:15px;border-radius:8px;background:#EFF6FF;"><h4 style="margin:0 0 5px;color:#0F172A;font-size:12px;">PREVIOUS BOOKING DETAILS</h4><p style="margin:0;font-size:12px;color:#555;">Old Inv: <b>${linkedInv.invoice_no}</b> | Date: <b>${linkedInv.invoice_date}</b><br/>Passenger: <b>${linkedInv.passenger_names || 'N/A'}</b> | Old Total: <b>${(linkedInv.total || 0).toFixed(2)}</b></p></div>` : ''}
-      ${inv.passenger_names ? `<div style="margin-bottom:20px;border:1px solid #e2e8f0;padding:15px;border-radius:8px;"><b style="color:#0F172A;font-size:14px;">Passengers / المسافرون:</b><div style="font-size:13px;margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:5px;">${paxNames}</div></div>` : ''}
+      ${linkedInv ? `<div style="margin-bottom:20px;border:1px dashed #1E3A8A;padding:15px;border-radius:8px;background:#EFF6FF;"><h4 style="margin:0 0 5px;color:#1E3A8A;font-size:12px;">PREVIOUS BOOKING DETAILS</h4><p style="margin:0;font-size:12px;color:#555;">Old Inv: <b>${linkedInv.invoice_no}</b> | Date: <b>${linkedInv.invoice_date}</b><br/>Passenger: <b>${linkedInv.passenger_names || 'N/A'}</b> | Old Total: <b>${(linkedInv.total || 0).toFixed(2)}</b></p></div>` : ''}
+      ${inv.passenger_names ? `<div style="margin-bottom:20px;border:1px solid #E2E8F0;padding:15px;border-radius:8px;"><b style="color:#1E3A8A;font-size:14px;">Passengers / المسافرون:</b><div style="font-size:13px;margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:5px;">${paxNames}</div></div>` : ''}
       <table style="width:100%;border-collapse:collapse;text-align:center;margin-bottom:30px;">
-        <thead><tr style="background:#0F172A;color:#F59E0B;"><th style="padding:12px;text-align:left;font-size:13px;">Desc / الوصف</th><th style="padding:12px;font-size:13px;">Qty</th><th style="padding:12px;font-size:13px;">Price</th><th style="padding:12px;font-size:13px;">Total</th></tr></thead>
-        <tbody><tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:12px;text-align:left;font-size:13px;">${inv.sector || 'N/A'}</td><td style="padding:12px;font-size:13px;">${inv.qty || 1}</td><td style="padding:12px;font-size:13px;">${((inv.total_sell || 0) / (inv.qty || 1)).toFixed(2)}</td><td style="padding:12px;font-size:13px;font-weight:bold;">${(inv.total_sell || 0).toFixed(2)}</td></tr></tbody>
+        <thead><tr style="background:#1E3A8A;color:#FBBF24;"><th style="padding:12px;text-align:left;font-size:13px;">Desc / الوصف</th><th style="padding:12px;font-size:13px;">Qty</th><th style="padding:12px;font-size:13px;">Price</th><th style="padding:12px;font-size:13px;">Total</th></tr></thead>
+        <tbody><tr style="border-bottom:1px solid #E2E8F0;"><td style="padding:12px;text-align:left;font-size:13px;">${inv.sector || 'N/A'}</td><td style="padding:12px;font-size:13px;">${inv.qty || 1}</td><td style="padding:12px;font-size:13px;">${((inv.total_sell || 0) / (inv.qty || 1)).toFixed(2)}</td><td style="padding:12px;font-size:13px;font-weight:bold;">${(inv.total_sell || 0).toFixed(2)}</td></tr></tbody>
       </table>
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div style="text-align:center;"><img src="${qrUrl}" alt="QR Code" style="height:100px;width:100px;"/><p style="font-size:10px;color:#666;margin:5px 0 0;">Scan to verify/download</p></div>
@@ -237,43 +223,58 @@ export default function useERPState() {
           <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;color:#EF4444;"><span>Due Amount / المتبقي:</span> <b>${due.toFixed(2)} SAR</b></p>
         </div>
       </div>
-      <div style="margin-top:60px; border-top:1px solid #e2e8f0; padding-top:20px;"><p style="font-size:11px;color:#888;text-align:center;margin:0 0 5px;">${s.invoice_footer || 'Thank you!'}</p></div>
+      <div style="margin-top:60px; border-top:1px solid #E2E8F0; padding-top:20px;"><p style="font-size:11px;color:#888;text-align:center;margin:0 0 5px;">${s.invoice_footer || 'Thank you!'}</p></div>
     </div>`;
   };
 
-  // Kept identical for brevity, but theme updated inside
+  // EXPANDED LEGAL CONTRACT TEMPLATE (2 Pages Equivalent Content)
   const getContractHTML = (s, corpName, dateStr, isOffer, cType, markup, terms) => {
     const titleEn = isOffer ? "SPECIAL CORPORATE OFFER" : "CORPORATE TRAVEL AGREEMENT";
     const titleAr = isOffer ? "عرض الشركات الخاص" : "اتفاقية السفر للشركات";
     return `
-    <div style="width:794px; min-height:1123px; padding:50px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial; position: relative;">
-      <div style="border: 4px solid #0F172A; padding: 40px; height: 100%; box-sizing: border-box;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #F59E0B; padding-bottom:20px; margin-bottom:40px;">
+    <div style="width:794px; min-height:1123px; padding:50px; background:#FFFFFF; color:#000000; font-family:'Segoe UI', Tahoma, Arial; position: relative;">
+      <div style="border: 4px solid #1E3A8A; padding: 40px; height: 100%; box-sizing: border-box;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #FBBF24; padding-bottom:20px; margin-bottom:40px;">
           <div style="display:flex; align-items:center; gap:20px;">
             ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:90px;width:auto;object-fit:contain;" />` : '<div style="width:90px;height:90px;"></div>'}
             <div style="text-align: right; direction: rtl;">
-              <h1 style="margin:0;color:#0F172A;font-size:22px;font-weight:bold;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h1>
-              <p style="font-size:12px;margin-top:5px;line-height:1.6;color:#555;">عنوان: ${s.address_ar || ''}<br/>هاتف: ${s.phone || ''}<br/>سجل تجاري: ${s.cr_no || ''}<br/>ضريبة القيمة المضافة: ${s.vat_no || ''}</p>
+              <h1 style="margin:0;color:#1E3A8A;font-size:22px;font-weight:bold;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h1>
+              <p style="font-size:12px;margin-top:5px;line-height:1.6;color:#333;">عنوان: ${s.address_ar || ''}<br/>هاتف: ${s.phone || ''}<br/>سجل تجاري: ${s.cr_no || ''}<br/>ضريبة القيمة المضافة: ${s.vat_no || ''}</p>
             </div>
           </div>
         </div>
+        
         <div style="text-align: center; margin-bottom: 40px;">
-          <h1 style="margin:0; font-size: 24px; color:#0F172A;">${titleEn}</h1>
+          <h1 style="margin:0; font-size: 24px; color:#1E3A8A;">${titleEn}</h1>
           <h2 style="margin:5px 0 0; font-size: 20px; color:#555; direction: rtl;">${titleAr}</h2>
-          <div style="width: 100px; height: 3px; background: #F59E0B; margin: 15px auto;"></div>
+          <div style="width: 100px; height: 3px; background: #FBBF24; margin: 15px auto;"></div>
         </div>
-        <div style="margin-bottom: 40px; background: #f8fafc; padding: 20px; border-left: 4px solid #0F172A;">
-          <p style="font-size: 15px; line-height: 1.8; margin: 0;">This ${isOffer ? 'offer' : 'agreement'} is made on <b>${dateStr}</b> between <b>${s.company_name_en || 'Our Company'}</b> and <b>${corpName}</b>.</p>
-          <p style="font-size: 15px; line-height: 1.8; direction: rtl; text-align: right; margin-top: 15px;">تم إبرام هذه ${isOffer ? 'العرض' : 'الاتفاقية'} في <b>${dateStr}</b> بين <b>${s.company_name_ar || 'شركتنا'}</b> و <b>${corpName}</b>.</p>
+        
+        <div style="margin-bottom: 40px; background: #F8FAFC; padding: 20px; border-left: 4px solid #1E3A8A;">
+          <p style="font-size: 15px; line-height: 1.8; margin: 0;">This ${isOffer ? 'offer' : 'agreement'} is made on <b>${dateStr}</b> between <b>${s.company_name_en || 'Our Company'}</b> (Hereinafter referred to as "Provider") and <b>${corpName}</b> (Hereinafter referred to as "Client").</p>
+          <p style="font-size: 15px; line-height: 1.8; direction: rtl; text-align: right; margin-top: 15px;">تم إبرام هذه ${isOffer ? 'العرض' : 'الاتفاقية'} في <b>${dateStr}</b> بين <b>${s.company_name_ar || 'شركتنا'}</b> (المزود) و <b>${corpName}</b> (العميل).</p>
         </div>
-        <h3 style="color:#0F172A; border-bottom:1px solid #ddd; padding-bottom:10px; font-size:18px;">Service Type / نوع الخدمة</h3>
-        <p style="font-size: 16px; font-weight: bold; margin-bottom: 20px;">${cType}</p>
-        <h3 style="color:#0F172A; border-bottom:1px solid #ddd; padding-bottom:10px; font-size:18px;">Terms & Conditions / الشروط والأحكام</h3>
-        <ul style="font-size: 14px; line-height: 2; margin-bottom: 20px; padding-right: 20px;">
-          <li>Provider agrees to supply ${cType} at competitive rates.</li>
-          <li>Service fee of <b>${markup} SAR</b> applies.</li>
+
+        <h3 style="color:#1E3A8A; border-bottom:1px solid #ddd; padding-bottom:10px; font-size:18px;">1. Service Type / نوع الخدمة</h3>
+        <p style="font-size: 14px; line-height: 1.6; margin-bottom: 20px;">The Provider agrees to supply <b>${cType}</b> to the Client. The Provider shall ensure all services are delivered with the highest standards of quality and reliability as per the regulations of the Saudi Arabian General Authority of Civil Aviation (GACA) and Ministry of Tourism.</p>
+
+        <h3 style="color:#1E3A8A; border-bottom:1px solid #ddd; padding-bottom:10px; font-size:18px;">2. Pricing & Markup / التسعير والعمولة</h3>
+        <p style="font-size: 14px; line-height: 1.6; margin-bottom: 20px;">A flat service fee of <b>${markup} SAR</b> will be charged over the base cost price per ticket/booking. All prices are subject to Value Added Tax (VAT) as per the regulations of the Zakat, Tax and Customs Authority (ZATCA) at the prevailing rate of 15%.</p>
+
+        <h3 style="color:#1E3A8A; border-bottom:1px solid #ddd; padding-bottom:10px; font-size:18px;">3. Terms of Payment / شروط الدفع</h3>
+        <p style="font-size: 14px; line-height: 1.6; margin-bottom: 20px;">Payments must be settled within 30 days from the date of invoice issuance. Late payments may incur a surcharge of 1% per month. The Provider reserves the right to suspend services for accounts with outstanding balances exceeding 60 days.</p>
+
+        <h3 style="color:#1E3A8A; border-bottom:1px solid #ddd; padding-bottom:10px; font-size:18px;">4. Cancellation & Refund Policy / سياسة الإلغاء والاسترجاع</h3>
+        <p style="font-size: 14px; line-height: 1.6; margin-bottom: 20px;">Cancellations are subject to the rules and regulations of the respective airlines and hotels. Service fees and processing charges are non-refundable. Refunds, if applicable, will be processed within 14 working days to the original payment method.</p>
+
+        <h3 style="color:#1E3A8A; border-bottom:1px solid #ddd; padding-bottom:10px; font-size:18px;">5. Confidentiality & Data Protection / السرية وحماية البيانات</h3>
+        <p style="font-size: 14px; line-height: 1.6; margin-bottom: 20px;">Both parties agree to keep all proprietary information, pricing, and client data confidential. The Provider complies with the Personal Data Protection Law (PDPL) of Saudi Arabia.</p>
+
+        <h3 style="color:#1E3A8A; border-bottom:1px solid #ddd; padding-bottom:10px; font-size:18px;">6. Additional Terms / شروط إضافية</h3>
+        <ul style="font-size: 14px; line-height: 1.8; margin-bottom: 20px; padding-right: 20px;">
           ${terms.split('\n').map(t => `<li>${t}</li>`).join('')}
         </ul>
+
         <div style="margin-top: 80px; display: flex; justify-content: space-between;">
           <div style="text-align: center;"><div style="border-top: 1px solid #333; width: 250px; margin-bottom: 5px;"></div><b>Authorized Signatory</b><br/><span style="font-size: 12px; color:#666;">${s.company_name_en}</span></div>
           <div style="text-align: center;"><div style="border-top: 1px solid #333; width: 250px; margin-bottom: 5px;"></div><b>Client Signature</b><br/><span style="font-size: 12px; color:#666;">${corpName}</span></div>
@@ -291,29 +292,29 @@ export default function useERPState() {
     const due = total - paid;
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent('https://sueud-al-taayira.vercel.app/invoice/' + exp.invoice_no)}`;
     return `
-    <div style="width:794px; min-height:1123px; padding:40px; box-sizing:border-box; background:#fff; color:#333; font-family:'Segoe UI', Tahoma, Arial;">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #0F172A; padding-bottom:20px; margin-bottom:30px;">
+    <div style="width:794px; min-height:1123px; padding:40px; background:#FFFFFF; color:#000000; font-family:'Segoe UI', Tahoma, Arial;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #1E3A8A; padding-bottom:20px; margin-bottom:30px;">
         <div style="display:flex; align-items:center; gap:20px;">
           ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:90px;width:auto;object-fit:contain;" />` : '<div style="width:90px;height:90px;"></div>'}
           <div>
-            <h1 style="margin:0;color:#0F172A;font-size:24px;font-weight:bold;">${s.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
+            <h1 style="margin:0;color:#1E3A8A;font-size:24px;font-weight:bold;">${s.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
             <h2 style="margin:5px 0;color:#555;font-size:18px;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
-            <p style="font-size:12px;margin-top:5px;line-height:1.6;color:#555;">${s.address_ar || ''}<br/>Phone: ${s.phone || ''} | VAT: ${s.vat_no || ''}<br/>License: ${s.license_no || ''} | Tourist License: ${s.tourist_license_no || ''}</p>
+            <p style="font-size:12px;margin-top:5px;line-height:1.6;color:#333;">${s.address_ar || ''}<br/>Phone: ${s.phone || ''} | VAT: ${s.vat_no || ''}<br/>License: ${s.license_no || ''} | Tourist License: ${s.tourist_license_no || ''}</p>
           </div>
         </div>
-        <div style="text-align:right; background:linear-gradient(135deg, #0F172A, #1E293B); color:#fff; padding:15px 25px; border-radius:8px; min-width:250px;">
+        <div style="text-align:right; background:#1E3A8A; color:#fff; padding:15px 25px; border-radius:8px; min-width:250px;">
           <h1 style="margin:0;font-size:22px;">PURCHASE BILL</h1>
-          <h2 style="margin:5px 0;font-size:18px;color:#F59E0B;">فاتورة مشتريات</h2>
+          <h2 style="margin:5px 0;font-size:18px;color:#FBBF24;">فاتورة مشتريات</h2>
           <p style="font-size:12px;margin-top:10px;color:#eee;">Bill No: <b>${exp.invoice_no}</b><br/>Date: <b>${exp.expense_date}</b><br/>Paid Via: <b>${exp.payment_mode}</b></p>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:30px;">
-        <div style="background:#f1f5f9;padding:15px;border-radius:8px;border-left:4px solid #F59E0B;"><h3 style="margin:0 0 5px;color:#0F172A;font-size:14px;">VENDOR / المورد</h3><p style="margin:0;font-size:16px;font-weight:bold;">${exp.vendor_name || 'N/A'}</p><p style="margin:3px 0 0;font-size:12px;color:#666;">VAT: ${exp.vendor_vat || 'N/A'}</p></div>
-        <div style="background:#f1f5f9;padding:15px;border-radius:8px;border-left:4px solid #F59E0B;text-align:right;"><h3 style="margin:0 0 5px;color:#0F172A;font-size:14px;">BILL TO / الفاتورة إلى</h3><p style="margin:0;font-size:16px;font-weight:bold;">${s.company_name_en || 'Our Company'}</p><p style="margin:3px 0 0;font-size:12px;color:#666;">${s.address_ar || ''}</p></div>
+        <div style="background:#F8FAFC;padding:15px;border-radius:8px;border-left:4px solid #FBBF24;"><h3 style="margin:0 0 5px;color:#1E3A8A;font-size:14px;">VENDOR / المورد</h3><p style="margin:0;font-size:16px;font-weight:bold;">${exp.vendor_name || 'N/A'}</p><p style="margin:3px 0 0;font-size:12px;color:#666;">VAT: ${exp.vendor_vat || 'N/A'}</p></div>
+        <div style="background:#F8FAFC;padding:15px;border-radius:8px;border-left:4px solid #FBBF24;text-align:right;"><h3 style="margin:0 0 5px;color:#1E3A8A;font-size:14px;">BILL TO / الفاتورة إلى</h3><p style="margin:0;font-size:16px;font-weight:bold;">${s.company_name_en || 'Our Company'}</p><p style="margin:3px 0 0;font-size:12px;color:#666;">${s.address_ar || ''}</p></div>
       </div>
       <table style="width:100%;border-collapse:collapse;text-align:center;margin-bottom:30px;">
-        <thead><tr style="background:#0F172A;color:#F59E0B;"><th style="padding:12px;text-align:left;font-size:13px;">Item / الوصف</th><th style="padding:12px;font-size:13px;">Qty</th><th style="padding:12px;font-size:13px;">Price</th><th style="padding:12px;font-size:13px;">Total</th></tr></thead>
-        <tbody>${exp.items && exp.items.length > 0 ? exp.items.map(item => `<tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:12px;text-align:left;font-size:13px;">${item.name}</td><td style="padding:12px;font-size:13px;">${item.qty}</td><td style="padding:12px;font-size:13px;">${parseFloat(item.price).toFixed(2)}</td><td style="padding:12px;font-size:13px;font-weight:bold;">${(parseFloat(item.qty)*parseFloat(item.price)).toFixed(2)}</td></tr>`).join('') : `<tr><td colspan="4" style="padding:20px;">No Items</td></tr>`}</tbody>
+        <thead><tr style="background:#1E3A8A;color:#FBBF24;"><th style="padding:12px;text-align:left;font-size:13px;">Item / الوصف</th><th style="padding:12px;font-size:13px;">Qty</th><th style="padding:12px;font-size:13px;">Price</th><th style="padding:12px;font-size:13px;">Total</th></tr></thead>
+        <tbody>${exp.items && exp.items.length > 0 ? exp.items.map(item => `<tr style="border-bottom:1px solid #E2E8F0;"><td style="padding:12px;text-align:left;font-size:13px;">${item.name}</td><td style="padding:12px;font-size:13px;">${item.qty}</td><td style="padding:12px;font-size:13px;">${parseFloat(item.price).toFixed(2)}</td><td style="padding:12px;font-size:13px;font-weight:bold;">${(parseFloat(item.qty)*parseFloat(item.price)).toFixed(2)}</td></tr>`).join('') : `<tr><td colspan="4" style="padding:20px;">No Items</td></tr>`}</tbody>
       </table>
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div style="text-align:center;"><img src="${qrUrl}" alt="QR Code" style="height:100px;width:100px;"/><p style="font-size:10px;color:#666;margin:5px 0 0;">${exp.invoice_no}</p></div>
@@ -325,12 +326,12 @@ export default function useERPState() {
           <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;color:#EF4444;"><span>Due Amount / المتبقي:</span> <b>${due.toFixed(2)} SAR</b></p>
         </div>
       </div>
-      <div style="margin-top:60px; border-top:1px solid #e2e8f0; padding-top:20px;"><p style="font-size:11px;color:#888;text-align:center;margin:0;">${s.invoice_footer || 'Thank you!'}</p></div>
+      <div style="margin-top:60px; border-top:1px solid #E2E8F0; padding-top:20px;"><p style="font-size:11px;color:#888;text-align:center;margin:0;">${s.invoice_footer || 'Thank you!'}</p></div>
     </div>`;
   };
 
   return {
-    user, setUser, userProfile, setUserProfile, lang, setLang, page, setPage, payFilter, setPayFilter, router, toast, setToast, modal, setModal, passForm, setPassForm, chatOpen, setChatOpen, chatMessages, setChatMessages, chatInput, setChatInput, search, setSearch, tblPage, setTblPage, itemsPerPage, ledgerCustId, setLedgerCustId, previewHTML, setPreviewHTML, data, setData, today, editInvId, setEditInvId, invForm, setInvForm, expForm, setExpForm, editExpId, setEditExpId, editCorpId, setEditCorpId, corpForm, setCorpForm, editCredId, setEditCredId, creditorForm, setCreditorForm, editCustId, setEditCustId, custForm, setCustForm, editVendId, setEditVendId, vendorForm, setVendorForm, editPkgId, setEditPkgId, pkgForm, setPkgForm, editBrnId, setEditBrnId, brnForm, setBrnForm, editEmpId, setEditEmpId, empForm, setEmpForm, editSrvId, setEditSrvId, srvForm, setSrvForm, editUserId, setEditUserId, investForm, setInvestForm, settleForm, setSettleForm, refundForm, setRefundForm, transferForm, setTransferForm, repDate, setRepDate, reportTab, setReportTab, statementTab, setStatementTab, setForm, setSetForm, userForm, setUserForm, portalForm, setPortalForm, tr, t, showToast, logAction, fetchAll, exportToExcel, filterData, getInvoiceHTML, getExpenseHTML, getContractHTML, tenantForm, setTenantForm, profileForm, setProfileForm, marketingText, setMarketingText,
+    user, setUser, userProfile, setUserProfile, lang, setLang, page, setPage, payFilter, setPayFilter, router, toast, setToast, modal, setModal, passForm, setPassForm, chatOpen, setChatOpen, chatMessages, setChatMessages, chatInput, setChatInput, search, setSearch, tblPage, setTblPage, itemsPerPage, ledgerCustId, setLedgerCustId, previewHTML, setPreviewHTML, data, setData, today, editInvId, setEditInvId, invForm, setInvForm, expForm, setExpForm, editExpId, setEditExpId, editCorpId, setEditCorpId, corpForm, setCorpForm, editCredId, setEditCredId, creditorForm, setCreditorForm, editCustId, setEditCustId, custForm, setCustForm, editVendId, setEditVendId, vendorForm, setVendorForm, editPkgId, setEditPkgId, pkgForm, setPkgForm, editBrnId, setEditBrnId, brnForm, setBrnForm, editEmpId, setEditEmpId, empForm, setEmpForm, editSrvId, setEditSrvId, srvForm, setSrvForm, editUserId, setEditUserId, investForm, setInvestForm, settleForm, setSettleForm, refundForm, setRefundForm, transferForm, setTransferForm, repDate, setRepDate, reportTab, setReportTab, statementTab, setStatementTab, setForm, setSetForm, userForm, setUserForm, portalForm, setPortalForm, tr, t, showToast, logAction, fetchAll, exportToExcel, filterData, getInvoiceHTML, getExpenseHTML, getContractHTML, tenantForm, setTenantForm, profileForm, setProfileForm, ledgerEmpId, setLedgerEmpId,
     contractCorpName, setContractCorpName, contractType, setContractType, contractMarkup, setContractMarkup, contractTerms, setContractTerms
   };
 }
