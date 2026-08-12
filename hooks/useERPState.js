@@ -1,337 +1,529 @@
-import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
-export default function useERPState() {
-  const [user, setUser] = useState(null);
-  const [userProfile, setUserProfile] = useState({ email: '', username: '', role: 'AgencyAdmin', is_admin: true, can_access_invoices: true, can_access_bank: true, can_access_hr: true, can_access_reports: true, can_access_settings: true, tenant_id: null, avatar_url: '', phone: '', address: '' });
-  const [lang, setLang] = useState('en');
-  const [page, setPage] = useState('dashboard');
-  const [payFilter, setPayFilter] = useState('All');
-  const router = useRouter();
-  const [toast, setToast] = useState(null);
-  const [modal, setModal] = useState({ type: null, data: null });
-  const [passForm, setPassForm] = useState({ newPass: '' });
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState([{ sender: 'bot', text: 'مرحباً! أنا مساعدك الذكي. كيف يمكنني مساعدتك؟' }]);
-  const [chatInput, setChatInput] = useState('');
-  const [search, setSearch] = useState('');
-  const [tblPage, setTblPage] = useState(1);
-  const itemsPerPage = 10;
-  const [ledgerCustId, setLedgerCustId] = useState(''); 
-  const [previewHTML, setPreviewHTML] = useState(''); 
-  const [ledgerEmpId, setLedgerEmpId] = useState(''); // For Employee Ledger
-  
-  const [contractCorpName, setContractCorpName] = useState('');
-  const [contractType, setContractType] = useState('Flight Tickets');
-  const [contractMarkup, setContractMarkup] = useState('20');
-  const [contractTerms, setContractTerms] = useState('Provider guarantees the cheapest fares. A flat service fee will be charged over the base cost price.');
+export default function useERPActions(state) {
+  const { user, data, setData, userProfile, showToast, logAction, fetchAll, invForm, setInvForm, expForm, setExpForm, corpForm, setCorpForm, creditorForm, setCreditorForm, custForm, setCustForm, vendorForm, setVendorForm, pkgForm, setPkgForm, brnForm, setBrnForm, empForm, setEmpForm, srvForm, setSrvForm, investForm, setInvestForm, settleForm, setSettleForm, refundForm, setRefundForm, transferForm, setTransferForm, setForm, setSetForm, userForm, setUserForm, portalForm, setPortalForm, editInvId, setEditInvId, editExpId, setEditExpId, editCorpId, setEditCorpId, editCredId, setEditCredId, editCustId, setEditCustId, editVendId, setEditVendId, editPkgId, setEditPkgId, editBrnId, setEditBrnId, editEmpId, setEditEmpId, editSrvId, setEditSrvId, editUserId, setEditUserId, modal, setModal, passForm, setPassForm, chatInput, setChatInput, chatMessages, setChatMessages, previewHTML, setPreviewHTML, getInvoiceHTML, getExpenseHTML, getContractHTML, today, router, contractCorpName, contractType, contractMarkup, contractTerms, tenantForm, setTenantForm, profileForm, setProfileForm, ledgerEmpId } = state;
 
-  const [tenantForm, setTenantForm] = useState({ agency_name: '', owner_email: '', subscription_end_date: '', company_name_ar: '', vat_no: '', cr_no: '', phone: '', address_ar: '' });
+  const handleLogout = () => { supabase.auth.signOut(); router.push('/login'); };
+  
+  const handleChangePassword = async (e) => { 
+    e.preventDefault(); 
+    if (!passForm.newPass) return showToast('Please enter a new password!');
+    const { error } = await supabase.auth.updateUser({ password: passForm.newPass }); 
+    if (error) return showToast('Error: ' + error.message); 
+    showToast('Password Updated Successfully!'); 
+    setModal({ type: null, data: null }); 
+    setPassForm({ newPass: '' }); 
+  };
+  
+  const handleSendMessage = () => { 
+    if (!chatInput.trim()) return; 
+    setChatMessages(prev => [...prev, { sender: 'user', text: chatInput }]); 
+    setChatInput(''); 
+    setTimeout(() => { setChatMessages(prev => [...prev, { sender: 'bot', text: "I can help with Invoices. (يمكنني المساعدة في الفواتير)" }]); }, 600); 
+  };
 
-  const [data, setData] = useState({ tenants: [], invoices: [], portals: [], customers: [], corporates: [], creditors: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [], audits: [], investments: [], vendors: [], customFields: [], packages: [], branches: [], empAdvances: [] });
-  const today = new Date().toISOString().split('T')[0];
-  
-  const [editInvId, setEditInvId] = useState(null);
-  const [invForm, setInvForm] = useState({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: '', bookingDate: today, invoiceDate: today, bookingType: 'New Booking', linkedInvId: '', service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' });
-  
-  const [expForm, setExpForm] = useState({ vendor_name: '', vendor_vat: '', expense_date: today, expense_type: 'Office Supplies', payment_mode: 'Cash', items: [{ name: '', qty: 1, price: 0 }], taxRate: '15', desc: '' });
-  const [editExpId, setEditExpId] = useState(null);
+  // Custom Field Handlers
+  const handleAddCustomField = () => setSetForm(prev => ({ ...prev, custom_fields: [...(prev.custom_fields || []), { key: '', value: '' }] }));
+  const handleRemoveCustomField = (index) => setSetForm(prev => ({ ...prev, custom_fields: prev.custom_fields.filter((_, i) => i !== index) }));
+  const handleCustomFieldChange = (index, type, value) => setSetForm(prev => {
+    const cf = [...prev.custom_fields];
+    cf[index][type] = value;
+    return { ...prev, custom_fields: cf };
+  });
 
-  const [editCorpId, setEditCorpId] = useState(null); const [corpForm, setCorpForm] = useState({ name: '', vat_no: '', phone: '', address: '' });
-  const [editCredId, setEditCredId] = useState(null); const [creditorForm, setCreditorForm] = useState({ name: '', phone: '', address: '' });
-  const [editCustId, setEditCustId] = useState(null); const [custForm, setCustForm] = useState({ name: '', phone: '', store_credit: 0 });
-  const [editVendId, setEditVendId] = useState(null); const [vendorForm, setVendorForm] = useState({ name: '', phone: '', balance: 0 });
-  const [editPkgId, setEditPkgId] = useState(null); const [pkgForm, setPkgForm] = useState({ name: '', price: '', desc: '', duration: '', inclusions: '' });
-  const [editBrnId, setEditBrnId] = useState(null); const [brnForm, setBrnForm] = useState({ name: '', location: '', phone: '', manager: '', email: '', timing: '', status: 'Active' });
-  
-  // Employee Form Updated with Iqama & Roles
-  const [editEmpId, setEditEmpId] = useState(null); 
-  const [empForm, setEmpForm] = useState({ name: '', role: 'Sales', salary: 0, phone: '', commission_rate: 0, iqama_no: '', iqama_expiry: '' });
-  
-  const [editSrvId, setEditSrvId] = useState(null); const [srvForm, setSrvForm] = useState({ name: '' });
-  const [editUserId, setEditUserId] = useState(null); 
-  
-  const [investForm, setInvestForm] = useState({ name: '', amount: '', date: today, desc: '', mode: 'Cash', reason: 'Other', otherReason: '' });
-  const [settleForm, setSettleForm] = useState({ id: '', date: today, mode: 'Cash' });
-  const [refundForm, setRefundForm] = useState({ id: '', date: today, compRefund: 0, custRefund: 0, mode: 'Cash', reason: '', portalId: '' });
-  const [transferForm, setTransferForm] = useState({ from: 'Cash', to: 'Bank', amount: '', date: today });
-  const [repDate, setRepDate] = useState({ from: '', to: '' }); const [reportTab, setReportTab] = useState('sales'); const [statementTab, setStatementTab] = useState('sales');
-  const [setForm, setSetForm] = useState({ company_name_en: 'SUEUD AL TAAYIRA', company_name_ar: 'صعود الطائرة للسفر السياحة', vat_no: '', cr_no: '', iata_no: '', phone: '', address_ar: 'طريق ملك عبدالعزيز عرعر', license_no: '', tourist_license_no: '', logo_url: '', invoice_footer: 'Thank you for choosing us!', custom_fields: [] });
-  const [userForm, setUserForm] = useState({ email: '', username: '', role: 'Sales', is_admin: false, can_access_invoices: true, can_access_bank: false, can_access_hr: false, can_access_reports: false, can_access_settings: false });
-  const [portalForm, setPortalForm] = useState({ name: '', balance: 0 });
-  
-  const [profileForm, setProfileForm] = useState({ username: '', avatar_url: '', phone: '', address: '' });
+  // Profile Handlers
+  const handleProfilePicUpload = async (e) => {
+    try {
+      const file = e.target.files[0];
+      if (!file) return;
+      const fileName = `avatar-${user.id}-${Date.now()}.${file.name.split('.').pop()}`;
+      const { error } = await supabase.storage.from('logos').upload(fileName, file);
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName);
+      setProfileForm(prev => ({ ...prev, avatar_url: urlData.publicUrl }));
+      showToast('Profile Picture Uploaded!');
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
 
-  const t = { en: { dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices List', refunds: 'Refund Invoices', customers: 'Customer List', corporates: 'Corporate Accounts', creditors: 'Creditors', portals: 'Portals & Recharge', bank: 'Bank & Cash', invest: 'Investors', hr: 'HR & Employees', users: 'User Management', reports: 'Financial Reports', audit: 'Audit Logs', settings: 'Settings', vendors: 'Vendors (B2B)', packages: 'Tour Packages', branches: 'Branches', logout: 'Logout', search: 'Search...', changePass: 'Change Password', statements: 'Statements', download_excel: 'Download Excel', credit: 'Credit Balances', profile: 'My Profile', profitability: 'Profit Analyzer' }, ar: { dash: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'قائمة الفواتير', refunds: 'فواتير الاسترجاع', customers: 'قائمة العملاء', corporates: 'حسابات الشركات', creditors: 'الدائنون', portals: 'البوابات والرصيد', bank: 'البنك والكاش', invest: 'المستثمرون', hr: 'الموارد البشرية', users: 'إدارة المستخدمين', reports: 'التقارير المالية', audit: 'سجلات التدقيق', settings: 'الإعدادات', vendors: 'الموردون', packages: 'باقات سياحية', branches: 'الفروع', logout: 'تسجيل الخروج', search: 'بحث...', changePass: 'تغيير كلمة المرور', statements: 'كشوف الحسابات', download_excel: 'تحميل إكسل', credit: 'أرصدة الائتمان', profile: 'حسابي', profitability: 'محلل الأرباح' } };
-  const tr = t[lang];
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    try {
+      const { error } = await supabase.from('app_users').update({ 
+        username: profileForm.username, 
+        avatar_url: profileForm.avatar_url,
+        phone: profileForm.phone,
+        address: profileForm.address
+      }).eq('id', userProfile.id);
+      
+      if (error) throw error;
+      showToast('Profile Updated Successfully!');
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
 
-  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
+  // SaaS SuperAdmin Actions
+  const handleAddTenant = async (e) => {
+    e.preventDefault();
+    try {
+      const tempPass = Math.random().toString(36).slice(-8) + 'A1!';
+      const res = await fetch('/api/create-tenant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...tenantForm, temp_password: tempPass })
+      });
+      const resData = await res.json();
+      if (resData.error) throw new Error(resData.error);
+      showToast(`✅ Agency Created! Email: ${tenantForm.owner_email} | Pass: ${tempPass}`);
+      setTenantForm({ agency_name: '', owner_email: '', subscription_end_date: '', company_name_ar: '', vat_no: '', cr_no: '', phone: '', address_ar: '' });
+      fetchAll();
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
 
-  useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) return router.push('/login');
-      setUser(session.user);
-      const { data: uData } = await supabase.from('app_users').select('*').eq('email', session.user.email).maybeSingle();
-      if (uData) {
-        setUserProfile(uData);
-        setProfileForm({ username: uData.username || '', avatar_url: uData.avatar_url || '', phone: uData.phone || '', address: uData.address || '' });
-        if (uData.role !== 'SuperAdmin') {
-          const { data: tenant } = await supabase.from('tenants').select('*').eq('id', uData.tenant_id).single();
-          if (!tenant || !tenant.is_paid || new Date(tenant.subscription_end_date) < new Date()) {
-            router.push('/subscription');
-            return;
-          }
+  const handleToggleSubscription = async (tenant) => {
+    try {
+      const { error } = await supabase.from('tenants').update({ is_paid: !tenant.is_paid }).eq('id', tenant.id);
+      if (error) throw error;
+      showToast('Subscription Updated!');
+      fetchAll();
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+
+  const handleDeleteTenant = async (id) => {
+    if (!confirm('Delete this Agency permanently?')) return;
+    try {
+      await supabase.from('tenants').delete().eq('id', id);
+      showToast('Agency Deleted!');
+      fetchAll();
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+
+  const downloadPDF = async (htmlContent, filename = 'document.pdf') => {
+    try {
+      const div = document.createElement('div');
+      div.style.position = 'absolute';
+      div.style.left = '-9999px';
+      div.style.top = '0';
+      div.innerHTML = htmlContent;
+      document.body.appendChild(div);
+      
+      const images = div.querySelectorAll('img');
+      await Promise.all(Array.from(images).map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(res => img.onload = img.onerror = res);
+      }));
+
+      const canvas = await html2canvas(div, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgWidth = 210; const pageHeight = 297;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      pdf.save(filename);
+      document.body.removeChild(div);
+      showToast('PDF Downloaded!');
+    } catch (err) {
+      showToast('PDF Error: ' + err.message);
+    }
+  };
+
+  const handleGenerateContract = (e) => {
+    e.preventDefault();
+    if (!contractCorpName) return showToast('Enter Corporate Name');
+    const s = data.settings;
+    const html = getContractHTML(s, contractCorpName, today, false, contractType, contractMarkup, contractTerms);
+    setPreviewHTML(html);
+    setModal({ type: 'preview', data: null });
+  };
+
+  const handleGenerateOffer = (e) => {
+    e.preventDefault();
+    if (!contractCorpName) return showToast('Enter Corporate Name');
+    const s = data.settings;
+    const html = getContractHTML(s, contractCorpName, today, true, contractType, contractMarkup, contractTerms);
+    setPreviewHTML(html);
+    setModal({ type: 'preview', data: null });
+  };
+
+  const handleEditInvoice = (inv) => {
+    setEditInvId(inv.id);
+    setInvForm({
+      custType: inv.customer_id ? 'Individual' : 'Corporate', custId: inv.customer_id || 'new', corpId: inv.corporate_id || 'new',
+      portalId: inv.portal_id, service: inv.service_type, flightType: inv.flight_type || 'Domestic',
+      flightJourney: inv.flight_journey || 'Single', refundable: inv.refundable_status || 'Refundable',
+      bookingType: inv.booking_type || 'New Booking', linkedInvId: inv.linked_inv_id || '',
+      flightSector: inv.flight_sector || '', airline: inv.airline || '', pnr: inv.pnr || '', ticketNo: inv.ticket_no || '',
+      qty: inv.qty || 1, cost: (inv.total_cost || 0) / (inv.qty || 1), sell: ((inv.total_sell || 0) + (inv.discount || 0)) / (inv.qty || 1),
+      discount: inv.discount || 0, taxRate: inv.vat > 0 ? '15' : '0', payment: inv.payment_method,
+      paid: (inv.paid_amount || 0) - (inv.used_credit || 0), useCredit: inv.used_credit || 0, invoiceDate: inv.invoice_date || today,
+      employeeId: inv.employee_id || '', passengers: inv.passenger_names ? inv.passenger_names.split('\n') : ['']
+    });
+    state.setPage('create');
+  };
+
+  const handleCreateInvoice = async (e) => {
+    e.preventDefault();
+    try {
+      if (invForm.custType === 'Individual' && invForm.custId === 'new' && invForm.custName) {
+        const exists = data.customers.find(c => c.name.toLowerCase() === invForm.custName.toLowerCase() && c.phone === invForm.custPhone);
+        if (exists) throw new Error('Customer already exists! Please select from the dropdown.');
+      }
+      const qty = parseInt(invForm.qty) || 1; const cost = (parseFloat(invForm.cost) || 0) * qty; 
+      let sell = (parseFloat(invForm.sell) || 0) * qty; const discount = parseFloat(invForm.discount) || 0; 
+      sell = sell - discount; const taxRate = parseFloat(invForm.taxRate) || 0; const vat = sell * (taxRate / 100); const total = sell + vat; 
+      const cashPaid = parseFloat(invForm.paid) || 0; const usedCredit = parseFloat(invForm.useCredit) || 0;
+      const totalPaid = cashPaid + usedCredit; const due = total - totalPaid; const profit = sell - cost; 
+      let cid = null, corpId = null;
+      
+      if (invForm.payment === 'Credit Balance' && invForm.creditCustId) {
+        cid = invForm.creditCustId;
+        const cust = data.customers.find(c => c.id === cid);
+        if (cust) {
+          const newCredit = (cust.store_credit || 0) - usedCredit;
+          const { error: credErr } = await supabase.from('customers').update({ store_credit: newCredit }).eq('id', cust.id);
+          if (credErr) throw new Error('Credit update failed: ' + credErr.message);
+          setData(prev => ({ ...prev, customers: prev.customers.map(c => c.id === cust.id ? { ...c, store_credit: newCredit } : c) }));
+        }
+      } else {
+        if (invForm.custType === 'Individual') { 
+          if (invForm.custId === 'new') { 
+            const { data: nC, error: cErr } = await supabase.from('customers').insert([{ name: invForm.custName, phone: invForm.custPhone, type: 'Individual', tenant_id: userProfile.tenant_id }]).select().single(); 
+            if (cErr) throw new Error('Customer creation failed: ' + cErr.message);
+            cid = nC.id; 
+          } else { cid = invForm.custId; } 
+        } else { 
+          if (invForm.corpId === 'new') { 
+            const { data: nCorp, error: corpErr } = await supabase.from('corporates').insert([{ name: invForm.corpName, vat_no: invForm.corpVat, phone: invForm.corpPhone, address: invForm.corpAddress, tenant_id: userProfile.tenant_id }]).select().single(); 
+            if (corpErr) throw new Error('Corporate creation failed: ' + corpErr.message);
+            corpId = nCorp.id; 
+          } else { corpId = invForm.corpId; } 
         }
       }
-      fetchAll();
-    });
-  }, [router]);
-
-  const logAction = async (action) => { if (user) await supabase.from('audit_logs').insert([{ user_email: user.email, action, tenant_id: userProfile.tenant_id }]); };
-
-  const fetchAll = async () => {
-    const tenantId = userProfile.tenant_id;
-    
-    const safeFetch = async (promise) => {
-      try {
-        const { data, error } = await promise;
-        if (error) { console.error("Fetch Error:", error.message); return []; }
-        return data || [];
-      } catch (e) { console.error(e); return []; }
-    };
-
-    const [tenantsData, invData, porData, cusData, corpData, crdData, recData, setRes, empData, payData, usrData, expData, srvData, cbkData, audData, invstmntData, vndData, pkgsData, brnsData, advData] = await Promise.all([
-      safeFetch(userProfile.role === 'SuperAdmin' ? supabase.from('tenants').select('*').order('created_at', { ascending: false }) : Promise.resolve({ data: [] })),
-      safeFetch(supabase.from('invoices').select(`*, customers(name, type, phone, store_credit), corporates(name, vat_no, phone), portals(name), employees(name, phone), creditors(name)`).eq('tenant_id', tenantId).order('created_at', { ascending: false })),
-      safeFetch(supabase.from('portals').select('*').eq('tenant_id', tenantId)),
-      safeFetch(supabase.from('customers').select('*').eq('tenant_id', tenantId).eq('type', 'Individual').order('name', { ascending: true })),
-      safeFetch(supabase.from('corporates').select('*').eq('tenant_id', tenantId).order('name', { ascending: true })),
-      safeFetch(supabase.from('creditors').select('*').eq('tenant_id', tenantId).order('name', { ascending: true })),
-      safeFetch(supabase.from('recharges').select(`*, portals(name)`).eq('tenant_id', tenantId).order('recharge_date', { ascending: false })),
-      safeFetch(supabase.from('settings').select('*').eq('tenant_id', tenantId).maybeSingle()),
-      safeFetch(supabase.from('employees').select('*').eq('tenant_id', tenantId)),
-      safeFetch(supabase.from('payroll').select(`*, employees(name)`).eq('tenant_id', tenantId)),
-      safeFetch(supabase.from('app_users').select('*').eq('tenant_id', tenantId)),
-      safeFetch(supabase.from('expenses').select('*').eq('tenant_id', tenantId)),
-      safeFetch(supabase.from('services').select('*').eq('tenant_id', tenantId)),
-      safeFetch(supabase.from('cashbook').select('*').eq('tenant_id', tenantId).order('trans_date', { ascending: false })),
-      safeFetch(supabase.from('audit_logs').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false }).limit(50)),
-      safeFetch(supabase.from('investments').select('*').eq('tenant_id', tenantId).order('invest_date', { ascending: false })),
-      safeFetch(supabase.from('vendors').select('*').eq('tenant_id', tenantId)),
-      safeFetch(supabase.from('packages').select('*').eq('tenant_id', tenantId)),
-      safeFetch(supabase.from('branches').select('*').eq('tenant_id', tenantId)),
-      safeFetch(supabase.from('employee_advances').select('*, employees(name)').eq('tenant_id', tenantId).order('date', { ascending: false }))
-    ]);
-
-    const settingsData = setRes || {};
-    setData({ 
-      tenants: tenantsData, invoices: invData, portals: porData, customers: cusData, corporates: corpData, 
-      creditors: crdData, recharges: recData, settings: settingsData, employees: empData, payroll: payData, 
-      appUsers: usrData, expenses: expData, services: srvData, cashbook: cbkData, audits: audData, 
-      investments: invstmntData, vendors: vndData, customFields: [], packages: pkgsData, branches: brnsData,
-      empAdvances: advData
-    });
-    
-    if (porData.length > 0) setInvForm(f => ({ ...f, portalId: f.portalId || porData[0].id }));
-    if (settingsData && Object.keys(settingsData).length > 0) setSetForm(prev => ({ ...prev, ...settingsData, custom_fields: settingsData.custom_fields || [] }));
+      const portal = data.portals.find(p => p.id === invForm.portalId); 
+      if (!portal) throw new Error("Please select a Portal");
+      let desc = invForm.service === 'Flight Ticket' ? `${invForm.airline} - ${invForm.flightSector}` : invForm.service; 
+      const passengerNames = invForm.passengers.filter(p => p).join('\n');
+      const payload = { 
+        customer_id: cid, corporate_id: corpId, portal_id: portal.id, employee_id: invForm.employeeId || null, 
+        booking_date: invForm.bookingDate, invoice_date: invForm.invoiceDate, service_type: invForm.service, 
+        flight_type: invForm.flightType, flight_journey: invForm.flightJourney, refundable_status: invForm.refundable,
+        booking_type: invForm.bookingType, linked_inv_id: invForm.linkedInvId || null,
+        pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty: qty, discount: discount, passenger_names: passengerNames || null, 
+        airline: invForm.airline || null, flight_sector: invForm.flightSector || null, total_cost: cost, total_sell: sell, profit, vat, total, 
+        paid_amount: totalPaid, used_credit: usedCredit, due_amount: due, payment_method: invForm.payment, 
+        credit_due_date: due > 0 && invForm.payment === 'Credit' ? invForm.creditDueDate : null, 
+        creditor_id: invForm.payment === 'Credit' ? (invForm.creditorId || null) : null, 
+        tabby_order_no: invForm.payment === 'Tabby' ? invForm.tabbyNo : null, tamara_order_no: invForm.payment === 'Tamara' ? invForm.tamaraNo : null, 
+        ticket_status: invForm.ticketStatus, tenant_id: userProfile.tenant_id
+      };
+      if (editInvId) {
+        const { data: upInv, error: upErr } = await supabase.from('invoices').update(payload).eq('id', editInvId).select(`*, customers(name), corporates(name), employees(name)`).single();
+        if (upErr) throw new Error('Invoice update failed: ' + upErr.message);
+        setData(prev => ({ ...prev, invoices: prev.invoices.map(i => i.id === editInvId ? upInv : i) }));
+        showToast('Invoice Updated!'); setEditInvId(null);
+      } else {
+        const invNo = `INV-${Date.now()}`;
+        const { data: newInv, error: invErr } = await supabase.from('invoices').insert([{ invoice_no: invNo, ...payload }]).select(`*, customers(name), corporates(name), employees(name)`).single();
+        if (invErr) throw new Error('Invoice creation failed: ' + invErr.message);
+        const newPortalBal = (portal.current_balance || 0) - cost; 
+        await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', portal.id); 
+        await logAction(`Created Invoice ${invNo}`);
+        let newCashEntry = null; 
+        if (cashPaid > 0 && invForm.payment !== 'Credit' && invForm.payment !== 'Credit Balance') { 
+          const cbType = invForm.payment === 'Cash' ? 'Cash-In' : (invForm.payment === 'Bank Transfer' ? 'Bank-In' : null); 
+          if (cbType) { 
+            const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: invForm.invoiceDate, type: cbType, description: `Payment for ${invNo}`, amount: cashPaid, tenant_id: userProfile.tenant_id }]).select().single(); 
+            if (cbErr) console.error("Cashbook entry failed:", cbErr.message);
+            newCashEntry = nC; 
+          } 
+        }
+        setData(prev => ({ ...prev, invoices: [newInv, ...prev.invoices], portals: prev.portals.map(p => p.id === portal.id ? { ...p, current_balance: newPortalBal } : p), cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook }));
+        showToast('Invoice Generated!');
+      }
+      setInvForm({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: data.portals[0]?.id || '', bookingDate: today, invoiceDate: today, bookingType: 'New Booking', linkedInvId: '', service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' }); 
+      state.setPage('list');
+    } catch (err) { showToast('Error: ' + err.message); }
   };
 
-  const exportToExcel = (csvData, filename) => { 
-    if (!csvData || csvData.length === 0) return showToast('No data to export'); 
+  const handleDeleteInvoice = async (inv) => {
+    if (!confirm('Delete this invoice permanently? This will reverse the portal balance.')) return;
+    const portal = data.portals.find(p => p.id === inv.portal_id);
+    if (portal) {
+      const newBal = (portal.current_balance || 0) + (inv.total_cost || 0);
+      await supabase.from('portals').update({ current_balance: newBal }).eq('id', portal.id);
+    }
+    await supabase.from('invoices').delete().eq('id', inv.id);
+    setData(prev => ({ ...prev, invoices: prev.invoices.filter(i => i.id !== inv.id), portals: prev.portals.map(p => p.id === inv.portal_id ? { ...p, current_balance: (p.current_balance || 0) + (inv.total_cost || 0) } : p) }));
+    showToast('Invoice Deleted & Portal Balance Reversed!');
+  };
+
+  const handleAddExpItem = () => setExpForm(prev => ({ ...prev, items: [...prev.items, { name: '', qty: 1, price: 0 }] }));
+  const handleRemoveExpItem = (index) => setExpForm(prev => ({ ...prev, items: prev.items.filter((_, i) => i !== index) }));
+  const handleExpItemChange = (index, field, value) => {
+    setExpForm(prev => {
+      const items = [...prev.items];
+      items[index] = { ...items[index], [field]: value };
+      return { ...prev, items };
+    });
+  };
+
+  const handleEditExpense = (exp) => {
+    setEditExpId(exp.id);
+    setExpForm({ vendor_name: exp.vendor_name, vendor_vat: exp.vendor_vat || '', expense_date: exp.expense_date, expense_type: exp.expense_type, payment_mode: exp.payment_mode, items: exp.items || [{ name: exp.item_name, qty: 1, price: exp.amount }], taxRate: exp.vat > 0 ? '15' : '0', desc: exp.description || '' });
+  };
+
+  const handleDeleteExpense = async (exp) => {
+    if (!confirm('Delete this expense? This will reverse the accounting entry.')) return;
     try {
-      const headers = Object.keys(csvData[0]); 
-      const csvRows = [headers.join(',')]; 
-      for (const row of csvData) { csvRows.push(headers.map(h => `"${row[h] || ''}"`).join(',')); } 
-      const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' }); 
-      const link = document.createElement('a'); 
-      link.href = URL.createObjectURL(blob); 
-      link.download = `${filename}.csv`; 
-      link.click(); 
-      showToast('Exported as CSV!'); 
-    } catch (err) { showToast('Export Error: ' + err.message); }
+      const cbEntry = data.cashbook.find(c => c.description.includes(exp.invoice_no));
+      if (cbEntry) await supabase.from('cashbook').delete().eq('id', cbEntry.id);
+      await supabase.from('expenses').delete().eq('id', exp.id);
+      setData(prev => ({ ...prev, expenses: prev.expenses.filter(e => e.id !== exp.id), cashbook: prev.cashbook.filter(c => c.id !== cbEntry?.id) }));
+      showToast('Expense Deleted & Accounts Reversed!');
+    } catch (err) { showToast('Error: ' + err.message); }
   };
 
-  const filterData = (arr, dateKey) => { if (!repDate.from || !repDate.to) return arr; return arr.filter(i => (i[dateKey] || i.created_at?.split('T')[0]) >= repDate.from && (i[dateKey] || i.created_at?.split('T')[0]) <= repDate.to); };
-
-  // FIXED INVOICE TEMPLATE: White Background, Black Text for Perfect Print
-  const getInvoiceHTML = (inv, s, invLang = 'en') => {
-    const isAr = invLang === 'ar'; 
-    const dir = isAr ? 'rtl' : 'ltr'; 
-    const textAlign = isAr ? 'right' : 'left'; 
-    const textAlignOpp = isAr ? 'left' : 'right';
-    const isRefund = inv.invoice_no && inv.invoice_no.startsWith('REF-');
-    const isCorporate = !!inv.corporate_id;
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent('https://sueud-al-taayira.vercel.app/invoice/' + inv.invoice_no)}`;
-    const titleEn = isRefund ? 'CREDIT NOTE' : (isCorporate ? 'TAX INVOICE' : 'SIMPLIFIED TAX INVOICE');
-    const titleAr = isRefund ? 'فاتورة إشعار دائن' : (isCorporate ? 'فاتورة ضريبية' : 'فاتورة ضريبية مبسطة');
-    const empName = inv.employees?.name || 'N/A';
-    const empPhone = inv.employees?.phone || 'N/A';
-    const custPhone = inv.customers?.phone || inv.corporates?.phone || 'N/A';
-    const paxNames = inv.passenger_names ? inv.passenger_names.split('\n').map(p => `<div style="padding:2px 0;">• ${p}</div>`).join('') : 'N/A';
-    const subtotal = (inv.total_sell || 0);
-    const vat = (inv.vat || 0);
-    const total = (inv.total || 0);
-    const paid = (inv.paid_amount || 0);
-    const due = (inv.due_amount || 0);
-    const taxRate = inv.vat > 0 ? 15 : 0;
-    const linkedInv = inv.linked_inv_id ? data.invoices.find(i => i.id === inv.linked_inv_id) : null;
-    const customFieldsHtml = s.custom_fields && s.custom_fields.length > 0 ? s.custom_fields.map(cf => `${cf.key}: ${cf.value}<br/>`).join('') : '';
-    
-    return `
-    <div style="width:794px; min-height:1123px; padding:40px; background-color:#FFFFFF; color:#000000; font-family:'Segoe UI', Tahoma, Arial; direction:${dir}; text-align:${textAlign};">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #1E3A8A; padding-bottom:20px; margin-bottom:30px;">
-        <div style="display:flex; align-items:center; gap:20px;">
-          ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:90px;width:auto;object-fit:contain;" />` : '<div style="width:90px;height:90px;"></div>'}
-          <div style="text-align: right; direction: rtl;">
-            <h1 style="margin:0;color:#1E3A8A;font-size:22px;font-weight:bold;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h1>
-            <p style="font-size:12px;margin-top:5px;line-height:1.6;color:#333;">عنوان: ${s.address_ar || ''}<br/>هاتف: ${s.phone || ''}<br/>سجل تجاري: ${s.cr_no || ''}<br/>ضريبة القيمة المضافة: ${s.vat_no || ''}<br/>ترخيص: ${s.license_no || ''}<br/>ترخيص سياحي: ${s.tourist_license_no || ''} ${customFieldsHtml}</p>
-          </div>
-        </div>
-        <div style="text-align:${textAlignOpp}; background:#1E3A8A; color:#fff; padding:15px 25px; border-radius:8px; min-width:250px;">
-          <h1 style="margin:0;font-size:22px;">${titleEn}</h1>
-          <h2 style="margin:5px 0;font-size:18px;color:#FBBF24;">${titleAr}</h2>
-          <p style="font-size:12px;margin-top:10px;color:#eee; text-align:${textAlignOpp};">Inv No: <b>${inv.invoice_no}</b><br/>Date: <b>${inv.invoice_date}</b><br/>Payment: <b>${inv.payment_method}</b></p>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:30px;">
-        <div style="background:#F8FAFC;padding:15px;border-radius:8px;border-left:4px solid #1E3A8A;"><h3 style="margin:0 0 5px;color:#1E3A8A;font-size:14px;">BILL TO / الفاتورة إلى:</h3><p style="margin:0;font-size:16px;font-weight:bold;">${inv.customers?.name || inv.corporates?.name || ''}</p><p style="margin:3px 0 0;font-size:12px;color:#666;">Phone: ${custPhone} ${inv.corporates?.vat_no ? '| VAT: '+inv.corporates.vat_no : ''}</p></div>
-        <div style="background:#F8FAFC;padding:15px;border-radius:8px;border-left:4px solid #1E3A8A;text-align:${textAlignOpp};"><h3 style="margin:0 0 5px;color:#1E3A8A;font-size:14px;">SALES PERSON / الموظف:</h3><p style="margin:0;font-size:16px;font-weight:bold;">${empName}</p><p style="margin:3px 0 0;font-size:12px;color:#666;">Contact: ${empPhone}</p></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;margin-bottom:20px;border:1px solid #E2E8F0;padding:15px;border-radius:8px;background:#FFFFFF;">
-        ${inv.service_type ? `<div><b style="color:#1E3A8A;font-size:11px;">Service</b><br/><span style="font-size:13px;">${inv.service_type}</span></div>` : ''}
-        ${inv.airline ? `<div><b style="color:#1E3A8A;font-size:11px;">Airline</b><br/><span style="font-size:13px;">${inv.airline}</span></div>` : ''}
-        ${inv.flight_sector ? `<div><b style="color:#1E3A8A;font-size:11px;">Sector</b><br/><span style="font-size:13px;">${inv.flight_sector}</span></div>` : ''}
-        ${inv.flight_type ? `<div><b style="color:#1E3A8A;font-size:11px;">Flight Type</b><br/><span style="font-size:13px;">${inv.flight_type}</span></div>` : ''}
-        ${inv.booking_type ? `<div><b style="color:#1E3A8A;font-size:11px;">Booking Type</b><br/><span style="font-size:13px;">${inv.booking_type}</span></div>` : ''}
-        ${inv.pnr ? `<div><b style="color:#1E3A8A;font-size:11px;">PNR</b><br/><span style="font-size:13px;">${inv.pnr}</span></div>` : ''}
-        ${inv.ticket_no ? `<div><b style="color:#1E3A8A;font-size:11px;">Ticket No</b><br/><span style="font-size:13px;">${inv.ticket_no}</span></div>` : ''}
-      </div>
-      ${linkedInv ? `<div style="margin-bottom:20px;border:1px dashed #1E3A8A;padding:15px;border-radius:8px;background:#EFF6FF;"><h4 style="margin:0 0 5px;color:#1E3A8A;font-size:12px;">PREVIOUS BOOKING DETAILS</h4><p style="margin:0;font-size:12px;color:#555;">Old Inv: <b>${linkedInv.invoice_no}</b> | Date: <b>${linkedInv.invoice_date}</b><br/>Passenger: <b>${linkedInv.passenger_names || 'N/A'}</b> | Old Total: <b>${(linkedInv.total || 0).toFixed(2)}</b></p></div>` : ''}
-      ${inv.passenger_names ? `<div style="margin-bottom:20px;border:1px solid #E2E8F0;padding:15px;border-radius:8px;"><b style="color:#1E3A8A;font-size:14px;">Passengers / المسافرون:</b><div style="font-size:13px;margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:5px;">${paxNames}</div></div>` : ''}
-      <table style="width:100%;border-collapse:collapse;text-align:center;margin-bottom:30px;">
-        <thead><tr style="background:#1E3A8A;color:#FBBF24;"><th style="padding:12px;text-align:left;font-size:13px;">Desc / الوصف</th><th style="padding:12px;font-size:13px;">Qty</th><th style="padding:12px;font-size:13px;">Price</th><th style="padding:12px;font-size:13px;">Total</th></tr></thead>
-        <tbody><tr style="border-bottom:1px solid #E2E8F0;"><td style="padding:12px;text-align:left;font-size:13px;">${inv.sector || 'N/A'}</td><td style="padding:12px;font-size:13px;">${inv.qty || 1}</td><td style="padding:12px;font-size:13px;">${((inv.total_sell || 0) / (inv.qty || 1)).toFixed(2)}</td><td style="padding:12px;font-size:13px;font-weight:bold;">${(inv.total_sell || 0).toFixed(2)}</td></tr></tbody>
-      </table>
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-        <div style="text-align:center;"><img src="${qrUrl}" alt="QR Code" style="height:100px;width:100px;"/><p style="font-size:10px;color:#666;margin:5px 0 0;">Scan to verify/download</p></div>
-        <div style="text-align:${textAlignOpp};min-width:280px;">
-          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>Total Before VAT / المجموع قبل الضريبة:</span> <b>${subtotal.toFixed(2)} SAR</b></p>
-          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>VAT (${taxRate}% ${taxRate === 0 ? 'معفاء' : ''}) / ضريبة القيمة المضافة:</span> <b>${vat.toFixed(2)} SAR</b></p>
-          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>Total After VAT / الإجمالي بعد الضريبة:</span> <b>${total.toFixed(2)} SAR</b></p>
-          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;color:#059669;"><span>Paid / مدفوع:</span> <b>${paid.toFixed(2)} SAR</b></p>
-          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;color:#EF4444;"><span>Due Amount / المتبقي:</span> <b>${due.toFixed(2)} SAR</b></p>
-        </div>
-      </div>
-      <div style="margin-top:60px; border-top:1px solid #E2E8F0; padding-top:20px;"><p style="font-size:11px;color:#888;text-align:center;margin:0 0 5px;">${s.invoice_footer || 'Thank you!'}</p></div>
-    </div>`;
+  const handlePreviewExpense = (exp) => {
+    const s = data.settings;
+    const html = getExpenseHTML(exp, s);
+    setPreviewHTML(html);
+    setModal({ type: 'preview', data: exp });
   };
 
-  // EXPANDED LEGAL CONTRACT TEMPLATE (2 Pages Equivalent Content)
-  const getContractHTML = (s, corpName, dateStr, isOffer, cType, markup, terms) => {
-    const titleEn = isOffer ? "SPECIAL CORPORATE OFFER" : "CORPORATE TRAVEL AGREEMENT";
-    const titleAr = isOffer ? "عرض الشركات الخاص" : "اتفاقية السفر للشركات";
-    return `
-    <div style="width:794px; min-height:1123px; padding:50px; background:#FFFFFF; color:#000000; font-family:'Segoe UI', Tahoma, Arial; position: relative;">
-      <div style="border: 4px solid #1E3A8A; padding: 40px; height: 100%; box-sizing: border-box;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #FBBF24; padding-bottom:20px; margin-bottom:40px;">
-          <div style="display:flex; align-items:center; gap:20px;">
-            ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:90px;width:auto;object-fit:contain;" />` : '<div style="width:90px;height:90px;"></div>'}
-            <div style="text-align: right; direction: rtl;">
-              <h1 style="margin:0;color:#1E3A8A;font-size:22px;font-weight:bold;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h1>
-              <p style="font-size:12px;margin-top:5px;line-height:1.6;color:#333;">عنوان: ${s.address_ar || ''}<br/>هاتف: ${s.phone || ''}<br/>سجل تجاري: ${s.cr_no || ''}<br/>ضريبة القيمة المضافة: ${s.vat_no || ''}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div style="text-align: center; margin-bottom: 40px;">
-          <h1 style="margin:0; font-size: 24px; color:#1E3A8A;">${titleEn}</h1>
-          <h2 style="margin:5px 0 0; font-size: 20px; color:#555; direction: rtl;">${titleAr}</h2>
-          <div style="width: 100px; height: 3px; background: #FBBF24; margin: 15px auto;"></div>
-        </div>
-        
-        <div style="margin-bottom: 40px; background: #F8FAFC; padding: 20px; border-left: 4px solid #1E3A8A;">
-          <p style="font-size: 15px; line-height: 1.8; margin: 0;">This ${isOffer ? 'offer' : 'agreement'} is made on <b>${dateStr}</b> between <b>${s.company_name_en || 'Our Company'}</b> (Hereinafter referred to as "Provider") and <b>${corpName}</b> (Hereinafter referred to as "Client").</p>
-          <p style="font-size: 15px; line-height: 1.8; direction: rtl; text-align: right; margin-top: 15px;">تم إبرام هذه ${isOffer ? 'العرض' : 'الاتفاقية'} في <b>${dateStr}</b> بين <b>${s.company_name_ar || 'شركتنا'}</b> (المزود) و <b>${corpName}</b> (العميل).</p>
-        </div>
+  const handleAddExpense = async (e) => {
+    e.preventDefault();
+    try {
+      const subTotal = expForm.items.reduce((sum, item) => sum + ((parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0)), 0);
+      const taxRate = parseFloat(expForm.taxRate) || 0;
+      const vat = subTotal * (taxRate / 100);
+      const totalAmount = subTotal + vat;
 
-        <h3 style="color:#1E3A8A; border-bottom:1px solid #ddd; padding-bottom:10px; font-size:18px;">1. Service Type / نوع الخدمة</h3>
-        <p style="font-size: 14px; line-height: 1.6; margin-bottom: 20px;">The Provider agrees to supply <b>${cType}</b> to the Client. The Provider shall ensure all services are delivered with the highest standards of quality and reliability as per the regulations of the Saudi Arabian General Authority of Civil Aviation (GACA) and Ministry of Tourism.</p>
-
-        <h3 style="color:#1E3A8A; border-bottom:1px solid #ddd; padding-bottom:10px; font-size:18px;">2. Pricing & Markup / التسعير والعمولة</h3>
-        <p style="font-size: 14px; line-height: 1.6; margin-bottom: 20px;">A flat service fee of <b>${markup} SAR</b> will be charged over the base cost price per ticket/booking. All prices are subject to Value Added Tax (VAT) as per the regulations of the Zakat, Tax and Customs Authority (ZATCA) at the prevailing rate of 15%.</p>
-
-        <h3 style="color:#1E3A8A; border-bottom:1px solid #ddd; padding-bottom:10px; font-size:18px;">3. Terms of Payment / شروط الدفع</h3>
-        <p style="font-size: 14px; line-height: 1.6; margin-bottom: 20px;">Payments must be settled within 30 days from the date of invoice issuance. Late payments may incur a surcharge of 1% per month. The Provider reserves the right to suspend services for accounts with outstanding balances exceeding 60 days.</p>
-
-        <h3 style="color:#1E3A8A; border-bottom:1px solid #ddd; padding-bottom:10px; font-size:18px;">4. Cancellation & Refund Policy / سياسة الإلغاء والاسترجاع</h3>
-        <p style="font-size: 14px; line-height: 1.6; margin-bottom: 20px;">Cancellations are subject to the rules and regulations of the respective airlines and hotels. Service fees and processing charges are non-refundable. Refunds, if applicable, will be processed within 14 working days to the original payment method.</p>
-
-        <h3 style="color:#1E3A8A; border-bottom:1px solid #ddd; padding-bottom:10px; font-size:18px;">5. Confidentiality & Data Protection / السرية وحماية البيانات</h3>
-        <p style="font-size: 14px; line-height: 1.6; margin-bottom: 20px;">Both parties agree to keep all proprietary information, pricing, and client data confidential. The Provider complies with the Personal Data Protection Law (PDPL) of Saudi Arabia.</p>
-
-        <h3 style="color:#1E3A8A; border-bottom:1px solid #ddd; padding-bottom:10px; font-size:18px;">6. Additional Terms / شروط إضافية</h3>
-        <ul style="font-size: 14px; line-height: 1.8; margin-bottom: 20px; padding-right: 20px;">
-          ${terms.split('\n').map(t => `<li>${t}</li>`).join('')}
-        </ul>
-
-        <div style="margin-top: 80px; display: flex; justify-content: space-between;">
-          <div style="text-align: center;"><div style="border-top: 1px solid #333; width: 250px; margin-bottom: 5px;"></div><b>Authorized Signatory</b><br/><span style="font-size: 12px; color:#666;">${s.company_name_en}</span></div>
-          <div style="text-align: center;"><div style="border-top: 1px solid #333; width: 250px; margin-bottom: 5px;"></div><b>Client Signature</b><br/><span style="font-size: 12px; color:#666;">${corpName}</span></div>
-        </div>
-      </div>
-    </div>`;
+      if (editExpId) {
+        const oldExp = data.expenses.find(e => e.id === editExpId);
+        const oldCb = data.cashbook.find(c => c.description.includes(oldExp.invoice_no));
+        if (oldCb) await supabase.from('cashbook').delete().eq('id', oldCb.id);
+        const { data: upExp, error: expErr } = await supabase.from('expenses').update({ vendor_name: expForm.vendor_name, vendor_vat: expForm.vendor_vat, expense_date: expForm.expense_date, expense_type: expForm.expense_type, item_name: expForm.items.map(i => i.name).join(', '), items: expForm.items, amount: totalAmount, description: expForm.desc, payment_mode: expForm.payment_mode }).eq('id', editExpId).select().single();
+        if (expErr) throw expErr;
+        const cbType = expForm.payment_mode === 'Cash' ? 'Cash-Out' : (expForm.payment_mode === 'Bank Transfer' ? 'Bank-Out' : 'Investor-Out');
+        const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: expForm.expense_date || today, type: cbType, description: `Expense: ${expForm.vendor_name} (${oldExp.invoice_no})`, amount: totalAmount, tenant_id: userProfile.tenant_id }]).select().single();
+        if (cbErr) throw cbErr;
+        setData(prev => ({ ...prev, expenses: prev.expenses.map(e => e.id === editExpId ? upExp : e), cashbook: nC ? [nC, ...prev.cashbook.filter(c => c.id !== oldCb?.id)] : prev.cashbook }));
+        showToast('Expense Updated!'); setEditExpId(null);
+      } else {
+        const expNo = `EXP-${Date.now()}`;
+        const { data: newExp, error: expErr } = await supabase.from('expenses').insert([{ invoice_no: expNo, vendor_name: expForm.vendor_name, vendor_vat: expForm.vendor_vat, expense_date: expForm.expense_date, expense_type: expForm.expense_type, item_name: expForm.items.map(i => i.name).join(', '), items: expForm.items, amount: totalAmount, description: expForm.desc, payment_mode: expForm.payment_mode, tenant_id: userProfile.tenant_id }]).select().single();
+        if (expErr) throw expErr;
+        const cbType = expForm.payment_mode === 'Cash' ? 'Cash-Out' : (expForm.payment_mode === 'Bank Transfer' ? 'Bank-Out' : 'Investor-Out');
+        const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: expForm.expense_date || today, type: cbType, description: `Expense: ${expForm.vendor_name} (${expNo})`, amount: totalAmount, tenant_id: userProfile.tenant_id }]).select().single();
+        if (cbErr) throw cbErr;
+        setData(prev => ({ ...prev, expenses: [newExp, ...prev.expenses], cashbook: [nC, ...prev.cashbook] }));
+        showToast('Expense Added & Auto-Deducted!');
+      }
+      setExpForm({ vendor_name: '', vendor_vat: '', expense_date: today, expense_type: 'Office Supplies', payment_mode: 'Cash', items: [{ name: '', qty: 1, price: 0 }], taxRate: '15', desc: '' });
+    } catch (err) { showToast('Error: ' + err.message); }
   };
 
-  const getExpenseHTML = (exp, s) => {
-    const subTotal = (exp.items || []).reduce((sum, item) => sum + ((parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0)), 0);
-    const taxRate = subTotal > 0 && exp.amount > subTotal ? 15 : 0;
-    const vat = subTotal * (taxRate / 100);
-    const total = subTotal + vat;
-    const paid = exp.amount || 0;
-    const due = total - paid;
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent('https://sueud-al-taayira.vercel.app/invoice/' + exp.invoice_no)}`;
-    return `
-    <div style="width:794px; min-height:1123px; padding:40px; background:#FFFFFF; color:#000000; font-family:'Segoe UI', Tahoma, Arial;">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #1E3A8A; padding-bottom:20px; margin-bottom:30px;">
-        <div style="display:flex; align-items:center; gap:20px;">
-          ${s.logo_url ? `<img src="${s.logo_url}" crossorigin="anonymous" style="height:90px;width:auto;object-fit:contain;" />` : '<div style="width:90px;height:90px;"></div>'}
-          <div>
-            <h1 style="margin:0;color:#1E3A8A;font-size:24px;font-weight:bold;">${s.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
-            <h2 style="margin:5px 0;color:#555;font-size:18px;">${s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
-            <p style="font-size:12px;margin-top:5px;line-height:1.6;color:#333;">${s.address_ar || ''}<br/>Phone: ${s.phone || ''} | VAT: ${s.vat_no || ''}<br/>License: ${s.license_no || ''} | Tourist License: ${s.tourist_license_no || ''}</p>
-          </div>
-        </div>
-        <div style="text-align:right; background:#1E3A8A; color:#fff; padding:15px 25px; border-radius:8px; min-width:250px;">
-          <h1 style="margin:0;font-size:22px;">PURCHASE BILL</h1>
-          <h2 style="margin:5px 0;font-size:18px;color:#FBBF24;">فاتورة مشتريات</h2>
-          <p style="font-size:12px;margin-top:10px;color:#eee;">Bill No: <b>${exp.invoice_no}</b><br/>Date: <b>${exp.expense_date}</b><br/>Paid Via: <b>${exp.payment_mode}</b></p>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:30px;">
-        <div style="background:#F8FAFC;padding:15px;border-radius:8px;border-left:4px solid #FBBF24;"><h3 style="margin:0 0 5px;color:#1E3A8A;font-size:14px;">VENDOR / المورد</h3><p style="margin:0;font-size:16px;font-weight:bold;">${exp.vendor_name || 'N/A'}</p><p style="margin:3px 0 0;font-size:12px;color:#666;">VAT: ${exp.vendor_vat || 'N/A'}</p></div>
-        <div style="background:#F8FAFC;padding:15px;border-radius:8px;border-left:4px solid #FBBF24;text-align:right;"><h3 style="margin:0 0 5px;color:#1E3A8A;font-size:14px;">BILL TO / الفاتورة إلى</h3><p style="margin:0;font-size:16px;font-weight:bold;">${s.company_name_en || 'Our Company'}</p><p style="margin:3px 0 0;font-size:12px;color:#666;">${s.address_ar || ''}</p></div>
-      </div>
-      <table style="width:100%;border-collapse:collapse;text-align:center;margin-bottom:30px;">
-        <thead><tr style="background:#1E3A8A;color:#FBBF24;"><th style="padding:12px;text-align:left;font-size:13px;">Item / الوصف</th><th style="padding:12px;font-size:13px;">Qty</th><th style="padding:12px;font-size:13px;">Price</th><th style="padding:12px;font-size:13px;">Total</th></tr></thead>
-        <tbody>${exp.items && exp.items.length > 0 ? exp.items.map(item => `<tr style="border-bottom:1px solid #E2E8F0;"><td style="padding:12px;text-align:left;font-size:13px;">${item.name}</td><td style="padding:12px;font-size:13px;">${item.qty}</td><td style="padding:12px;font-size:13px;">${parseFloat(item.price).toFixed(2)}</td><td style="padding:12px;font-size:13px;font-weight:bold;">${(parseFloat(item.qty)*parseFloat(item.price)).toFixed(2)}</td></tr>`).join('') : `<tr><td colspan="4" style="padding:20px;">No Items</td></tr>`}</tbody>
-      </table>
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-        <div style="text-align:center;"><img src="${qrUrl}" alt="QR Code" style="height:100px;width:100px;"/><p style="font-size:10px;color:#666;margin:5px 0 0;">${exp.invoice_no}</p></div>
-        <div style="text-align:right;min-width:280px;">
-          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>Total Before VAT:</span> <b>${subTotal.toFixed(2)} SAR</b></p>
-          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>VAT (${taxRate}% ${taxRate === 0 ? 'معفاء' : ''}):</span> <b>${vat.toFixed(2)} SAR</b></p>
-          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span>Total After VAT:</span> <b>${total.toFixed(2)} SAR</b></p>
-          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;color:#059669;"><span>Paid / مدفوع:</span> <b>${paid.toFixed(2)} SAR</b></p>
-          <p style="margin:0;font-size:14px;display:flex;justify-content:space-between;padding:8px 0;color:#EF4444;"><span>Due Amount / المتبقي:</span> <b>${due.toFixed(2)} SAR</b></p>
-        </div>
-      </div>
-      <div style="margin-top:60px; border-top:1px solid #E2E8F0; padding-top:20px;"><p style="font-size:11px;color:#888;text-align:center;margin:0;">${s.invoice_footer || 'Thank you!'}</p></div>
-    </div>`;
+  const handleAddEditCust = async (e) => { e.preventDefault(); const pl = { name: custForm.name, phone: custForm.phone, store_credit: parseFloat(custForm.store_credit) || 0, tenant_id: userProfile.tenant_id }; try { if (editCustId) { const { data: up, error } = await supabase.from('customers').update(pl).eq('id', editCustId).select().single(); if (error) throw error; setData(prev => ({...prev, customers: prev.customers.map(c => c.id === editCustId ? up : c)})); showToast('Updated!'); setEditCustId(null); } else { const { data: nItem, error } = await supabase.from('customers').insert([{...pl, type: 'Individual'}]).select().single(); if (error) throw error; setData(prev => ({...prev, customers: [...prev.customers, nItem]})); showToast('Added!'); } setCustForm({ name: '', phone: '', store_credit: 0 }); } catch (err) { showToast('Error: ' + err.message); } };
+  const handleAddEditCorp = async (e) => { e.preventDefault(); const pl = { ...corpForm, tenant_id: userProfile.tenant_id }; try { if (editCorpId) { const { data: up, error } = await supabase.from('corporates').update(pl).eq('id', editCorpId).select().single(); if (error) throw error; setData(prev => ({...prev, corporates: prev.corporates.map(c => c.id === editCorpId ? up : c)})); showToast('Updated!'); setEditCorpId(null); } else { const { data: nItem, error } = await supabase.from('corporates').insert([pl]).select().single(); if (error) throw error; setData(prev => ({...prev, corporates: [...prev.corporates, nItem]})); showToast('Added!'); } setCorpForm({ name: '', vat_no: '', phone: '', address: '' }); } catch (err) { showToast('Error: ' + err.message); } };
+  const handleAddEditCred = async (e) => { e.preventDefault(); const pl = { ...creditorForm, tenant_id: userProfile.tenant_id }; try { if (editCredId) { const { data: up, error } = await supabase.from('creditors').update(pl).eq('id', editCredId).select().single(); if (error) throw error; setData(prev => ({...prev, creditors: prev.creditors.map(c => c.id === editCredId ? up : c)})); showToast('Updated!'); setEditCredId(null); } else { const { data: nItem, error } = await supabase.from('creditors').insert([pl]).select().single(); if (error) throw error; setData(prev => ({...prev, creditors: [...prev.creditors, nItem]})); showToast('Added!'); } setCreditorForm({ name: '', phone: '', address: '' }); } catch (err) { showToast('Error: ' + err.message); } };
+  const handleAddEditVend = async (e) => { e.preventDefault(); const pl = { ...vendorForm, tenant_id: userProfile.tenant_id }; try { if (editVendId) { const { data: up, error } = await supabase.from('vendors').update(pl).eq('id', editVendId).select().single(); if (error) throw error; setData(prev => ({...prev, vendors: prev.vendors.map(c => c.id === editVendId ? up : c)})); showToast('Updated!'); setEditVendId(null); } else { const { data: nItem, error } = await supabase.from('vendors').insert([pl]).select().single(); if (error) throw error; setData(prev => ({...prev, vendors: [...prev.vendors, nItem]})); showToast('Added!'); } setVendorForm({ name: '', phone: '', balance: 0 }); } catch (err) { showToast('Error: ' + err.message); } };
+  const handleAddEditPkg = async (e) => { e.preventDefault(); const pl = { name: pkgForm.name, price: parseFloat(pkgForm.price), description: pkgForm.desc, duration: pkgForm.duration, inclusions: pkgForm.inclusions, tenant_id: userProfile.tenant_id }; try { if (editPkgId) { const { data: up, error } = await supabase.from('packages').update(pl).eq('id', editPkgId).select().single(); if (error) throw error; setData(prev => ({...prev, packages: prev.packages.map(c => c.id === editPkgId ? up : c)})); showToast('Updated!'); setEditPkgId(null); } else { const { data: nItem, error } = await supabase.from('packages').insert([pl]).select().single(); if (error) throw error; setData(prev => ({...prev, packages: [...prev.packages, nItem]})); showToast('Added!'); } setPkgForm({ name: '', price: '', desc: '', duration: '', inclusions: '' }); } catch (err) { showToast('Error: ' + err.message); } };
+  const handleAddEditBrn = async (e) => { e.preventDefault(); const pl = { ...brnForm, tenant_id: userProfile.tenant_id }; try { if (editBrnId) { const { data: up, error } = await supabase.from('branches').update(pl).eq('id', editBrnId).select().single(); if (error) throw error; setData(prev => ({...prev, branches: prev.branches.map(c => c.id === editBrnId ? up : c)})); showToast('Updated!'); setEditBrnId(null); } else { const { data: nItem, error } = await supabase.from('branches').insert([pl]).select().single(); if (error) throw error; setData(prev => ({...prev, branches: [...prev.branches, nItem]})); showToast('Added!'); } setBrnForm({ name: '', location: '', phone: '', manager: '', email: '', timing: '', status: 'Active' }); } catch (err) { showToast('Error: ' + err.message); } };
+  
+  // Employee Add/Edit (FIXED AUTO-DELETE BUG & ADDED IQAMA)
+  const handleAddEditEmp = async (e) => { 
+    e.preventDefault(); 
+    const pl = { 
+      name: empForm.name, 
+      role: empForm.role, 
+      salary: parseFloat(empForm.salary) || 0, 
+      phone: empForm.phone, 
+      commission_rate: parseFloat(empForm.commission_rate) || 0,
+      iqama_no: empForm.iqama_no || null,
+      iqama_expiry: empForm.iqama_expiry || null,
+      tenant_id: userProfile.tenant_id 
+    }; 
+    try { 
+      if (editEmpId) { 
+        const { data: up, error } = await supabase.from('employees').update(pl).eq('id', editEmpId).select().single(); 
+        if (error) throw error; 
+        setData(prev => ({...prev, employees: prev.employees.map(c => c.id === editEmpId ? up : c)})); 
+        showToast('Employee Updated!'); setEditEmpId(null); 
+      } else { 
+        const { data: nItem, error } = await supabase.from('employees').insert([pl]).select().single(); 
+        if (error) throw error; 
+        setData(prev => ({...prev, employees: [nItem, ...prev.employees]})); 
+        showToast('Employee Added!'); 
+      } 
+      setEmpForm({ name: '', role: 'Sales', salary: 0, phone: '', commission_rate: 0, iqama_no: '', iqama_expiry: '' }); 
+    } catch (err) { showToast('Error: ' + err.message); } 
+  };
+
+  const handleAddEditSrv = async (e) => { e.preventDefault(); const pl = { ...srvForm, tenant_id: userProfile.tenant_id }; try { if (editSrvId) { const { data: up, error } = await supabase.from('services').update(pl).eq('id', editSrvId).select().single(); if (error) throw error; setData(prev => ({...prev, services: prev.services.map(c => c.id === editSrvId ? up : c)})); showToast('Updated!'); setEditSrvId(null); } else { const { data: nItem, error } = await supabase.from('services').insert([pl]).select().single(); if (error) throw error; setData(prev => ({...prev, services: [...prev.services, nItem]})); showToast('Added!'); } setSrvForm({ name: '' }); } catch (err) { showToast('Error: ' + err.message); } };
+  const handleAddPortal = async (e) => { e.preventDefault(); try { const { data: newItem, error } = await supabase.from('portals').insert([{ name: portalForm.name, current_balance: parseFloat(portalForm.balance) || 0, tenant_id: userProfile.tenant_id }]).select().single(); if (error) throw error; setData(prev => ({ ...prev, portals: [...prev.portals, newItem] })); showToast('Portal Added!'); setPortalForm({ name: '', balance: 0 }); } catch (err) { showToast('Error: ' + err.message); } };
+  const handleAddInvestment = async (e) => { e.preventDefault(); try { const mode = investForm.mode; const finalReason = investForm.reason === 'Other' ? investForm.otherReason : investForm.reason; const { data: newInv, error: invErr } = await supabase.from('investments').insert([{ investor_name: investForm.name, amount: parseFloat(investForm.amount), invest_date: investForm.date, description: investForm.desc, payment_mode: mode, reason: finalReason, tenant_id: userProfile.tenant_id }]).select().single(); if (invErr) throw invErr; const cbType = mode === 'Cash' ? 'Cash-In' : 'Bank-In'; const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: investForm.date, type: cbType, description: `Investment by ${investForm.name} (${finalReason})`, amount: parseFloat(investForm.amount), tenant_id: userProfile.tenant_id }]).select().single(); if (cbErr) throw cbErr; setData(prev => ({ ...prev, investments: [newInv, ...prev.investments], cashbook: [nC, ...prev.cashbook] })); showToast('Investor Added!'); setInvestForm({ name: '', amount: '', date: today, desc: '', mode: 'Cash', reason: 'Other', otherReason: '' }); } catch (err) { showToast('Error: ' + err.message); } };
+  const handleDelete = async (table, id) => { if (!confirm('Delete permanently?')) return; try { const { error } = await supabase.from(table).delete().eq('id', id); if (error) throw error; setData(prev => ({ ...prev, [table]: prev[table].filter(item => item.id !== id) })); showToast('Deleted!'); } catch (err) { showToast('Error: ' + err.message); } };
+  const handleRecharge = async (e) => { e.preventDefault(); try { const p = data.portals.find(p => p.id === e.target.portal.value); const amount = parseFloat(e.target.amt.value); const mode = e.target.mode.value; const { data: newRec, error: recErr } = await supabase.from('recharges').insert([{ portal_id: p.id, amount, recharge_date: e.target.date.value, description: e.target.desc.value, payment_mode: mode, tenant_id: userProfile.tenant_id }]).select('*, portals(name)').single(); if (recErr) throw recErr; const newBal = (p.current_balance || 0) + amount; const { error: pErr } = await supabase.from('portals').update({ current_balance: newBal }).eq('id', p.id); if (pErr) throw pErr; const cbType = mode === 'Cash' ? 'Cash-Out' : 'Bank-Out'; const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: e.target.date.value, type: cbType, description: `Recharge for ${p.name}`, amount, tenant_id: userProfile.tenant_id }]).select().single(); if (cbErr) throw cbErr; setData(prev => ({ ...prev, recharges: [newRec, ...prev.recharges], portals: prev.portals.map(por => por.id === p.id ? { ...por, current_balance: newBal } : por), cashbook: [nC, ...prev.cashbook] })); showToast('Recharged!'); e.target.reset(); } catch (err) { showToast('Error: ' + err.message); } };
+  const handleTransfer = async (e) => { e.preventDefault(); try { const amt = parseFloat(transferForm.amount); if (amt <= 0 || transferForm.from === transferForm.to) return showToast("Invalid transfer"); const entries = []; if (transferForm.from === 'Cash') entries.push({ trans_date: transferForm.date, type: 'Cash-Out', description: `Transfer to ${transferForm.to}`, amount: amt, tenant_id: userProfile.tenant_id }); if (transferForm.from === 'Bank') entries.push({ trans_date: transferForm.date, type: 'Bank-Out', description: `Transfer to ${transferForm.to}`, amount: amt, tenant_id: userProfile.tenant_id }); if (transferForm.from === 'Investor') entries.push({ trans_date: transferForm.date, type: 'Investor-Out', description: `Transfer to ${transferForm.to}`, amount: amt, tenant_id: userProfile.tenant_id }); if (transferForm.to === 'Cash') entries.push({ trans_date: transferForm.date, type: 'Cash-In', description: `Transfer from ${transferForm.from}`, amount: amt, tenant_id: userProfile.tenant_id }); if (transferForm.to === 'Bank') entries.push({ trans_date: transferForm.date, type: 'Bank-In', description: `Transfer from ${transferForm.from}`, amount: amt, tenant_id: userProfile.tenant_id }); if (transferForm.to === 'Investor') entries.push({ trans_date: transferForm.date, type: 'Investor-In', description: `Transfer from ${transferForm.from}`, amount: amt, tenant_id: userProfile.tenant_id }); const { error } = await supabase.from('cashbook').insert(entries); if (error) throw error; await fetchAll(); showToast('Fund Transferred!'); setTransferForm({ from: 'Cash', to: 'Bank', amount: '', date: today }); } catch (err) { showToast('Error: ' + err.message); } };
+  const handleAddUser = async (e) => { e.preventDefault(); try { const { data: newUser, error } = await supabase.from('app_users').insert([{ email: userForm.email, username: userForm.username, role: userForm.role, ...userForm, tenant_id: userProfile.tenant_id }]).select().single(); if (error) throw error; setData(prev => ({ ...prev, appUsers: [newUser, ...prev.appUsers] })); showToast('User Added!'); setUserForm({ email: '', username: '', role: 'Sales', is_admin: false, can_access_invoices: true, can_access_bank: false, can_access_hr: false, can_access_reports: false, can_access_settings: false }); } catch (err) { showToast('Error: ' + err.message); } };
+  const handleEditUser = (u) => { setEditUserId(u.id); setUserForm({ email: u.email, username: u.username, role: u.role, is_admin: u.is_admin, can_access_invoices: u.can_access_invoices, can_access_bank: u.can_access_bank, can_access_hr: u.can_access_hr, can_access_reports: u.can_access_reports, can_access_settings: u.can_access_settings }); };
+  const handleUpdateUser = async (e) => { e.preventDefault(); try { const { data: upUser, error } = await supabase.from('app_users').update(userForm).eq('id', editUserId).select().single(); if (error) throw error; setData(prev => ({ ...prev, appUsers: prev.appUsers.map(u => u.id === editUserId ? upUser : u) })); showToast('User Updated!'); setEditUserId(null); setUserForm({ email: '', username: '', role: 'Sales', is_admin: false, can_access_invoices: true, can_access_bank: false, can_access_hr: false, can_access_reports: false, can_access_settings: false }); } catch (err) { showToast('Error: ' + err.message); } };
+
+  // Employee Advance Handlers
+  const handleAddAdvance = async (e) => {
+    e.preventDefault();
+    try {
+      const empId = e.target.emp.value;
+      const amount = parseFloat(e.target.amt.value);
+      const date = e.target.date.value;
+      const emp = data.employees.find(em => em.id === empId);
+      
+      const { data: newAdv, error: advErr } = await supabase.from('employee_advances').insert([{ 
+        employee_id: empId, amount, date, status: 'Pending', tenant_id: userProfile.tenant_id 
+      }]).select('*, employees(name)').single();
+      
+      if (advErr) throw advErr;
+      
+      const cbType = 'Cash-Out';
+      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ 
+        trans_date: date, type: cbType, description: `Advance to ${emp.name}`, amount, tenant_id: userProfile.tenant_id 
+      }]).select().single();
+      
+      if (cbErr) throw cbErr;
+      
+      setData(prev => ({ ...prev, empAdvances: [newAdv, ...(prev.empAdvances || [])], cashbook: [nC, ...prev.cashbook] }));
+      showToast('Advance Given!');
+      e.target.reset();
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+
+  const handleReturnAdvance = async (adv) => {
+    try {
+      const { error } = await supabase.from('employee_advances').update({ status: 'Returned' }).eq('id', adv.id);
+      if (error) throw error;
+      
+      const cbType = 'Cash-In';
+      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ 
+        trans_date: today, type: cbType, description: `Advance Returned by ${adv.employees?.name}`, amount: adv.amount, tenant_id: userProfile.tenant_id 
+      }]).select().single();
+      
+      if (cbErr) throw cbErr;
+      
+      setData(prev => ({ ...prev, empAdvances: prev.empAdvances.map(a => a.id === adv.id ? { ...a, status: 'Returned' } : a), cashbook: [nC, ...prev.cashbook] }));
+      showToast('Advance Returned!');
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+
+  // Pay Salary Handler (Updated with Base, Commission, Advance Deduction)
+  const handlePaySalary = async (e) => { 
+    e.preventDefault(); 
+    try { 
+      const empId = e.target.emp.value; 
+      const base = parseFloat(e.target.base.value) || 0; 
+      const comm = parseFloat(e.target.comm.value) || 0; 
+      const advDed = parseFloat(e.target.adv_ded.value) || 0; 
+      const netPaid = base + comm - advDed;
+      const mode = e.target.mode.value; 
+      const emp = data.employees.find(em => em.id === empId); 
+      
+      const { data: newPay, error: payErr } = await supabase.from('payroll').insert([{ 
+        employee_id: empId, base_salary: base, commission: comm, advance_deduction: advDed,
+        amount: netPaid, month: e.target.month.value, payment_mode: mode, tenant_id: userProfile.tenant_id 
+      }]).select('*, employees(name)').single(); 
+      
+      if (payErr) throw payErr; 
+      
+      // Mark oldest pending advances as Deducted (up to advDed amount)
+      if (advDed > 0) {
+        let remainingDed = advDed;
+        const pendingAdv = (data.empAdvances || []).filter(a => a.employee_id === empId && a.status === 'Pending');
+        for (const adv of pendingAdv) {
+          if (remainingDed <= 0) break;
+          await supabase.from('employee_advances').update({ status: 'Deducted' }).eq('id', adv.id);
+          remainingDed -= adv.amount;
+        }
+      }
+      
+      const cbType = mode === 'Cash' ? 'Cash-Out' : 'Bank-Out'; 
+      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ 
+        trans_date: today, type: cbType, description: `Salary to ${emp.name} (Net)`, amount: netPaid, tenant_id: userProfile.tenant_id 
+      }]).select().single(); 
+      
+      if (cbErr) throw cbErr; 
+      
+      setData(prev => ({ 
+        ...prev, 
+        payroll: [newPay, ...prev.payroll], 
+        empAdvances: prev.empAdvances?.map(a => (a.employee_id === empId && a.status === 'Pending' && advDed > 0) ? { ...a, status: 'Deducted' } : a),
+        cashbook: [nC, ...prev.cashbook] 
+      })); 
+      
+      showToast('Salary Paid!'); 
+      e.target.reset(); 
+    } catch (err) { showToast('Error: ' + err.message); } 
+  };
+
+  const handleSettlePayment = async (e) => { e.preventDefault(); try { const inv = data.invoices.find(i => i.id === settleForm.id); if (!inv) return; const newPaid = (inv.paid_amount || 0) + (inv.due_amount || 0); const { data: upInv, error: invErr } = await supabase.from('invoices').update({ paid_amount: newPaid, due_amount: 0, settlement_date: settleForm.date, payment_method: settleForm.mode }).eq('id', inv.id).select(`*, customers(name)`).single(); if (invErr) throw invErr; const cbType = settleForm.mode === 'Cash' ? 'Cash-In' : 'Bank-In'; const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: settleForm.date, type: cbType, description: `Settlement for ${inv.invoice_no}`, amount: inv.due_amount, tenant_id: userProfile.tenant_id }]).select().single(); if (cbErr) throw cbErr; setData(prev => ({ ...prev, invoices: prev.invoices.map(i => i.id === inv.id ? upInv : i), cashbook: [nC, ...prev.cashbook] })); showToast('Payment Settled!'); setModal({ type: null, data: null }); } catch (err) { showToast('Error: ' + err.message); } };
+  const handleQuickSettle = async (inv) => {
+    if (!confirm(`Settle due amount ${inv.due_amount} for ${inv.invoice_no}?`)) return;
+    try {
+      const newPaid = (inv.paid_amount || 0) + (inv.due_amount || 0);
+      const { data: upInv, error: invErr } = await supabase.from('invoices').update({ paid_amount: newPaid, due_amount: 0, settlement_date: today, payment_method: 'Cash' }).eq('id', inv.id).select(`*, customers(name)`).single();
+      if (invErr) throw invErr;
+      const cbType = 'Cash-In';
+      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Quick Settlement for ${inv.invoice_no}`, amount: inv.due_amount, tenant_id: userProfile.tenant_id }]).select().single();
+      if (cbErr) throw cbErr;
+      setData(prev => ({ ...prev, invoices: prev.invoices.map(i => i.id === inv.id ? upInv : i), cashbook: [nC, ...prev.cashbook] }));
+      showToast('Payment Settled Quickly!');
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+  const handleRefund = async (e) => { e.preventDefault(); try { const inv = data.invoices.find(i => i.id === refundForm.id); if (!inv) return; const compRef = parseFloat(refundForm.compRefund) || 0; const custRef = parseFloat(refundForm.custRefund) || 0; const { data: upInv, error: invErr } = await supabase.from('invoices').update({ status: 'refunded', refund_company: compRef, refund_customer: custRef }).eq('id', inv.id).select(`*, customers(name), employees(name)`).single(); if (invErr) throw invErr; const refNo = `REF-${Date.now()}`; const { data: newRefInv, error: refErr } = await supabase.from('invoices').insert([{ invoice_no: refNo, customer_id: inv.customer_id, portal_id: inv.portal_id, booking_date: today, invoice_date: refundForm.date, service_type: inv.service_type, employee_id: inv.employee_id, airline: inv.airline, flight_sector: inv.flight_sector, pnr: inv.pnr, ticket_no: inv.ticket_no, passenger_names: inv.passenger_names, total_sell: -custRef, total: -custRef, paid_amount: -custRef, status: 'refunded', refund_company: compRef, refund_customer: custRef, refund_reason: refundForm.reason, tenant_id: userProfile.tenant_id }]).select(`*, customers(name), employees(name)`).single(); if (refErr) throw refErr; if (inv.portal_id && compRef > 0) { const portal = data.portals.find(p => p.id === inv.portal_id); const newPortalBal = (portal.current_balance || 0) + compRef; const { error: pErr } = await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', inv.portal_id); if (pErr) throw pErr; setData(prev => ({ ...prev, portals: prev.portals.map(p => p.id === inv.portal_id ? { ...p, current_balance: newPortalBal } : p) })); } let newCashEntry = null; if (custRef > 0) { if (refundForm.mode === 'Credit') { const cust = data.customers.find(c => c.id === inv.customer_id); if (cust) { const newCredit = (cust.store_credit || 0) + custRef; const { error: cErr } = await supabase.from('customers').update({ store_credit: newCredit }).eq('id', cust.id); if (cErr) throw cErr; setData(prev => ({ ...prev, customers: prev.customers.map(c => c.id === cust.id ? { ...c, store_credit: newCredit } : c) })); } } else { const cbType = refundForm.mode === 'Cash' ? 'Cash-Out' : 'Bank-Out'; const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: refundForm.date, type: cbType, description: `Refund to customer for ${inv.invoice_no}`, amount: custRef, tenant_id: userProfile.tenant_id }]).select().single(); if (cbErr) throw cbErr; newCashEntry = nC; } } setData(prev => ({ ...prev, invoices: [newRefInv, prev.invoices.map(i => i.id === inv.id ? upInv : i)].flat(), cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook })); showToast('Refund Processed!'); setModal({ type: null, data: null }); } catch (err) { showToast('Error: ' + err.message); } };
+  const openRefundModal = (inv) => { setRefundForm({ id: inv.id, date: today, compRefund: 0, custRefund: 0, mode: 'Cash', reason: '', portalId: inv.portal_id }); setModal({ type: 'refund', data: inv }); };
+  const openSettleModal = (inv) => { setSettleForm({ id: inv.id, date: today, mode: 'Cash' }); setModal({ type: 'settle', data: inv }); };
+  const openPreview = (inv) => { const s = data.settings; const html = getInvoiceHTML(inv, s, 'en'); setPreviewHTML(html); setModal({ type: 'preview', data: inv }); };
+  const handleLogoUpload = async (e) => { try { const file = e.target.files[0]; if (!file) return; const fileName = `logo-${Date.now()}.${file.name.split('.').pop()}`; const { error } = await supabase.storage.from('logos').upload(fileName, file); if (error) throw error; const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName); setSetForm(prev => ({ ...prev, logo_url: urlData.publicUrl })); showToast('Logo Uploaded!'); } catch (err) { showToast('Error: ' + err.message); } };
+  
+  const handleSaveSettings = async (e) => { 
+    e.preventDefault(); 
+    try { 
+      const { id, ...settingsData } = setForm;
+      const tId = userProfile.tenant_id;
+      
+      if (!tId) return showToast('Error: Tenant ID missing!');
+      
+      const { data: existing } = await supabase.from('settings').select('id').eq('tenant_id', tId).maybeSingle();
+      
+      if (existing && existing.id) {
+        const { data: updatedData, error } = await supabase.from('settings').update({ ...settingsData }).eq('id', existing.id).select().single(); 
+        if (error) throw error;
+        setSetForm(prev => ({ ...prev, ...updatedData, id: existing.id }));
+        setData(prev => ({ ...prev, settings: updatedData }));
+      } else {
+        const { data: insertedData, error } = await supabase.from('settings').insert([{ ...settingsData, tenant_id: tId }]).select().single(); 
+        if (error) throw error;
+        setSetForm(prev => ({ ...prev, ...insertedData }));
+        setData(prev => ({ ...prev, settings: insertedData }));
+      }
+      
+      showToast('Settings Saved Successfully!'); 
+    } catch (err) { 
+      showToast('Error: ' + err.message); 
+    } 
   };
 
   return {
-    user, setUser, userProfile, setUserProfile, lang, setLang, page, setPage, payFilter, setPayFilter, router, toast, setToast, modal, setModal, passForm, setPassForm, chatOpen, setChatOpen, chatMessages, setChatMessages, chatInput, setChatInput, search, setSearch, tblPage, setTblPage, itemsPerPage, ledgerCustId, setLedgerCustId, previewHTML, setPreviewHTML, data, setData, today, editInvId, setEditInvId, invForm, setInvForm, expForm, setExpForm, editExpId, setEditExpId, editCorpId, setEditCorpId, corpForm, setCorpForm, editCredId, setEditCredId, creditorForm, setCreditorForm, editCustId, setEditCustId, custForm, setCustForm, editVendId, setEditVendId, vendorForm, setVendorForm, editPkgId, setEditPkgId, pkgForm, setPkgForm, editBrnId, setEditBrnId, brnForm, setBrnForm, editEmpId, setEditEmpId, empForm, setEmpForm, editSrvId, setEditSrvId, srvForm, setSrvForm, editUserId, setEditUserId, investForm, setInvestForm, settleForm, setSettleForm, refundForm, setRefundForm, transferForm, setTransferForm, repDate, setRepDate, reportTab, setReportTab, statementTab, setStatementTab, setForm, setSetForm, userForm, setUserForm, portalForm, setPortalForm, tr, t, showToast, logAction, fetchAll, exportToExcel, filterData, getInvoiceHTML, getExpenseHTML, getContractHTML, tenantForm, setTenantForm, profileForm, setProfileForm, ledgerEmpId, setLedgerEmpId,
-    contractCorpName, setContractCorpName, contractType, setContractType, contractMarkup, setContractMarkup, contractTerms, setContractTerms
+    handleLogout, handleChangePassword, handleSendMessage, handleEditInvoice, handleCreateInvoice, handleDeleteInvoice, handleAddExpItem, handleRemoveExpItem, handleExpItemChange, handleAddExpense, handleEditExpense, handleDeleteExpense, handlePreviewExpense, handleAddEditCust, handleAddEditCorp, handleAddEditCred, handleAddEditVend, handleAddEditPkg, handleAddEditBrn, handleAddEditEmp, handleAddEditSrv, handleAddPortal, handleAddInvestment, handleDelete, handleRecharge, handleTransfer, handleAddUser, handleEditUser, handleUpdateUser, handlePaySalary, handleSettlePayment, handleQuickSettle, openSettleModal, handleRefund, openRefundModal, openPreview, handleLogoUpload, handleSaveSettings, downloadPDF, handleGenerateContract, handleGenerateOffer, handleAddCustomField, handleRemoveCustomField, handleCustomFieldChange, 
+    handleAddTenant, handleToggleSubscription, handleDeleteTenant, 
+    handleProfilePicUpload, handleSaveProfile,
+    handleAddAdvance, handleReturnAdvance
   };
 }
