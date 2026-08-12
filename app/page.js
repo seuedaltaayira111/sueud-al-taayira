@@ -8,7 +8,6 @@ export default function Home() {
 
   if (!erp.user) return <div style={{ padding: 50, textAlign: 'center' }}>Loading ERP...</div>;
 
-  // Strict & Failsafe SuperAdmin Check
   const isSuperAdmin = erp.userProfile?.role === 'SuperAdmin' || 
                        erp.user?.email === 'atallah@sueud.com' || 
                        erp.user?.email === 'hamdan@sueud.com';
@@ -29,6 +28,7 @@ export default function Home() {
     { id: 'branches', label: erp.tr.branches, show: erp.userProfile.is_admin || erp.userProfile.can_access_settings },
     { id: 'contract', label: 'Corporate Contract', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'offer', label: 'Corporate Offer', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
+    { id: 'marketing', label: '🚀 AI Marketing', show: true }, // NEW SHOCKING FEATURE
     { id: 'bank', label: erp.tr.bank, show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
     { id: 'invest', label: erp.tr.invest, show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
     { id: 'hr', label: erp.tr.hr, show: erp.userProfile.is_admin || erp.userProfile.can_access_hr },
@@ -42,7 +42,7 @@ export default function Home() {
 
   return (
     <>
-      {erp.toast && <div style={{ position: 'fixed', top: '20px', right: '20px', background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: '#FBBF24', padding: '15px 25px', borderRadius: '12px', zIndex: 9999, boxShadow: '0 5px 15px rgba(0,0,0,0.2)', fontWeight: '600' }}>{erp.toast}</div>}
+      {erp.toast && <div style={{ position: 'fixed', top: '20px', right: '20px', background: '#0F172A', color: '#F59E0B', padding: '15px 25px', borderRadius: '12px', zIndex: 9999, boxShadow: '0 5px 15px rgba(0,0,0,0.2)', fontWeight: '600' }}>{erp.toast}</div>}
       
       <ERPLayout 
         tr={erp.tr} lang={erp.lang} setLang={erp.setLang} page={erp.page} setPage={erp.setPage} 
@@ -123,6 +123,10 @@ export default function Home() {
           // Profile Props
           profileForm={erp.profileForm} setProfileForm={erp.setProfileForm}
           handleProfilePicUpload={erp.handleProfilePicUpload} handleSaveProfile={erp.handleSaveProfile}
+          
+          // AI Marketing Props
+          marketingText={erp.marketingText} setMarketingText={erp.setMarketingText}
+          handleGenerateMarketing={erp.handleGenerateMarketing}
         />
       </ERPLayout>
     </>
