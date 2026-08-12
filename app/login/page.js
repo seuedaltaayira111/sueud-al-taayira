@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [mode, setMode] = useState('login'); // 'login' or 'forgot'
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -14,9 +15,17 @@ export default function Login() {
     e.preventDefault();
     setMsg('');
     setLoading(true);
+
+    if (mode === 'forgot') {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/` });
+      setLoading(false);
+      if (error) return setMsg('Error: ' + error.message);
+      return setMsg('✨ Magic link sent! Check your email to reset password.');
+    }
+
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (error) return setMsg('Error: ' + error.message);
+    if (error) return setMsg('⚠️ Invalid credentials. Please try again.');
     router.push('/');
   };
 
@@ -31,33 +40,31 @@ export default function Login() {
           100% { transform: translateX(120vw) translateY(20px) rotate(-5deg); opacity: 0; }
         }
         @keyframes pulseGlow {
-          0%, 100% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.2), 0 0 40px rgba(37, 99, 235, 0.1); }
-          50% { box-shadow: 0 0 40px rgba(251, 191, 36, 0.4), 0 0 80px rgba(37, 99, 235, 0.2); }
+          0%, 100% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.3), 0 0 40px rgba(15, 23, 42, 0.5); }
+          50% { box-shadow: 0 0 40px rgba(245, 158, 11, 0.6), 0 0 80px rgba(15, 23, 42, 0.8); }
         }
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
         }
         .erp-input:focus {
-          border-color: #2563EB !important;
-          box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1) !important;
-          background: #fff !important;
-        }
-        .erp-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 10px 25px rgba(30, 58, 138, 0.4) !important;
+          border-color: #F59E0B !important;
+          box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1) !important;
         }
       `}</style>
 
+      {/* Flying Airplane Animation */}
       <div style={styles.aircraft}>✈️</div>
+      
+      {/* Background Orbs */}
       <div style={styles.orbTop}></div>
       <div style={styles.orbBottom}></div>
 
       <div style={styles.loginCard}>
         <div style={styles.logoBox}>
           <div style={styles.logoContainer}>
-            {/* Fixed Working Logo Link */}
-            <img src="https://uat.saudia.com/etc.clientlibs/saudia/clientlibs/clientlib-air-mfe/resources/assets/images/logo.svg" alt="Company Logo" style={styles.logo} onError={(e) => e.target.style.display='none'} />
+            {/* User Provided Logo */}
+            <img src="https://z-cdn-media.chatglm.cn/files/9ac36e95-5359-46d9-bdfc-624cf3aac5dd.jpeg" alt="Company Logo" style={styles.logo} onError={(e) => e.target.style.display='none'} />
           </div>
           <h1 style={styles.titleEn}>SUEUD AL TAIYYARAH</h1>
           <h2 style={styles.titleAr}>صعود الطائرة للسفر و السياحة</h2>
@@ -69,7 +76,7 @@ export default function Login() {
             <span style={styles.inputIcon}>📧</span>
             <input 
               type="email" 
-              placeholder="Email Address" 
+              placeholder="Enter your Email" 
               value={email} 
               onChange={(e) => setEmail(e.target.value)} 
               required 
@@ -78,33 +85,34 @@ export default function Login() {
             />
           </div>
           
-          <div style={styles.inputGroup}>
-            <span style={styles.inputIcon}>🔒</span>
-            <input 
-              type="password" 
-              placeholder="Password" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              required 
-              style={styles.input} 
-              className="erp-input"
-            />
-          </div>
+          {mode === 'login' && (
+            <div style={styles.inputGroup}>
+              <span style={styles.inputIcon}>🔒</span>
+              <input 
+                type="password" 
+                placeholder="Enter your Password" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                required 
+                style={styles.input} 
+                className="erp-input"
+              />
+            </div>
+          )}
 
-          <button 
-            type="submit" 
-            style={styles.btn} 
-            className="erp-btn"
-            disabled={loading}
-          >
-            {loading ? '⏳ Please wait...' : 'Secure Login →'}
+          <button type="submit" style={styles.btn} disabled={loading}>
+            {loading ? '⏳ Authenticating...' : (mode === 'login' ? 'Secure Login →' : 'Send Magic Link ✨')}
           </button>
         </form>
 
-        {msg && <p style={{...styles.msg, color: '#ef4444'}}>{msg}</p>}
+        {msg && <p style={{...styles.msg, color: msg.includes('✨') ? '#059669' : '#EF4444'}}>{msg}</p>}
         
+        <button onClick={() => { setMode(mode === 'login' ? 'forgot' : 'login'); setMsg(''); }} style={styles.linkBtn}>
+          {mode === 'login' ? '🔒 Forgot Password?' : '← Back to Login'}
+        </button>
+
         <div style={styles.footerText}>
-          <p>Protected by Enterprise Security</p>
+          <p>🔒 Protected by Enterprise Security</p>
           <p>© 2024 Sueud Al Taayira ERP. All rights reserved.</p>
         </div>
       </div>
@@ -118,7 +126,7 @@ const styles = {
     height: '100vh', 
     alignItems: 'center', 
     justifyContent: 'center', 
-    background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 100%)', 
+    background: '#0F172A', 
     position: 'relative', 
     overflow: 'hidden', 
     fontFamily: "'Poppins', sans-serif" 
@@ -129,7 +137,7 @@ const styles = {
     animation: 'fly 15s linear infinite', 
     top: '25%', 
     left: '-200px', 
-    color: '#FBBF24', 
+    color: '#F59E0B', 
     opacity: 0.8, 
     zIndex: 1, 
     filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.3))' 
@@ -140,7 +148,7 @@ const styles = {
     right: '-10%', 
     width: '500px', 
     height: '500px', 
-    background: 'radial-gradient(circle, rgba(251,191,36,0.15) 0%, rgba(0,0,0,0) 70%)', 
+    background: 'radial-gradient(circle, rgba(245,158,11,0.15) 0%, rgba(0,0,0,0) 70%)', 
     borderRadius: '50%',
     zIndex: 0
   },
@@ -150,20 +158,20 @@ const styles = {
     left: '-10%', 
     width: '600px', 
     height: '600px', 
-    background: 'radial-gradient(circle, rgba(37,99,235,0.15) 0%, rgba(0,0,0,0) 70%)', 
+    background: 'radial-gradient(circle, rgba(30,41,59,0.5) 0%, rgba(0,0,0,0) 70%)', 
     borderRadius: '50%',
     zIndex: 0
   },
   loginCard: { 
-    background: 'rgba(255, 255, 255, 0.95)', 
+    background: 'rgba(15, 23, 42, 0.9)', 
     padding: '50px 40px', 
     borderRadius: '24px', 
-    boxShadow: '0 20px 50px rgba(0,0,0,0.4)', 
+    boxShadow: '0 20px 50px rgba(0,0,0,0.5)', 
     width: '450px', 
     textAlign: 'center', 
     backdropFilter: 'blur(20px)', 
     zIndex: 10, 
-    border: '1px solid rgba(255, 255, 255, 0.2)',
+    border: '1px solid #334155',
     animation: 'fadeInUp 0.8s ease-out forwards',
     display: 'flex',
     flexDirection: 'column',
@@ -178,7 +186,7 @@ const styles = {
     margin: '0 auto 15px',
     borderRadius: '50%',
     padding: '5px',
-    background: 'linear-gradient(135deg, #1E3A8A, #FBBF24)',
+    background: '#F59E0B',
     animation: 'pulseGlow 4s infinite ease-in-out',
     display: 'flex',
     alignItems: 'center',
@@ -187,15 +195,14 @@ const styles = {
   logo: { 
     width: '100px', 
     height: '100px', 
-    objectFit: 'contain',
+    objectFit: 'cover',
     borderRadius: '50%', 
     display: 'block', 
-    background: 'white',
-    padding: '10px'
+    background: 'white'
   },
   titleEn: { 
     margin: 0, 
-    color: '#0F172A', 
+    color: '#F59E0B', 
     fontSize: '22px', 
     fontWeight: '800', 
     letterSpacing: '2px',
@@ -203,7 +210,7 @@ const styles = {
   },
   titleAr: { 
     margin: '5px 0 0', 
-    color: '#D97706', 
+    color: '#fff', 
     fontSize: '20px', 
     fontWeight: '700', 
     fontFamily: "'Tajawal', sans-serif" 
@@ -211,7 +218,7 @@ const styles = {
   divider: {
     width: '50px',
     height: '3px',
-    background: 'linear-gradient(90deg, #1E3A8A, #FBBF24)',
+    background: '#F59E0B',
     margin: '20px auto 0',
     borderRadius: '2px'
   },
@@ -236,48 +243,53 @@ const styles = {
   input: { 
     width: '100%', 
     padding: '16px 16px 16px 45px', 
-    border: '1px solid #cbd5e1', 
+    border: '1px solid #334155', 
     borderRadius: '12px', 
     fontSize: '15px', 
     boxSizing: 'border-box', 
     outline: 'none', 
     transition: 'all 0.3s', 
-    background: '#F8FAFC',
+    background: '#1E293B',
     fontWeight: '500',
-    color: '#0F172A'
+    color: '#fff'
   },
   btn: { 
     width: '100%', 
     padding: '16px', 
-    background: 'linear-gradient(90deg, #1E3A8A 0%, #2563EB 100%)', 
-    color: '#FBBF24', 
+    background: '#F59E0B', 
+    color: '#0F172A', 
     border: 'none', 
     borderRadius: '12px', 
     cursor: 'pointer', 
     fontWeight: 'bold', 
     fontSize: '16px', 
     marginTop: '10px', 
-    boxShadow: '0 5px 15px rgba(30, 58, 138, 0.3)', 
-    transition: 'all 0.3s ease',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px'
+    boxShadow: '0 5px 15px rgba(245, 158, 11, 0.3)', 
+    transition: 'all 0.3s ease' 
   },
   msg: { 
     fontSize: '14px', 
     marginTop: '15px', 
     fontWeight: '600',
     padding: '10px',
-    borderRadius: '8px',
-    background: 'rgba(239, 68, 68, 0.05)'
+    borderRadius: '8px'
+  },
+  linkBtn: { 
+    background: 'none', 
+    border: 'none', 
+    color: '#F59E0B', 
+    cursor: 'pointer', 
+    marginTop: '15px', 
+    textDecoration: 'underline', 
+    fontSize: '14px', 
+    fontWeight: '500' 
   },
   footerText: {
     marginTop: '30px',
     paddingTop: '20px',
-    borderTop: '1px solid #e2e8f0',
+    borderTop: '1px solid #334155',
     fontSize: '11px',
-    color: '#94a3b8',
+    color: '#64748B',
     lineHeight: '1.6'
   }
 };
