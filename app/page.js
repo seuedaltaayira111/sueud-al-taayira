@@ -1,4 +1,5 @@
 'use client';
+
 import useERP from '@/hooks/useERP';
 import ERPLayout from '@/components/ERPLayout';
 import ERPViews from '@/components/ERPViews';
@@ -6,14 +7,18 @@ import ERPViews from '@/components/ERPViews';
 export default function Home() {
   const erp = useERP();
 
-  if (!erp.user) return <div style={{ padding: 50, textAlign: 'center' }}>Loading ERP...</div>;
+  // Yahan userProfile null check karna zaroori hai, warna app crash ho jayega
+  if (!erp.user || !erp.userProfile) {
+    return <div style={{ padding: 50, textAlign: 'center', fontFamily: 'sans-serif' }}>Loading ERP...</div>;
+  }
 
+  // Safe access using optional chaining (?.)
   const isSuperAdmin = erp.userProfile?.role === 'SuperAdmin' || 
                        erp.user?.email === 'atallah@sueud.com' || 
                        erp.user?.email === 'hamdan@sueud.com';
 
   const menu = [
-    { id: 'dashboard', label: erp.tr.dash, show: true },
+    { id: 'dashboard', label: erp.tr.dashboard, show: true },
     { id: 'superadmin', label: '👑 SuperAdmin Panel', show: isSuperAdmin },
     { id: 'create', label: erp.tr.create, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'list', label: erp.tr.list, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
@@ -28,7 +33,7 @@ export default function Home() {
     { id: 'branches', label: erp.tr.branches, show: erp.userProfile.is_admin || erp.userProfile.can_access_settings },
     { id: 'contract', label: 'Corporate Contract', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'offer', label: 'Corporate Offer', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
-    { id: 'profitability', label: '📊 Profit Analyzer', show: true }, // NEW FEATURE
+    { id: 'profitability', label: '📊 Profit Analyzer', show: true }, 
     { id: 'bank', label: erp.tr.bank, show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
     { id: 'invest', label: erp.tr.invest, show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
     { id: 'hr', label: erp.tr.hr, show: erp.userProfile.is_admin || erp.userProfile.can_access_hr },
