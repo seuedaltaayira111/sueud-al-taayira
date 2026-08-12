@@ -5,118 +5,185 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 // ==========================================
-// STYLISH PROFESSIONAL INVOICE TEMPLATE
+// BREATHTAKING BILINGUAL INVOICE TEMPLATE
 // ==========================================
 const getInvoiceHTML = (inv, s, lang = 'en') => {
-  const isAr = lang === 'ar';
   const setting = s || {};
+  const isAr = lang === 'ar';
+  const dir = isAr ? 'rtl' : 'ltr';
+  
+  // Barcode aur QR Code Generate karne ke liye APIs
+  const invoiceNo = inv.invoice_no || 'N/A';
+  const totalAmount = (inv.total || 0).toFixed(2);
+  const vatAmount = (inv.vat || 0).toFixed(2);
+  
+  // ZATCA Style QR Code Data
+  const qrData = encodeURIComponent(`Seller:${setting.company_name_ar || 'Company'},VAT:${setting.vat_no || 'N/A'},Inv:${invoiceNo},Total:${totalAmount},VAT:${vatAmount}`);
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${qrData}`;
+  
+  // Barcode URL
+  const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${invoiceNo}&code=Code128&translate-esc=on`;
+
   return `
   <!DOCTYPE html>
-  <html lang="${isAr ? 'ar' : 'en'}" dir="${isAr ? 'rtl' : 'ltr'}">
+  <html lang="${isAr ? 'ar' : 'en'}" dir="${dir}">
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice ${inv.invoice_no}</title>
+    <title>Invoice ${invoiceNo}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-      body { font-family: 'Poppins', 'Tajawal', sans-serif; background: #f1f5f9; margin: 0; padding: 20px; color: #1e293b; }
-      .invoice-box { max-width: 800px; margin: auto; background: #fff; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden; border: 1px solid #e2e8f0; }
-      .header { background: #1E3A8A; color: #fff; padding: 30px; display: flex; justify-content: space-between; align-items: center; }
-      .header h1 { margin: 0; font-size: 28px; color: #FBBF24; }
-      .header p { margin: 5px 0 0; opacity: 0.9; font-size: 14px; }
-      .header-right { text-align: ${isAr ? 'left' : 'right'}; }
-      .header-right h2 { margin: 0; font-size: 20px; color: #FBBF24; }
-      .section { padding: 30px; }
-      .flex { display: flex; justify-content: space-between; margin-bottom: 30px; }
-      .box { background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #1E3A8A; width: 48%; }
-      .box h3 { margin: 0 0 10px; font-size: 14px; color: #64748b; text-transform: uppercase; }
-      .box p { margin: 3px 0; font-size: 16px; font-weight: 500; }
-      table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-      th { background: #1E3A8A; color: #fff; padding: 12px; text-align: ${isAr ? 'right' : 'left'}; font-size: 14px; }
-      td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
-      .totals { margin-left: auto; width: 300px; }
-      .totals div { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0; }
-      .totals .grand { font-size: 18px; font-weight: bold; color: #1E3A8A; border-bottom: none; }
-      .footer { text-align: center; padding: 20px; background: #f8fafc; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
-      .status-badge { display: inline-block; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; background: ${inv.due_amount > 0 ? '#FEF3C7' : '#D1FAE5'}; color: ${inv.due_amount > 0 ? '#D97706' : '#059669'}; }
+      body { font-family: 'Poppins', 'Cairo', sans-serif; background: #e2e8f0; margin: 0; padding: 40px; color: #1e293b; -webkit-print-color-adjust: exact; }
+      .invoice-container { max-width: 850px; margin: auto; background: #ffffff; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); overflow: hidden; border-top: 8px solid #1E3A8A; }
+      
+      /* Header Section */
+      .header { padding: 40px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
+      .company-info h1 { margin: 0; font-size: 28px; color: #1E3A8A; font-weight: 800; letter-spacing: -0.5px; }
+      .company-info h2 { margin: 5px 0 0; font-size: 22px; color: #D97706; font-weight: 700; direction: rtl; font-family: 'Cairo', sans-serif; }
+      .company-info p { margin: 5px 0; font-size: 13px; color: #64748b; line-height: 1.6; }
+      
+      .invoice-meta { text-align: ${isAr ? 'left' : 'right'}; background: #1E3A8A; padding: 20px 30px; border-radius: 12px; color: #fff; box-shadow: 0 10px 20px rgba(30, 58, 138, 0.2); }
+      .invoice-meta h2 { margin: 0 0 10px; font-size: 24px; color: #FBBF24; text-transform: uppercase; letter-spacing: 1px; }
+      .invoice-meta p { margin: 4px 0; font-size: 14px; font-weight: 500; }
+      .invoice-meta span { color: #FBBF24; font-weight: 700; }
+
+      /* Body Section */
+      .body { padding: 40px; }
+      .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+      .card { background: #f8fafc; border-radius: 12px; padding: 20px; border-left: 5px solid #1E3A8A; }
+      .card h3 { margin: 0 0 15px; font-size: 14px; text-transform: uppercase; color: #1E3A8A; letter-spacing: 0.5px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
+      .card p { margin: 6px 0; font-size: 15px; display: flex; justify-content: space-between; }
+      .card p strong { color: #334155; }
+      .card p span { color: #64748b; font-weight: 600; }
+
+      /* Table Section */
+      .table-wrapper { background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; margin-bottom: 30px; }
+      table { width: 100%; border-collapse: collapse; }
+      thead th { background: #1E3A8A; color: #fff; padding: 15px; font-size: 14px; text-align: ${isAr ? 'right' : 'left'}; font-weight: 600; }
+      thead th.center { text-align: center; }
+      thead th.right { text-align: right; }
+      tbody td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #334155; }
+      tbody td.center { text-align: center; }
+      tbody td.right { text-align: right; font-weight: 600; }
+      .service-badge { display: inline-block; background: #DBEAFE; color: #1E3A8A; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+
+      /* Totals Section */
+      .totals-section { display: flex; justify-content: flex-end; margin-bottom: 30px; }
+      .totals-box { width: 320px; }
+      .total-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e2e8f0; font-size: 15px; }
+      .total-row span { color: #64748b; }
+      .total-row strong { color: #1e293b; font-weight: 600; }
+      .grand-total { background: #1E3A8A; color: #fff; padding: 15px 20px; border-radius: 8px; margin-top: 10px; font-size: 18px; display: flex; justify-content: space-between; font-weight: 700; }
+      .grand-total strong { color: #FBBF24; }
+      .due-amount { color: #EF4444; font-weight: 700; }
+      .paid-amount { color: #059669; font-weight: 700; }
+
+      /* Footer & Codes */
+      .footer { background: #f8fafc; padding: 30px 40px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+      .codes img { height: 70px; mix-blend-mode: multiply; }
+      .footer-text { text-align: center; font-size: 12px; color: #94a3b8; line-height: 1.6; }
+      .footer-text strong { color: #64748b; display: block; font-size: 14px; margin-bottom: 5px; }
+      
+      @media print {
+        body { background: #fff; padding: 0; }
+        .invoice-container { box-shadow: none; border-radius: 0; max-width: 100%; }
+      }
     </style>
   </head>
   <body>
-    <div class="invoice-box">
+    <div class="invoice-container">
+      
+      <!-- Header -->
       <div class="header">
-        <div>
+        <div class="company-info">
           <h1>${setting.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
-          <p>${setting.company_name_ar || 'صعود الطائرة للسفر السياحة'}</p>
-          <p>${setting.address_ar || ''} | ${setting.phone || ''}</p>
-          <p>VAT: ${setting.vat_no || 'N/A'} | CR: ${setting.cr_no || 'N/A'}</p>
+          <h2>${setting.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
+          <p>${setting.address_ar || 'Riyadh, Saudi Arabia'}<br>${setting.phone || '+966 500000000'} | VAT: ${setting.vat_no || 'N/A'} | CR: ${setting.cr_no || 'N/A'}</p>
         </div>
-        <div class="header-right">
-          <h2>INVOICE</h2>
-          <p>#${inv.invoice_no}</p>
-          <p>${inv.invoice_date || ''}</p>
+        <div class="invoice-meta">
+          <h2>Tax Invoice / فاتورة</h2>
+          <p>Invoice No / رقم: <span>${invoiceNo}</span></p>
+          <p>Date / التاريخ: <span>${inv.invoice_date || ''}</span></p>
+          <p>Status / الحالة: <span>${inv.due_amount > 0 ? 'Unpaid' : 'Paid'}</span></p>
         </div>
       </div>
-      
-      <div class="section">
-        <div class="flex">
-          <div class="box">
-            <h3>Bill To</h3>
-            <p><strong>${inv.customers?.name || inv.corporates?.name || 'Walk-in Customer'}</strong></p>
-            ${inv.customers?.phone ? `<p>Phone: ${inv.customers.phone}</p>` : ''}
-            ${inv.corporates?.vat_no ? `<p>VAT: ${inv.corporates.vat_no}</p>` : ''}
+
+      <!-- Body -->
+      <div class="body">
+        
+        <!-- Customer & Flight Details -->
+        <div class="details-grid">
+          <div class="card">
+            <h3>Customer Info / معلومات العميل</h3>
+            <p><strong>Name / الاسم:</strong> <span>${inv.customers?.name || inv.corporates?.name || 'Walk-in'}</span></p>
+            <p><strong>Phone / الجوال:</strong> <span>${inv.customers?.phone || 'N/A'}</span></p>
+            <p><strong>ID / الهوية:</strong> <span>${inv.customers?.id_no || 'N/A'}</span></p>
           </div>
-          <div class="box">
-            <h3>Flight Details</h3>
-            <p><strong>${inv.airline || 'N/A'} - ${inv.flight_sector || ''}</strong></p>
-            <p>PNR: ${inv.pnr || 'N/A'} | Ticket: ${inv.ticket_no || 'N/A'}</p>
-            <p>Passenger: ${inv.passenger_names ? inv.passenger_names.replace(/\n/g, ', ') : 'N/A'}</p>
+          <div class="card" style="border-left-color: #D97706;">
+            <h3>Booking Details / تفاصيل الحجز</h3>
+            <p><strong>Service / الخدمة:</strong> <span>${inv.service_type || 'Flight'}</span></p>
+            <p><strong>Airline / الشركة:</strong> <span>${inv.airline || 'N/A'}</span></p>
+            <p><strong>PNR / رقم الحجز:</strong> <span>${inv.pnr || 'N/A'}</span></p>
+            <p><strong>Passenger / الركاب:</strong> <span style="text-align:right;">${inv.passenger_names ? inv.passenger_names.replace(/\n/g, ', ') : 'N/A'}</span></p>
           </div>
         </div>
 
-        <table>
-          <thead>
-            <tr>
-              <th>Description</th>
-              <th>Type</th>
-              <th>Status</th>
-              <th style="text-align: right;">Amount (SAR)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>${inv.sector || inv.service_type}</td>
-              <td>${inv.service_type} (${inv.flight_type || 'N/A'})</td>
-              <td><span class="status-badge">${inv.due_amount > 0 ? 'UNPAID' : 'PAID'}</span></td>
-              <td style="text-align: right;">${(inv.total_sell || 0).toFixed(2)}</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div class="totals">
-          <div>
-            <span>Subtotal:</span>
-            <span>${(inv.total_sell || 0).toFixed(2)}</span>
-          </div>
-          ${inv.discount > 0 ? `<div><span>Discount:</span><span> - ${(inv.discount || 0).toFixed(2)}</span></div>` : ''}
-          <div>
-            <span>VAT (15%):</span>
-            <span>${(inv.vat || 0).toFixed(2)}</span>
-          </div>
-          <div class="grand">
-            <span>Total:</span>
-            <span>${(inv.total || 0).toFixed(2)} SAR</span>
-          </div>
-          <div>
-            <span>Paid Amount:</span>
-            <span style="color: #059669;">${(inv.paid_amount || 0).toFixed(2)}</span>
-          </div>
-          ${inv.due_amount > 0 ? `<div class="grand" style="color:#EF4444;"><span>Due Amount:</span><span>${(inv.due_amount || 0).toFixed(2)}</span></div>` : ''}
+        <!-- Items Table -->
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Description / الوصف</th>
+                <th class="center">Qty / الكمية</th>
+                <th class="right">Unit Price / السعر</th>
+                <th class="right">Total / الإجمالي</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <strong>${inv.sector || inv.service_type}</strong><br>
+                  <span class="service-badge">${inv.flight_type || inv.service_type} | ${inv.flight_journey || ''}</span>
+                </td>
+                <td class="center">${inv.qty || 1}</td>
+                <td class="right">${((inv.total_sell || 0) / (inv.qty || 1)).toFixed(2)} SAR</td>
+                <td class="right">${(inv.total_sell || 0).toFixed(2)} SAR</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+
+        <!-- Totals & Payment -->
+        <div class="totals-section">
+          <div class="totals-box">
+            <div class="total-row"><span>Total Before Tax / الإجمالي قبل الضريبة</span> <strong>${(inv.total_sell || 0).toFixed(2)} SAR</strong></div>
+            <div class="total-row"><span>VAT (15%) / قيمة الضريبة</span> <strong>${(inv.vat || 0).toFixed(2)} SAR</strong></div>
+            <div class="grand-total"><span>Grand Total / الإجمالي شامل الضريبة</span> <strong>${(inv.total || 0).toFixed(2)} SAR</strong></div>
+            <div class="total-row" style="margin-top: 15px; border-bottom: none;"><span>Paid Amount / المدفوع</span> <strong class="paid-amount">${(inv.paid_amount || 0).toFixed(2)} SAR</strong></div>
+            <div class="total-row"><span>Due Amount / المتبقي</span> <strong class="due-amount">${(inv.due_amount || 0).toFixed(2)} SAR</strong></div>
+            <div class="total-row" style="border-bottom: none;"><span>Payment Method / طريقة الدفع</span> <strong>${inv.payment_method || 'Cash'}</strong></div>
+          </div>
+        </div>
+
       </div>
-      
+
+      <!-- Footer with Codes -->
       <div class="footer">
-        <p>${setting.invoice_footer || 'Thank you for choosing us!'}</p>
-        <p>This is a computer generated invoice and does not require physical signature.</p>
+        <div class="codes">
+          <img src="${barcodeUrl}" alt="Barcode" crossorigin="anonymous"><br>
+          <small style="color:#94a3b8; font-size: 10px;">Scan Barcode / امسح الباركود</small>
+        </div>
+        <div class="footer-text">
+          <strong>${setting.company_name_ar || 'صعود الطائرة للسفر السياحة'}</strong>
+          <p>${setting.invoice_footer || 'Thank you for choosing us! / شكراً لاختياركم خدماتنا'}</p>
+          <p>THIS IS A SYSTEM GENERATED INVOICE / هذه فاتورة صادرة من النظام</p>
+        </div>
+        <div class="codes">
+          <img src="${qrCodeUrl}" alt="QR Code" crossorigin="anonymous"><br>
+          <small style="color:#94a3b8; font-size: 10px;">ZATCA QR / رمز الاستجابة</small>
+        </div>
       </div>
+
     </div>
   </body>
   </html>
@@ -126,7 +193,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
 const getExpenseHTML = (exp, s) => {
   return `
   <!DOCTYPE html><html><head><style>
-  body { font-family: sans-serif; padding: 20px; }
+  body { font-family: 'Poppins', sans-serif; padding: 20px; }
   .exp-box { max-width: 600px; margin: auto; border: 1px solid #ccc; padding: 20px; border-radius: 8px; }
   h1 { color: #1E3A8A; }
   </style></head><body>
@@ -144,7 +211,7 @@ const getExpenseHTML = (exp, s) => {
 const getContractHTML = (s, name, date, isOffer, type, markup, terms) => {
   return `
   <!DOCTYPE html><html><head><style>
-  body { font-family: sans-serif; padding: 40px; line-height: 1.6; }
+  body { font-family: 'Poppins', sans-serif; padding: 40px; line-height: 1.6; }
   h1 { color: #1E3A8A; text-align: center; }
   </style></head><body>
     <h1>${isOffer ? 'Corporate Offer' : 'Corporate Contract'}</h1>
