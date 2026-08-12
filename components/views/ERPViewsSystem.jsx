@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 
 const styles = { 
@@ -15,7 +17,7 @@ export default function ERPViewsSystem(props) {
   
   const [statementType, setStatementType] = useState('sales');
 
-  // 1. PROFITABILITY ANALYZER (NEW SHOCKING FEATURE)
+  // 1. PROFITABILITY ANALYZER
   if (page === 'profitability') {
     const activeInvoices = data.invoices.filter(i => !i.invoice_no.startsWith('REF-'));
     const airlineProfits = {};
