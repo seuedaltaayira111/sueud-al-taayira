@@ -1,17 +1,17 @@
 import React from 'react';
 
 const styles = { 
-  input: { width: '100%', padding: '10px', margin: '5px 0', border: '1px solid #334155', borderRadius: '6px', outline: 'none', boxSizing: 'border-box', background: '#1E293B', color: '#fff' }, 
-  btnPrimary: { padding: '10px 15px', background: '#F59E0B', color: '#0F172A', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }, 
+  input: { width: '100%', padding: '10px', margin: '5px 0', border: '1px solid #cbd5e1', borderRadius: '6px', outline: 'none', boxSizing: 'border-box' }, 
+  btnPrimary: { padding: '10px 15px', background: '#1E3A8A', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }, 
   btnSuccess: { padding: '8px 12px', background: '#059669', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
   btnDanger: { padding: '8px 12px', background: '#EF4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
-  btnWarning: { padding: '8px 12px', background: '#F59E0B', color: '#0F172A', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
-  card: { background: '#1E293B', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '20px', border: '1px solid #334155' }, 
-  label: { fontSize: '14px', fontWeight: 'bold', color: '#94A3B8', marginBottom: '5px', display: 'block', marginTop: '10px' } 
+  btnWarning: { padding: '8px 12px', background: '#FBBF24', color: '#1E3A8A', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
+  card: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px', border: '1px solid #e2e8f0' }, 
+  label: { fontSize: '14px', fontWeight: 'bold', color: '#333', marginBottom: '5px', display: 'block', marginTop: '10px' } 
 };
 
 export default function ERPViewsCore(props) {
-  const { page, data, tr, today, invForm, setInvForm, handleCreateInvoice, downloadPDF, printInvoice, exportToExcel, search, setSearch, payFilter, setPayFilter, handleEditInvoice, handleDeleteInvoice, openRefundModal, editInvId, openPreview, openSettleModal, handleQuickSettle, handleAddEditCust, custForm, setCustForm, editCustId, handleAddEditCorp, corpForm, setCorpForm, editCorpId, handleAddEditCred, creditorForm, setCreditorForm, editCredId, handleEditCust, handleEditCorp, handleEditCred, handleDelete } = props;
+  const { page, data, tr, today, invForm, setInvForm, handleCreateInvoice, handleDownloadPDF, printInvoice, exportToExcel, search, setSearch, payFilter, setPayFilter, handleEditInvoice, handleDeleteInvoice, openRefundModal, editInvId, openPreview, openSettleModal, handleQuickSettle, handleAddEditCust, custForm, setCustForm, editCustId, handleAddEditCorp, corpForm, setCorpForm, editCorpId, handleAddEditCred, creditorForm, setCreditorForm, editCredId, handleEditCust, handleEditCorp, handleEditCred, handleDelete } = props;
 
   if (page === 'dashboard') {
     const s = data.settings || {};
@@ -28,18 +28,18 @@ export default function ERPViewsCore(props) {
       <div>
         <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }`}</style>
         <div style={{ textAlign: 'center', marginBottom: '30px', animation: 'fadeIn 1s ease-in-out' }}>
-          <h1 style={{ margin: 0, color: '#F59E0B', fontSize: '32px' }}>{s.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
-          <h2 style={{ margin: '5px 0', color: '#fff', fontSize: '24px' }}>{s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
-          <p style={{ color: '#94A3B8', fontSize: '14px' }}>{s.address_ar || ''} | {s.phone || ''}</p>
+          <h1 style={{ margin: 0, color: '#1E3A8A', fontSize: '32px' }}>{s.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
+          <h2 style={{ margin: '5px 0', color: '#D97706', fontSize: '24px' }}>{s.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
+          <p style={{ color: '#555', fontSize: '14px' }}>{s.address_ar || ''} | {s.phone || ''}</p>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-          <div style={{...styles.card, borderLeft: '5px solid #F59E0B'}}><h3 style={{color: '#94A3B8'}}>Total Sales</h3><h2 style={{color: '#059669'}}>{tSales.toFixed(2)} SAR</h2></div>
-          <div style={{...styles.card, borderLeft: '5px solid #F59E0B'}}><h3 style={{color: '#94A3B8'}}>Total Profit</h3><h2 style={{color: '#059669'}}>{tProfit.toFixed(2)} SAR</h2></div>
-          <div style={{...styles.card, borderLeft: '5px solid #EF4444'}}><h3 style={{color: '#94A3B8'}}>Outstanding</h3><h2 style={{color: '#EF4444'}}>{totalOutstanding.toFixed(2)} SAR</h2></div>
-          <div style={{...styles.card, borderLeft: '5px solid #0F172A'}}><h3 style={{color: '#94A3B8'}}>Cash Balance</h3><h2 style={{color: '#fff'}}>{cashBal.toFixed(2)} SAR</h2></div>
-          <div style={{...styles.card, borderLeft: '5px solid #0F172A'}}><h3 style={{color: '#94A3B8'}}>Bank Balance</h3><h2 style={{color: '#fff'}}>{bankBal.toFixed(2)} SAR</h2></div>
+          <div style={{...styles.card, borderLeft: '5px solid #1E3A8A'}}><h3 style={{color: '#555'}}>Total Sales</h3><h2 style={{color: '#059669'}}>{tSales.toFixed(2)} SAR</h2></div>
+          <div style={{...styles.card, borderLeft: '5px solid #059669'}}><h3 style={{color: '#555'}}>Total Profit</h3><h2 style={{color: '#059669'}}>{tProfit.toFixed(2)} SAR</h2></div>
+          <div style={{...styles.card, borderLeft: '5px solid #EF4444'}}><h3 style={{color: '#555'}}>Outstanding</h3><h2 style={{color: '#EF4444'}}>{totalOutstanding.toFixed(2)} SAR</h2></div>
+          <div style={{...styles.card, borderLeft: '5px solid #D97706'}}><h3 style={{color: '#555'}}>Cash Balance</h3><h2 style={{color: '#333'}}>{cashBal.toFixed(2)} SAR</h2></div>
+          <div style={{...styles.card, borderLeft: '5px solid #2563EB'}}><h3 style={{color: '#555'}}>Bank Balance</h3><h2 style={{color: '#333'}}>{bankBal.toFixed(2)} SAR</h2></div>
           <div style={{...styles.card, borderLeft: '5px solid #dc2626'}}><h3 style={{ color: '#dc2626' }}>Low Portal Alerts</h3>{lowBalPortals.length === 0 ? <p style={{fontSize: '14px', color: '#059669'}}>All portals are healthy.</p> : lowBalPortals.map(p => <p key={p.id} style={{fontSize: '14px', margin: '5px 0', color: '#dc2626'}}>{p.name} - {p.current_balance.toFixed(2)} SAR</p>)}</div>
-          <div style={{...styles.card, borderLeft: '5px solid #7c3aed'}}><h3 style={{color: '#94A3B8'}}>Total Expenses</h3><h2 style={{color: '#EF4444'}}>{tExpenses.toFixed(2)} SAR</h2></div>
+          <div style={{...styles.card, borderLeft: '5px solid #7c3aed'}}><h3 style={{color: '#555'}}>Total Expenses</h3><h2 style={{color: '#EF4444'}}>{tExpenses.toFixed(2)} SAR</h2></div>
         </div>
       </div>
     );
@@ -49,10 +49,10 @@ export default function ERPViewsCore(props) {
     const creditCustomers = data.customers.filter(c => (c.store_credit || 0) > 0);
     return (
       <div>
-        <h2 style={{ color: '#F59E0B' }}>{tr.credit}</h2>
-        <table style={{ width: '100%', borderCollapse: 'collapse', background: '#1E293B', color: '#fff', marginTop: '20px' }}>
-          <thead><tr style={{ background: '#0F172A', color: '#F59E0B' }}><th style={{ padding: '12px', textAlign: 'left' }}>Customer</th><th style={{ padding: '12px' }}>Phone</th><th style={{ padding: '12px' }}>Available Credit (SAR)</th></tr></thead>
-          <tbody>{creditCustomers.length === 0 ? <tr><td colSpan="3" style={{padding: '20px', textAlign: 'center', color: '#94A3B8'}}>No credit balances available.</td></tr> : creditCustomers.map(c => <tr key={c.id} style={{ borderBottom: '1px solid #334155' }}><td style={{ padding: '12px' }}>{c.name}</td><td style={{ padding: '12px' }}>{c.phone}</td><td style={{ padding: '12px', color: '#059669', fontWeight: 'bold' }}>{(c.store_credit || 0).toFixed(2)}</td></tr>)}</tbody>
+        <h2 style={{ color: '#1E3A8A' }}>{tr.credit}</h2>
+        <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', marginTop: '20px' }}>
+          <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Customer</th><th style={{ padding: '12px' }}>Phone</th><th style={{ padding: '12px' }}>Available Credit (SAR)</th></tr></thead>
+          <tbody>{creditCustomers.length === 0 ? <tr><td colSpan="3" style={{padding: '20px', textAlign: 'center'}}>No credit balances available.</td></tr> : creditCustomers.map(c => <tr key={c.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{c.name}</td><td style={{ padding: '12px' }}>{c.phone}</td><td style={{ padding: '12px', color: '#059669', fontWeight: 'bold' }}>{(c.store_credit || 0).toFixed(2)}</td></tr>)}</tbody>
         </table>
       </div>
     );
@@ -60,7 +60,7 @@ export default function ERPViewsCore(props) {
 
   if (page === 'create') return (
     <div style={styles.card}>
-      <h2 style={{ color: '#F59E0B' }}>{editInvId ? 'Edit Invoice' : tr.create}</h2>
+      <h2 style={{ color: '#1E3A8A' }}>{editInvId ? 'Edit Invoice' : tr.create}</h2>
       <form onSubmit={handleCreateInvoice}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
           {invForm.payment !== 'Credit Balance' && (<div><label style={styles.label}>Customer Type</label><select value={invForm.custType} onChange={e => setInvForm({...invForm, custType: e.target.value})} style={styles.input}><option>Individual</option><option>Corporate</option></select></div>)}
@@ -106,7 +106,7 @@ export default function ERPViewsCore(props) {
     return (
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-          <h2 style={{ color: '#F59E0B' }}>{isInvoices ? tr.list : tr.refunds}</h2>
+          <h2 style={{ color: '#1E3A8A' }}>{isInvoices ? tr.list : tr.refunds}</h2>
           <button onClick={() => exportToExcel(filteredData.map(i => ({ Inv: i.invoice_no, Customer: i.customers?.name || i.corporates?.name, Date: i.invoice_date, Total: i.total, Due: i.due_amount, Method: i.payment_method })), isInvoices ? 'Invoices' : 'Refunds')} style={styles.btnSuccess}>{tr.download_excel}</button>
         </div>
         <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
@@ -115,9 +115,9 @@ export default function ERPViewsCore(props) {
             <option>All</option><option>Cash</option><option>Bank Transfer</option><option>Credit</option><option>Credit Balance</option><option>Tabby</option><option>Tamara</option>
           </select>
         </div>
-        <table style={{ width: '100%', borderCollapse: 'collapse', background: '#1E293B', color: '#fff', borderRadius: '12px', overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', borderRadius: '12px', overflow: 'hidden' }}>
           <thead>
-            <tr style={{ background: '#0F172A', color: '#F59E0B' }}>
+            <tr style={{ background: '#1E3A8A', color: 'white' }}>
               <th style={{ padding: '12px', textAlign: 'left' }}>Inv No</th>
               <th style={{ padding: '12px', textAlign: 'left' }}>Customer</th>
               <th style={{ padding: '12px', textAlign: 'left' }}>Total</th>
@@ -128,7 +128,7 @@ export default function ERPViewsCore(props) {
           </thead>
           <tbody>
             {filteredData.slice(0, 10).map(inv => (
-              <tr key={inv.id} style={{ borderBottom: '1px solid #334155' }}>
+              <tr key={inv.id} style={{ borderBottom: '1px solid #E2E8F0' }}>
                 <td style={{ padding: '12px' }}>{inv.invoice_no}</td>
                 <td style={{ padding: '12px' }}>{inv.customers?.name || inv.corporates?.name}</td>
                 <td style={{ padding: '12px' }}>{(inv.total || 0).toFixed(2)}</td>
@@ -137,7 +137,7 @@ export default function ERPViewsCore(props) {
                 <td style={{ padding: '12px' }}>
                   <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
                     <button onClick={() => openPreview(inv)} style={{ ...styles.btnPrimary, padding: '5px 8px', width: 'auto', fontSize: '11px' }}>Preview</button>
-                    <button onClick={() => downloadPDF(inv, 'en')} style={{ ...styles.btnPrimary, padding: '5px 8px', width: 'auto', fontSize: '11px' }}>PDF</button>
+                    <button onClick={() => handleDownloadPDF(inv, 'en')} style={{ ...styles.btnPrimary, padding: '5px 8px', width: 'auto', fontSize: '11px' }}>PDF</button>
                     <button onClick={() => printInvoice(inv, 'ar')} style={{ ...styles.btnWarning, padding: '5px 8px', fontSize: '11px' }}>Print</button>
                     <button onClick={() => handleEditInvoice(inv)} style={{ ...styles.btnWarning, padding: '5px 8px', fontSize: '11px' }}>Edit</button>
                     <button onClick={() => handleDeleteInvoice(inv)} style={{ ...styles.btnDanger, padding: '5px 8px', fontSize: '11px' }}>Delete</button>
@@ -156,7 +156,7 @@ export default function ERPViewsCore(props) {
   if (page === 'customers') return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-        <h2 style={{ color: '#F59E0B' }}>{tr.customers}</h2>
+        <h2 style={{ color: '#1E3A8A' }}>{tr.customers}</h2>
         <button onClick={() => exportToExcel(data.customers, 'Customers')} style={styles.btnSuccess}>{tr.download_excel}</button>
       </div>
       <div style={styles.card}>
@@ -167,9 +167,9 @@ export default function ERPViewsCore(props) {
           <button type="submit" style={styles.btnPrimary}>{editCustId ? 'Update' : 'Add'}</button>
         </form>
       </div>
-      <table style={{ width: '100%', borderCollapse: 'collapse', background: '#1E293B', color: '#fff' }}>
-        <thead><tr style={{ background: '#0F172A', color: '#F59E0B' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Phone</th><th style={{ padding: '12px' }}>Credit</th><th style={{ padding: '12px' }}>Actions</th></tr></thead>
-        <tbody>{data.customers.map(c => <tr key={c.id} style={{ borderBottom: '1px solid #334155' }}><td style={{ padding: '12px' }}>{c.name}</td><td style={{ padding: '12px' }}>{c.phone}</td><td style={{ padding: '12px' }}>{c.store_credit || 0}</td><td style={{ padding: '12px' }}><button onClick={() => handleEditCust(c)} style={styles.btnWarning}>Edit</button><button onClick={() => handleDelete('customers', c.id)} style={{...styles.btnDanger, marginLeft: '5px'}}>Delete</button></td></tr>)}</tbody>
+      <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
+        <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Phone</th><th style={{ padding: '12px' }}>Credit</th><th style={{ padding: '12px' }}>Actions</th></tr></thead>
+        <tbody>{data.customers.map(c => <tr key={c.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{c.name}</td><td style={{ padding: '12px' }}>{c.phone}</td><td style={{ padding: '12px' }}>{c.store_credit || 0}</td><td style={{ padding: '12px' }}><button onClick={() => handleEditCust(c)} style={styles.btnWarning}>Edit</button><button onClick={() => handleDelete('customers', c.id)} style={{...styles.btnDanger, marginLeft: '5px'}}>Delete</button></td></tr>)}</tbody>
       </table>
     </div>
   );
@@ -177,7 +177,7 @@ export default function ERPViewsCore(props) {
   if (page === 'corporates') return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-        <h2 style={{ color: '#F59E0B' }}>{tr.corporates}</h2>
+        <h2 style={{ color: '#1E3A8A' }}>{tr.corporates}</h2>
         <button onClick={() => exportToExcel(data.corporates, 'Corporates')} style={styles.btnSuccess}>{tr.download_excel}</button>
       </div>
       <div style={styles.card}>
@@ -189,9 +189,9 @@ export default function ERPViewsCore(props) {
           <button type="submit" style={styles.btnPrimary}>{editCorpId ? 'Update' : 'Add'}</button>
         </form>
       </div>
-      <table style={{ width: '100%', borderCollapse: 'collapse', background: '#1E293B', color: '#fff' }}>
-        <thead><tr style={{ background: '#0F172A', color: '#F59E0B' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>VAT</th><th style={{ padding: '12px' }}>Actions</th></tr></thead>
-        <tbody>{data.corporates.map(c => <tr key={c.id} style={{ borderBottom: '1px solid #334155' }}><td style={{ padding: '12px' }}>{c.name}</td><td style={{ padding: '12px' }}>{c.vat_no}</td><td style={{ padding: '12px' }}><button onClick={() => handleEditCorp(c)} style={styles.btnWarning}>Edit</button><button onClick={() => handleDelete('corporates', c.id)} style={{...styles.btnDanger, marginLeft: '5px'}}>Delete</button></td></tr>)}</tbody>
+      <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
+        <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>VAT</th><th style={{ padding: '12px' }}>Actions</th></tr></thead>
+        <tbody>{data.corporates.map(c => <tr key={c.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{c.name}</td><td style={{ padding: '12px' }}>{c.vat_no}</td><td style={{ padding: '12px' }}><button onClick={() => handleEditCorp(c)} style={styles.btnWarning}>Edit</button><button onClick={() => handleDelete('corporates', c.id)} style={{...styles.btnDanger, marginLeft: '5px'}}>Delete</button></td></tr>)}</tbody>
       </table>
     </div>
   );
@@ -199,7 +199,7 @@ export default function ERPViewsCore(props) {
   if (page === 'creditors') return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-        <h2 style={{ color: '#F59E0B' }}>{tr.creditors}</h2>
+        <h2 style={{ color: '#1E3A8A' }}>{tr.creditors}</h2>
         <button onClick={() => exportToExcel(data.creditors, 'Creditors')} style={styles.btnSuccess}>{tr.download_excel}</button>
       </div>
       <div style={styles.card}>
@@ -209,9 +209,9 @@ export default function ERPViewsCore(props) {
           <button type="submit" style={styles.btnPrimary}>{editCredId ? 'Update' : 'Add'}</button>
         </form>
       </div>
-      <table style={{ width: '100%', borderCollapse: 'collapse', background: '#1E293B', color: '#fff' }}>
-        <thead><tr style={{ background: '#0F172A', color: '#F59E0B' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Actions</th></tr></thead>
-        <tbody>{data.creditors.map(c => <tr key={c.id} style={{ borderBottom: '1px solid #334155' }}><td style={{ padding: '12px' }}>{c.name}</td><td style={{ padding: '12px' }}><button onClick={() => handleEditCred(c)} style={styles.btnWarning}>Edit</button><button onClick={() => handleDelete('creditors', c.id)} style={{...styles.btnDanger, marginLeft: '5px'}}>Delete</button></td></tr>)}</tbody>
+      <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
+        <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Actions</th></tr></thead>
+        <tbody>{data.creditors.map(c => <tr key={c.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{c.name}</td><td style={{ padding: '12px' }}><button onClick={() => handleEditCred(c)} style={styles.btnWarning}>Edit</button><button onClick={() => handleDelete('creditors', c.id)} style={{...styles.btnDanger, marginLeft: '5px'}}>Delete</button></td></tr>)}</tbody>
       </table>
     </div>
   );
