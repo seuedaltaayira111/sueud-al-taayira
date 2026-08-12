@@ -4,11 +4,163 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
-// Basic HTML generators
-const getInvoiceHTML = (inv, s, lang) => `<div style="font-family:sans-serif;padding:20px;"><h1>Invoice ${inv.invoice_no}</h1><p>Customer: ${inv.customers?.name || 'N/A'}</p><p>Total: ${inv.total} SAR</p></div>`;
-const getExpenseHTML = (exp, s) => `<div style="font-family:sans-serif;padding:20px;"><h1>Expense ${exp.invoice_no}</h1><p>Vendor: ${exp.vendor_name}</p><p>Total: ${exp.amount} SAR</p></div>`;
-const getContractHTML = (s, name, date, isOffer, type, markup, terms) => `<div style="font-family:sans-serif;padding:20px;"><h1>Contract for ${name}</h1><p>Type: ${type}</p><p>Markup: ${markup}</p></div>`;
+// ==========================================
+// STYLISH PROFESSIONAL INVOICE TEMPLATE
+// ==========================================
+const getInvoiceHTML = (inv, s, lang = 'en') => {
+  const isAr = lang === 'ar';
+  const setting = s || {};
+  return `
+  <!DOCTYPE html>
+  <html lang="${isAr ? 'ar' : 'en'}" dir="${isAr ? 'rtl' : 'ltr'}">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice ${inv.invoice_no}</title>
+    <style>
+      body { font-family: 'Poppins', 'Tajawal', sans-serif; background: #f1f5f9; margin: 0; padding: 20px; color: #1e293b; }
+      .invoice-box { max-width: 800px; margin: auto; background: #fff; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden; border: 1px solid #e2e8f0; }
+      .header { background: #1E3A8A; color: #fff; padding: 30px; display: flex; justify-content: space-between; align-items: center; }
+      .header h1 { margin: 0; font-size: 28px; color: #FBBF24; }
+      .header p { margin: 5px 0 0; opacity: 0.9; font-size: 14px; }
+      .header-right { text-align: ${isAr ? 'left' : 'right'}; }
+      .header-right h2 { margin: 0; font-size: 20px; color: #FBBF24; }
+      .section { padding: 30px; }
+      .flex { display: flex; justify-content: space-between; margin-bottom: 30px; }
+      .box { background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #1E3A8A; width: 48%; }
+      .box h3 { margin: 0 0 10px; font-size: 14px; color: #64748b; text-transform: uppercase; }
+      .box p { margin: 3px 0; font-size: 16px; font-weight: 500; }
+      table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+      th { background: #1E3A8A; color: #fff; padding: 12px; text-align: ${isAr ? 'right' : 'left'}; font-size: 14px; }
+      td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+      .totals { margin-left: auto; width: 300px; }
+      .totals div { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0; }
+      .totals .grand { font-size: 18px; font-weight: bold; color: #1E3A8A; border-bottom: none; }
+      .footer { text-align: center; padding: 20px; background: #f8fafc; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
+      .status-badge { display: inline-block; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; background: ${inv.due_amount > 0 ? '#FEF3C7' : '#D1FAE5'}; color: ${inv.due_amount > 0 ? '#D97706' : '#059669'}; }
+    </style>
+  </head>
+  <body>
+    <div class="invoice-box">
+      <div class="header">
+        <div>
+          <h1>${setting.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
+          <p>${setting.company_name_ar || 'صعود الطائرة للسفر السياحة'}</p>
+          <p>${setting.address_ar || ''} | ${setting.phone || ''}</p>
+          <p>VAT: ${setting.vat_no || 'N/A'} | CR: ${setting.cr_no || 'N/A'}</p>
+        </div>
+        <div class="header-right">
+          <h2>INVOICE</h2>
+          <p>#${inv.invoice_no}</p>
+          <p>${inv.invoice_date || ''}</p>
+        </div>
+      </div>
+      
+      <div class="section">
+        <div class="flex">
+          <div class="box">
+            <h3>Bill To</h3>
+            <p><strong>${inv.customers?.name || inv.corporates?.name || 'Walk-in Customer'}</strong></p>
+            ${inv.customers?.phone ? `<p>Phone: ${inv.customers.phone}</p>` : ''}
+            ${inv.corporates?.vat_no ? `<p>VAT: ${inv.corporates.vat_no}</p>` : ''}
+          </div>
+          <div class="box">
+            <h3>Flight Details</h3>
+            <p><strong>${inv.airline || 'N/A'} - ${inv.flight_sector || ''}</strong></p>
+            <p>PNR: ${inv.pnr || 'N/A'} | Ticket: ${inv.ticket_no || 'N/A'}</p>
+            <p>Passenger: ${inv.passenger_names ? inv.passenger_names.replace(/\n/g, ', ') : 'N/A'}</p>
+          </div>
+        </div>
 
+        <table>
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th style="text-align: right;">Amount (SAR)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>${inv.sector || inv.service_type}</td>
+              <td>${inv.service_type} (${inv.flight_type || 'N/A'})</td>
+              <td><span class="status-badge">${inv.due_amount > 0 ? 'UNPAID' : 'PAID'}</span></td>
+              <td style="text-align: right;">${(inv.total_sell || 0).toFixed(2)}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="totals">
+          <div>
+            <span>Subtotal:</span>
+            <span>${(inv.total_sell || 0).toFixed(2)}</span>
+          </div>
+          ${inv.discount > 0 ? `<div><span>Discount:</span><span> - ${(inv.discount || 0).toFixed(2)}</span></div>` : ''}
+          <div>
+            <span>VAT (15%):</span>
+            <span>${(inv.vat || 0).toFixed(2)}</span>
+          </div>
+          <div class="grand">
+            <span>Total:</span>
+            <span>${(inv.total || 0).toFixed(2)} SAR</span>
+          </div>
+          <div>
+            <span>Paid Amount:</span>
+            <span style="color: #059669;">${(inv.paid_amount || 0).toFixed(2)}</span>
+          </div>
+          ${inv.due_amount > 0 ? `<div class="grand" style="color:#EF4444;"><span>Due Amount:</span><span>${(inv.due_amount || 0).toFixed(2)}</span></div>` : ''}
+        </div>
+      </div>
+      
+      <div class="footer">
+        <p>${setting.invoice_footer || 'Thank you for choosing us!'}</p>
+        <p>This is a computer generated invoice and does not require physical signature.</p>
+      </div>
+    </div>
+  </body>
+  </html>
+  `;
+};
+
+const getExpenseHTML = (exp, s) => {
+  return `
+  <!DOCTYPE html><html><head><style>
+  body { font-family: sans-serif; padding: 20px; }
+  .exp-box { max-width: 600px; margin: auto; border: 1px solid #ccc; padding: 20px; border-radius: 8px; }
+  h1 { color: #1E3A8A; }
+  </style></head><body>
+    <div class="exp-box">
+      <h1>Expense Voucher: ${exp.invoice_no}</h1>
+      <p><strong>Vendor:</strong> ${exp.vendor_name}</p>
+      <p><strong>Date:</strong> ${exp.expense_date}</p>
+      <p><strong>Type:</strong> ${exp.expense_type}</p>
+      <p><strong>Amount:</strong> ${(exp.amount || 0).toFixed(2)} SAR</p>
+      <p><strong>Paid Via:</strong> ${exp.payment_mode}</p>
+    </div>
+  </body></html>`;
+};
+
+const getContractHTML = (s, name, date, isOffer, type, markup, terms) => {
+  return `
+  <!DOCTYPE html><html><head><style>
+  body { font-family: sans-serif; padding: 40px; line-height: 1.6; }
+  h1 { color: #1E3A8A; text-align: center; }
+  </style></head><body>
+    <h1>${isOffer ? 'Corporate Offer' : 'Corporate Contract'}</h1>
+    <p><strong>Company:</strong> ${name}</p>
+    <p><strong>Date:</strong> ${date}</p>
+    <p><strong>Service Type:</strong> ${type}</p>
+    <p><strong>Service Fee/Markup:</strong> ${markup} SAR</p>
+    <br/>
+    <h3>Terms & Conditions</h3>
+    <pre>${terms}</pre>
+  </body></html>`;
+};
+
+// ==========================================
+// MAIN HOOK START
+// ==========================================
 export default function useERPState() {
   const router = useRouter();
   const today = new Date().toISOString().split('T')[0];
@@ -79,14 +231,13 @@ export default function useERPState() {
   const [editUserId, setEditUserId] = useState(null);
 
   const tr = {
-    dashboard: 'Dashboard', create: 'Create Invoice', list: 'Invoices', refunds: 'Refunds',
+    dashboard: 'Dashboard', dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices', refunds: 'Refunds',
     customers: 'Customers', corporates: 'Corporates', creditors: 'Creditors', credit: 'Credit Balances',
     vendors: 'Vendors', packages: 'Packages', branches: 'Branches', portals: 'Portals', bank: 'Bank & Cash',
     invest: 'Investors', hr: 'Human Resources', users: 'Users', settings: 'Settings', reports: 'Reports',
     audit: 'Audit Logs', statements: 'Statements', contract: 'Contracts', offer: 'Offers',
     superadmin: 'SuperAdmin', profile: 'Profile', profitability: 'Profitability',
-    search: 'Search...', download_excel: 'Export Excel', logout: 'Logout', changePass: 'Change Password',
-    dash: 'Dashboard'
+    search: 'Search...', download_excel: 'Export Excel', logout: 'Logout', changePass: 'Change Password'
   };
 
   const showToast = (msg) => {
@@ -137,7 +288,7 @@ export default function useERPState() {
         tenants: ten.data || [],
         payroll: pay.data || [],
         empAdvances: adv.data || [],
-        investments: [], branches: [], packages: [], vendors: [], services: [], recharges: [], audits: [] // Fetch these if needed
+        investments: [], branches: [], packages: [], vendors: [], services: [], recharges: [], audits: [] 
       });
     } catch (err) {
       console.error("Fetch Error:", err);
@@ -173,7 +324,7 @@ export default function useERPState() {
         if (profileData) {
           setUserProfile(profileData);
         } else {
-          // Agar user app_users table mein nahi hai, toh SuperAdmin maan lo
+          // Agar user app_users table mein nahi hai, toh SuperAdmin maan lo (Valid UUID format)
           setUserProfile({ 
             id: session.user.id, 
             email: session.user.email, 
@@ -185,7 +336,7 @@ export default function useERPState() {
             can_access_hr: true, 
             can_access_reports: true, 
             can_access_settings: true, 
-            tenant_id: '00000000-0000-0000-0000-000000000000' // Default SuperAdmin Tenant
+            tenant_id: '00000000-0000-0000-0000-000000000000' 
           });
         }
       } else {
