@@ -4,9 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
-const getInvoiceHTML = (inv, s, lang) => `<div>Invoice ${inv.invoice_no}</div>`;
-const getExpenseHTML = (exp, s) => `<div>Expense ${exp.invoice_no}</div>`;
-const getContractHTML = (s, name, date, isOffer, type, markup, terms) => `<div>Contract for ${name}</div>`;
+// Basic HTML generators
+const getInvoiceHTML = (inv, s, lang) => `<div style="font-family:sans-serif;padding:20px;"><h1>Invoice ${inv.invoice_no}</h1><p>Customer: ${inv.customers?.name || 'N/A'}</p><p>Total: ${inv.total} SAR</p></div>`;
+const getExpenseHTML = (exp, s) => `<div style="font-family:sans-serif;padding:20px;"><h1>Expense ${exp.invoice_no}</h1><p>Vendor: ${exp.vendor_name}</p><p>Total: ${exp.amount} SAR</p></div>`;
+const getContractHTML = (s, name, date, isOffer, type, markup, terms) => `<div style="font-family:sans-serif;padding:20px;"><h1>Contract for ${name}</h1><p>Type: ${type}</p><p>Markup: ${markup}</p></div>`;
 
 export default function useERPState() {
   const router = useRouter();
@@ -42,6 +43,7 @@ export default function useERPState() {
   const [contractMarkup, setContractMarkup] = useState(0);
   const [contractTerms, setContractTerms] = useState('');
 
+  // Forms
   const [invForm, setInvForm] = useState({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: '', bookingDate: today, invoiceDate: today, bookingType: 'New Booking', linkedInvId: '', service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' });
   const [expForm, setExpForm] = useState({ vendor_name: '', vendor_vat: '', expense_date: today, expense_type: 'Office Supplies', payment_mode: 'Cash', items: [{ name: '', qty: 1, price: 0 }], taxRate: '15', desc: '' });
   const [custForm, setCustForm] = useState({ name: '', phone: '', store_credit: 0 });
@@ -63,6 +65,7 @@ export default function useERPState() {
   const [tenantForm, setTenantForm] = useState({ agency_name: '', owner_email: '', subscription_end_date: '', company_name_ar: '', vat_no: '', cr_no: '', phone: '', address_ar: '' });
   const [profileForm, setProfileForm] = useState({ username: '', avatar_url: '', phone: '', address: '' });
 
+  // Edit IDs
   const [editInvId, setEditInvId] = useState(null);
   const [editExpId, setEditExpId] = useState(null);
   const [editCustId, setEditCustId] = useState(null);
@@ -82,7 +85,8 @@ export default function useERPState() {
     invest: 'Investors', hr: 'Human Resources', users: 'Users', settings: 'Settings', reports: 'Reports',
     audit: 'Audit Logs', statements: 'Statements', contract: 'Contracts', offer: 'Offers',
     superadmin: 'SuperAdmin', profile: 'Profile', profitability: 'Profitability',
-    search: 'Search...', download_excel: 'Export Excel', logout: 'Logout', changePass: 'Change Password'
+    search: 'Search...', download_excel: 'Export Excel', logout: 'Logout', changePass: 'Change Password',
+    dash: 'Dashboard'
   };
 
   const showToast = (msg) => {
@@ -94,12 +98,51 @@ export default function useERPState() {
     if (!userProfile?.id) return;
     try {
       await supabase.from('audits').insert([{ user_email: userProfile.email, action, tenant_id: userProfile.tenant_id }]);
-    } catch (e) { console.error(e) }
+    } catch (e) { console.error("Audit Error:", e) }
   };
 
+  // REAL DATA FETCHING FROM SUPABASE
   const fetchAll = useCallback(async () => {
-    console.log("Fetching data...");
-  }, []);
+    if (!userProfile?.tenant_id) return;
+    const tId = userProfile.tenant_id;
+    
+    try {
+      const [inv, cust, corp, cred, por, cash, exp, emp, appU, set, ten, pay, adv] = await Promise.all([
+        supabase.from('invoices').select(`*, customers(name), corporates(name), employees(name)`).eq('tenant_id', tId),
+        supabase.from('customers').select('*').eq('tenant_id', tId),
+        supabase.from('corporates').select('*').eq('tenant_id', tId),
+        supabase.from('creditors').select('*').eq('tenant_id', tId),
+        supabase.from('portals').select('*').eq('tenant_id', tId),
+        supabase.from('cashbook').select('*').eq('tenant_id', tId),
+        supabase.from('expenses').select('*').eq('tenant_id', tId),
+        supabase.from('employees').select('*').eq('tenant_id', tId),
+        supabase.from('app_users').select('*').eq('tenant_id', tId),
+        supabase.from('settings').select('*').eq('tenant_id', tId).maybeSingle(),
+        supabase.from('tenants').select('*'),
+        supabase.from('payroll').select('*, employees(name)').eq('tenant_id', tId),
+        supabase.from('employee_advances').select('*, employees(name)').eq('tenant_id', tId)
+      ]);
+
+      setData({
+        invoices: inv.data || [],
+        customers: cust.data || [],
+        corporates: corp.data || [],
+        creditors: cred.data || [],
+        portals: por.data || [],
+        cashbook: cash.data || [],
+        expenses: exp.data || [],
+        employees: emp.data || [],
+        appUsers: appU.data || [],
+        settings: set.data || {},
+        tenants: ten.data || [],
+        payroll: pay.data || [],
+        empAdvances: adv.data || [],
+        investments: [], branches: [], packages: [], vendors: [], services: [], recharges: [], audits: [] // Fetch these if needed
+      });
+    } catch (err) {
+      console.error("Fetch Error:", err);
+    }
+  }, [userProfile]);
 
   const exportToExcel = (data, filename) => {
     console.log("Exporting to Excel:", filename, data);
@@ -119,26 +162,45 @@ export default function useERPState() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setUser(session.user);
-        // Mock profile taaki app crash na ho
-        setUserProfile({ 
-          id: '123', 
-          email: session.user.email, 
-          username: session.user.email, 
-          role: 'Admin', 
-          is_admin: true, 
-          can_access_invoices: true, 
-          can_access_bank: true, 
-          can_access_hr: true, 
-          can_access_reports: true, 
-          can_access_settings: true, 
-          tenant_id: 'tenant-1' 
-        });
+        
+        // REAL PROFILE FETCH FROM SUPABASE
+        const { data: profileData } = await supabase
+          .from('app_users')
+          .select('*')
+          .eq('email', session.user.email)
+          .single();
+
+        if (profileData) {
+          setUserProfile(profileData);
+        } else {
+          // Agar user app_users table mein nahi hai, toh SuperAdmin maan lo
+          setUserProfile({ 
+            id: session.user.id, 
+            email: session.user.email, 
+            username: session.user.email, 
+            role: 'SuperAdmin', 
+            is_admin: true, 
+            can_access_invoices: true, 
+            can_access_bank: true, 
+            can_access_hr: true, 
+            can_access_reports: true, 
+            can_access_settings: true, 
+            tenant_id: '00000000-0000-0000-0000-000000000000' // Default SuperAdmin Tenant
+          });
+        }
       } else {
         router.push('/login');
       }
     };
     getSession();
   }, [router]);
+
+  // Jab userProfile load ho jaye, tabhi data fetch karo
+  useEffect(() => {
+    if (userProfile) {
+      fetchAll();
+    }
+  }, [userProfile, fetchAll]);
 
   return {
     user, data, setData, userProfile, setUserProfile, toast, showToast, logAction, fetchAll,
