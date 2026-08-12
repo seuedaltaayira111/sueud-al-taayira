@@ -5,24 +5,24 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 // ==========================================
-// BREATHTAKING BILINGUAL INVOICE TEMPLATE
+// PREMIUM BILINGUAL INVOICE TEMPLATE (FIXED)
 // ==========================================
 const getInvoiceHTML = (inv, s, lang = 'en') => {
   const setting = s || {};
   const isAr = lang === 'ar';
   const dir = isAr ? 'rtl' : 'ltr';
   
-  // Barcode aur QR Code Generate karne ke liye APIs
   const invoiceNo = inv.invoice_no || 'N/A';
   const totalAmount = (inv.total || 0).toFixed(2);
   const vatAmount = (inv.vat || 0).toFixed(2);
   
-  // ZATCA Style QR Code Data
-  const qrData = encodeURIComponent(`Seller:${setting.company_name_ar || 'Company'},VAT:${setting.vat_no || 'N/A'},Inv:${invoiceNo},Total:${totalAmount},VAT:${vatAmount}`);
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${qrData}`;
+  // Scannable URL for QR & Barcode (Opens live invoice)
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://yourdomain.com';
+  const trackUrl = `${baseUrl}/invoice/${invoiceNo}`;
   
-  // Barcode URL
-  const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${invoiceNo}&code=Code128&translate-esc=on`;
+  // QR Code & Barcode APIs
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(trackUrl)}`;
+  const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(trackUrl)}&code=Code128&translate-esc=on`;
 
   return `
   <!DOCTYPE html>
@@ -33,75 +33,77 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
     <title>Invoice ${invoiceNo}</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-      body { font-family: 'Poppins', 'Cairo', sans-serif; background: #e2e8f0; margin: 0; padding: 40px; color: #1e293b; -webkit-print-color-adjust: exact; }
-      .invoice-container { max-width: 850px; margin: auto; background: #ffffff; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); overflow: hidden; border-top: 8px solid #1E3A8A; }
+      body { font-family: 'Poppins', 'Cairo', sans-serif; background: #e2e8f0; margin: 0; padding: 20px; color: #1e293b; -webkit-print-color-adjust: exact; }
+      .invoice-container { max-width: 850px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; border-top: 8px solid #1E3A8A; }
       
-      /* Header Section */
-      .header { padding: 40px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
-      .company-info h1 { margin: 0; font-size: 28px; color: #1E3A8A; font-weight: 800; letter-spacing: -0.5px; }
-      .company-info h2 { margin: 5px 0 0; font-size: 22px; color: #D97706; font-weight: 700; direction: rtl; font-family: 'Cairo', sans-serif; }
-      .company-info p { margin: 5px 0; font-size: 13px; color: #64748b; line-height: 1.6; }
+      /* Compact Padding to fit one page */
+      .header { padding: 25px 30px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
       
-      .invoice-meta { text-align: ${isAr ? 'left' : 'right'}; background: #1E3A8A; padding: 20px 30px; border-radius: 12px; color: #fff; box-shadow: 0 10px 20px rgba(30, 58, 138, 0.2); }
-      .invoice-meta h2 { margin: 0 0 10px; font-size: 24px; color: #FBBF24; text-transform: uppercase; letter-spacing: 1px; }
-      .invoice-meta p { margin: 4px 0; font-size: 14px; font-weight: 500; }
+      /* Arabic Name on Top */
+      .company-info h2 { margin: 0; font-size: 28px; color: #1E3A8A; font-weight: 800; direction: rtl; font-family: 'Cairo', sans-serif; }
+      .company-info h1 { margin: 3px 0 0; font-size: 18px; color: #D97706; font-weight: 700; text-transform: uppercase; }
+      .company-info p { margin: 8px 0 0; font-size: 12px; color: #64748b; line-height: 1.5; }
+      
+      .invoice-meta { text-align: ${isAr ? 'left' : 'right'}; background: #1E3A8A; padding: 15px 25px; border-radius: 10px; color: #fff; }
+      .invoice-meta h3 { margin: 0 0 8px; font-size: 20px; color: #FBBF24; text-transform: uppercase; letter-spacing: 1px; }
+      .invoice-meta p { margin: 3px 0; font-size: 13px; font-weight: 500; }
       .invoice-meta span { color: #FBBF24; font-weight: 700; }
 
-      /* Body Section */
-      .body { padding: 40px; }
-      .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
-      .card { background: #f8fafc; border-radius: 12px; padding: 20px; border-left: 5px solid #1E3A8A; }
-      .card h3 { margin: 0 0 15px; font-size: 14px; text-transform: uppercase; color: #1E3A8A; letter-spacing: 0.5px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
-      .card p { margin: 6px 0; font-size: 15px; display: flex; justify-content: space-between; }
+      .body { padding: 25px 30px; }
+      .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+      .card { background: #f8fafc; border-radius: 10px; padding: 15px; border-left: 4px solid #1E3A8A; }
+      .card h4 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; color: #1E3A8A; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; }
+      .card p { margin: 5px 0; font-size: 13px; display: flex; justify-content: space-between; }
       .card p strong { color: #334155; }
-      .card p span { color: #64748b; font-weight: 600; }
+      .card p span { color: #64748b; font-weight: 600; text-align: right; max-width: 60%; word-wrap: break-word; }
 
-      /* Table Section */
-      .table-wrapper { background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; margin-bottom: 30px; }
+      .table-wrapper { background: #fff; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; margin-bottom: 20px; }
       table { width: 100%; border-collapse: collapse; }
-      thead th { background: #1E3A8A; color: #fff; padding: 15px; font-size: 14px; text-align: ${isAr ? 'right' : 'left'}; font-weight: 600; }
+      thead th { background: #1E3A8A; color: #fff; padding: 12px; font-size: 13px; text-align: ${isAr ? 'right' : 'left'}; }
       thead th.center { text-align: center; }
       thead th.right { text-align: right; }
-      tbody td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #334155; }
+      tbody td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; color: #334155; vertical-align: top; }
       tbody td.center { text-align: center; }
       tbody td.right { text-align: right; font-weight: 600; }
-      .service-badge { display: inline-block; background: #DBEAFE; color: #1E3A8A; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+      .service-badge { display: inline-block; background: #DBEAFE; color: #1E3A8A; padding: 3px 8px; border-radius: 15px; font-size: 11px; font-weight: 600; margin-top: 5px; }
 
-      /* Totals Section */
-      .totals-section { display: flex; justify-content: flex-end; margin-bottom: 30px; }
+      .totals-section { display: flex; justify-content: flex-end; margin-bottom: 20px; }
       .totals-box { width: 320px; }
-      .total-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e2e8f0; font-size: 15px; }
+      .total-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
       .total-row span { color: #64748b; }
       .total-row strong { color: #1e293b; font-weight: 600; }
-      .grand-total { background: #1E3A8A; color: #fff; padding: 15px 20px; border-radius: 8px; margin-top: 10px; font-size: 18px; display: flex; justify-content: space-between; font-weight: 700; }
+      .grand-total { background: #1E3A8A; color: #fff; padding: 12px 15px; border-radius: 8px; margin-top: 8px; font-size: 16px; display: flex; justify-content: space-between; font-weight: 700; }
       .grand-total strong { color: #FBBF24; }
       .due-amount { color: #EF4444; font-weight: 700; }
       .paid-amount { color: #059669; font-weight: 700; }
 
-      /* Footer & Codes */
-      .footer { background: #f8fafc; padding: 30px 40px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+      .footer { background: #f8fafc; padding: 20px 30px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
       .codes img { height: 70px; mix-blend-mode: multiply; }
-      .footer-text { text-align: center; font-size: 12px; color: #94a3b8; line-height: 1.6; }
-      .footer-text strong { color: #64748b; display: block; font-size: 14px; margin-bottom: 5px; }
+      .footer-text { text-align: center; font-size: 11px; color: #94a3b8; line-height: 1.5; }
+      .footer-text strong { color: #64748b; display: block; font-size: 14px; margin-bottom: 4px; }
       
+      /* Print Rules: Header/Footer on every page */
       @media print {
         body { background: #fff; padding: 0; }
-        .invoice-container { box-shadow: none; border-radius: 0; max-width: 100%; }
+        .invoice-container { box-shadow: none; border-radius: 0; max-width: 100%; border: none; }
+        .header { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .footer { position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .body { padding-top: 160px; padding-bottom: 120px; }
       }
     </style>
   </head>
   <body>
     <div class="invoice-container">
       
-      <!-- Header -->
+      <!-- Header (Fixed for Print) -->
       <div class="header">
         <div class="company-info">
-          <h1>${setting.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
           <h2>${setting.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
+          <h1>${setting.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
           <p>${setting.address_ar || 'Riyadh, Saudi Arabia'}<br>${setting.phone || '+966 500000000'} | VAT: ${setting.vat_no || 'N/A'} | CR: ${setting.cr_no || 'N/A'}</p>
         </div>
         <div class="invoice-meta">
-          <h2>Tax Invoice / فاتورة</h2>
+          <h3>Tax Invoice / فاتورة</h3>
           <p>Invoice No / رقم: <span>${invoiceNo}</span></p>
           <p>Date / التاريخ: <span>${inv.invoice_date || ''}</span></p>
           <p>Status / الحالة: <span>${inv.due_amount > 0 ? 'Unpaid' : 'Paid'}</span></p>
@@ -114,17 +116,17 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
         <!-- Customer & Flight Details -->
         <div class="details-grid">
           <div class="card">
-            <h3>Customer Info / معلومات العميل</h3>
+            <h4>Customer Info / معلومات العميل</h4>
             <p><strong>Name / الاسم:</strong> <span>${inv.customers?.name || inv.corporates?.name || 'Walk-in'}</span></p>
             <p><strong>Phone / الجوال:</strong> <span>${inv.customers?.phone || 'N/A'}</span></p>
             <p><strong>ID / الهوية:</strong> <span>${inv.customers?.id_no || 'N/A'}</span></p>
           </div>
           <div class="card" style="border-left-color: #D97706;">
-            <h3>Booking Details / تفاصيل الحجز</h3>
+            <h4>Booking Details / تفاصيل الحجز</h4>
             <p><strong>Service / الخدمة:</strong> <span>${inv.service_type || 'Flight'}</span></p>
             <p><strong>Airline / الشركة:</strong> <span>${inv.airline || 'N/A'}</span></p>
             <p><strong>PNR / رقم الحجز:</strong> <span>${inv.pnr || 'N/A'}</span></p>
-            <p><strong>Passenger / الركاب:</strong> <span style="text-align:right;">${inv.passenger_names ? inv.passenger_names.replace(/\n/g, ', ') : 'N/A'}</span></p>
+            <p><strong>Passenger / الركاب:</strong> <span>${inv.passenger_names ? inv.passenger_names.replace(/\n/g, ', ') : 'N/A'}</span></p>
           </div>
         </div>
 
@@ -159,7 +161,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
             <div class="total-row"><span>Total Before Tax / الإجمالي قبل الضريبة</span> <strong>${(inv.total_sell || 0).toFixed(2)} SAR</strong></div>
             <div class="total-row"><span>VAT (15%) / قيمة الضريبة</span> <strong>${(inv.vat || 0).toFixed(2)} SAR</strong></div>
             <div class="grand-total"><span>Grand Total / الإجمالي شامل الضريبة</span> <strong>${(inv.total || 0).toFixed(2)} SAR</strong></div>
-            <div class="total-row" style="margin-top: 15px; border-bottom: none;"><span>Paid Amount / المدفوع</span> <strong class="paid-amount">${(inv.paid_amount || 0).toFixed(2)} SAR</strong></div>
+            <div class="total-row" style="margin-top: 10px; border-bottom: none;"><span>Paid Amount / المدفوع</span> <strong class="paid-amount">${(inv.paid_amount || 0).toFixed(2)} SAR</strong></div>
             <div class="total-row"><span>Due Amount / المتبقي</span> <strong class="due-amount">${(inv.due_amount || 0).toFixed(2)} SAR</strong></div>
             <div class="total-row" style="border-bottom: none;"><span>Payment Method / طريقة الدفع</span> <strong>${inv.payment_method || 'Cash'}</strong></div>
           </div>
@@ -167,7 +169,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
 
       </div>
 
-      <!-- Footer with Codes -->
+      <!-- Footer (Fixed for Print) -->
       <div class="footer">
         <div class="codes">
           <img src="${barcodeUrl}" alt="Barcode" crossorigin="anonymous"><br>
@@ -180,7 +182,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
         </div>
         <div class="codes">
           <img src="${qrCodeUrl}" alt="QR Code" crossorigin="anonymous"><br>
-          <small style="color:#94a3b8; font-size: 10px;">ZATCA QR / رمز الاستجابة</small>
+          <small style="color:#94a3b8; font-size: 10px;">Scan for Online / امسح للإلكتروني</small>
         </div>
       </div>
 
