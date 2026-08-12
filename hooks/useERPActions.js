@@ -3,7 +3,7 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
 export default function useERPActions(state) {
-  const { user, data, setData, userProfile, showToast, logAction, fetchAll, invForm, setInvForm, expForm, setExpForm, corpForm, setCorpForm, creditorForm, setCreditorForm, custForm, setCustForm, vendorForm, setVendorForm, pkgForm, setPkgForm, brnForm, setBrnForm, empForm, setEmpForm, srvForm, setSrvForm, investForm, setInvestForm, settleForm, setSettleForm, refundForm, setRefundForm, transferForm, setTransferForm, setForm, setSetForm, userForm, setUserForm, portalForm, setPortalForm, editInvId, setEditInvId, editExpId, setEditExpId, editCorpId, setEditCorpId, editCredId, setEditCredId, editCustId, setEditCustId, editVendId, setEditVendId, editPkgId, setEditPkgId, editBrnId, setEditBrnId, editEmpId, setEditEmpId, editSrvId, setEditSrvId, editUserId, setEditUserId, modal, setModal, passForm, setPassForm, chatInput, setChatInput, chatMessages, setChatMessages, previewHTML, setPreviewHTML, getInvoiceHTML, getExpenseHTML, getContractHTML, today, router, contractCorpName, contractType, contractMarkup, contractTerms, tenantForm, setTenantForm } = state;
+  const { user, data, setData, userProfile, showToast, logAction, fetchAll, invForm, setInvForm, expForm, setExpForm, corpForm, setCorpForm, creditorForm, setCreditorForm, custForm, setCustForm, vendorForm, setVendorForm, pkgForm, setPkgForm, brnForm, setBrnForm, empForm, setEmpForm, srvForm, setSrvForm, investForm, setInvestForm, settleForm, setSettleForm, refundForm, setRefundForm, transferForm, setTransferForm, setForm, setSetForm, userForm, setUserForm, portalForm, setPortalForm, editInvId, setEditInvId, editExpId, setEditExpId, editCorpId, setEditCorpId, editCredId, setEditCredId, editCustId, setEditCustId, editVendId, setEditVendId, editPkgId, setEditPkgId, editBrnId, setEditBrnId, editEmpId, setEditEmpId, editSrvId, setEditSrvId, editUserId, setEditUserId, modal, setModal, passForm, setPassForm, chatInput, setChatInput, chatMessages, setChatMessages, previewHTML, setPreviewHTML, getInvoiceHTML, getExpenseHTML, getContractHTML, today, router, contractCorpName, contractType, contractMarkup, contractTerms, tenantForm, setTenantForm, profileForm, setProfileForm } = state;
 
   const handleLogout = () => { supabase.auth.signOut(); router.push('/login'); };
   
@@ -32,6 +32,33 @@ export default function useERPActions(state) {
     cf[index][type] = value;
     return { ...prev, custom_fields: cf };
   });
+
+  // Profile Handlers
+  const handleProfilePicUpload = async (e) => {
+    try {
+      const file = e.target.files[0];
+      if (!file) return;
+      const fileName = `avatar-${user.id}-${Date.now()}.${file.name.split('.').pop()}`;
+      const { error } = await supabase.storage.from('logos').upload(fileName, file);
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName);
+      setProfileForm(prev => ({ ...prev, avatar_url: urlData.publicUrl }));
+      showToast('Profile Picture Uploaded!');
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    try {
+      const { error } = await supabase.from('app_users').update({ 
+        username: profileForm.username, 
+        avatar_url: profileForm.avatar_url 
+      }).eq('id', userProfile.id);
+      
+      if (error) throw error;
+      showToast('Profile Updated Successfully!');
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
 
   // SaaS SuperAdmin Actions
   const handleAddTenant = async (e) => {
@@ -415,7 +442,7 @@ export default function useERPActions(state) {
   const openPreview = (inv) => { const s = data.settings; const html = getInvoiceHTML(inv, s, 'en'); setPreviewHTML(html); setModal({ type: 'preview', data: inv }); };
   const handleLogoUpload = async (e) => { try { const file = e.target.files[0]; if (!file) return; const fileName = `logo-${Date.now()}.${file.name.split('.').pop()}`; const { error } = await supabase.storage.from('logos').upload(fileName, file); if (error) throw error; const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName); setSetForm(prev => ({ ...prev, logo_url: urlData.publicUrl })); showToast('Logo Uploaded!'); } catch (err) { showToast('Error: ' + err.message); } };
   
-  // 100% Bulletproof handleSaveSettings (No duplicate key, No tenant missing)
+  // 100% Bulletproof handleSaveSettings
   const handleSaveSettings = async (e) => { 
     e.preventDefault(); 
     try { 
@@ -446,7 +473,7 @@ export default function useERPActions(state) {
 
   return {
     handleLogout, handleChangePassword, handleSendMessage, handleEditInvoice, handleCreateInvoice, handleDeleteInvoice, handleAddExpItem, handleRemoveExpItem, handleExpItemChange, handleAddExpense, handleEditExpense, handleDeleteExpense, handlePreviewExpense, handleAddEditCust, handleAddEditCorp, handleAddEditCred, handleAddEditVend, handleAddEditPkg, handleAddEditBrn, handleAddEditEmp, handleAddEditSrv, handleAddPortal, handleAddInvestment, handleDelete, handleRecharge, handleTransfer, handleAddUser, handleEditUser, handleUpdateUser, handlePaySalary, handleSettlePayment, handleQuickSettle, openSettleModal, handleRefund, openRefundModal, openPreview, handleLogoUpload, handleSaveSettings, downloadPDF, handleGenerateContract, handleGenerateOffer, handleAddCustomField, handleRemoveCustomField, handleCustomFieldChange, 
-    // SaaS Actions
-    handleAddTenant, handleToggleSubscription, handleDeleteTenant
+    handleAddTenant, handleToggleSubscription, handleDeleteTenant, 
+    handleProfilePicUpload, handleSaveProfile
   };
 }
