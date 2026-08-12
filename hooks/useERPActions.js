@@ -1,8 +1,6 @@
 'use client';
 
 import { supabase } from '@/lib/supabase';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 
 export default function useERPActions(state) {
   const { user, data, setData, userProfile, showToast, logAction, fetchAll, invForm, setInvForm, expForm, setExpForm, corpForm, setCorpForm, creditorForm, setCreditorForm, custForm, setCustForm, vendorForm, setVendorForm, pkgForm, setPkgForm, brnForm, setBrnForm, empForm, setEmpForm, srvForm, setSrvForm, investForm, setInvestForm, settleForm, setSettleForm, refundForm, setRefundForm, transferForm, setTransferForm, setForm, setSetForm, userForm, setUserForm, portalForm, setPortalForm, editInvId, setEditInvId, editExpId, setEditExpId, editCorpId, setEditCorpId, editCredId, setEditCredId, editCustId, setEditCustId, editVendId, setEditVendId, editPkgId, setEditPkgId, editBrnId, setEditBrnId, editEmpId, setEditEmpId, editSrvId, setEditSrvId, editUserId, setEditUserId, modal, setModal, passForm, setPassForm, chatInput, setChatInput, chatMessages, setChatMessages, previewHTML, setPreviewHTML, getInvoiceHTML, getExpenseHTML, getContractHTML, today, router, contractCorpName, contractType, contractMarkup, contractTerms, tenantForm, setTenantForm, profileForm, setProfileForm, ledgerEmpId } = state;
@@ -96,8 +94,12 @@ export default function useERPActions(state) {
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
+  // DYNAMIC IMPORT TO FIX WINDOW/DOCUMENT ERROR
   const downloadPDF = async (htmlContent, filename = 'document.pdf') => {
     try {
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+      
       const div = document.createElement('div');
       div.style.position = 'absolute';
       div.style.left = '-9999px';
