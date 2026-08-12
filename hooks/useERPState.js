@@ -21,12 +21,23 @@ export default function useERPState() {
   const [ledgerCustId, setLedgerCustId] = useState(''); 
   const [previewHTML, setPreviewHTML] = useState(''); 
   
+  // Contract States
   const [contractCorpName, setContractCorpName] = useState('');
   const [contractType, setContractType] = useState('Flight Tickets');
   const [contractMarkup, setContractMarkup] = useState('20');
   const [contractTerms, setContractTerms] = useState('Provider guarantees the cheapest fares. A flat service fee will be charged over the base cost price. Invoices will be issued monthly or per booking, inclusive of VAT where applicable.');
 
-  const [tenantForm, setTenantForm] = useState({ agency_name: '', owner_email: '', subscription_end_date: '', company_name_ar: '', vat_no: '', cr_no: '', phone: '', address_ar: '' });
+  // SaaS Tenant State (Added all fields for pre-fill)
+  const [tenantForm, setTenantForm] = useState({ 
+    agency_name: '', 
+    owner_email: '', 
+    subscription_end_date: '',
+    company_name_ar: '',
+    vat_no: '',
+    cr_no: '',
+    phone: '',
+    address_ar: ''
+  });
 
   const [data, setData] = useState({ tenants: [], invoices: [], portals: [], customers: [], corporates: [], creditors: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [], audits: [], investments: [], vendors: [], customFields: [], packages: [], branches: [] });
   const today = new Date().toISOString().split('T')[0];
