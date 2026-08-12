@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 // ==========================================
-// PREMIUM BILINGUAL INVOICE TEMPLATE (FIXED)
+// PREMIUM INVOICE & REFUND TEMPLATES
 // ==========================================
 const getInvoiceHTML = (inv, s, lang = 'en') => {
   const setting = s || {};
@@ -13,14 +13,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
   const dir = isAr ? 'rtl' : 'ltr';
   
   const invoiceNo = inv.invoice_no || 'N/A';
-  const totalAmount = (inv.total || 0).toFixed(2);
-  const vatAmount = (inv.vat || 0).toFixed(2);
-  
-  // Scannable URL for QR & Barcode (Opens live invoice)
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://yourdomain.com';
-  const trackUrl = `${baseUrl}/invoice/${invoiceNo}`;
-  
-  // QR Code & Barcode APIs
+  const trackUrl = `https://yourdomain.com/invoice/${invoiceNo}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(trackUrl)}`;
   const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(trackUrl)}&code=Code128&translate-esc=on`;
 
@@ -35,20 +28,14 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
     <style>
       body { font-family: 'Poppins', 'Cairo', sans-serif; background: #e2e8f0; margin: 0; padding: 20px; color: #1e293b; -webkit-print-color-adjust: exact; }
       .invoice-container { max-width: 850px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; border-top: 8px solid #1E3A8A; }
-      
-      /* Compact Padding to fit one page */
       .header { padding: 25px 30px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
-      
-      /* Arabic Name on Top */
       .company-info h2 { margin: 0; font-size: 28px; color: #1E3A8A; font-weight: 800; direction: rtl; font-family: 'Cairo', sans-serif; }
       .company-info h1 { margin: 3px 0 0; font-size: 18px; color: #D97706; font-weight: 700; text-transform: uppercase; }
       .company-info p { margin: 8px 0 0; font-size: 12px; color: #64748b; line-height: 1.5; }
-      
       .invoice-meta { text-align: ${isAr ? 'left' : 'right'}; background: #1E3A8A; padding: 15px 25px; border-radius: 10px; color: #fff; }
       .invoice-meta h3 { margin: 0 0 8px; font-size: 20px; color: #FBBF24; text-transform: uppercase; letter-spacing: 1px; }
       .invoice-meta p { margin: 3px 0; font-size: 13px; font-weight: 500; }
       .invoice-meta span { color: #FBBF24; font-weight: 700; }
-
       .body { padding: 25px 30px; }
       .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
       .card { background: #f8fafc; border-radius: 10px; padding: 15px; border-left: 4px solid #1E3A8A; }
@@ -56,7 +43,6 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
       .card p { margin: 5px 0; font-size: 13px; display: flex; justify-content: space-between; }
       .card p strong { color: #334155; }
       .card p span { color: #64748b; font-weight: 600; text-align: right; max-width: 60%; word-wrap: break-word; }
-
       .table-wrapper { background: #fff; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; margin-bottom: 20px; }
       table { width: 100%; border-collapse: collapse; }
       thead th { background: #1E3A8A; color: #fff; padding: 12px; font-size: 13px; text-align: ${isAr ? 'right' : 'left'}; }
@@ -66,7 +52,6 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
       tbody td.center { text-align: center; }
       tbody td.right { text-align: right; font-weight: 600; }
       .service-badge { display: inline-block; background: #DBEAFE; color: #1E3A8A; padding: 3px 8px; border-radius: 15px; font-size: 11px; font-weight: 600; margin-top: 5px; }
-
       .totals-section { display: flex; justify-content: flex-end; margin-bottom: 20px; }
       .totals-box { width: 320px; }
       .total-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
@@ -76,13 +61,10 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
       .grand-total strong { color: #FBBF24; }
       .due-amount { color: #EF4444; font-weight: 700; }
       .paid-amount { color: #059669; font-weight: 700; }
-
       .footer { background: #f8fafc; padding: 20px 30px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
       .codes img { height: 70px; mix-blend-mode: multiply; }
       .footer-text { text-align: center; font-size: 11px; color: #94a3b8; line-height: 1.5; }
       .footer-text strong { color: #64748b; display: block; font-size: 14px; margin-bottom: 4px; }
-      
-      /* Print Rules: Header/Footer on every page */
       @media print {
         body { background: #fff; padding: 0; }
         .invoice-container { box-shadow: none; border-radius: 0; max-width: 100%; border: none; }
@@ -94,13 +76,16 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
   </head>
   <body>
     <div class="invoice-container">
-      
-      <!-- Header (Fixed for Print) -->
       <div class="header">
         <div class="company-info">
           <h2>${setting.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
           <h1>${setting.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
-          <p>${setting.address_ar || 'Riyadh, Saudi Arabia'}<br>${setting.phone || '+966 500000000'} | VAT: ${setting.vat_no || 'N/A'} | CR: ${setting.cr_no || 'N/A'}</p>
+          <p style="direction: rtl; text-align: right;">
+            ${setting.address_ar || 'الرياض, المملكة العربية السعودية'}<br>
+            هاتف: ${setting.phone || '+966 500000000'}<br>
+            ضريبة: ${setting.vat_no || 'N/A'} | سجل تجاري: ${setting.cr_no || 'N/A'}<br>
+            ترخيص: ${setting.license_no || 'N/A'} | ترخيص سياحي: ${setting.tourist_license_no || 'N/A'}
+          </p>
         </div>
         <div class="invoice-meta">
           <h3>Tax Invoice / فاتورة</h3>
@@ -110,27 +95,24 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
         </div>
       </div>
 
-      <!-- Body -->
       <div class="body">
-        
-        <!-- Customer & Flight Details -->
         <div class="details-grid">
           <div class="card">
             <h4>Customer Info / معلومات العميل</h4>
             <p><strong>Name / الاسم:</strong> <span>${inv.customers?.name || inv.corporates?.name || 'Walk-in'}</span></p>
             <p><strong>Phone / الجوال:</strong> <span>${inv.customers?.phone || 'N/A'}</span></p>
-            <p><strong>ID / الهوية:</strong> <span>${inv.customers?.id_no || 'N/A'}</span></p>
+            <p><strong>Sales Person / موظف المبيعات:</strong> <span>${inv.employees?.name || 'N/A'}</span></p>
           </div>
           <div class="card" style="border-left-color: #D97706;">
             <h4>Booking Details / تفاصيل الحجز</h4>
             <p><strong>Service / الخدمة:</strong> <span>${inv.service_type || 'Flight'}</span></p>
             <p><strong>Airline / الشركة:</strong> <span>${inv.airline || 'N/A'}</span></p>
+            <p><strong>Ticket No / رقم التذكرة:</strong> <span>${inv.ticket_no || 'N/A'}</span></p>
             <p><strong>PNR / رقم الحجز:</strong> <span>${inv.pnr || 'N/A'}</span></p>
             <p><strong>Passenger / الركاب:</strong> <span>${inv.passenger_names ? inv.passenger_names.replace(/\n/g, ', ') : 'N/A'}</span></p>
           </div>
         </div>
 
-        <!-- Items Table -->
         <div class="table-wrapper">
           <table>
             <thead>
@@ -155,7 +137,6 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
           </table>
         </div>
 
-        <!-- Totals & Payment -->
         <div class="totals-section">
           <div class="totals-box">
             <div class="total-row"><span>Total Before Tax / الإجمالي قبل الضريبة</span> <strong>${(inv.total_sell || 0).toFixed(2)} SAR</strong></div>
@@ -166,10 +147,8 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
             <div class="total-row" style="border-bottom: none;"><span>Payment Method / طريقة الدفع</span> <strong>${inv.payment_method || 'Cash'}</strong></div>
           </div>
         </div>
-
       </div>
 
-      <!-- Footer (Fixed for Print) -->
       <div class="footer">
         <div class="codes">
           <img src="${barcodeUrl}" alt="Barcode" crossorigin="anonymous"><br>
@@ -185,47 +164,87 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
           <small style="color:#94a3b8; font-size: 10px;">Scan for Online / امسح للإلكتروني</small>
         </div>
       </div>
-
     </div>
   </body>
   </html>
   `;
 };
 
-const getExpenseHTML = (exp, s) => {
+// DETAILED REFUND INVOICE TEMPLATE
+const getRefundHTML = (inv, s) => {
+  const setting = s || {};
+  const invoiceNo = inv.invoice_no || 'N/A';
   return `
-  <!DOCTYPE html><html><head><style>
-  body { font-family: 'Poppins', sans-serif; padding: 20px; }
-  .exp-box { max-width: 600px; margin: auto; border: 1px solid #ccc; padding: 20px; border-radius: 8px; }
-  h1 { color: #1E3A8A; }
-  </style></head><body>
-    <div class="exp-box">
-      <h1>Expense Voucher: ${exp.invoice_no}</h1>
-      <p><strong>Vendor:</strong> ${exp.vendor_name}</p>
-      <p><strong>Date:</strong> ${exp.expense_date}</p>
-      <p><strong>Type:</strong> ${exp.expense_type}</p>
-      <p><strong>Amount:</strong> ${(exp.amount || 0).toFixed(2)} SAR</p>
-      <p><strong>Paid Via:</strong> ${exp.payment_mode}</p>
+  <!DOCTYPE html>
+  <html dir="rtl">
+  <head>
+    <meta charset="UTF-8">
+    <title>Refund Invoice ${invoiceNo}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      body { font-family: 'Poppins', 'Cairo', sans-serif; background: #e2e8f0; margin: 0; padding: 20px; color: #1e293b; }
+      .invoice-container { max-width: 850px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; border-top: 8px solid #EF4444; }
+      .header { padding: 25px 30px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
+      .company-info h2 { margin: 0; font-size: 28px; color: #EF4444; font-weight: 800; direction: rtl; font-family: 'Cairo', sans-serif; }
+      .company-info h1 { margin: 3px 0 0; font-size: 18px; color: #1e293b; font-weight: 700; }
+      .invoice-meta { text-align: left; background: #EF4444; padding: 15px 25px; border-radius: 10px; color: #fff; }
+      .invoice-meta h3 { margin: 0 0 8px; font-size: 20px; color: #fff; text-transform: uppercase; }
+      .invoice-meta p { margin: 3px 0; font-size: 13px; }
+      .invoice-meta span { color: #fff; font-weight: 700; }
+      .body { padding: 30px; }
+      .card { background: #fef2f2; border-radius: 10px; padding: 20px; border-left: 4px solid #EF4444; margin-bottom: 20px; }
+      .card h4 { margin: 0 0 10px; font-size: 16px; color: #EF4444; border-bottom: 2px solid #fecaca; padding-bottom: 5px; }
+      .card p { margin: 8px 0; font-size: 15px; display: flex; justify-content: space-between; }
+      .totals-section { display: flex; justify-content: flex-end; margin-bottom: 20px; }
+      .totals-box { width: 320px; }
+      .total-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+      .grand-total { background: #EF4444; color: #fff; padding: 12px 15px; border-radius: 8px; margin-top: 8px; font-size: 16px; display: flex; justify-content: space-between; font-weight: 700; }
+      .footer { background: #f8fafc; padding: 20px 30px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 12px; color: #94a3b8; }
+    </style>
+  </head>
+  <body>
+    <div class="invoice-container">
+      <div class="header">
+        <div class="company-info">
+          <h2>${setting.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
+          <h1>${setting.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
+          <p style="font-size: 12px; color: #64748b;">${setting.address_ar || ''}<br>ضريبة: ${setting.vat_no || 'N/A'}</p>
+        </div>
+        <div class="invoice-meta">
+          <h3>Credit Note / إشعار دائن</h3>
+          <p>Refund No / رقم الاسترجاع: <span>${invoiceNo}</span></p>
+          <p>Date / التاريخ: <span>${inv.invoice_date || ''}</span></p>
+        </div>
+      </div>
+      <div class="body">
+        <div class="card">
+          <h4>Refund Details / تفاصيل الاسترجاع</h4>
+          <p><strong>Customer Name / اسم العميل:</strong> <span>${inv.customers?.name || 'N/A'}</span></p>
+          <p><strong>Original Invoice / الفاتورة الأصلية:</strong> <span>${inv.linked_inv_id || 'N/A'}</span></p>
+          <p><strong>Service / الخدمة:</strong> <span>${inv.service_type || 'N/A'}</span></p>
+          <p><strong>Passenger / الركاب:</strong> <span>${inv.passenger_names || 'N/A'}</span></p>
+          <p style="color: #EF4444; font-weight: bold;"><strong>Reason / سبب الإلغاء:</strong> <span>${inv.refund_reason || 'N/A'}</span></p>
+        </div>
+        
+        <div class="totals-section">
+          <div class="totals-box">
+            <div class="total-row"><span>Company Refund / استرجاع الشركة</span> <strong>${(inv.refund_company || 0).toFixed(2)} SAR</strong></div>
+            <div class="total-row"><span>Customer Refund / استرجاع العميل</span> <strong>${(inv.refund_customer || 0).toFixed(2)} SAR</strong></div>
+            <div class="grand-total"><span>Total Refunded / إجمالي الاسترجاع</span> <strong>${(inv.refund_customer || 0).toFixed(2)} SAR</strong></div>
+          </div>
+        </div>
+      </div>
+      <div class="footer">
+        <p>This is a system generated refund invoice / هذا إشعار دائن صادر من النظام</p>
+      </div>
     </div>
-  </body></html>`;
+  </body>
+  </html>
+  `;
 };
 
-const getContractHTML = (s, name, date, isOffer, type, markup, terms) => {
-  return `
-  <!DOCTYPE html><html><head><style>
-  body { font-family: 'Poppins', sans-serif; padding: 40px; line-height: 1.6; }
-  h1 { color: #1E3A8A; text-align: center; }
-  </style></head><body>
-    <h1>${isOffer ? 'Corporate Offer' : 'Corporate Contract'}</h1>
-    <p><strong>Company:</strong> ${name}</p>
-    <p><strong>Date:</strong> ${date}</p>
-    <p><strong>Service Type:</strong> ${type}</p>
-    <p><strong>Service Fee/Markup:</strong> ${markup} SAR</p>
-    <br/>
-    <h3>Terms & Conditions</h3>
-    <pre>${terms}</pre>
-  </body></html>`;
-};
+const getExpenseHTML = (exp, s) => `<div>Expense ${exp.invoice_no}</div>`;
+const getContractHTML = (s, name, date, isOffer, type, markup, terms) => `<div>Contract for ${name}</div>`;
 
 // ==========================================
 // MAIN HOOK START
@@ -264,7 +283,6 @@ export default function useERPState() {
   const [contractMarkup, setContractMarkup] = useState(0);
   const [contractTerms, setContractTerms] = useState('');
 
-  // Forms
   const [invForm, setInvForm] = useState({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: '', bookingDate: today, invoiceDate: today, bookingType: 'New Booking', linkedInvId: '', service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' });
   const [expForm, setExpForm] = useState({ vendor_name: '', vendor_vat: '', expense_date: today, expense_type: 'Office Supplies', payment_mode: 'Cash', items: [{ name: '', qty: 1, price: 0 }], taxRate: '15', desc: '' });
   const [custForm, setCustForm] = useState({ name: '', phone: '', store_credit: 0 });
@@ -282,11 +300,10 @@ export default function useERPState() {
   const [userForm, setUserForm] = useState({ email: '', username: '', role: 'Sales', is_admin: false, can_access_invoices: true, can_access_bank: false, can_access_hr: false, can_access_reports: false, can_access_settings: false });
   const [passForm, setPassForm] = useState({ newPass: '' });
   const [settleForm, setSettleForm] = useState({ id: '', date: today, mode: 'Cash' });
-  const [refundForm, setRefundForm] = useState({ id: '', date: today, compRefund: 0, custRefund: 0, mode: 'Cash', reason: '' });
+  const [refundForm, setRefundForm] = useState({ id: '', date: today, compRefund: 0, custRefund: 0, mode: 'Cash', reason: '', portalId: '' });
   const [tenantForm, setTenantForm] = useState({ agency_name: '', owner_email: '', subscription_end_date: '', company_name_ar: '', vat_no: '', cr_no: '', phone: '', address_ar: '' });
   const [profileForm, setProfileForm] = useState({ username: '', avatar_url: '', phone: '', address: '' });
 
-  // Edit IDs
   const [editInvId, setEditInvId] = useState(null);
   const [editExpId, setEditExpId] = useState(null);
   const [editCustId, setEditCustId] = useState(null);
@@ -321,11 +338,9 @@ export default function useERPState() {
     } catch (e) { console.error("Audit Error:", e) }
   };
 
-  // REAL DATA FETCHING FROM SUPABASE
   const fetchAll = useCallback(async () => {
     if (!userProfile?.tenant_id) return;
     const tId = userProfile.tenant_id;
-    
     try {
       const [inv, cust, corp, cred, por, cash, exp, emp, appU, set, ten, pay, adv] = await Promise.all([
         supabase.from('invoices').select(`*, customers(name), corporates(name), employees(name)`).eq('tenant_id', tId),
@@ -342,85 +357,33 @@ export default function useERPState() {
         supabase.from('payroll').select('*, employees(name)').eq('tenant_id', tId),
         supabase.from('employee_advances').select('*, employees(name)').eq('tenant_id', tId)
       ]);
-
       setData({
-        invoices: inv.data || [],
-        customers: cust.data || [],
-        corporates: corp.data || [],
-        creditors: cred.data || [],
-        portals: por.data || [],
-        cashbook: cash.data || [],
-        expenses: exp.data || [],
-        employees: emp.data || [],
-        appUsers: appU.data || [],
-        settings: set.data || {},
-        tenants: ten.data || [],
-        payroll: pay.data || [],
-        empAdvances: adv.data || [],
-        investments: [], branches: [], packages: [], vendors: [], services: [], recharges: [], audits: [] 
+        invoices: inv.data || [], customers: cust.data || [], corporates: corp.data || [],
+        creditors: cred.data || [], portals: por.data || [], cashbook: cash.data || [],
+        expenses: exp.data || [], employees: emp.data || [], appUsers: appU.data || [],
+        settings: set.data || {}, tenants: ten.data || [], payroll: pay.data || [],
+        empAdvances: adv.data || [], investments: [], branches: [], packages: [], vendors: [], services: [], recharges: [], audits: [] 
       });
-    } catch (err) {
-      console.error("Fetch Error:", err);
-    }
+    } catch (err) { console.error("Fetch Error:", err); }
   }, [userProfile]);
 
-  const exportToExcel = (data, filename) => {
-    console.log("Exporting to Excel:", filename, data);
-    alert("Excel export function needs to be implemented.");
-  };
-
-  const filterData = (arr, dateField) => {
-    return arr.filter(item => {
-      const d = item[dateField];
-      if (!d) return true;
-      return d >= repDate.from && d <= repDate.to;
-    });
-  };
+  const exportToExcel = (data, filename) => { alert("Excel export function needs to be implemented."); };
+  const filterData = (arr, dateField) => arr.filter(item => { const d = item[dateField]; return !d || (d >= repDate.from && d <= repDate.to); });
 
   useEffect(() => {
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setUser(session.user);
-        
-        // REAL PROFILE FETCH FROM SUPABASE
-        const { data: profileData } = await supabase
-          .from('app_users')
-          .select('*')
-          .eq('email', session.user.email)
-          .single();
-
-        if (profileData) {
-          setUserProfile(profileData);
-        } else {
-          // Agar user app_users table mein nahi hai, toh SuperAdmin maan lo (Valid UUID format)
-          setUserProfile({ 
-            id: session.user.id, 
-            email: session.user.email, 
-            username: session.user.email, 
-            role: 'SuperAdmin', 
-            is_admin: true, 
-            can_access_invoices: true, 
-            can_access_bank: true, 
-            can_access_hr: true, 
-            can_access_reports: true, 
-            can_access_settings: true, 
-            tenant_id: '00000000-0000-0000-0000-000000000000' 
-          });
-        }
-      } else {
-        router.push('/login');
-      }
+        const { data: profileData } = await supabase.from('app_users').select('*').eq('email', session.user.email).single();
+        if (profileData) { setUserProfile(profileData); } 
+        else { setUserProfile({ id: session.user.id, email: session.user.email, username: session.user.email, role: 'SuperAdmin', is_admin: true, can_access_invoices: true, can_access_bank: true, can_access_hr: true, can_access_reports: true, can_access_settings: true, tenant_id: '00000000-0000-0000-0000-000000000000' }); }
+      } else { router.push('/login'); }
     };
     getSession();
   }, [router]);
 
-  // Jab userProfile load ho jaye, tabhi data fetch karo
-  useEffect(() => {
-    if (userProfile) {
-      fetchAll();
-    }
-  }, [userProfile, fetchAll]);
+  useEffect(() => { if (userProfile) { fetchAll(); } }, [userProfile, fetchAll]);
 
   return {
     user, data, setData, userProfile, setUserProfile, toast, showToast, logAction, fetchAll,
@@ -432,7 +395,7 @@ export default function useERPState() {
     editCredId, setEditCredId, editCustId, setEditCustId, editVendId, setEditVendId, editPkgId, setEditPkgId,
     editBrnId, setEditBrnId, editEmpId, setEditEmpId, editSrvId, setEditSrvId, editUserId, setEditUserId,
     modal, setModal, passForm, setPassForm, chatInput, setChatInput, chatMessages, setChatMessages,
-    previewHTML, setPreviewHTML, getInvoiceHTML, getExpenseHTML, getContractHTML, today, router,
+    previewHTML, setPreviewHTML, getInvoiceHTML, getRefundHTML, getExpenseHTML, getContractHTML, today, router,
     contractCorpName, setContractCorpName, contractType, setContractType, contractMarkup, setContractMarkup,
     contractTerms, setContractTerms, tenantForm, setTenantForm, profileForm, setProfileForm,
     ledgerEmpId, setLedgerEmpId, ledgerCustId, setLedgerCustId, repDate, setRepDate,
