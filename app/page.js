@@ -28,7 +28,7 @@ export default function Home() {
     { id: 'branches', label: erp.tr.branches, show: erp.userProfile.is_admin || erp.userProfile.can_access_settings },
     { id: 'contract', label: 'Corporate Contract', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'offer', label: 'Corporate Offer', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
-    { id: 'marketing', label: '🚀 AI Marketing', show: true }, // NEW SHOCKING FEATURE
+    { id: 'profitability', label: '📊 Profit Analyzer', show: true }, // NEW FEATURE
     { id: 'bank', label: erp.tr.bank, show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
     { id: 'invest', label: erp.tr.invest, show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
     { id: 'hr', label: erp.tr.hr, show: erp.userProfile.is_admin || erp.userProfile.can_access_hr },
@@ -42,7 +42,7 @@ export default function Home() {
 
   return (
     <>
-      {erp.toast && <div style={{ position: 'fixed', top: '20px', right: '20px', background: '#0F172A', color: '#F59E0B', padding: '15px 25px', borderRadius: '12px', zIndex: 9999, boxShadow: '0 5px 15px rgba(0,0,0,0.2)', fontWeight: '600' }}>{erp.toast}</div>}
+      {erp.toast && <div style={{ position: 'fixed', top: '20px', right: '20px', background: '#1E3A8A', color: '#FBBF24', padding: '15px 25px', borderRadius: '12px', zIndex: 9999, boxShadow: '0 5px 15px rgba(0,0,0,0.2)', fontWeight: '600' }}>{erp.toast}</div>}
       
       <ERPLayout 
         tr={erp.tr} lang={erp.lang} setLang={erp.setLang} page={erp.page} setPage={erp.setPage} 
@@ -59,6 +59,7 @@ export default function Home() {
         <ERPViews 
           page={erp.page} data={erp.data} tr={erp.tr} today={erp.today}
           ledgerCustId={erp.ledgerCustId} setLedgerCustId={erp.setLedgerCustId}
+          ledgerEmpId={erp.ledgerEmpId} setLedgerEmpId={erp.setLedgerEmpId}
           
           invForm={erp.invForm} setInvForm={erp.setInvForm} 
           handleCreateInvoice={erp.handleCreateInvoice} downloadPDF={erp.downloadPDF}
@@ -92,6 +93,7 @@ export default function Home() {
           handleEditExpense={erp.handleEditExpense} 
           handleDeleteExpense={erp.handleDeleteExpense} 
           handlePreviewExpense={erp.handlePreviewExpense}
+          handleAddAdvance={erp.handleAddAdvance} handleReturnAdvance={erp.handleReturnAdvance}
           
           handleAddPortal={erp.handleAddPortal} portalForm={erp.portalForm} setPortalForm={erp.setPortalForm}
           handleAddInvestment={erp.handleAddInvestment} investForm={erp.investForm} setInvestForm={erp.setInvestForm}
@@ -116,17 +118,11 @@ export default function Home() {
           contractTerms={erp.contractTerms} setContractTerms={erp.setContractTerms}
           handleGenerateContract={erp.handleGenerateContract} handleGenerateOffer={erp.handleGenerateOffer}
           
-          // SaaS Props
           tenantForm={erp.tenantForm} setTenantForm={erp.setTenantForm}
           handleAddTenant={erp.handleAddTenant} handleToggleSubscription={erp.handleToggleSubscription} handleDeleteTenant={erp.handleDeleteTenant}
 
-          // Profile Props
           profileForm={erp.profileForm} setProfileForm={erp.setProfileForm}
           handleProfilePicUpload={erp.handleProfilePicUpload} handleSaveProfile={erp.handleSaveProfile}
-          
-          // AI Marketing Props
-          marketingText={erp.marketingText} setMarketingText={erp.setMarketingText}
-          handleGenerateMarketing={erp.handleGenerateMarketing}
         />
       </ERPLayout>
     </>
