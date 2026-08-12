@@ -1,3 +1,5 @@
+'use client';
+
 import useERPState from './useERPState';
 import useERPActions from './useERPActions';
 
