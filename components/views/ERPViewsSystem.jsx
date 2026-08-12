@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 
 const styles = { 
   input: { width: '100%', padding: '10px', margin: '5px 0', border: '1px solid #cbd5e1', borderRadius: '6px', outline: 'none', boxSizing: 'border-box' }, 
-  btnPrimary: { padding: '10px 15px', background: '#1B5E20', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }, 
+  btnPrimary: { padding: '10px 15px', background: '#1B5E20', color: '#D4AF37', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }, 
   btnSuccess: { padding: '8px 12px', background: '#059669', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
   btnDanger: { padding: '8px 12px', background: '#EF4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
-  btnWarning: { padding: '8px 12px', background: '#FBBF24', color: '#1E3A8A', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
+  btnWarning: { padding: '8px 12px', background: '#FBBF24', color: '#1B5E20', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
   card: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px' }, 
   label: { fontSize: '14px', fontWeight: 'bold', color: '#333', marginBottom: '5px', display: 'block', marginTop: '10px' } 
 };
@@ -15,7 +15,7 @@ export default function ERPViewsSystem(props) {
   
   const [statementType, setStatementType] = useState('sales');
 
-  // 1. PROFILE PAGE (NEW FEATURE)
+  // 1. PROFILE PAGE (FIXED & FILLED)
   if (page === 'profile') return (
     <div>
       <h2>{tr.profile}</h2>
@@ -68,7 +68,7 @@ export default function ERPViewsSystem(props) {
           </form>
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
-          <thead><tr style={{ background: '#1B5E20', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Agency Name</th><th style={{ padding: '12px' }}>Owner Email</th><th style={{ padding: '12px' }}>Sub. End Date</th><th style={{ padding: '12px' }}>Status</th><th style={{ padding: '12px' }}>Actions</th></tr></thead>
+          <thead><tr style={{ background: '#1B5E20', color: '#D4AF37' }}><th style={{ padding: '12px', textAlign: 'left' }}>Agency Name</th><th style={{ padding: '12px' }}>Owner Email</th><th style={{ padding: '12px' }}>Sub. End Date</th><th style={{ padding: '12px' }}>Status</th><th style={{ padding: '12px' }}>Actions</th></tr></thead>
           <tbody>
             {data.tenants && data.tenants.map(t => (
               <tr key={t.id} style={{ borderBottom: '1px solid #E2E8F0' }}>
@@ -109,7 +109,7 @@ export default function ERPViewsSystem(props) {
         </form>
       </div>
       <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
-        <thead><tr style={{ background: '#1B5E20', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Email</th><th style={{ padding: '12px' }}>Role</th><th style={{ padding: '12px' }}>Admin</th><th style={{ padding: '12px' }}>Actions</th></tr></thead>
+        <thead><tr style={{ background: '#1B5E20', color: '#D4AF37' }}><th style={{ padding: '12px', textAlign: 'left' }}>Email</th><th style={{ padding: '12px' }}>Role</th><th style={{ padding: '12px' }}>Admin</th><th style={{ padding: '12px' }}>Actions</th></tr></thead>
         <tbody>{data.appUsers.map(u => (<tr key={u.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{u.email}</td><td style={{ padding: '12px' }}>{u.role}</td><td style={{ padding: '12px' }}>{u.is_admin ? '✅' : '❌'}</td><td style={{ padding: '12px' }}><button onClick={() => handleEditUser(u)} style={styles.btnWarning}>Edit</button><button onClick={() => handleDelete('app_users', u.id)} style={{...styles.btnDanger, marginLeft: '5px'}}>Delete</button></td></tr>))}</tbody>
       </table>
     </div>
@@ -137,7 +137,7 @@ export default function ERPViewsSystem(props) {
             <h3 style={{ margin: '0 0 10px', color: '#1B5E20' }}>Custom Fields (Manual)</h3>
             {setForm.custom_fields && setForm.custom_fields.map((cf, i) => (
               <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                <input placeholder="Label (e.g. IATA No)" value={cf.key} onChange={e => handleCustomFieldChange(i, 'key', e.target.value)} style={styles.input} />
+                <input placeholder="Label (e.g. IATA No)" value={cf.key} onChange={e => handleCustomFieldChange(i, 'key', e.target.value})} style={styles.input} />
                 <input placeholder="Value" value={cf.value} onChange={e => handleCustomFieldChange(i, 'value', e.target.value)} style={styles.input} />
                 <button type="button" onClick={() => handleRemoveCustomField(i)} style={{...styles.btnDanger, width: 'auto'}}>X</button>
               </div>
@@ -156,7 +156,7 @@ export default function ERPViewsSystem(props) {
     const isContract = page === 'contract';
     return (
       <div>
-        <div style={{ background: 'linear-gradient(135deg, #1B5E20, #2E7D32)', color: 'white', padding: '30px', borderRadius: '12px', marginBottom: '20px' }}>
+        <div style={{ background: 'linear-gradient(135deg, #1B5E20, #2E7D32)', color: '#D4AF37', padding: '30px', borderRadius: '12px', marginBottom: '20px' }}>
           <h2 style={{ margin: 0, fontSize: '24px' }}>{isContract ? 'Corporate Contract Generator' : 'Corporate Offer Generator'}</h2>
           <p style={{ margin: '5px 0 0', opacity: 0.9 }}>{isContract ? "Generate a formal dynamic agreement for corporate clients." : "Generate a special dynamic offer letter for corporate clients."}</p>
         </div>
@@ -187,7 +187,7 @@ export default function ERPViewsSystem(props) {
     );
   }
 
-  // 6. REPORTS PAGE (Enhanced with Monthly Filters & Download)
+  // 6. REPORTS PAGE
   if (page === 'reports') {
     const filteredInvoices = filterData(data.invoices.filter(i => !i.invoice_no.startsWith('REF-')), 'invoice_date');
     const filteredExpenses = filterData(data.expenses, 'expense_date');
@@ -218,7 +218,7 @@ export default function ERPViewsSystem(props) {
               <button onClick={() => exportToExcel(filteredInvoices.map(i => ({ Date: i.invoice_date, Inv: i.invoice_no, Customer: i.customers?.name, Total: i.total, Due: i.due_amount })), 'SalesReport')} style={styles.btnSuccess}>Export Excel</button>
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
-              <thead><tr style={{ background: '#1B5E20', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px' }}>Inv</th><th style={{ padding: '12px' }}>Customer</th><th style={{ padding: '12px' }}>Total</th></tr></thead>
+              <thead><tr style={{ background: '#1B5E20', color: '#D4AF37' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px' }}>Inv</th><th style={{ padding: '12px' }}>Customer</th><th style={{ padding: '12px' }}>Total</th></tr></thead>
               <tbody>{filteredInvoices.map(i => (<tr key={i.id}><td style={{ padding: '12px' }}>{i.invoice_date}</td><td style={{ padding: '12px' }}>{i.invoice_no}</td><td style={{ padding: '12px' }}>{i.customers?.name}</td><td style={{ padding: '12px' }}>{(i.total || 0).toFixed(2)}</td></tr>))}</tbody>
             </table>
           </div>
@@ -230,7 +230,7 @@ export default function ERPViewsSystem(props) {
               <button onClick={() => exportToExcel(filteredExpenses.map(e => ({ Date: e.expense_date, Vendor: e.vendor_name, Type: e.expense_type, Total: e.amount })), 'ExpenseReport')} style={styles.btnSuccess}>Export Excel</button>
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
-              <thead><tr style={{ background: '#1B5E20', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px' }}>Vendor</th><th style={{ padding: '12px' }}>Type</th><th style={{ padding: '12px' }}>Total</th></tr></thead>
+              <thead><tr style={{ background: '#1B5E20', color: '#D4AF37' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px' }}>Vendor</th><th style={{ padding: '12px' }}>Type</th><th style={{ padding: '12px' }}>Total</th></tr></thead>
               <tbody>{filteredExpenses.map(e => (<tr key={e.id}><td style={{ padding: '12px' }}>{e.expense_date}</td><td style={{ padding: '12px' }}>{e.vendor_name}</td><td style={{ padding: '12px' }}>{e.expense_type}</td><td style={{ padding: '12px' }}>{(e.amount || 0).toFixed(2)}</td></tr>))}</tbody>
             </table>
           </div>
@@ -250,7 +250,7 @@ export default function ERPViewsSystem(props) {
             <h3>Portal Balances Report</h3>
             <button onClick={() => exportToExcel(data.portals.map(p => ({ Name: p.name, Balance: p.current_balance })), 'PortalReport')} style={styles.btnSuccess}>Export</button>
             <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', marginTop: '20px' }}>
-              <thead><tr style={{ background: '#1B5E20', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Portal</th><th style={{ padding: '12px' }}>Balance (SAR)</th></tr></thead>
+              <thead><tr style={{ background: '#1B5E20', color: '#D4AF37' }}><th style={{ padding: '12px', textAlign: 'left' }}>Portal</th><th style={{ padding: '12px' }}>Balance (SAR)</th></tr></thead>
               <tbody>{data.portals.map(p => (<tr key={p.id}><td style={{ padding: '12px' }}>{p.name}</td><td style={{ padding: '12px', fontWeight: 'bold', color: (p.current_balance || 0) < 0 ? '#EF4444' : '#059669' }}>{(p.current_balance || 0).toFixed(2)}</td></tr>))}</tbody>
             </table>
           </div>
@@ -258,7 +258,7 @@ export default function ERPViewsSystem(props) {
         {reportTab === 'outstanding' && (
           <div>
             <h3>Outstanding Dues Report</h3>
-            {(() => { const outInvs = data.invoices.filter(i => (i.due_amount || 0) > 0); const totalDue = outInvs.reduce((s, i) => s + i.due_amount, 0); return ( <><p>Total Outstanding: <b>{totalDue.toFixed(2)} SAR</b></p><button onClick={() => exportToExcel(outInvs.map(i => ({ Inv: i.invoice_no, Customer: i.customers?.name, Due: i.due_amount })), 'OutstandingReport')} style={styles.btnSuccess}>Export</button><table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', marginTop: '20px' }}><thead><tr style={{ background: '#1B5E20', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Inv</th><th style={{ padding: '12px' }}>Customer</th><th style={{ padding: '12px' }}>Due</th></tr></thead><tbody>{outInvs.map(i => (<tr key={i.id}><td style={{ padding: '12px' }}>{i.invoice_no}</td><td style={{ padding: '12px' }}>{i.customers?.name || 'N/A'}</td><td style={{ padding: '12px', color: '#EF4444', fontWeight: 'bold' }}>{(i.due_amount || 0).toFixed(2)}</td></tr>))}</tbody></table></>); })()}
+            {(() => { const outInvs = data.invoices.filter(i => (i.due_amount || 0) > 0); const totalDue = outInvs.reduce((s, i) => s + i.due_amount, 0); return ( <><p>Total Outstanding: <b>{totalDue.toFixed(2)} SAR</b></p><button onClick={() => exportToExcel(outInvs.map(i => ({ Inv: i.invoice_no, Customer: i.customers?.name, Due: i.due_amount })), 'OutstandingReport')} style={styles.btnSuccess}>Export</button><table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', marginTop: '20px' }}><thead><tr style={{ background: '#1B5E20', color: '#D4AF37' }}><th style={{ padding: '12px', textAlign: 'left' }}>Inv</th><th style={{ padding: '12px' }}>Customer</th><th style={{ padding: '12px' }}>Due</th></tr></thead><tbody>{outInvs.map(i => (<tr key={i.id}><td style={{ padding: '12px' }}>{i.invoice_no}</td><td style={{ padding: '12px' }}>{i.customers?.name || 'N/A'}</td><td style={{ padding: '12px', color: '#EF4444', fontWeight: 'bold' }}>{(i.due_amount || 0).toFixed(2)}</td></tr>))}</tbody></table></>); })()}
           </div>
         )}
       </div>
@@ -270,7 +270,7 @@ export default function ERPViewsSystem(props) {
     <div>
       <h2>{tr.audit}</h2>
       <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
-        <thead><tr style={{ background: '#1B5E20', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px', textAlign: 'left' }}>User</th><th style={{ padding: '12px', textAlign: 'left' }}>Action</th></tr></thead>
+        <thead><tr style={{ background: '#1B5E20', color: '#D4AF37' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px', textAlign: 'left' }}>User</th><th style={{ padding: '12px', textAlign: 'left' }}>Action</th></tr></thead>
         <tbody>{data.audits.map(a => (<tr key={a.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{a.created_at?.split('T')[0]}</td><td style={{ padding: '12px' }}>{a.user_email}</td><td style={{ padding: '12px' }}>{a.action}</td></tr>))}</tbody>
       </table>
     </div>
@@ -302,73 +302,73 @@ export default function ERPViewsSystem(props) {
 
         {statementType === 'sales' && (
           <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
-            <thead><tr style={{ background: '#1B5E20', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px' }}>Inv No</th><th style={{ padding: '12px' }}>Customer</th><th style={{ padding: '12px' }}>Total</th><th style={{ padding: '12px' }}>Due</th></tr></thead>
+            <thead><tr style={{ background: '#1B5E20', color: '#D4AF37' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px' }}>Inv No</th><th style={{ padding: '12px' }}>Customer</th><th style={{ padding: '12px' }}>Total</th><th style={{ padding: '12px' }}>Due</th></tr></thead>
             <tbody>{filterData(data.invoices.filter(i => !i.invoice_no.startsWith('REF-')), 'invoice_date').map(i => (<tr key={i.id}><td style={{ padding: '12px' }}>{i.invoice_date}</td><td style={{ padding: '12px' }}>{i.invoice_no}</td><td style={{ padding: '12px' }}>{i.customers?.name || i.corporates?.name}</td><td style={{ padding: '12px' }}>{(i.total || 0).toFixed(2)}</td><td style={{ padding: '12px', color: (i.due_amount || 0) > 0 ? '#EF4444' : '#059669', fontWeight: 'bold' }}>{(i.due_amount || 0).toFixed(2)}</td></tr>))}</tbody>
           </table>
         )}
         {statementType === 'portals' && (
           <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
-            <thead><tr style={{ background: '#1B5E20', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Portal</th><th style={{ padding: '12px' }}>Balance (SAR)</th></tr></thead>
+            <thead><tr style={{ background: '#1B5E20', color: '#D4AF37' }}><th style={{ padding: '12px', textAlign: 'left' }}>Portal</th><th style={{ padding: '12px' }}>Balance (SAR)</th></tr></thead>
             <tbody>{data.portals.map(p => (<tr key={p.id}><td style={{ padding: '12px' }}>{p.name}</td><td style={{ padding: '12px', fontWeight: 'bold', color: (p.current_balance || 0) < 0 ? '#EF4444' : '#059669' }}>{(p.current_balance || 0).toFixed(2)}</td></tr>))}</tbody>
           </table>
         )}
         {statementType === 'vendors' && (
           <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
-            <thead><tr style={{ background: '#1B5E20', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Vendor</th><th style={{ padding: '12px' }}>Phone</th><th style={{ padding: '12px' }}>Balance</th></tr></thead>
+            <thead><tr style={{ background: '#1B5E20', color: '#D4AF37' }}><th style={{ padding: '12px', textAlign: 'left' }}>Vendor</th><th style={{ padding: '12px' }}>Phone</th><th style={{ padding: '12px' }}>Balance</th></tr></thead>
             <tbody>{data.vendors.map(v => (<tr key={v.id}><td style={{ padding: '12px' }}>{v.name}</td><td style={{ padding: '12px' }}>{v.phone}</td><td style={{ padding: '12px' }}>{v.balance}</td></tr>))}</tbody>
           </table>
         )}
         {statementType === 'salary' && (
           <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
-            <thead><tr style={{ background: '#1B5E20', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Employee</th><th style={{ padding: '12px' }}>Month</th><th style={{ padding: '12px' }}>Amount</th><th style={{ padding: '12px' }}>Mode</th></tr></thead>
+            <thead><tr style={{ background: '#1B5E20', color: '#D4AF37' }}><th style={{ padding: '12px', textAlign: 'left' }}>Employee</th><th style={{ padding: '12px' }}>Month</th><th style={{ padding: '12px' }}>Amount</th><th style={{ padding: '12px' }}>Mode</th></tr></thead>
             <tbody>{filterData(data.payroll, 'month').map(p => (<tr key={p.id}><td style={{ padding: '12px' }}>{p.employees?.name}</td><td style={{ padding: '12px' }}>{p.month}</td><td style={{ padding: '12px' }}>{p.amount}</td><td style={{ padding: '12px' }}>{p.payment_mode}</td></tr>))}</tbody>
           </table>
         )}
         {statementType === 'expenses' && (
           <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
-            <thead><tr style={{ background: '#1B5E20', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px' }}>Vendor</th><th style={{ padding: '12px' }}>Type</th><th style={{ padding: '12px' }}>Amount</th></tr></thead>
+            <thead><tr style={{ background: '#1B5E20', color: '#D4AF37' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px' }}>Vendor</th><th style={{ padding: '12px' }}>Type</th><th style={{ padding: '12px' }}>Amount</th></tr></thead>
             <tbody>{filterData(data.expenses, 'expense_date').map(e => (<tr key={e.id}><td style={{ padding: '12px' }}>{e.expense_date}</td><td style={{ padding: '12px' }}>{e.vendor_name}</td><td style={{ padding: '12px' }}>{e.expense_type}</td><td style={{ padding: '12px' }}>{(e.amount || 0).toFixed(2)}</td></tr>))}</tbody>
           </table>
         )}
         {statementType === 'customers' && (
           <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
-            <thead><tr style={{ background: '#1B5E20', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Phone</th><th style={{ padding: '12px' }}>Credit</th></tr></thead>
+            <thead><tr style={{ background: '#1B5E20', color: '#D4AF37' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Phone</th><th style={{ padding: '12px' }}>Credit</th></tr></thead>
             <tbody>{data.customers.map(c => (<tr key={c.id}><td style={{ padding: '12px' }}>{c.name}</td><td style={{ padding: '12px' }}>{c.phone}</td><td style={{ padding: '12px' }}>{c.store_credit || 0}</td></tr>))}</tbody>
           </table>
         )}
         {statementType === 'creditors' && (
           <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
-            <thead><tr style={{ background: '#1B5E20', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Phone</th></tr></thead>
+            <thead><tr style={{ background: '#1B5E20', color: '#D4AF37' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Phone</th></tr></thead>
             <tbody>{data.creditors.map(c => (<tr key={c.id}><td style={{ padding: '12px' }}>{c.name}</td><td style={{ padding: '12px' }}>{c.phone}</td></tr>))}</tbody>
           </table>
         )}
         {statementType === 'credit' && (
           <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
-            <thead><tr style={{ background: '#1B5E20', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Available Credit</th></tr></thead>
+            <thead><tr style={{ background: '#1B5E20', color: '#D4AF37' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Available Credit</th></tr></thead>
             <tbody>{data.customers.filter(c => (c.store_credit || 0) > 0).map(c => (<tr key={c.id}><td style={{ padding: '12px' }}>{c.name}</td><td style={{ padding: '12px', color: '#059669', fontWeight: 'bold' }}>{(c.store_credit || 0).toFixed(2)}</td></tr>))}</tbody>
           </table>
         )}
         {statementType === 'branches' && (
           <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
-            <thead><tr style={{ background: '#1B5E20', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Location</th><th style={{ padding: '12px' }}>Manager</th><th style={{ padding: '12px' }}>Status</th></tr></thead>
+            <thead><tr style={{ background: '#1B5E20', color: '#D4AF37' }}><th style={{ padding: '12px', textAlign: 'left' }}>Name</th><th style={{ padding: '12px' }}>Location</th><th style={{ padding: '12px' }}>Manager</th><th style={{ padding: '12px' }}>Status</th></tr></thead>
             <tbody>{data.branches.map(b => (<tr key={b.id}><td style={{ padding: '12px' }}>{b.name}</td><td style={{ padding: '12px' }}>{b.location}</td><td style={{ padding: '12px' }}>{b.manager}</td><td style={{ padding: '12px' }}>{b.status}</td></tr>))}</tbody>
           </table>
         )}
         {statementType === 'cash' && (
           <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
-            <thead><tr style={{ background: '#1B5E20', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px' }}>Desc</th><th style={{ padding: '12px' }}>Amount</th></tr></thead>
+            <thead><tr style={{ background: '#1B5E20', color: '#D4AF37' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px' }}>Desc</th><th style={{ padding: '12px' }}>Amount</th></tr></thead>
             <tbody>{filterData(data.cashbook.filter(c => c.type.includes('Cash')), 'trans_date').map(c => (<tr key={c.id}><td style={{ padding: '12px' }}>{c.trans_date}</td><td style={{ padding: '12px' }}>{c.description}</td><td style={{ padding: '12px', color: c.type.includes('In') ? '#059669' : '#EF4444' }}>{(c.amount || 0).toFixed(2)}</td></tr>))}</tbody>
           </table>
         )}
         {statementType === 'bank' && (
           <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
-            <thead><tr style={{ background: '#1B5E20', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px' }}>Desc</th><th style={{ padding: '12px' }}>Amount</th></tr></thead>
+            <thead><tr style={{ background: '#1B5E20', color: '#D4AF37' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px' }}>Desc</th><th style={{ padding: '12px' }}>Amount</th></tr></thead>
             <tbody>{filterData(data.cashbook.filter(c => c.type.includes('Bank')), 'trans_date').map(c => (<tr key={c.id}><td style={{ padding: '12px' }}>{c.trans_date}</td><td style={{ padding: '12px' }}>{c.description}</td><td style={{ padding: '12px', color: c.type.includes('In') ? '#059669' : '#EF4444' }}>{(c.amount || 0).toFixed(2)}</td></tr>))}</tbody>
           </table>
         )}
         {statementType === 'investor' && (
           <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
-            <thead><tr style={{ background: '#1B5E20', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px' }}>Investor</th><th style={{ padding: '12px' }}>Amount</th><th style={{ padding: '12px' }}>Reason</th></tr></thead>
+            <thead><tr style={{ background: '#1B5E20', color: '#D4AF37' }}><th style={{ padding: '12px', textAlign: 'left' }}>Date</th><th style={{ padding: '12px' }}>Investor</th><th style={{ padding: '12px' }}>Amount</th><th style={{ padding: '12px' }}>Reason</th></tr></thead>
             <tbody>{filterData(data.investments, 'invest_date').map(i => (<tr key={i.id}><td style={{ padding: '12px' }}>{i.invest_date}</td><td style={{ padding: '12px' }}>{i.investor_name}</td><td style={{ padding: '12px' }}>{(i.amount || 0).toFixed(2)}</td><td style={{ padding: '12px' }}>{i.reason || 'N/A'}</td></tr>))}</tbody>
           </table>
         )}
