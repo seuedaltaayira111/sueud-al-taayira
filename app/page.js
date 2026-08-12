@@ -8,7 +8,7 @@ export default function Home() {
 
   if (!erp.user) return <div style={{ padding: 50, textAlign: 'center' }}>Loading ERP...</div>;
 
-  // Failsafe Check: Ab ye naye emails se check karega
+  // Strict & Failsafe SuperAdmin Check
   const isSuperAdmin = erp.userProfile?.role === 'SuperAdmin' || 
                        erp.user?.email === 'atallah@sueud.com' || 
                        erp.user?.email === 'hamdan@sueud.com';
@@ -37,6 +37,7 @@ export default function Home() {
     { id: 'reports', label: erp.tr.reports, show: erp.userProfile.is_admin || erp.userProfile.can_access_reports },
     { id: 'audit', label: erp.tr.audit, show: erp.userProfile.is_admin },
     { id: 'settings', label: erp.tr.settings, show: erp.userProfile.is_admin || erp.userProfile.can_access_settings },
+    { id: 'profile', label: erp.tr.profile, show: true },
   ].filter(m => m.show);
 
   return (
@@ -118,6 +119,10 @@ export default function Home() {
           // SaaS Props
           tenantForm={erp.tenantForm} setTenantForm={erp.setTenantForm}
           handleAddTenant={erp.handleAddTenant} handleToggleSubscription={erp.handleToggleSubscription} handleDeleteTenant={erp.handleDeleteTenant}
+
+          // Profile Props
+          profileForm={erp.profileForm} setProfileForm={erp.setProfileForm}
+          handleProfilePicUpload={erp.handleProfilePicUpload} handleSaveProfile={erp.handleSaveProfile}
         />
       </ERPLayout>
     </>
