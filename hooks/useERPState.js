@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 // ==========================================
-// PREMIUM INVOICE & REFUND TEMPLATES
+// PREMIUM INVOICE TEMPLATE
 // ==========================================
 const getInvoiceHTML = (inv, s, lang = 'en') => {
   const setting = s || {};
@@ -13,7 +13,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
   const dir = isAr ? 'rtl' : 'ltr';
   
   const invoiceNo = inv.invoice_no || 'N/A';
-  const trackUrl = `https://yourdomain.com/invoice/${invoiceNo}`;
+  const trackUrl = `https://yourdomain.com/invoice/${invoiceNo}`; // Yahan apna domain daal sakte ho
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(trackUrl)}`;
   const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(trackUrl)}&code=Code128&translate-esc=on`;
 
@@ -170,7 +170,9 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
   `;
 };
 
+// ==========================================
 // DETAILED REFUND INVOICE TEMPLATE
+// ==========================================
 const getRefundHTML = (inv, s) => {
   const setting = s || {};
   const invoiceNo = inv.invoice_no || 'N/A';
@@ -243,8 +245,40 @@ const getRefundHTML = (inv, s) => {
   `;
 };
 
-const getExpenseHTML = (exp, s) => `<div>Expense ${exp.invoice_no}</div>`;
-const getContractHTML = (s, name, date, isOffer, type, markup, terms) => `<div>Contract for ${name}</div>`;
+const getExpenseHTML = (exp, s) => {
+  return `
+  <!DOCTYPE html><html><head><style>
+  body { font-family: 'Poppins', sans-serif; padding: 20px; }
+  .exp-box { max-width: 600px; margin: auto; border: 1px solid #ccc; padding: 20px; border-radius: 8px; }
+  h1 { color: #1E3A8A; }
+  </style></head><body>
+    <div class="exp-box">
+      <h1>Expense Voucher: ${exp.invoice_no}</h1>
+      <p><strong>Vendor:</strong> ${exp.vendor_name}</p>
+      <p><strong>Date:</strong> ${exp.expense_date}</p>
+      <p><strong>Type:</strong> ${exp.expense_type}</p>
+      <p><strong>Amount:</strong> ${(exp.amount || 0).toFixed(2)} SAR</p>
+      <p><strong>Paid Via:</strong> ${exp.payment_mode}</p>
+    </div>
+  </body></html>`;
+};
+
+const getContractHTML = (s, name, date, isOffer, type, markup, terms) => {
+  return `
+  <!DOCTYPE html><html><head><style>
+  body { font-family: 'Poppins', sans-serif; padding: 40px; line-height: 1.6; }
+  h1 { color: #1E3A8A; text-align: center; }
+  </style></head><body>
+    <h1>${isOffer ? 'Corporate Offer' : 'Corporate Contract'}</h1>
+    <p><strong>Company:</strong> ${name}</p>
+    <p><strong>Date:</strong> ${date}</p>
+    <p><strong>Service Type:</strong> ${type}</p>
+    <p><strong>Service Fee/Markup:</strong> ${markup} SAR</p>
+    <br/>
+    <h3>Terms & Conditions</h3>
+    <pre>${terms}</pre>
+  </body></html>`;
+};
 
 // ==========================================
 // MAIN HOOK START
@@ -300,7 +334,7 @@ export default function useERPState() {
   const [userForm, setUserForm] = useState({ email: '', username: '', role: 'Sales', is_admin: false, can_access_invoices: true, can_access_bank: false, can_access_hr: false, can_access_reports: false, can_access_settings: false });
   const [passForm, setPassForm] = useState({ newPass: '' });
   const [settleForm, setSettleForm] = useState({ id: '', date: today, mode: 'Cash' });
-  const [refundForm, setRefundForm] = useState({ id: '', date: today, compRefund: 0, custRefund: 0, mode: 'Cash', reason: '', portalId: '' });
+  const [refundForm, setRefundForm] = useState({ id: '', date: today, compRefund: 0, custRefund: 0, mode: 'Cash', reason: '' });
   const [tenantForm, setTenantForm] = useState({ agency_name: '', owner_email: '', subscription_end_date: '', company_name_ar: '', vat_no: '', cr_no: '', phone: '', address_ar: '' });
   const [profileForm, setProfileForm] = useState({ username: '', avatar_url: '', phone: '', address: '' });
 
