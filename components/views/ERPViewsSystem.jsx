@@ -15,7 +15,7 @@ export default function ERPViewsSystem(props) {
   
   const [statementType, setStatementType] = useState('sales');
 
-  // 1. PROFILE PAGE (FIXED & FILLED)
+  // 1. PROFILE PAGE
   if (page === 'profile') return (
     <div>
       <h2>{tr.profile}</h2>
@@ -137,7 +137,7 @@ export default function ERPViewsSystem(props) {
             <h3 style={{ margin: '0 0 10px', color: '#1B5E20' }}>Custom Fields (Manual)</h3>
             {setForm.custom_fields && setForm.custom_fields.map((cf, i) => (
               <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                <input placeholder="Label (e.g. IATA No)" value={cf.key} onChange={e => handleCustomFieldChange(i, 'key', e.target.value})} style={styles.input} />
+                <input placeholder="Label (e.g. IATA No)" value={cf.key} onChange={e => handleCustomFieldChange(i, 'key', e.target.value)} style={styles.input} />
                 <input placeholder="Value" value={cf.value} onChange={e => handleCustomFieldChange(i, 'value', e.target.value)} style={styles.input} />
                 <button type="button" onClick={() => handleRemoveCustomField(i)} style={{...styles.btnDanger, width: 'auto'}}>X</button>
               </div>
