@@ -1,3 +1,5 @@
+'use client';
+
 import { supabase } from '@/lib/supabase';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -24,7 +26,6 @@ export default function useERPActions(state) {
     setTimeout(() => { setChatMessages(prev => [...prev, { sender: 'bot', text: "I can help with Invoices. (يمكنني المساعدة في الفواتير)" }]); }, 600); 
   };
 
-  // Custom Field Handlers
   const handleAddCustomField = () => setSetForm(prev => ({ ...prev, custom_fields: [...(prev.custom_fields || []), { key: '', value: '' }] }));
   const handleRemoveCustomField = (index) => setSetForm(prev => ({ ...prev, custom_fields: prev.custom_fields.filter((_, i) => i !== index) }));
   const handleCustomFieldChange = (index, type, value) => setSetForm(prev => {
@@ -33,7 +34,6 @@ export default function useERPActions(state) {
     return { ...prev, custom_fields: cf };
   });
 
-  // Profile Handlers
   const handleProfilePicUpload = async (e) => {
     try {
       const file = e.target.files[0];
@@ -56,13 +56,11 @@ export default function useERPActions(state) {
         phone: profileForm.phone,
         address: profileForm.address
       }).eq('id', userProfile.id);
-      
       if (error) throw error;
       showToast('Profile Updated Successfully!');
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
-  // SaaS SuperAdmin Actions
   const handleAddTenant = async (e) => {
     e.preventDefault();
     try {
@@ -464,7 +462,6 @@ export default function useERPActions(state) {
     } catch (err) { showToast('Error: ' + err.message); } 
   };
 
-  // Employee Advance Handlers
   const handleAddAdvance = async (e) => {
     e.preventDefault();
     try {
@@ -472,20 +469,11 @@ export default function useERPActions(state) {
       const amount = parseFloat(e.target.amt.value);
       const date = e.target.date.value;
       const emp = data.employees.find(em => em.id === empId);
-      
-      const { data: newAdv, error: advErr } = await supabase.from('employee_advances').insert([{ 
-        employee_id: empId, amount, date, status: 'Pending', tenant_id: userProfile.tenant_id 
-      }]).select('*, employees(name)').single();
-      
+      const { data: newAdv, error: advErr } = await supabase.from('employee_advances').insert([{ employee_id: empId, amount, date, status: 'Pending', tenant_id: userProfile.tenant_id }]).select('*, employees(name)').single();
       if (advErr) throw advErr;
-      
       const cbType = 'Cash-Out';
-      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ 
-        trans_date: date, type: cbType, description: `Advance to ${emp.name}`, amount, tenant_id: userProfile.tenant_id 
-      }]).select().single();
-      
+      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: date, type: cbType, description: `Advance to ${emp.name}`, amount, tenant_id: userProfile.tenant_id }]).select().single();
       if (cbErr) throw cbErr;
-      
       setData(prev => ({ ...prev, empAdvances: [newAdv, ...(prev.empAdvances || [])], cashbook: [nC, ...prev.cashbook] }));
       showToast('Advance Given!');
       e.target.reset();
@@ -496,20 +484,14 @@ export default function useERPActions(state) {
     try {
       const { error } = await supabase.from('employee_advances').update({ status: 'Returned' }).eq('id', adv.id);
       if (error) throw error;
-      
       const cbType = 'Cash-In';
-      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ 
-        trans_date: today, type: cbType, description: `Advance Returned by ${adv.employees?.name}`, amount: adv.amount, tenant_id: userProfile.tenant_id 
-      }]).select().single();
-      
+      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Advance Returned by ${adv.employees?.name}`, amount: adv.amount, tenant_id: userProfile.tenant_id }]).select().single();
       if (cbErr) throw cbErr;
-      
       setData(prev => ({ ...prev, empAdvances: prev.empAdvances.map(a => a.id === adv.id ? { ...a, status: 'Returned' } : a), cashbook: [nC, ...prev.cashbook] }));
       showToast('Advance Returned!');
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
-  // Pay Salary Handler
   const handlePaySalary = async (e) => { 
     e.preventDefault(); 
     try { 
@@ -520,14 +502,8 @@ export default function useERPActions(state) {
       const netPaid = base + comm - advDed;
       const mode = e.target.mode.value; 
       const emp = data.employees.find(em => em.id === empId); 
-      
-      const { data: newPay, error: payErr } = await supabase.from('payroll').insert([{ 
-        employee_id: empId, base_salary: base, commission: comm, advance_deduction: advDed,
-        amount: netPaid, month: e.target.month.value, payment_mode: mode, tenant_id: userProfile.tenant_id 
-      }]).select('*, employees(name)').single(); 
-      
+      const { data: newPay, error: payErr } = await supabase.from('payroll').insert([{ employee_id: empId, base_salary: base, commission: comm, advance_deduction: advDed, amount: netPaid, month: e.target.month.value, payment_mode: mode, tenant_id: userProfile.tenant_id }]).select('*, employees(name)').single(); 
       if (payErr) throw payErr; 
-      
       if (advDed > 0) {
         let remainingDed = advDed;
         const pendingAdv = (data.empAdvances || []).filter(a => a.employee_id === empId && a.status === 'Pending');
@@ -537,21 +513,10 @@ export default function useERPActions(state) {
           remainingDed -= adv.amount;
         }
       }
-      
       const cbType = mode === 'Cash' ? 'Cash-Out' : 'Bank-Out'; 
-      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ 
-        trans_date: today, type: cbType, description: `Salary to ${emp.name} (Net)`, amount: netPaid, tenant_id: userProfile.tenant_id 
-      }]).select().single(); 
-      
+      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Salary to ${emp.name} (Net)`, amount: netPaid, tenant_id: userProfile.tenant_id }]).select().single(); 
       if (cbErr) throw cbErr; 
-      
-      setData(prev => ({ 
-        ...prev, 
-        payroll: [newPay, ...prev.payroll], 
-        empAdvances: prev.empAdvances?.map(a => (a.employee_id === empId && a.status === 'Pending' && advDed > 0) ? { ...a, status: 'Deducted' } : a),
-        cashbook: [nC, ...prev.cashbook] 
-      })); 
-      
+      setData(prev => ({ ...prev, payroll: [newPay, ...prev.payroll], empAdvances: prev.empAdvances?.map(a => (a.employee_id === empId && a.status === 'Pending' && advDed > 0) ? { ...a, status: 'Deducted' } : a), cashbook: [nC, ...prev.cashbook] })); 
       showToast('Salary Paid!'); 
       e.target.reset(); 
     } catch (err) { showToast('Error: ' + err.message); } 
@@ -652,11 +617,8 @@ export default function useERPActions(state) {
     try { 
       const { id, ...settingsData } = setForm;
       const tId = userProfile.tenant_id;
-      
       if (!tId) return showToast('Error: Tenant ID missing!');
-      
       const { data: existing } = await supabase.from('settings').select('id').eq('tenant_id', tId).maybeSingle();
-      
       if (existing && existing.id) {
         const { data: updatedData, error } = await supabase.from('settings').update({ ...settingsData }).eq('id', existing.id).select().single(); 
         if (error) throw error;
@@ -665,9 +627,9 @@ export default function useERPActions(state) {
       } else {
         const { data: insertedData, error } = await supabase.from('settings').insert([{ ...settingsData, tenant_id: tId }]).select().single(); 
         if (error) throw error;
-        setSetForm(prev => ({ ...prev, ...insertedData })); setData(prev => ({ ...prev, settings: insertedData }));
+        setSetForm(prev => ({ ...prev, ...insertedData })); 
+        setData(prev => ({ ...prev, settings: insertedData }));
       }
-      
       showToast('Settings Saved Successfully!'); 
     } catch (err) { 
       showToast('Error: ' + err.message); 
