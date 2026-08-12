@@ -3,7 +3,7 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
 export default function useERPActions(state) {
-  const { user, data, setData, userProfile, showToast, logAction, fetchAll, invForm, setInvForm, expForm, setExpForm, corpForm, setCorpForm, creditorForm, setCreditorForm, custForm, setCustForm, vendorForm, setVendorForm, pkgForm, setPkgForm, brnForm, setBrnForm, empForm, setEmpForm, srvForm, setSrvForm, investForm, setInvestForm, settleForm, setSettleForm, refundForm, setRefundForm, transferForm, setTransferForm, setForm, setSetForm, userForm, setUserForm, portalForm, setPortalForm, editInvId, setEditInvId, editExpId, setEditExpId, editCorpId, setEditCorpId, editCredId, setEditCredId, editCustId, setEditCustId, editVendId, setEditVendId, editPkgId, setEditPkgId, editBrnId, setEditBrnId, editEmpId, setEditEmpId, editSrvId, setEditSrvId, editUserId, setEditUserId, modal, setModal, passForm, setPassForm, chatInput, setChatInput, chatMessages, setChatMessages, previewHTML, setPreviewHTML, getInvoiceHTML, getExpenseHTML, getContractHTML, today, router, contractCorpName, contractType, contractMarkup, contractTerms, tenantForm, setTenantForm, profileForm, setProfileForm, marketingText, setMarketingText } = state;
+  const { user, data, setData, userProfile, showToast, logAction, fetchAll, invForm, setInvForm, expForm, setExpForm, corpForm, setCorpForm, creditorForm, setCreditorForm, custForm, setCustForm, vendorForm, setVendorForm, pkgForm, setPkgForm, brnForm, setBrnForm, empForm, setEmpForm, srvForm, setSrvForm, investForm, setInvestForm, settleForm, setSettleForm, refundForm, setRefundForm, transferForm, setTransferForm, setForm, setSetForm, userForm, setUserForm, portalForm, setPortalForm, editInvId, setEditInvId, editExpId, setEditExpId, editCorpId, setEditCorpId, editCredId, setEditCredId, editCustId, setEditCustId, editVendId, setEditVendId, editPkgId, setEditPkgId, editBrnId, setEditBrnId, editEmpId, setEditEmpId, editSrvId, setEditSrvId, editUserId, setEditUserId, modal, setModal, passForm, setPassForm, chatInput, setChatInput, chatMessages, setChatMessages, previewHTML, setPreviewHTML, getInvoiceHTML, getExpenseHTML, getContractHTML, today, router, contractCorpName, contractType, contractMarkup, contractTerms, tenantForm, setTenantForm, profileForm, setProfileForm, ledgerEmpId } = state;
 
   const handleLogout = () => { supabase.auth.signOut(); router.push('/login'); };
   
@@ -60,14 +60,6 @@ export default function useERPActions(state) {
       if (error) throw error;
       showToast('Profile Updated Successfully!');
     } catch (err) { showToast('Error: ' + err.message); }
-  };
-
-  // AI Marketing Handler (SHOCKING FEATURE)
-  const handleGenerateMarketing = (service, discount) => {
-    const s = data.settings;
-    const msg = `✈️ *${s.company_name_en || 'Sueud Al Taayira'}* ✈️\n\n🔥 *Special Offer!* 🔥\nBook your *${service}* with us and get up to *${discount}% OFF*!\n\n✨ Why choose us?\n- Best fares guaranteed\n- 24/7 customer support\n- Fast & reliable service\n\n📞 Contact us now: ${s.phone || ''}\n📍 Visit us: ${s.address_ar || ''}`;
-    setMarketingText(msg);
-    showToast('Marketing Message Generated! Copy and send it.');
   };
 
   // SaaS SuperAdmin Actions
@@ -142,6 +134,13 @@ export default function useERPActions(state) {
     } catch (err) {
       showToast('PDF Error: ' + err.message);
     }
+  };
+
+  // Wrapper for direct PDF download from invoice object
+  const handleDownloadPDF = async (inv, lang = 'en') => {
+    const s = data.settings;
+    const html = getInvoiceHTML(inv, s, lang);
+    await downloadPDF(html, `${inv.invoice_no}.pdf`);
   };
 
   const handleGenerateContract = (e) => {
@@ -346,7 +345,36 @@ export default function useERPActions(state) {
   const handleAddEditVend = async (e) => { e.preventDefault(); const pl = { ...vendorForm, tenant_id: userProfile.tenant_id }; try { if (editVendId) { const { data: up, error } = await supabase.from('vendors').update(pl).eq('id', editVendId).select().single(); if (error) throw error; setData(prev => ({...prev, vendors: prev.vendors.map(c => c.id === editVendId ? up : c)})); showToast('Updated!'); setEditVendId(null); } else { const { data: nItem, error } = await supabase.from('vendors').insert([pl]).select().single(); if (error) throw error; setData(prev => ({...prev, vendors: [...prev.vendors, nItem]})); showToast('Added!'); } setVendorForm({ name: '', phone: '', balance: 0 }); } catch (err) { showToast('Error: ' + err.message); } };
   const handleAddEditPkg = async (e) => { e.preventDefault(); const pl = { name: pkgForm.name, price: parseFloat(pkgForm.price), description: pkgForm.desc, duration: pkgForm.duration, inclusions: pkgForm.inclusions, tenant_id: userProfile.tenant_id }; try { if (editPkgId) { const { data: up, error } = await supabase.from('packages').update(pl).eq('id', editPkgId).select().single(); if (error) throw error; setData(prev => ({...prev, packages: prev.packages.map(c => c.id === editPkgId ? up : c)})); showToast('Updated!'); setEditPkgId(null); } else { const { data: nItem, error } = await supabase.from('packages').insert([pl]).select().single(); if (error) throw error; setData(prev => ({...prev, packages: [...prev.packages, nItem]})); showToast('Added!'); } setPkgForm({ name: '', price: '', desc: '', duration: '', inclusions: '' }); } catch (err) { showToast('Error: ' + err.message); } };
   const handleAddEditBrn = async (e) => { e.preventDefault(); const pl = { ...brnForm, tenant_id: userProfile.tenant_id }; try { if (editBrnId) { const { data: up, error } = await supabase.from('branches').update(pl).eq('id', editBrnId).select().single(); if (error) throw error; setData(prev => ({...prev, branches: prev.branches.map(c => c.id === editBrnId ? up : c)})); showToast('Updated!'); setEditBrnId(null); } else { const { data: nItem, error } = await supabase.from('branches').insert([pl]).select().single(); if (error) throw error; setData(prev => ({...prev, branches: [...prev.branches, nItem]})); showToast('Added!'); } setBrnForm({ name: '', location: '', phone: '', manager: '', email: '', timing: '', status: 'Active' }); } catch (err) { showToast('Error: ' + err.message); } };
-  const handleAddEditEmp = async (e) => { e.preventDefault(); const pl = { ...empForm, commission_rate: parseFloat(empForm.commission_rate) || 0, tenant_id: userProfile.tenant_id }; try { if (editEmpId) { const { data: up, error } = await supabase.from('employees').update(pl).eq('id', editEmpId).select().single(); if (error) throw error; setData(prev => ({...prev, employees: prev.employees.map(c => c.id === editEmpId ? up : c)})); showToast('Updated!'); setEditEmpId(null); } else { const { data: nItem, error } = await supabase.from('employees').insert([pl]).select().single(); if (error) throw error; setData(prev => ({...prev, employees: [nItem, ...prev.employees]})); showToast('Added!'); } setEmpForm({ name: '', role: 'Sales', salary: 0, phone: '', commission_rate: 0 }); } catch (err) { showToast('Error: ' + err.message); } };
+  
+  // Employee Add/Edit
+  const handleAddEditEmp = async (e) => { 
+    e.preventDefault(); 
+    const pl = { 
+      name: empForm.name, 
+      role: empForm.role, 
+      salary: parseFloat(empForm.salary) || 0, 
+      phone: empForm.phone, 
+      commission_rate: parseFloat(empForm.commission_rate) || 0,
+      iqama_no: empForm.iqama_no || null,
+      iqama_expiry: empForm.iqama_expiry || null,
+      tenant_id: userProfile.tenant_id 
+    }; 
+    try { 
+      if (editEmpId) { 
+        const { data: up, error } = await supabase.from('employees').update(pl).eq('id', editEmpId).select().single(); 
+        if (error) throw error; 
+        setData(prev => ({...prev, employees: prev.employees.map(c => c.id === editEmpId ? up : c)})); 
+        showToast('Employee Updated!'); setEditEmpId(null); 
+      } else { 
+        const { data: nItem, error } = await supabase.from('employees').insert([pl]).select().single(); 
+        if (error) throw error; 
+        setData(prev => ({...prev, employees: [nItem, ...prev.employees]})); 
+        showToast('Employee Added!'); 
+      } 
+      setEmpForm({ name: '', role: 'Sales', salary: 0, phone: '', commission_rate: 0, iqama_no: '', iqama_expiry: '' }); 
+    } catch (err) { showToast('Error: ' + err.message); } 
+  };
+
   const handleAddEditSrv = async (e) => { e.preventDefault(); const pl = { ...srvForm, tenant_id: userProfile.tenant_id }; try { if (editSrvId) { const { data: up, error } = await supabase.from('services').update(pl).eq('id', editSrvId).select().single(); if (error) throw error; setData(prev => ({...prev, services: prev.services.map(c => c.id === editSrvId ? up : c)})); showToast('Updated!'); setEditSrvId(null); } else { const { data: nItem, error } = await supabase.from('services').insert([pl]).select().single(); if (error) throw error; setData(prev => ({...prev, services: [...prev.services, nItem]})); showToast('Added!'); } setSrvForm({ name: '' }); } catch (err) { showToast('Error: ' + err.message); } };
   const handleAddPortal = async (e) => { e.preventDefault(); try { const { data: newItem, error } = await supabase.from('portals').insert([{ name: portalForm.name, current_balance: parseFloat(portalForm.balance) || 0, tenant_id: userProfile.tenant_id }]).select().single(); if (error) throw error; setData(prev => ({ ...prev, portals: [...prev.portals, newItem] })); showToast('Portal Added!'); setPortalForm({ name: '', balance: 0 }); } catch (err) { showToast('Error: ' + err.message); } };
   const handleAddInvestment = async (e) => { e.preventDefault(); try { const mode = investForm.mode; const finalReason = investForm.reason === 'Other' ? investForm.otherReason : investForm.reason; const { data: newInv, error: invErr } = await supabase.from('investments').insert([{ investor_name: investForm.name, amount: parseFloat(investForm.amount), invest_date: investForm.date, description: investForm.desc, payment_mode: mode, reason: finalReason, tenant_id: userProfile.tenant_id }]).select().single(); if (invErr) throw invErr; const cbType = mode === 'Cash' ? 'Cash-In' : 'Bank-In'; const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: investForm.date, type: cbType, description: `Investment by ${investForm.name} (${finalReason})`, amount: parseFloat(investForm.amount), tenant_id: userProfile.tenant_id }]).select().single(); if (cbErr) throw cbErr; setData(prev => ({ ...prev, investments: [newInv, ...prev.investments], cashbook: [nC, ...prev.cashbook] })); showToast('Investor Added!'); setInvestForm({ name: '', amount: '', date: today, desc: '', mode: 'Cash', reason: 'Other', otherReason: '' }); } catch (err) { showToast('Error: ' + err.message); } };
@@ -402,7 +430,7 @@ export default function useERPActions(state) {
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
-  // Pay Salary Handler (Updated with Base, Commission, Advance Deduction)
+  // Pay Salary Handler
   const handlePaySalary = async (e) => { 
     e.preventDefault(); 
     try { 
@@ -421,7 +449,6 @@ export default function useERPActions(state) {
       
       if (payErr) throw payErr; 
       
-      // Mark oldest pending advances as Deducted (up to advDed amount)
       if (advDed > 0) {
         let remainingDed = advDed;
         const pendingAdv = (data.empAdvances || []).filter(a => a.employee_id === empId && a.status === 'Pending');
@@ -503,7 +530,6 @@ export default function useERPActions(state) {
     handleLogout, handleChangePassword, handleSendMessage, handleEditInvoice, handleCreateInvoice, handleDeleteInvoice, handleAddExpItem, handleRemoveExpItem, handleExpItemChange, handleAddExpense, handleEditExpense, handleDeleteExpense, handlePreviewExpense, handleAddEditCust, handleAddEditCorp, handleAddEditCred, handleAddEditVend, handleAddEditPkg, handleAddEditBrn, handleAddEditEmp, handleAddEditSrv, handleAddPortal, handleAddInvestment, handleDelete, handleRecharge, handleTransfer, handleAddUser, handleEditUser, handleUpdateUser, handlePaySalary, handleSettlePayment, handleQuickSettle, openSettleModal, handleRefund, openRefundModal, openPreview, handleLogoUpload, handleSaveSettings, downloadPDF, handleGenerateContract, handleGenerateOffer, handleAddCustomField, handleRemoveCustomField, handleCustomFieldChange, 
     handleAddTenant, handleToggleSubscription, handleDeleteTenant, 
     handleProfilePicUpload, handleSaveProfile,
-    handleAddAdvance, handleReturnAdvance,
-    handleGenerateMarketing
+    handleAddAdvance, handleReturnAdvance, handleDownloadPDF
   };
 }
