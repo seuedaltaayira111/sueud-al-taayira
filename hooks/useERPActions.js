@@ -136,14 +136,12 @@ export default function useERPActions(state) {
     }
   };
 
-  // Wrapper for direct PDF download from invoice object
   const handleDownloadPDF = async (inv, lang = 'en') => {
     const s = data.settings;
     const html = getInvoiceHTML(inv, s, lang);
     await downloadPDF(html, `${inv.invoice_no}.pdf`);
   };
 
-  // Print Invoice directly
   const printInvoice = (inv, lang = 'en') => {
     const s = data.settings;
     const html = getInvoiceHTML(inv, s, lang);
@@ -356,7 +354,6 @@ export default function useERPActions(state) {
   const handleAddEditPkg = async (e) => { e.preventDefault(); const pl = { name: pkgForm.name, price: parseFloat(pkgForm.price), description: pkgForm.desc, duration: pkgForm.duration, inclusions: pkgForm.inclusions, tenant_id: userProfile.tenant_id }; try { if (editPkgId) { const { data: up, error } = await supabase.from('packages').update(pl).eq('id', editPkgId).select().single(); if (error) throw error; setData(prev => ({...prev, packages: prev.packages.map(c => c.id === editPkgId ? up : c)})); showToast('Updated!'); setEditPkgId(null); } else { const { data: nItem, error } = await supabase.from('packages').insert([pl]).select().single(); if (error) throw error; setData(prev => ({...prev, packages: [...prev.packages, nItem]})); showToast('Added!'); } setPkgForm({ name: '', price: '', desc: '', duration: '', inclusions: '' }); } catch (err) { showToast('Error: ' + err.message); } };
   const handleAddEditBrn = async (e) => { e.preventDefault(); const pl = { ...brnForm, tenant_id: userProfile.tenant_id }; try { if (editBrnId) { const { data: up, error } = await supabase.from('branches').update(pl).eq('id', editBrnId).select().single(); if (error) throw error; setData(prev => ({...prev, branches: prev.branches.map(c => c.id === editBrnId ? up : c)})); showToast('Updated!'); setEditBrnId(null); } else { const { data: nItem, error } = await supabase.from('branches').insert([pl]).select().single(); if (error) throw error; setData(prev => ({...prev, branches: [...prev.branches, nItem]})); showToast('Added!'); } setBrnForm({ name: '', location: '', phone: '', manager: '', email: '', timing: '', status: 'Active' }); } catch (err) { showToast('Error: ' + err.message); } };
   
-  // Employee Add/Edit
   const handleAddEditEmp = async (e) => { 
     e.preventDefault(); 
     const pl = { 
@@ -668,8 +665,7 @@ export default function useERPActions(state) {
       } else {
         const { data: insertedData, error } = await supabase.from('settings').insert([{ ...settingsData, tenant_id: tId }]).select().single(); 
         if (error) throw error;
-        setSetForm(prev => ({ ...prev, ...insertedData }));
-        setData(prev => ({ ...prev, settings: insertedData }));
+        setSetForm(prev => ({ ...prev, ...insertedData })); setData(prev => ({ ...prev, settings: insertedData }));
       }
       
       showToast('Settings Saved Successfully!'); 
