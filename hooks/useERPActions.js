@@ -3,7 +3,7 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
 export default function useERPActions(state) {
-  const { user, data, setData, userProfile, showToast, logAction, fetchAll, invForm, setInvForm, expForm, setExpForm, corpForm, setCorpForm, creditorForm, setCreditorForm, custForm, setCustForm, vendorForm, setVendorForm, pkgForm, setPkgForm, brnForm, setBrnForm, empForm, setEmpForm, srvForm, setSrvForm, investForm, setInvestForm, settleForm, setSettleForm, refundForm, setRefundForm, transferForm, setTransferForm, setForm, setSetForm, userForm, setUserForm, portalForm, setPortalForm, editInvId, setEditInvId, editExpId, setEditExpId, editCorpId, setEditCorpId, editCredId, setEditCredId, editCustId, setEditCustId, editVendId, setEditVendId, editPkgId, setEditPkgId, editBrnId, setEditBrnId, editEmpId, setEditEmpId, editSrvId, setEditSrvId, editUserId, setEditUserId, modal, setModal, passForm, setPassForm, chatInput, setChatInput, chatMessages, setChatMessages, previewHTML, setPreviewHTML, getInvoiceHTML, getExpenseHTML, getContractHTML, today, router, contractCorpName, contractType, contractMarkup, contractTerms, tenantForm, setTenantForm, profileForm, setProfileForm } = state;
+  const { user, data, setData, userProfile, showToast, logAction, fetchAll, invForm, setInvForm, expForm, setExpForm, corpForm, setCorpForm, creditorForm, setCreditorForm, custForm, setCustForm, vendorForm, setVendorForm, pkgForm, setPkgForm, brnForm, setBrnForm, empForm, setEmpForm, srvForm, setSrvForm, investForm, setInvestForm, settleForm, setSettleForm, refundForm, setRefundForm, transferForm, setTransferForm, setForm, setSetForm, userForm, setUserForm, portalForm, setPortalForm, editInvId, setEditInvId, editExpId, setEditExpId, editCorpId, setEditCorpId, editCredId, setEditCredId, editCustId, setEditCustId, editVendId, setEditVendId, editPkgId, setEditPkgId, editBrnId, setEditBrnId, editEmpId, setEditEmpId, editSrvId, setEditSrvId, editUserId, setEditUserId, modal, setModal, passForm, setPassForm, chatInput, setChatInput, chatMessages, setChatMessages, previewHTML, setPreviewHTML, getInvoiceHTML, getExpenseHTML, getContractHTML, today, router, contractCorpName, contractType, contractMarkup, contractTerms, tenantForm, setTenantForm, profileForm, setProfileForm, marketingText, setMarketingText } = state;
 
   const handleLogout = () => { supabase.auth.signOut(); router.push('/login'); };
   
@@ -52,12 +52,22 @@ export default function useERPActions(state) {
     try {
       const { error } = await supabase.from('app_users').update({ 
         username: profileForm.username, 
-        avatar_url: profileForm.avatar_url 
+        avatar_url: profileForm.avatar_url,
+        phone: profileForm.phone,
+        address: profileForm.address
       }).eq('id', userProfile.id);
       
       if (error) throw error;
       showToast('Profile Updated Successfully!');
     } catch (err) { showToast('Error: ' + err.message); }
+  };
+
+  // AI Marketing Handler (SHOCKING FEATURE)
+  const handleGenerateMarketing = (service, discount) => {
+    const s = data.settings;
+    const msg = `✈️ *${s.company_name_en || 'Sueud Al Taayira'}* ✈️\n\n🔥 *Special Offer!* 🔥\nBook your *${service}* with us and get up to *${discount}% OFF*!\n\n✨ Why choose us?\n- Best fares guaranteed\n- 24/7 customer support\n- Fast & reliable service\n\n📞 Contact us now: ${s.phone || ''}\n📍 Visit us: ${s.address_ar || ''}`;
+    setMarketingText(msg);
+    showToast('Marketing Message Generated! Copy and send it.');
   };
 
   // SaaS SuperAdmin Actions
@@ -75,9 +85,7 @@ export default function useERPActions(state) {
       showToast(`✅ Agency Created! Email: ${tenantForm.owner_email} | Pass: ${tempPass}`);
       setTenantForm({ agency_name: '', owner_email: '', subscription_end_date: '', company_name_ar: '', vat_no: '', cr_no: '', phone: '', address_ar: '' });
       fetchAll();
-    } catch (err) { 
-      showToast('Error: ' + err.message); 
-    }
+    } catch (err) { showToast('Error: ' + err.message); }
   };
 
   const handleToggleSubscription = async (tenant) => {
@@ -116,16 +124,12 @@ export default function useERPActions(state) {
       const canvas = await html2canvas(div, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgWidth = 210; 
-      const pageHeight = 297;
+      const imgWidth = 210; const pageHeight = 297;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
       let heightLeft = imgHeight;
       let position = 0;
-
       pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
-
       while (heightLeft >= 0) {
         position = heightLeft - imgHeight;
         pdf.addPage();
@@ -161,31 +165,15 @@ export default function useERPActions(state) {
   const handleEditInvoice = (inv) => {
     setEditInvId(inv.id);
     setInvForm({
-      custType: inv.customer_id ? 'Individual' : 'Corporate',
-      custId: inv.customer_id || 'new',
-      corpId: inv.corporate_id || 'new',
-      portalId: inv.portal_id,
-      service: inv.service_type,
-      flightType: inv.flight_type || 'Domestic',
-      flightJourney: inv.flight_journey || 'Single',
-      refundable: inv.refundable_status || 'Refundable',
-      bookingType: inv.booking_type || 'New Booking',
-      linkedInvId: inv.linked_inv_id || '',
-      flightSector: inv.flight_sector || '',
-      airline: inv.airline || '',
-      pnr: inv.pnr || '',
-      ticketNo: inv.ticket_no || '',
-      qty: inv.qty || 1,
-      cost: (inv.total_cost || 0) / (inv.qty || 1),
-      sell: ((inv.total_sell || 0) + (inv.discount || 0)) / (inv.qty || 1),
-      discount: inv.discount || 0,
-      taxRate: inv.vat > 0 ? '15' : '0',
-      payment: inv.payment_method,
-      paid: (inv.paid_amount || 0) - (inv.used_credit || 0),
-      useCredit: inv.used_credit || 0,
-      invoiceDate: inv.invoice_date || today,
-      employeeId: inv.employee_id || '',
-      passengers: inv.passenger_names ? inv.passenger_names.split('\n') : ['']
+      custType: inv.customer_id ? 'Individual' : 'Corporate', custId: inv.customer_id || 'new', corpId: inv.corporate_id || 'new',
+      portalId: inv.portal_id, service: inv.service_type, flightType: inv.flight_type || 'Domestic',
+      flightJourney: inv.flight_journey || 'Single', refundable: inv.refundable_status || 'Refundable',
+      bookingType: inv.booking_type || 'New Booking', linkedInvId: inv.linked_inv_id || '',
+      flightSector: inv.flight_sector || '', airline: inv.airline || '', pnr: inv.pnr || '', ticketNo: inv.ticket_no || '',
+      qty: inv.qty || 1, cost: (inv.total_cost || 0) / (inv.qty || 1), sell: ((inv.total_sell || 0) + (inv.discount || 0)) / (inv.qty || 1),
+      discount: inv.discount || 0, taxRate: inv.vat > 0 ? '15' : '0', payment: inv.payment_method,
+      paid: (inv.paid_amount || 0) - (inv.used_credit || 0), useCredit: inv.used_credit || 0, invoiceDate: inv.invoice_date || today,
+      employeeId: inv.employee_id || '', passengers: inv.passenger_names ? inv.passenger_names.split('\n') : ['']
     });
     state.setPage('create');
   };
@@ -197,24 +185,11 @@ export default function useERPActions(state) {
         const exists = data.customers.find(c => c.name.toLowerCase() === invForm.custName.toLowerCase() && c.phone === invForm.custPhone);
         if (exists) throw new Error('Customer already exists! Please select from the dropdown.');
       }
-      if (invForm.custType === 'Individual' && invForm.custId !== 'new' && !invForm.custId) throw new Error("Please select a valid Customer.");
-      if (invForm.custType === 'Corporate' && invForm.corpId !== 'new' && !invForm.corpId) throw new Error("Please select a valid Corporate.");
-
-      const qty = parseInt(invForm.qty) || 1; 
-      const cost = (parseFloat(invForm.cost) || 0) * qty; 
-      let sell = (parseFloat(invForm.sell) || 0) * qty; 
-      const discount = parseFloat(invForm.discount) || 0; 
-      sell = sell - discount; 
-      const taxRate = parseFloat(invForm.taxRate) || 0; 
-      const vat = sell * (taxRate / 100); 
-      const total = sell + vat; 
-      
-      const cashPaid = parseFloat(invForm.paid) || 0;
-      const usedCredit = parseFloat(invForm.useCredit) || 0;
-      const totalPaid = cashPaid + usedCredit;
-      const due = total - totalPaid; 
-      const profit = sell - cost; 
-      
+      const qty = parseInt(invForm.qty) || 1; const cost = (parseFloat(invForm.cost) || 0) * qty; 
+      let sell = (parseFloat(invForm.sell) || 0) * qty; const discount = parseFloat(invForm.discount) || 0; 
+      sell = sell - discount; const taxRate = parseFloat(invForm.taxRate) || 0; const vat = sell * (taxRate / 100); const total = sell + vat; 
+      const cashPaid = parseFloat(invForm.paid) || 0; const usedCredit = parseFloat(invForm.useCredit) || 0;
+      const totalPaid = cashPaid + usedCredit; const due = total - totalPaid; const profit = sell - cost; 
       let cid = null, corpId = null;
       
       if (invForm.payment === 'Credit Balance' && invForm.creditCustId) {
@@ -241,30 +216,23 @@ export default function useERPActions(state) {
           } else { corpId = invForm.corpId; } 
         }
       }
-      
       const portal = data.portals.find(p => p.id === invForm.portalId); 
       if (!portal) throw new Error("Please select a Portal");
-      
       let desc = invForm.service === 'Flight Ticket' ? `${invForm.airline} - ${invForm.flightSector}` : invForm.service; 
       const passengerNames = invForm.passengers.filter(p => p).join('\n');
-      
       const payload = { 
         customer_id: cid, corporate_id: corpId, portal_id: portal.id, employee_id: invForm.employeeId || null, 
         booking_date: invForm.bookingDate, invoice_date: invForm.invoiceDate, service_type: invForm.service, 
         flight_type: invForm.flightType, flight_journey: invForm.flightJourney, refundable_status: invForm.refundable,
         booking_type: invForm.bookingType, linked_inv_id: invForm.linkedInvId || null,
-        pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty: qty, 
-        discount: discount, passenger_names: passengerNames || null, airline: invForm.airline || null, 
-        flight_sector: invForm.flightSector || null, total_cost: cost, total_sell: sell, profit, vat, total, 
+        pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty: qty, discount: discount, passenger_names: passengerNames || null, 
+        airline: invForm.airline || null, flight_sector: invForm.flightSector || null, total_cost: cost, total_sell: sell, profit, vat, total, 
         paid_amount: totalPaid, used_credit: usedCredit, due_amount: due, payment_method: invForm.payment, 
         credit_due_date: due > 0 && invForm.payment === 'Credit' ? invForm.creditDueDate : null, 
         creditor_id: invForm.payment === 'Credit' ? (invForm.creditorId || null) : null, 
-        tabby_order_no: invForm.payment === 'Tabby' ? invForm.tabbyNo : null, 
-        tamara_order_no: invForm.payment === 'Tamara' ? invForm.tamaraNo : null, 
-        ticket_status: invForm.ticketStatus,
-        tenant_id: userProfile.tenant_id
+        tabby_order_no: invForm.payment === 'Tabby' ? invForm.tabbyNo : null, tamara_order_no: invForm.payment === 'Tamara' ? invForm.tamaraNo : null, 
+        ticket_status: invForm.ticketStatus, tenant_id: userProfile.tenant_id
       };
-      
       if (editInvId) {
         const { data: upInv, error: upErr } = await supabase.from('invoices').update(payload).eq('id', editInvId).select(`*, customers(name), corporates(name), employees(name)`).single();
         if (upErr) throw new Error('Invoice update failed: ' + upErr.message);
@@ -274,11 +242,8 @@ export default function useERPActions(state) {
         const invNo = `INV-${Date.now()}`;
         const { data: newInv, error: invErr } = await supabase.from('invoices').insert([{ invoice_no: invNo, ...payload }]).select(`*, customers(name), corporates(name), employees(name)`).single();
         if (invErr) throw new Error('Invoice creation failed: ' + invErr.message);
-        
         const newPortalBal = (portal.current_balance || 0) - cost; 
-        const { error: pErr } = await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', portal.id); 
-        if (pErr) console.error("Portal update failed:", pErr.message);
-        
+        await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', portal.id); 
         await logAction(`Created Invoice ${invNo}`);
         let newCashEntry = null; 
         if (cashPaid > 0 && invForm.payment !== 'Credit' && invForm.payment !== 'Credit Balance') { 
@@ -292,12 +257,9 @@ export default function useERPActions(state) {
         setData(prev => ({ ...prev, invoices: [newInv, ...prev.invoices], portals: prev.portals.map(p => p.id === portal.id ? { ...p, current_balance: newPortalBal } : p), cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook }));
         showToast('Invoice Generated!');
       }
-      
       setInvForm({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: data.portals[0]?.id || '', bookingDate: today, invoiceDate: today, bookingType: 'New Booking', linkedInvId: '', service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' }); 
       state.setPage('list');
-    } catch (err) { 
-      showToast('Error: ' + err.message); 
-    }
+    } catch (err) { showToast('Error: ' + err.message); }
   };
 
   const handleDeleteInvoice = async (inv) => {
@@ -324,16 +286,7 @@ export default function useERPActions(state) {
 
   const handleEditExpense = (exp) => {
     setEditExpId(exp.id);
-    setExpForm({
-      vendor_name: exp.vendor_name,
-      vendor_vat: exp.vendor_vat || '',
-      expense_date: exp.expense_date,
-      expense_type: exp.expense_type,
-      payment_mode: exp.payment_mode,
-      items: exp.items || [{ name: exp.item_name, qty: 1, price: exp.amount }],
-      taxRate: exp.vat > 0 ? '15' : '0',
-      desc: exp.description || ''
-    });
+    setExpForm({ vendor_name: exp.vendor_name, vendor_vat: exp.vendor_vat || '', expense_date: exp.expense_date, expense_type: exp.expense_type, payment_mode: exp.payment_mode, items: exp.items || [{ name: exp.item_name, qty: 1, price: exp.amount }], taxRate: exp.vat > 0 ? '15' : '0', desc: exp.description || '' });
   };
 
   const handleDeleteExpense = async (exp) => {
@@ -341,13 +294,10 @@ export default function useERPActions(state) {
     try {
       const cbEntry = data.cashbook.find(c => c.description.includes(exp.invoice_no));
       if (cbEntry) await supabase.from('cashbook').delete().eq('id', cbEntry.id);
-      
       await supabase.from('expenses').delete().eq('id', exp.id);
       setData(prev => ({ ...prev, expenses: prev.expenses.filter(e => e.id !== exp.id), cashbook: prev.cashbook.filter(c => c.id !== cbEntry?.id) }));
       showToast('Expense Deleted & Accounts Reversed!');
-    } catch (err) {
-      showToast('Error: ' + err.message);
-    }
+    } catch (err) { showToast('Error: ' + err.message); }
   };
 
   const handlePreviewExpense = (exp) => {
@@ -369,39 +319,25 @@ export default function useERPActions(state) {
         const oldExp = data.expenses.find(e => e.id === editExpId);
         const oldCb = data.cashbook.find(c => c.description.includes(oldExp.invoice_no));
         if (oldCb) await supabase.from('cashbook').delete().eq('id', oldCb.id);
-
-        const { data: upExp, error: expErr } = await supabase.from('expenses').update({
-          vendor_name: expForm.vendor_name, vendor_vat: expForm.vendor_vat, expense_date: expForm.expense_date, expense_type: expForm.expense_type,
-          item_name: expForm.items.map(i => i.name).join(', '), items: expForm.items, amount: totalAmount, description: expForm.desc, payment_mode: expForm.payment_mode
-        }).eq('id', editExpId).select().single();
+        const { data: upExp, error: expErr } = await supabase.from('expenses').update({ vendor_name: expForm.vendor_name, vendor_vat: expForm.vendor_vat, expense_date: expForm.expense_date, expense_type: expForm.expense_type, item_name: expForm.items.map(i => i.name).join(', '), items: expForm.items, amount: totalAmount, description: expForm.desc, payment_mode: expForm.payment_mode }).eq('id', editExpId).select().single();
         if (expErr) throw expErr;
-
         const cbType = expForm.payment_mode === 'Cash' ? 'Cash-Out' : (expForm.payment_mode === 'Bank Transfer' ? 'Bank-Out' : 'Investor-Out');
         const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: expForm.expense_date || today, type: cbType, description: `Expense: ${expForm.vendor_name} (${oldExp.invoice_no})`, amount: totalAmount, tenant_id: userProfile.tenant_id }]).select().single();
         if (cbErr) throw cbErr;
-
         setData(prev => ({ ...prev, expenses: prev.expenses.map(e => e.id === editExpId ? upExp : e), cashbook: nC ? [nC, ...prev.cashbook.filter(c => c.id !== oldCb?.id)] : prev.cashbook }));
         showToast('Expense Updated!'); setEditExpId(null);
       } else {
         const expNo = `EXP-${Date.now()}`;
-        const { data: newExp, error: expErr } = await supabase.from('expenses').insert([{
-          invoice_no: expNo, vendor_name: expForm.vendor_name, vendor_vat: expForm.vendor_vat, expense_date: expForm.expense_date, expense_type: expForm.expense_type,
-          item_name: expForm.items.map(i => i.name).join(', '), items: expForm.items, amount: totalAmount, description: expForm.desc, payment_mode: expForm.payment_mode, tenant_id: userProfile.tenant_id
-        }]).select().single();
+        const { data: newExp, error: expErr } = await supabase.from('expenses').insert([{ invoice_no: expNo, vendor_name: expForm.vendor_name, vendor_vat: expForm.vendor_vat, expense_date: expForm.expense_date, expense_type: expForm.expense_type, item_name: expForm.items.map(i => i.name).join(', '), items: expForm.items, amount: totalAmount, description: expForm.desc, payment_mode: expForm.payment_mode, tenant_id: userProfile.tenant_id }]).select().single();
         if (expErr) throw expErr;
-
         const cbType = expForm.payment_mode === 'Cash' ? 'Cash-Out' : (expForm.payment_mode === 'Bank Transfer' ? 'Bank-Out' : 'Investor-Out');
         const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: expForm.expense_date || today, type: cbType, description: `Expense: ${expForm.vendor_name} (${expNo})`, amount: totalAmount, tenant_id: userProfile.tenant_id }]).select().single();
         if (cbErr) throw cbErr;
-
         setData(prev => ({ ...prev, expenses: [newExp, ...prev.expenses], cashbook: [nC, ...prev.cashbook] }));
         showToast('Expense Added & Auto-Deducted!');
       }
-
       setExpForm({ vendor_name: '', vendor_vat: '', expense_date: today, expense_type: 'Office Supplies', payment_mode: 'Cash', items: [{ name: '', qty: 1, price: 0 }], taxRate: '15', desc: '' });
-    } catch (err) {
-      showToast('Error: ' + err.message);
-    }
+    } catch (err) { showToast('Error: ' + err.message); }
   };
 
   const handleAddEditCust = async (e) => { e.preventDefault(); const pl = { name: custForm.name, phone: custForm.phone, store_credit: parseFloat(custForm.store_credit) || 0, tenant_id: userProfile.tenant_id }; try { if (editCustId) { const { data: up, error } = await supabase.from('customers').update(pl).eq('id', editCustId).select().single(); if (error) throw error; setData(prev => ({...prev, customers: prev.customers.map(c => c.id === editCustId ? up : c)})); showToast('Updated!'); setEditCustId(null); } else { const { data: nItem, error } = await supabase.from('customers').insert([{...pl, type: 'Individual'}]).select().single(); if (error) throw error; setData(prev => ({...prev, customers: [...prev.customers, nItem]})); showToast('Added!'); } setCustForm({ name: '', phone: '', store_credit: 0 }); } catch (err) { showToast('Error: ' + err.message); } };
@@ -410,27 +346,7 @@ export default function useERPActions(state) {
   const handleAddEditVend = async (e) => { e.preventDefault(); const pl = { ...vendorForm, tenant_id: userProfile.tenant_id }; try { if (editVendId) { const { data: up, error } = await supabase.from('vendors').update(pl).eq('id', editVendId).select().single(); if (error) throw error; setData(prev => ({...prev, vendors: prev.vendors.map(c => c.id === editVendId ? up : c)})); showToast('Updated!'); setEditVendId(null); } else { const { data: nItem, error } = await supabase.from('vendors').insert([pl]).select().single(); if (error) throw error; setData(prev => ({...prev, vendors: [...prev.vendors, nItem]})); showToast('Added!'); } setVendorForm({ name: '', phone: '', balance: 0 }); } catch (err) { showToast('Error: ' + err.message); } };
   const handleAddEditPkg = async (e) => { e.preventDefault(); const pl = { name: pkgForm.name, price: parseFloat(pkgForm.price), description: pkgForm.desc, duration: pkgForm.duration, inclusions: pkgForm.inclusions, tenant_id: userProfile.tenant_id }; try { if (editPkgId) { const { data: up, error } = await supabase.from('packages').update(pl).eq('id', editPkgId).select().single(); if (error) throw error; setData(prev => ({...prev, packages: prev.packages.map(c => c.id === editPkgId ? up : c)})); showToast('Updated!'); setEditPkgId(null); } else { const { data: nItem, error } = await supabase.from('packages').insert([pl]).select().single(); if (error) throw error; setData(prev => ({...prev, packages: [...prev.packages, nItem]})); showToast('Added!'); } setPkgForm({ name: '', price: '', desc: '', duration: '', inclusions: '' }); } catch (err) { showToast('Error: ' + err.message); } };
   const handleAddEditBrn = async (e) => { e.preventDefault(); const pl = { ...brnForm, tenant_id: userProfile.tenant_id }; try { if (editBrnId) { const { data: up, error } = await supabase.from('branches').update(pl).eq('id', editBrnId).select().single(); if (error) throw error; setData(prev => ({...prev, branches: prev.branches.map(c => c.id === editBrnId ? up : c)})); showToast('Updated!'); setEditBrnId(null); } else { const { data: nItem, error } = await supabase.from('branches').insert([pl]).select().single(); if (error) throw error; setData(prev => ({...prev, branches: [...prev.branches, nItem]})); showToast('Added!'); } setBrnForm({ name: '', location: '', phone: '', manager: '', email: '', timing: '', status: 'Active' }); } catch (err) { showToast('Error: ' + err.message); } };
-  
-  // Employee Add/Edit (Added commission_rate)
-  const handleAddEditEmp = async (e) => { 
-    e.preventDefault(); 
-    const pl = { ...empForm, commission_rate: parseFloat(empForm.commission_rate) || 0, tenant_id: userProfile.tenant_id }; 
-    try { 
-      if (editEmpId) { 
-        const { data: up, error } = await supabase.from('employees').update(pl).eq('id', editEmpId).select().single(); 
-        if (error) throw error; 
-        setData(prev => ({...prev, employees: prev.employees.map(c => c.id === editEmpId ? up : c)})); 
-        showToast('Updated!'); setEditEmpId(null); 
-      } else { 
-        const { data: nItem, error } = await supabase.from('employees').insert([pl]).select().single(); 
-        if (error) throw error; 
-        setData(prev => ({...prev, employees: [nItem, ...prev.employees]})); 
-        showToast('Added!'); 
-      } 
-      setEmpForm({ name: '', role: 'Sales', salary: 0, phone: '', commission_rate: 0 }); 
-    } catch (err) { showToast('Error: ' + err.message); } 
-  };
-
+  const handleAddEditEmp = async (e) => { e.preventDefault(); const pl = { ...empForm, commission_rate: parseFloat(empForm.commission_rate) || 0, tenant_id: userProfile.tenant_id }; try { if (editEmpId) { const { data: up, error } = await supabase.from('employees').update(pl).eq('id', editEmpId).select().single(); if (error) throw error; setData(prev => ({...prev, employees: prev.employees.map(c => c.id === editEmpId ? up : c)})); showToast('Updated!'); setEditEmpId(null); } else { const { data: nItem, error } = await supabase.from('employees').insert([pl]).select().single(); if (error) throw error; setData(prev => ({...prev, employees: [nItem, ...prev.employees]})); showToast('Added!'); } setEmpForm({ name: '', role: 'Sales', salary: 0, phone: '', commission_rate: 0 }); } catch (err) { showToast('Error: ' + err.message); } };
   const handleAddEditSrv = async (e) => { e.preventDefault(); const pl = { ...srvForm, tenant_id: userProfile.tenant_id }; try { if (editSrvId) { const { data: up, error } = await supabase.from('services').update(pl).eq('id', editSrvId).select().single(); if (error) throw error; setData(prev => ({...prev, services: prev.services.map(c => c.id === editSrvId ? up : c)})); showToast('Updated!'); setEditSrvId(null); } else { const { data: nItem, error } = await supabase.from('services').insert([pl]).select().single(); if (error) throw error; setData(prev => ({...prev, services: [...prev.services, nItem]})); showToast('Added!'); } setSrvForm({ name: '' }); } catch (err) { showToast('Error: ' + err.message); } };
   const handleAddPortal = async (e) => { e.preventDefault(); try { const { data: newItem, error } = await supabase.from('portals').insert([{ name: portalForm.name, current_balance: parseFloat(portalForm.balance) || 0, tenant_id: userProfile.tenant_id }]).select().single(); if (error) throw error; setData(prev => ({ ...prev, portals: [...prev.portals, newItem] })); showToast('Portal Added!'); setPortalForm({ name: '', balance: 0 }); } catch (err) { showToast('Error: ' + err.message); } };
   const handleAddInvestment = async (e) => { e.preventDefault(); try { const mode = investForm.mode; const finalReason = investForm.reason === 'Other' ? investForm.otherReason : investForm.reason; const { data: newInv, error: invErr } = await supabase.from('investments').insert([{ investor_name: investForm.name, amount: parseFloat(investForm.amount), invest_date: investForm.date, description: investForm.desc, payment_mode: mode, reason: finalReason, tenant_id: userProfile.tenant_id }]).select().single(); if (invErr) throw invErr; const cbType = mode === 'Cash' ? 'Cash-In' : 'Bank-In'; const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: investForm.date, type: cbType, description: `Investment by ${investForm.name} (${finalReason})`, amount: parseFloat(investForm.amount), tenant_id: userProfile.tenant_id }]).select().single(); if (cbErr) throw cbErr; setData(prev => ({ ...prev, investments: [newInv, ...prev.investments], cashbook: [nC, ...prev.cashbook] })); showToast('Investor Added!'); setInvestForm({ name: '', amount: '', date: today, desc: '', mode: 'Cash', reason: 'Other', otherReason: '' }); } catch (err) { showToast('Error: ' + err.message); } };
@@ -451,22 +367,14 @@ export default function useERPActions(state) {
       const emp = data.employees.find(em => em.id === empId);
       
       const { data: newAdv, error: advErr } = await supabase.from('employee_advances').insert([{ 
-        employee_id: empId, 
-        amount, 
-        date, 
-        status: 'Pending', 
-        tenant_id: userProfile.tenant_id 
+        employee_id: empId, amount, date, status: 'Pending', tenant_id: userProfile.tenant_id 
       }]).select('*, employees(name)').single();
       
       if (advErr) throw advErr;
       
       const cbType = 'Cash-Out';
       const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ 
-        trans_date: date, 
-        type: cbType, 
-        description: `Advance to ${emp.name}`, 
-        amount, 
-        tenant_id: userProfile.tenant_id 
+        trans_date: date, type: cbType, description: `Advance to ${emp.name}`, amount, tenant_id: userProfile.tenant_id 
       }]).select().single();
       
       if (cbErr) throw cbErr;
@@ -484,11 +392,7 @@ export default function useERPActions(state) {
       
       const cbType = 'Cash-In';
       const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ 
-        trans_date: today, 
-        type: cbType, 
-        description: `Advance Returned by ${adv.employees?.name}`, 
-        amount: adv.amount, 
-        tenant_id: userProfile.tenant_id 
+        trans_date: today, type: cbType, description: `Advance Returned by ${adv.employees?.name}`, amount: adv.amount, tenant_id: userProfile.tenant_id 
       }]).select().single();
       
       if (cbErr) throw cbErr;
@@ -511,14 +415,8 @@ export default function useERPActions(state) {
       const emp = data.employees.find(em => em.id === empId); 
       
       const { data: newPay, error: payErr } = await supabase.from('payroll').insert([{ 
-        employee_id: empId, 
-        base_salary: base,
-        commission: comm,
-        advance_deduction: advDed,
-        amount: netPaid, 
-        month: e.target.month.value, 
-        payment_mode: mode, 
-        tenant_id: userProfile.tenant_id 
+        employee_id: empId, base_salary: base, commission: comm, advance_deduction: advDed,
+        amount: netPaid, month: e.target.month.value, payment_mode: mode, tenant_id: userProfile.tenant_id 
       }]).select('*, employees(name)').single(); 
       
       if (payErr) throw payErr; 
@@ -536,11 +434,7 @@ export default function useERPActions(state) {
       
       const cbType = mode === 'Cash' ? 'Cash-Out' : 'Bank-Out'; 
       const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ 
-        trans_date: today, 
-        type: cbType, 
-        description: `Salary to ${emp.name} (Net)`, 
-        amount: netPaid, 
-        tenant_id: userProfile.tenant_id 
+        trans_date: today, type: cbType, description: `Salary to ${emp.name} (Net)`, amount: netPaid, tenant_id: userProfile.tenant_id 
       }]).select().single(); 
       
       if (cbErr) throw cbErr; 
@@ -609,6 +503,7 @@ export default function useERPActions(state) {
     handleLogout, handleChangePassword, handleSendMessage, handleEditInvoice, handleCreateInvoice, handleDeleteInvoice, handleAddExpItem, handleRemoveExpItem, handleExpItemChange, handleAddExpense, handleEditExpense, handleDeleteExpense, handlePreviewExpense, handleAddEditCust, handleAddEditCorp, handleAddEditCred, handleAddEditVend, handleAddEditPkg, handleAddEditBrn, handleAddEditEmp, handleAddEditSrv, handleAddPortal, handleAddInvestment, handleDelete, handleRecharge, handleTransfer, handleAddUser, handleEditUser, handleUpdateUser, handlePaySalary, handleSettlePayment, handleQuickSettle, openSettleModal, handleRefund, openRefundModal, openPreview, handleLogoUpload, handleSaveSettings, downloadPDF, handleGenerateContract, handleGenerateOffer, handleAddCustomField, handleRemoveCustomField, handleCustomFieldChange, 
     handleAddTenant, handleToggleSubscription, handleDeleteTenant, 
     handleProfilePicUpload, handleSaveProfile,
-    handleAddAdvance, handleReturnAdvance
+    handleAddAdvance, handleReturnAdvance,
+    handleGenerateMarketing
   };
 }
