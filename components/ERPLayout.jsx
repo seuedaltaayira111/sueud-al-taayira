@@ -12,15 +12,15 @@ export default function ERPLayout({ children, tr, lang, setLang, page, setPage, 
         handleRefund={handleRefund} previewHTML={previewHTML} downloadPDF={downloadPDF}
       />
 
-      <div style={{ width: '260px', background: '#1E3A8A', color: 'white', padding: '20px', display: 'flex', flexDirection: 'column', boxShadow: '5px 0 15px rgba(0,0,0,0.1)' }}>
+      <div style={{ width: '260px', background: '#1B5E20', color: 'white', padding: '20px', display: 'flex', flexDirection: 'column', boxShadow: '5px 0 15px rgba(0,0,0,0.1)' }}>
         <div style={{ marginBottom: '30px', textAlign: 'center' }}>
-          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '800' }}>SUEUD AL TAAYIRA</h1>
-          <p style={{ margin: 0, fontSize: '14px', color: '#FBBF24' }}>صعود الطائرة للسفر السياحة</p>
+          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#D4AF37' }}>SUEUD AL TAAYIRA</h1>
+          <p style={{ margin: 0, fontSize: '14px', color: '#fff' }}>صعود الطائرة للسفر السياحة</p>
         </div>
-        <button onClick={() => setLang(lang === 'en' ? 'ar' : 'en')} style={{ padding: '8px 15px', background: '#FBBF24', color: '#1E3A8A', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', marginBottom: '15px' }}>{lang === 'en' ? 'العربية' : 'English'}</button>
+        <button onClick={() => setLang(lang === 'en' ? 'ar' : 'en')} style={{ padding: '8px 15px', background: '#D4AF37', color: '#1B5E20', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', marginBottom: '15px' }}>{lang === 'en' ? 'العربية' : 'English'}</button>
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {menu.map(m => (
-            <div key={m.id} onClick={() => setPage(m.id)} style={{ padding: '12px', marginBottom: '5px', borderRadius: '8px', cursor: 'pointer', background: page === m.id ? 'rgba(255,255,255,0.2)' : 'transparent', fontWeight: page === m.id ? 'bold' : 'normal' }}>{m.label}</div>
+            <div key={m.id} onClick={() => setPage(m.id)} style={{ padding: '12px', marginBottom: '5px', borderRadius: '8px', cursor: 'pointer', background: page === m.id ? 'rgba(212, 175, 55, 0.2)' : 'transparent', fontWeight: page === m.id ? 'bold' : 'normal', color: page === m.id ? '#D4AF37' : '#fff', borderLeft: page === m.id ? '3px solid #D4AF37' : '3px solid transparent' }}>{m.label}</div>
           ))}
         </div>
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '15px', marginTop: '15px' }}>
@@ -34,21 +34,21 @@ export default function ERPLayout({ children, tr, lang, setLang, page, setPage, 
         <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 999 }}>
           {chatOpen && (
             <div style={{ width: '350px', height: '450px', background: 'white', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', marginBottom: '10px', overflow: 'hidden' }}>
-              <div style={{ background: '#1E3A8A', color: 'white', padding: '15px', fontWeight: 'bold' }}>AI Assistant</div>
+              <div style={{ background: '#1B5E20', color: '#D4AF37', padding: '15px', fontWeight: 'bold' }}>AI Assistant</div>
               <div style={{ flex: 1, padding: '10px', overflowY: 'auto' }}>
                 {chatMessages.map((m, i) => (
                   <div key={i} style={{ margin: '5px 0', textAlign: m.sender === 'user' ? 'right' : 'left' }}>
-                    <span style={{ background: m.sender === 'user' ? '#E2E8F0' : '#1E3A8A', color: m.sender === 'user' ? '#333' : 'white', padding: '8px 12px', borderRadius: '10px', display: 'inline-block' }}>{m.text}</span>
+                    <span style={{ background: m.sender === 'user' ? '#E2E8F0' : '#1B5E20', color: m.sender === 'user' ? '#333' : '#fff', padding: '8px 12px', borderRadius: '10px', display: 'inline-block' }}>{m.text}</span>
                   </div>
                 ))}
               </div>
               <div style={{ display: 'flex', borderTop: '1px solid #E2E8F0' }}>
                 <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSendMessage()} placeholder="Ask..." style={{ flex: 1, border: 'none', padding: '10px', outline: 'none' }} />
-                <button onClick={handleSendMessage} style={{ background: '#1E3A8A', color: 'white', border: 'none', padding: '10px 15px', cursor: 'pointer' }}>Send</button>
+                <button onClick={handleSendMessage} style={{ background: '#1B5E20', color: '#D4AF37', border: 'none', padding: '10px 15px', cursor: 'pointer' }}>Send</button>
               </div>
             </div>
           )}
-          <button onClick={() => setChatOpen(!chatOpen)} style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', border: 'none', fontSize: '28px', cursor: 'pointer', boxShadow: '0 5px 15px rgba(0,0,0,0.2)' }}>💬</button>
+          <button onClick={() => setChatOpen(!chatOpen)} style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'linear-gradient(135deg, #1B5E20, #2E7D32)', color: '#D4AF37', border: 'none', fontSize: '28px', cursor: 'pointer', boxShadow: '0 5px 15px rgba(0,0,0,0.2)' }}>💬</button>
         </div>
       </div>
     </div>
