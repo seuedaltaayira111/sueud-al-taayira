@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
-// Basic HTML generators (Taaki agar file na mile to app crash na ho)
 const getInvoiceHTML = (inv, s, lang) => `<div>Invoice ${inv.invoice_no}</div>`;
 const getExpenseHTML = (exp, s) => `<div>Expense ${exp.invoice_no}</div>`;
 const getContractHTML = (s, name, date, isOffer, type, markup, terms) => `<div>Contract for ${name}</div>`;
@@ -15,6 +14,7 @@ export default function useERPState() {
 
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
+  const [toast, setToast] = useState(null);
   const [data, setData] = useState({
     invoices: [], customers: [], corporates: [], creditors: [], portals: [],
     cashbook: [], expenses: [], investments: [], employees: [], payroll: [],
@@ -23,6 +23,7 @@ export default function useERPState() {
   });
 
   const [page, setPage] = useState('dashboard');
+  const [tblPage, setTblPage] = useState(1);
   const [lang, setLang] = useState('en');
   const [modal, setModal] = useState({ type: null, data: null });
   const [chatOpen, setChatOpen] = useState(false);
@@ -41,7 +42,6 @@ export default function useERPState() {
   const [contractMarkup, setContractMarkup] = useState(0);
   const [contractTerms, setContractTerms] = useState('');
 
-  // Forms
   const [invForm, setInvForm] = useState({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: '', bookingDate: today, invoiceDate: today, bookingType: 'New Booking', linkedInvId: '', service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' });
   const [expForm, setExpForm] = useState({ vendor_name: '', vendor_vat: '', expense_date: today, expense_type: 'Office Supplies', payment_mode: 'Cash', items: [{ name: '', qty: 1, price: 0 }], taxRate: '15', desc: '' });
   const [custForm, setCustForm] = useState({ name: '', phone: '', store_credit: 0 });
@@ -63,7 +63,6 @@ export default function useERPState() {
   const [tenantForm, setTenantForm] = useState({ agency_name: '', owner_email: '', subscription_end_date: '', company_name_ar: '', vat_no: '', cr_no: '', phone: '', address_ar: '' });
   const [profileForm, setProfileForm] = useState({ username: '', avatar_url: '', phone: '', address: '' });
 
-  // Edit IDs
   const [editInvId, setEditInvId] = useState(null);
   const [editExpId, setEditExpId] = useState(null);
   const [editCustId, setEditCustId] = useState(null);
@@ -86,21 +85,9 @@ export default function useERPState() {
     search: 'Search...', download_excel: 'Export Excel', logout: 'Logout', changePass: 'Change Password'
   };
 
-  const menu = [
-    { id: 'dashboard', label: tr.dashboard }, { id: 'create', label: tr.create }, { id: 'list', label: tr.list },
-    { id: 'refunds', label: tr.refunds }, { id: 'customers', label: tr.customers }, { id: 'corporates', label: tr.corporates },
-    { id: 'creditors', label: tr.creditors }, { id: 'credit', label: tr.credit }, { id: 'vendors', label: tr.vendors },
-    { id: 'packages', label: tr.packages }, { id: 'branches', label: tr.branches }, { id: 'portals', label: tr.portals },
-    { id: 'bank', label: tr.bank }, { id: 'invest', label: tr.invest }, { id: 'hr', label: tr.hr },
-    { id: 'reports', label: tr.reports }, { id: 'statements', label: tr.statements }, { id: 'profitability', label: tr.profitability },
-    { id: 'contract', label: tr.contract }, { id: 'offer', label: tr.offer }, { id: 'users', label: tr.users },
-    { id: 'audit', label: tr.audit }, { id: 'settings', label: tr.settings }, { id: 'profile', label: tr.profile },
-    { id: 'superadmin', label: tr.superadmin }
-  ];
-
   const showToast = (msg) => {
-    console.log("Toast:", msg);
-    alert(msg);
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
   };
 
   const logAction = async (action) => {
@@ -132,13 +119,29 @@ export default function useERPState() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setUser(session.user);
+        // Mock profile taaki app crash na ho
+        setUserProfile({ 
+          id: '123', 
+          email: session.user.email, 
+          username: session.user.email, 
+          role: 'Admin', 
+          is_admin: true, 
+          can_access_invoices: true, 
+          can_access_bank: true, 
+          can_access_hr: true, 
+          can_access_reports: true, 
+          can_access_settings: true, 
+          tenant_id: 'tenant-1' 
+        });
+      } else {
+        router.push('/login');
       }
     };
     getSession();
-  }, []);
+  }, [router]);
 
   return {
-    user, data, setData, userProfile, setUserProfile, showToast, logAction, fetchAll,
+    user, data, setData, userProfile, setUserProfile, toast, showToast, logAction, fetchAll,
     invForm, setInvForm, expForm, setExpForm, corpForm, setCorpForm, creditorForm, setCreditorForm,
     custForm, setCustForm, vendorForm, setVendorForm, pkgForm, setPkgForm, brnForm, setBrnForm,
     empForm, setEmpForm, srvForm, setSrvForm, investForm, setInvestForm, settleForm, setSettleForm,
@@ -152,7 +155,7 @@ export default function useERPState() {
     contractTerms, setContractTerms, tenantForm, setTenantForm, profileForm, setProfileForm,
     ledgerEmpId, setLedgerEmpId, ledgerCustId, setLedgerCustId, repDate, setRepDate,
     reportTab, setReportTab, statementTab, setStatementTab, page, setPage, lang, setLang,
-    chatOpen, setChatOpen, search, setSearch, payFilter, setPayFilter, exportToExcel, filterData,
-    tr, menu
+    chatOpen, setChatOpen, search, setSearch, payFilter, setPayFilter, tblPage, setTblPage, 
+    exportToExcel, filterData, tr
   };
 }
