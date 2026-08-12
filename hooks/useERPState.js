@@ -21,25 +21,14 @@ export default function useERPState() {
   const [ledgerCustId, setLedgerCustId] = useState(''); 
   const [previewHTML, setPreviewHTML] = useState(''); 
   
-  // Contract States
   const [contractCorpName, setContractCorpName] = useState('');
   const [contractType, setContractType] = useState('Flight Tickets');
   const [contractMarkup, setContractMarkup] = useState('20');
   const [contractTerms, setContractTerms] = useState('Provider guarantees the cheapest fares. A flat service fee will be charged over the base cost price. Invoices will be issued monthly or per booking, inclusive of VAT where applicable.');
 
-  // SaaS Tenant State (Added all fields for pre-fill)
-  const [tenantForm, setTenantForm] = useState({ 
-    agency_name: '', 
-    owner_email: '', 
-    subscription_end_date: '',
-    company_name_ar: '',
-    vat_no: '',
-    cr_no: '',
-    phone: '',
-    address_ar: ''
-  });
+  const [tenantForm, setTenantForm] = useState({ agency_name: '', owner_email: '', subscription_end_date: '', company_name_ar: '', vat_no: '', cr_no: '', phone: '', address_ar: '' });
 
-  const [data, setData] = useState({ tenants: [], invoices: [], portals: [], customers: [], corporates: [], creditors: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [], audits: [], investments: [], vendors: [], customFields: [], packages: [], branches: [] });
+  const [data, setData] = useState({ tenants: [], invoices: [], portals: [], customers: [], corporates: [], creditors: [], recharges: [], settings: {}, employees: [], payroll: [], appUsers: [], expenses: [], services: [], cashbook: [], audits: [], investments: [], vendors: [], customFields: [], packages: [], branches: [], empAdvances: [] });
   const today = new Date().toISOString().split('T')[0];
   
   const [editInvId, setEditInvId] = useState(null);
@@ -54,7 +43,9 @@ export default function useERPState() {
   const [editVendId, setEditVendId] = useState(null); const [vendorForm, setVendorForm] = useState({ name: '', phone: '', balance: 0 });
   const [editPkgId, setEditPkgId] = useState(null); const [pkgForm, setPkgForm] = useState({ name: '', price: '', desc: '', duration: '', inclusions: '' });
   const [editBrnId, setEditBrnId] = useState(null); const [brnForm, setBrnForm] = useState({ name: '', location: '', phone: '', manager: '', email: '', timing: '', status: 'Active' });
-  const [editEmpId, setEditEmpId] = useState(null); const [empForm, setEmpForm] = useState({ name: '', role: 'Sales', salary: 0, phone: '' });
+  const [editEmpId, setEditEmpId] = useState(null); 
+  // Added commission_rate here
+  const [empForm, setEmpForm] = useState({ name: '', role: 'Sales', salary: 0, phone: '', commission_rate: 0 });
   const [editSrvId, setEditSrvId] = useState(null); const [srvForm, setSrvForm] = useState({ name: '' });
   const [editUserId, setEditUserId] = useState(null); 
   
@@ -95,11 +86,10 @@ export default function useERPState() {
 
   const logAction = async (action) => { if (user) await supabase.from('audit_logs').insert([{ user_email: user.email, action, tenant_id: userProfile.tenant_id }]); };
 
-  // PERFORMANCE FIX: Using Promise.all to fetch all data parallelly (10x Faster)
   const fetchAll = async () => {
     const tenantId = userProfile.tenant_id;
     
-    const [tenantsRes, invRes, porRes, cusRes, corpRes, crdRes, recRes, setRes, empRes, payRes, usrRes, expRes, srvRes, cbkRes, audRes, invstmntRes, vndRes, pkgsRes, brnsRes] = await Promise.all([
+    const [tenantsRes, invRes, porRes, cusRes, corpRes, crdRes, recRes, setRes, empRes, payRes, usrRes, expRes, srvRes, cbkRes, audRes, invstmntRes, vndRes, pkgsRes, brnsRes, advRes] = await Promise.all([
       userProfile.role === 'SuperAdmin' ? supabase.from('tenants').select('*').order('created_at', { ascending: false }) : Promise.resolve({ data: [] }),
       supabase.from('invoices').select(`*, customers(name, type, phone, store_credit), corporates(name, vat_no, phone), portals(name), employees(name, phone), creditors(name)`).eq('tenant_id', tenantId).order('created_at', { ascending: false }),
       supabase.from('portals').select('*').eq('tenant_id', tenantId),
@@ -118,7 +108,8 @@ export default function useERPState() {
       supabase.from('investments').select('*').eq('tenant_id', tenantId).order('invest_date', { ascending: false }),
       supabase.from('vendors').select('*').eq('tenant_id', tenantId),
       supabase.from('packages').select('*').eq('tenant_id', tenantId),
-      supabase.from('branches').select('*').eq('tenant_id', tenantId)
+      supabase.from('branches').select('*').eq('tenant_id', tenantId),
+      supabase.from('employee_advances').select('*, employees(name)').eq('tenant_id', tenantId).order('date', { ascending: false })
     ]);
 
     const portalsData = porRes.data || [];
@@ -143,7 +134,8 @@ export default function useERPState() {
       vendors: vndRes.data || [], 
       customFields: [], 
       packages: pkgsRes.data || [], 
-      branches: brnsRes.data || [] 
+      branches: brnsRes.data || [],
+      empAdvances: advRes.data || []
     });
     
     if (portalsData.length > 0) setInvForm(f => ({ ...f, portalId: f.portalId || portalsData[0].id }));
@@ -254,7 +246,6 @@ export default function useERPState() {
     </div>`;
   };
 
-  // GREEN & GOLDEN THEME INVOICE
   const getInvoiceHTML = (inv, s, invLang = 'en') => {
     const isAr = invLang === 'ar'; 
     const dir = isAr ? 'rtl' : 'ltr'; 
