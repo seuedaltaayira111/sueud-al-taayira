@@ -19,10 +19,12 @@ export default function Home() {
 
   const menu = [
     { id: 'dashboard', label: erp.tr.dashboard, show: true },
+    { id: 'ai_dashboard', label: '🤖 AI Dashboard', show: true }, // NEW AI PANEL
     { id: 'superadmin', label: '👑 SuperAdmin Panel', show: isSuperAdmin },
     { id: 'create', label: erp.tr.create, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'list', label: erp.tr.list, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'refunds', label: erp.tr.refunds, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
+    { id: 'quotations', label: '📄 Quotations', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices }, // NEW QUOTATIONS PANEL
     { id: 'customers', label: erp.tr.customers, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'corporates', label: erp.tr.corporates, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'creditors', label: erp.tr.creditors, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
@@ -37,6 +39,7 @@ export default function Home() {
     { id: 'bank', label: erp.tr.bank, show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
     { id: 'invest', label: erp.tr.invest, show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
     { id: 'hr', label: erp.tr.hr, show: erp.userProfile.is_admin || erp.userProfile.can_access_hr },
+    { id: 'hr_advanced', label: '🎯 Targets & HR', show: erp.userProfile.is_admin || erp.userProfile.can_access_hr }, // NEW TARGETS PANEL
     { id: 'statements', label: erp.tr.statements, show: erp.userProfile.is_admin || erp.userProfile.can_access_reports },
     { id: 'users', label: erp.tr.users, show: erp.userProfile.is_admin },
     { id: 'reports', label: erp.tr.reports, show: erp.userProfile.is_admin || erp.userProfile.can_access_reports },
