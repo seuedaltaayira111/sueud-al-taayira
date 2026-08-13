@@ -29,10 +29,13 @@ export default function Home() {
     { id: 'corporates', label: erp.tr.corporates, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'creditors', label: erp.tr.creditors, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'credit', label: erp.tr.credit, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
+    { id: 'credit_limits', label: '💳 Credit Limits', show: erp.userProfile.is_admin || erp.userProfile.can_access_bank }, // NEW CREDIT LIMITS
     { id: 'portals', label: erp.tr.portals, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'vendors', label: erp.tr.vendors, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
+    { id: 'supplier_statement', label: '📦 Supplier Statement', show: erp.userProfile.is_admin || erp.userProfile.can_access_bank }, // NEW SUPPLIER STATEMENT
     { id: 'packages', label: erp.tr.packages, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'branches', label: erp.tr.branches, show: erp.userProfile.is_admin || erp.userProfile.can_access_settings },
+    { id: 'multi_branch', label: '🏢 Multi-Branch', show: erp.userProfile.is_admin }, // NEW MULTI-BRANCH
     { id: 'contract', label: 'Corporate Contract', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'offer', label: 'Corporate Offer', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'profitability', label: '📊 Profit Analyzer', show: true }, 
