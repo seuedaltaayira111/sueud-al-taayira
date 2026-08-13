@@ -19,34 +19,48 @@ export default function Home() {
 
   const menu = [
     { id: 'dashboard', label: erp.tr.dashboard, show: true },
-    { id: 'ai_dashboard', label: '🤖 AI Dashboard', show: true }, // NEW AI PANEL
+    { id: 'ai_dashboard', label: '🤖 AI Dashboard', show: true }, 
+    { id: 'notifications', label: '🔔 Notifications', show: true }, // NEW NOTIFICATIONS
     { id: 'superadmin', label: '👑 SuperAdmin Panel', show: isSuperAdmin },
+    
+    // Invoices & Sales
     { id: 'create', label: erp.tr.create, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'list', label: erp.tr.list, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'refunds', label: erp.tr.refunds, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
-    { id: 'quotations', label: '📄 Quotations', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices }, // NEW QUOTATIONS PANEL
+    { id: 'quotations', label: '📄 Quotations', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices }, 
+    { id: 'recurring_invoices', label: '🔁 Recurring Invoices', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices }, // NEW RECURRING
+    { id: 'profitability', label: '📊 Profit Analyzer', show: true }, 
+    
+    // Customers & Vendors
     { id: 'customers', label: erp.tr.customers, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'corporates', label: erp.tr.corporates, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'creditors', label: erp.tr.creditors, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'credit', label: erp.tr.credit, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
-    { id: 'credit_limits', label: '💳 Credit Limits', show: erp.userProfile.is_admin || erp.userProfile.can_access_bank }, // NEW CREDIT LIMITS
+    { id: 'credit_limits', label: '💳 Credit Limits', show: erp.userProfile.is_admin || erp.userProfile.can_access_bank }, 
+    { id: 'customer_statement', label: '📊 Cust Statement', show: erp.userProfile.is_admin || erp.userProfile.can_access_reports }, // NEW CUST STMT
     { id: 'portals', label: erp.tr.portals, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'vendors', label: erp.tr.vendors, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
-    { id: 'supplier_statement', label: '📦 Supplier Statement', show: erp.userProfile.is_admin || erp.userProfile.can_access_bank }, // NEW SUPPLIER STATEMENT
+    { id: 'supplier_statement', label: '📦 Supplier Statement', show: erp.userProfile.is_admin || erp.userProfile.can_access_bank }, 
     { id: 'packages', label: erp.tr.packages, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'branches', label: erp.tr.branches, show: erp.userProfile.is_admin || erp.userProfile.can_access_settings },
-    { id: 'multi_branch', label: '🏢 Multi-Branch', show: erp.userProfile.is_admin }, // NEW MULTI-BRANCH
+    { id: 'multi_branch', label: '🏢 Multi-Branch', show: erp.userProfile.is_admin }, 
+    
+    // Contracts & Finance
     { id: 'contract', label: 'Corporate Contract', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'offer', label: 'Corporate Offer', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
-    { id: 'profitability', label: '📊 Profit Analyzer', show: true }, 
     { id: 'bank', label: erp.tr.bank, show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
     { id: 'invest', label: erp.tr.invest, show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
+    { id: 'expense_approval', label: '🛡️ Expense Approval', show: erp.userProfile.is_admin }, // NEW EXPENSE APPROVAL
+    
+    // HR & Reports
     { id: 'hr', label: erp.tr.hr, show: erp.userProfile.is_admin || erp.userProfile.can_access_hr },
-    { id: 'hr_advanced', label: '🎯 Targets & HR', show: erp.userProfile.is_admin || erp.userProfile.can_access_hr }, // NEW TARGETS PANEL
+    { id: 'hr_advanced', label: '🎯 Targets & HR', show: erp.userProfile.is_admin || erp.userProfile.can_access_hr }, 
     { id: 'statements', label: erp.tr.statements, show: erp.userProfile.is_admin || erp.userProfile.can_access_reports },
     { id: 'users', label: erp.tr.users, show: erp.userProfile.is_admin },
     { id: 'reports', label: erp.tr.reports, show: erp.userProfile.is_admin || erp.userProfile.can_access_reports },
     { id: 'audit', label: erp.tr.audit, show: erp.userProfile.is_admin },
+    
+    // System
     { id: 'settings', label: erp.tr.settings, show: erp.userProfile.is_admin || erp.userProfile.can_access_settings },
     { id: 'profile', label: erp.tr.profile, show: true },
   ].filter(m => m.show);
