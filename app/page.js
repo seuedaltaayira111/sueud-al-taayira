@@ -128,6 +128,10 @@ export default function Home() {
 
           profileForm={erp.profileForm} setProfileForm={erp.setProfileForm}
           handleProfilePicUpload={erp.handleProfilePicUpload} handleSaveProfile={erp.handleSaveProfile}
+          
+          // WHATSAPP & EMAIL PROPS PASSED HERE
+          shareWhatsApp={erp.shareWhatsApp}
+          shareEmail={erp.shareEmail}
         />
       </ERPLayout>
     </>
