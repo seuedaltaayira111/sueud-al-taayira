@@ -40,15 +40,22 @@ export default function ERPViewsAdvanced(props) {
 
   const markAttendance = async (e) => {
     e.preventDefault();
+    if (!attForm.empId) return showToast('Please select an employee');
     try {
       const { data: newAtt, error } = await supabase.from('attendance').insert([{ 
-        employee_id: attForm.empId, date: today, status: attForm.status, overtime: parseFloat(attForm.overtime) || 0, tenant_id: userProfile.tenant_id 
+        employee_id: attForm.empId, 
+        date: today, 
+        status: attForm.status, 
+        overtime: parseFloat(attForm.overtime) || 0, 
+        tenant_id: userProfile.tenant_id 
       }]).select('*, employees(name)').single();
       if (error) throw error;
       setAttendance(prev => [newAtt, ...prev]);
-      showToast('Attendance Marked!');
+      showToast('Attendance Marked Successfully!');
       setAttForm({ empId: '', status: 'Present', overtime: 0 });
-    } catch (err) { showToast('Error: ' + err.message); }
+    } catch (err) { 
+      showToast('Error: ' + err.message); 
+    }
   };
 
   // 1. AI DASHBOARD LAYER
@@ -166,6 +173,7 @@ export default function ERPViewsAdvanced(props) {
                 <th style={{ padding: '12px' }}>Target (SAR)</th>
                 <th style={{ padding: '12px' }}>Achieved (SAR)</th>
                 <th style={{ padding: '12px' }}>Percentage</th>
+                <th style={{ padding: '12px' }}>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -204,9 +212,23 @@ export default function ERPViewsAdvanced(props) {
         <div style={styles.card}>
           <h3>📅 Mark Attendance & Leaves</h3>
           <form onSubmit={markAttendance} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '15px', alignItems: 'flex-end' }}>
-            <div><label style={styles.label}>Employee</label><select style={styles.input} value={attForm.empId} onChange={e => setAttForm({...attForm, empId: e.target.value})} required><option value="">Select</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
-            <div><label style={styles.label}>Status</label><select style={styles.input} value={attForm.status} onChange={e => setAttForm({...attForm, status: e.target.value})}><option>Present</option><option>Absent</option><option>Leave</option></select></div>
-            <div><label style={styles.label}>Overtime (Hrs)</label><input type="number" style={styles.input} value={attForm.overtime} onChange={e => setAttForm({...attForm, overtime: e.target.value})} /></div>
+            <div>
+              <label style={styles.label}>Employee</label>
+              <select style={styles.input} value={attForm.empId} onChange={e => setAttForm({...attForm, empId: e.target.value})} required>
+                <option value="">Select Employee</option>
+                {data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Status</label>
+              <select style={styles.input} value={attForm.status} onChange={e => setAttForm({...attForm, status: e.target.value})}>
+                <option>Present</option><option>Absent</option><option>Leave</option>
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Overtime (Hrs)</label>
+              <input type="number" style={styles.input} value={attForm.overtime} onChange={e => setAttForm({...attForm, overtime: e.target.value})} />
+            </div>
             <button type="submit" style={{...styles.btnPrimary, height: '42px'}}>Mark</button>
           </form>
           
