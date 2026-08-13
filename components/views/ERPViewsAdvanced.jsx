@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
 const styles = { 
@@ -14,7 +14,42 @@ const styles = {
 
 export default function ERPViewsAdvanced(props) {
   const { page, data, tr, today, userProfile, showToast, setData } = props;
-  const [quoteForm, setQuoteForm] = useState({ customer_name: '', service_type: 'Flight Ticket', price: '', valid_until: today });
+  const [editTargetId, setEditTargetId] = useState(null);
+  const [targetVal, setTargetVal] = useState(0);
+  const [attForm, setAttForm] = useState({ empId: '', status: 'Present', overtime: 0 });
+  const [attendance, setAttendance] = useState([]);
+
+  // Fetch Attendance
+  useEffect(() => {
+    if (page === 'hr_advanced' && userProfile?.tenant_id) {
+      supabase.from('attendance').select('*, employees(name)').eq('tenant_id', userProfile.tenant_id).then(({ data: att }) => {
+        setAttendance(att || []);
+      });
+    }
+  }, [page, userProfile]);
+
+  const saveTarget = async (empId) => {
+    try {
+      const { data: upEmp, error } = await supabase.from('employees').update({ target: parseFloat(targetVal) || 0 }).eq('id', empId).select().single();
+      if (error) throw error;
+      setData(prev => ({ ...prev, employees: prev.employees.map(e => e.id === empId ? upEmp : e) }));
+      showToast('Target Updated!');
+      setEditTargetId(null);
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+
+  const markAttendance = async (e) => {
+    e.preventDefault();
+    try {
+      const { data: newAtt, error } = await supabase.from('attendance').insert([{ 
+        employee_id: attForm.empId, date: today, status: attForm.status, overtime: parseFloat(attForm.overtime) || 0, tenant_id: userProfile.tenant_id 
+      }]).select('*, employees(name)').single();
+      if (error) throw error;
+      setAttendance(prev => [newAtt, ...prev]);
+      showToast('Attendance Marked!');
+      setAttForm({ empId: '', status: 'Present', overtime: 0 });
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
 
   // 1. AI DASHBOARD LAYER
   if (page === 'ai_dashboard') {
@@ -36,7 +71,6 @@ export default function ERPViewsAdvanced(props) {
     if (totalDue > 0) aiInsights.push(`⚠️ You have ${totalDue.toFixed(2)} SAR pending from ${pendingPayments.length} customers. Follow up needed.`);
     if (topEmployee) aiInsights.push(`🏆 ${topEmployee.name} is your top performer with ${topEmployee.profit.toFixed(2)} SAR in profit.`);
     if (tProfit < 1000) aiInsights.push("📉 Profits are low this month. Consider pushing tour packages or visa services.");
-    if (data.expenses.length > 5) aiInsights.push("💰 Office expenses are high. Review your vendor balances.");
 
     return (
       <div>
@@ -44,22 +78,11 @@ export default function ERPViewsAdvanced(props) {
           <h2 style={{ margin: 0, fontSize: '28px' }}>🤖 AI ERP Assistant</h2>
           <p style={{ margin: '5px 0 0', opacity: 0.9, fontSize: '16px' }}>Real-time business insights based on your data.</p>
         </div>
-
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-          <div style={{...styles.card, borderLeft: '5px solid #059669'}}>
-            <h3 style={{color: '#555'}}>Monthly Sales</h3>
-            <h2 style={{color: '#1E3A8A'}}>{tSales.toFixed(2)} SAR</h2>
-          </div>
-          <div style={{...styles.card, borderLeft: '5px solid #1E3A8A'}}>
-            <h3 style={{color: '#555'}}>Net Profit</h3>
-            <h2 style={{color: '#059669'}}>{tProfit.toFixed(2)} SAR</h2>
-          </div>
-          <div style={{...styles.card, borderLeft: '5px solid #EF4444'}}>
-            <h3 style={{color: '#555'}}>Pending Dues</h3>
-            <h2 style={{color: '#EF4444'}}>{totalDue.toFixed(2)} SAR</h2>
-          </div>
+          <div style={{...styles.card, borderLeft: '5px solid #059669'}}><h3 style={{color: '#555'}}>Monthly Sales</h3><h2 style={{color: '#1E3A8A'}}>{tSales.toFixed(2)} SAR</h2></div>
+          <div style={{...styles.card, borderLeft: '5px solid #1E3A8A'}}><h3 style={{color: '#555'}}>Net Profit</h3><h2 style={{color: '#059669'}}>{tProfit.toFixed(2)} SAR</h2></div>
+          <div style={{...styles.card, borderLeft: '5px solid #EF4444'}}><h3 style={{color: '#555'}}>Pending Dues</h3><h2 style={{color: '#EF4444'}}>{totalDue.toFixed(2)} SAR</h2></div>
         </div>
-
         <div style={styles.card}>
           <h3 style={{ color: '#1E3A8A', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px' }}>🧠 AI Insights & Action Items</h3>
           <ul style={{ marginTop: '15px', paddingLeft: '20px' }}>
@@ -70,31 +93,22 @@ export default function ERPViewsAdvanced(props) {
     );
   }
 
-  // 2. QUOTATIONS PANEL (WORKING LOGIC)
+  // 2. QUOTATIONS PANEL
   if (page === 'quotations') {
     const quotations = data.invoices.filter(i => i.status === 'Draft');
+    const [quoteForm, setQuoteForm] = useState({ customer_name: '', service_type: 'Flight Ticket', price: '', valid_until: today });
 
     const handleCreateQuote = async (e) => {
       e.preventDefault();
       try {
         const quoteNo = `QUO-${Date.now()}`;
-        const payload = {
-          invoice_no: quoteNo,
-          sector: quoteForm.service_type,
-          total_sell: parseFloat(quoteForm.price) || 0,
-          total: parseFloat(quoteForm.price) || 0,
-          invoice_date: today,
-          status: 'Draft',
-          tenant_id: userProfile.tenant_id
-        };
+        const payload = { invoice_no: quoteNo, sector: quoteForm.service_type, total_sell: parseFloat(quoteForm.price) || 0, total: parseFloat(quoteForm.price) || 0, invoice_date: today, status: 'Draft', tenant_id: userProfile.tenant_id };
         const { data: newQuote, error } = await supabase.from('invoices').insert([payload]).select().single();
         if (error) throw error;
         setData(prev => ({ ...prev, invoices: [newQuote, ...prev.invoices] }));
-        showToast('Quotation Created Successfully!');
+        showToast('Quotation Created!');
         setQuoteForm({ customer_name: '', service_type: 'Flight Ticket', price: '', valid_until: today });
-      } catch (err) {
-        showToast('Error: ' + err.message);
-      }
+      } catch (err) { showToast('Error: ' + err.message); }
     };
 
     const convertToInvoice = async (quote) => {
@@ -102,10 +116,8 @@ export default function ERPViewsAdvanced(props) {
         const { error } = await supabase.from('invoices').update({ status: 'Confirmed' }).eq('id', quote.id);
         if (error) throw error;
         setData(prev => ({ ...prev, invoices: prev.invoices.map(i => i.id === quote.id ? { ...i, status: 'Confirmed' } : i) }));
-        showToast('Quotation converted to Invoice! You can edit it in Invoices tab.');
-      } catch (err) {
-        showToast('Error: ' + err.message);
-      }
+        showToast('Converted to Invoice!');
+      } catch (err) { showToast('Error: ' + err.message); }
     };
 
     return (
@@ -126,16 +138,14 @@ export default function ERPViewsAdvanced(props) {
           <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
             <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{padding:'10px', textAlign:'left'}}>Quote No</th><th style={{padding:'10px'}}>Service</th><th style={{padding:'10px'}}>Amount</th><th style={{padding:'10px'}}>Action</th></tr></thead>
             <tbody>
-              {quotations.length === 0 ? <tr><td colSpan="4" style={{padding:'15px', textAlign:'center'}}>No quotations found.</td></tr> : 
-                quotations.map(q => (
-                  <tr key={q.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{padding:'10px'}}>{q.invoice_no}</td>
-                    <td style={{padding:'10px', textAlign:'center'}}>{q.sector}</td>
-                    <td style={{padding:'10px', textAlign:'center'}}>{(q.total || 0).toFixed(2)} SAR</td>
-                    <td style={{padding:'10px', textAlign:'center'}}><button onClick={() => convertToInvoice(q)} style={styles.btnSuccess}>Convert to Invoice</button></td>
-                  </tr>
-                ))
-              }
+              {quotations.length === 0 ? <tr><td colSpan="4" style={{padding:'15px', textAlign:'center'}}>No quotations found.</td></tr> : quotations.map(q => (
+                <tr key={q.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <td style={{padding:'10px'}}>{q.invoice_no}</td>
+                  <td style={{padding:'10px', textAlign:'center'}}>{q.sector}</td>
+                  <td style={{padding:'10px', textAlign:'center'}}>{(q.total || 0).toFixed(2)} SAR</td>
+                  <td style={{padding:'10px', textAlign:'center'}}><button onClick={() => convertToInvoice(q)} style={styles.btnSuccess}>Convert to Invoice</button></td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -143,7 +153,7 @@ export default function ERPViewsAdvanced(props) {
     );
   }
 
-  // 3. ADVANCED HR & TARGETS
+  // 3. ADVANCED HR & TARGETS (EDITABLE & WORKING)
   if (page === 'hr_advanced') {
     return (
       <div>
@@ -162,18 +172,27 @@ export default function ERPViewsAdvanced(props) {
               {data.employees.map(emp => {
                 const empInv = data.invoices.filter(i => i.employee_id === emp.id && !i.invoice_no.startsWith('REF-') && i.status !== 'Draft');
                 const achieved = empInv.reduce((s, i) => s + (i.total || 0), 0);
-                const target = 10000; // Static target for now
+                const target = emp.target || 0;
                 const perc = target > 0 ? (achieved / target) * 100 : 0;
                 return (
                   <tr key={emp.id} style={{ borderBottom: '1px solid #E2E8F0' }}>
                     <td style={{ padding: '12px', fontWeight: 'bold' }}>{emp.name}</td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>{target.toFixed(2)}</td>
+                    <td style={{ padding: '12px', textAlign: 'center' }}>
+                      {editTargetId === emp.id ? (
+                        <input type="number" value={targetVal} onChange={e => setTargetVal(e.target.value)} style={{...styles.input, width: '100px', margin: 0}} />
+                      ) : (
+                        <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => { setEditTargetId(emp.id); setTargetVal(target); }}>{target.toFixed(2)}</span>
+                      )}
+                    </td>
                     <td style={{ padding: '12px', textAlign: 'center', color: '#059669' }}>{achieved.toFixed(2)}</td>
                     <td style={{ padding: '12px', textAlign: 'center' }}>
-                      <div style={{ background: '#e2e8f0', borderRadius: '10px', overflow: 'hidden', width: '100%', height: '20px' }}>
+                      <div style={{ background: '#e2e8f0', borderRadius: '10px', overflow: 'hidden', width: '100%', height: '20px', display: 'flex', alignItems: 'center' }}>
                         <div style={{ width: `${Math.min(perc, 100)}%`, background: perc >= 100 ? '#059669' : '#FBBF24', height: '100%' }}></div>
                       </div>
                       <small style={{ fontWeight: 'bold' }}>{perc.toFixed(0)}%</small>
+                    </td>
+                    <td style={{ padding: '12px', textAlign: 'center' }}>
+                      {editTargetId === emp.id ? <button onClick={() => saveTarget(emp.id)} style={styles.btnSuccess}>Save</button> : <button onClick={() => { setEditTargetId(emp.id); setTargetVal(target); }} style={styles.btnWarning}>Edit</button>}
                     </td>
                   </tr>
                 );
@@ -183,9 +202,27 @@ export default function ERPViewsAdvanced(props) {
         </div>
         
         <div style={styles.card}>
-          <h3>📅 Attendance & Leaves</h3>
-          <p style={{ color: '#64748b' }}>Track employee attendance, leaves, and overtime hours here.</p>
-          <button style={{ ...styles.btnSuccess, marginTop: '10px' }}>+ Mark Attendance</button>
+          <h3>📅 Mark Attendance & Leaves</h3>
+          <form onSubmit={markAttendance} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '15px', alignItems: 'flex-end' }}>
+            <div><label style={styles.label}>Employee</label><select style={styles.input} value={attForm.empId} onChange={e => setAttForm({...attForm, empId: e.target.value})} required><option value="">Select</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
+            <div><label style={styles.label}>Status</label><select style={styles.input} value={attForm.status} onChange={e => setAttForm({...attForm, status: e.target.value})}><option>Present</option><option>Absent</option><option>Leave</option></select></div>
+            <div><label style={styles.label}>Overtime (Hrs)</label><input type="number" style={styles.input} value={attForm.overtime} onChange={e => setAttForm({...attForm, overtime: e.target.value})} /></div>
+            <button type="submit" style={{...styles.btnPrimary, height: '42px'}}>Mark</button>
+          </form>
+          
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
+            <thead><tr style={{ background: '#f1f5f9' }}><th style={{padding:'10px', textAlign:'left'}}>Date</th><th style={{padding:'10px'}}>Employee</th><th style={{padding:'10px'}}>Status</th><th style={{padding:'10px'}}>Overtime</th></tr></thead>
+            <tbody>
+              {attendance.length === 0 ? <tr><td colSpan="4" style={{padding:'10px', textAlign:'center'}}>No attendance marked yet.</td></tr> : attendance.slice(0, 10).map(a => (
+                <tr key={a.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <td style={{padding:'10px'}}>{a.date}</td>
+                  <td style={{padding:'10px', textAlign:'center'}}>{a.employees?.name || 'N/A'}</td>
+                  <td style={{padding:'10px', textAlign:'center', color: a.status === 'Present' ? '#059669' : '#EF4444'}}>{a.status}</td>
+                  <td style={{padding:'10px', textAlign:'center'}}>{a.overtime || 0} hrs</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     );
