@@ -44,9 +44,7 @@ export default function useERPActions(state) {
   };
 
   const handleAddCustomField = () => setSetForm(prev => ({ ...prev, custom_fields: [...(prev.custom_fields || []), { key: '', value: '' }] }));
-  
   const handleRemoveCustomField = (index) => setSetForm(prev => ({ ...prev, custom_fields: prev.custom_fields.filter((_, i) => i !== index) }));
-  
   const handleCustomFieldChange = (index, type, value) => setSetForm(prev => {
     const cf = [...prev.custom_fields];
     cf[index][type] = value;
@@ -125,7 +123,6 @@ export default function useERPActions(state) {
     }
   };
 
-  // DYNAMIC IMPORT TO FIX WINDOW/DOCUMENT ERROR
   const downloadPDF = async (htmlContent, filename = 'document.pdf') => {
     try {
       const html2canvas = (await import('html2canvas')).default;
@@ -186,7 +183,6 @@ export default function useERPActions(state) {
     printWindow.print();
   };
 
-  // WHATSAPP & EMAIL SHARE FUNCTIONS
   const shareWhatsApp = (inv) => {
     if (inv.invoice_no.startsWith('REF-')) return showToast('Refund invoices cannot be shared via WhatsApp directly!');
     handleShareWhatsApp(inv, data.settings);
@@ -215,9 +211,22 @@ export default function useERPActions(state) {
     setModal({ type: 'preview', data: null });
   };
 
-  // FIX: Prevent editing Refund Invoices
+  // FIX: If Refund Invoice, open Refund Modal to Edit. If Normal, open Invoice Form.
   const handleEditInvoice = (inv) => {
-    if (inv.invoice_no.startsWith('REF-')) return showToast('Refund invoices cannot be edited!');
+    if (inv.invoice_no.startsWith('REF-')) {
+      setRefundForm({
+        id: inv.id,
+        date: inv.invoice_date || today,
+        compRefund: inv.refund_company || 0,
+        custRefund: inv.refund_customer || 0,
+        mode: inv.payment_method || 'Cash',
+        reason: inv.refund_reason || '',
+        portalId: inv.portal_id,
+        creditBalance: 0
+      });
+      setModal({ type: 'refund', data: inv });
+      return;
+    }
     
     setEditInvId(inv.id);
     setInvForm({
@@ -357,7 +366,6 @@ export default function useERPActions(state) {
         const { data: newInv, error: invErr } = await supabase.from('invoices').insert([{ invoice_no: invNo, ...payload }]).select(`*, customers(name), corporates(name), employees(name)`).single();
         if (invErr) throw new Error('Invoice creation failed: ' + invErr.message);
         
-        // Deduct from Portal Balance
         const newPortalBal = (portal.current_balance || 0) - cost; 
         await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', portal.id); 
         await logAction(`Created Invoice ${invNo}`);
@@ -1016,6 +1024,27 @@ export default function useERPActions(state) {
   const handleRefund = async (e) => { 
     e.preventDefault(); 
     try { 
+      // Check if we are EDITING an existing REF- invoice
+      const existingRefInv = data.invoices.find(i => i.id === refundForm.id && i.invoice_no.startsWith('REF-'));
+      
+      if (existingRefInv) {
+        const { error } = await supabase.from('invoices').update({
+          refund_company: parseFloat(refundForm.compRefund) || 0,
+          refund_customer: parseFloat(refundForm.custRefund) || 0,
+          refund_reason: refundForm.reason,
+          invoice_date: refundForm.date,
+          total: -(parseFloat(refundForm.custRefund) || 0),
+          total_sell: -(parseFloat(refundForm.custRefund) || 0),
+          paid_amount: -(parseFloat(refundForm.custRefund) || 0)
+        }).eq('id', refundForm.id);
+        if (error) throw error;
+        showToast('Refund Invoice Updated!');
+        setModal({ type: null, data: null });
+        fetchAll();
+        return;
+      }
+
+      // Creating NEW Refund
       const inv = data.invoices.find(i => i.id === refundForm.id); 
       if (!inv) return; 
       const compRef = parseFloat(refundForm.compRefund) || 0; 
@@ -1028,17 +1057,33 @@ export default function useERPActions(state) {
       
       const refNo = `REF-${Date.now()}`; 
       const { data: newRefInv, error: refErr } = await supabase.from('invoices').insert([{ 
-        invoice_no: refNo, customer_id: inv.customer_id, portal_id: inv.portal_id, booking_date: today, 
-        invoice_date: refundForm.date, service_type: inv.service_type, employee_id: inv.employee_id, 
-        airline: inv.airline, flight_sector: inv.flight_sector, pnr: inv.pnr, ticket_no: inv.ticket_no, 
-        passenger_names: inv.passenger_names, total_sell: -custRef, total: -custRef, paid_amount: -custRef, 
-        status: 'refunded', refund_company: compRef, refund_customer: custRef, refund_reason: refundForm.reason, 
+        invoice_no: refNo, 
+        customer_id: inv.customer_id, 
+        corporate_id: inv.corporate_id,
+        portal_id: inv.portal_id, 
+        booking_date: today, 
+        invoice_date: refundForm.date, 
+        service_type: inv.service_type, 
+        employee_id: inv.employee_id, 
+        airline: inv.airline, 
+        flight_sector: inv.flight_sector, 
+        pnr: inv.pnr, 
+        ticket_no: inv.ticket_no, 
+        passenger_names: inv.passenger_names, 
+        sector: inv.sector,
+        flight_type: inv.flight_type,
+        total_sell: -custRef, 
+        total: -custRef, 
+        paid_amount: -custRef, 
+        status: 'refunded', 
+        refund_company: compRef, 
+        refund_customer: custRef, 
+        refund_reason: refundForm.reason, 
         linked_inv_id: inv.invoice_no,
         tenant_id: userProfile.tenant_id 
       }]).select(`*, customers(name), employees(name)`).single(); 
       if (refErr) throw refErr; 
       
-      // FIX: Add money back to the Portal from which the ticket was booked
       if (inv.portal_id && compRef > 0) { 
         const portal = data.portals.find(p => p.id === inv.portal_id); 
         const newPortalBal = (portal.current_balance || 0) + compRef; 
@@ -1067,7 +1112,7 @@ export default function useERPActions(state) {
         } 
       } 
       setData(prev => ({ ...prev, invoices: [newRefInv, prev.invoices.map(i => i.id === inv.id ? upInv : i)].flat(), cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook })); 
-      showToast('Refund Processed!'); 
+      showToast('Refund Processed! All details copied.'); 
       setModal({ type: null, data: null }); 
     } catch (err) { 
       showToast('Error: ' + err.message); 
@@ -1135,10 +1180,43 @@ export default function useERPActions(state) {
     } 
   };
 
+  // STAFF MISTAKE / LOSS HANDLER
+  const handleAddMistake = async (e) => {
+    e.preventDefault();
+    try {
+      const empId = e.target.emp.value;
+      const lossAmount = parseFloat(e.target.loss_amt.value);
+      const { data: newMistake, error } = await supabase.from('staff_mistakes').insert([{
+        employee_id: empId,
+        date: today,
+        old_ticket_no: e.target.old_tkt.value,
+        new_ticket_no: e.target.new_tkt.value,
+        loss_amount: lossAmount,
+        paid_by_employee: e.target.paid_by_emp.checked,
+        tenant_id: userProfile.tenant_id
+      }]).select('*, employees(name)').single();
+
+      if (error) throw error;
+
+      if (e.target.paid_by_emp.checked) {
+        const { data: newAdv, error: advErr } = await supabase.from('employee_advances').insert([{ 
+          employee_id: empId, amount: lossAmount, date: today, status: 'Pending', tenant_id: userProfile.tenant_id 
+        }]).select('*, employees(name)').single();
+        if (advErr) throw advErr;
+        setData(prev => ({ ...prev, empAdvances: [newAdv, ...(prev.empAdvances || [])] }));
+      }
+
+      setData(prev => ({ ...prev, staffMistakes: [newMistake, ...(prev.staffMistakes || [])] }));
+      showToast('Mistake Loss Recorded & Linked to Salary!');
+      e.target.reset();
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+
   return {
     handleLogout, handleChangePassword, handleSendMessage, handleEditInvoice, handleCreateInvoice, handleDeleteInvoice, handleAddExpItem, handleRemoveExpItem, handleExpItemChange, handleAddExpense, handleEditExpense, handleDeleteExpense, handlePreviewExpense, handleAddEditCust, handleAddEditCorp, handleAddEditCred, handleAddEditVend, handleAddEditPkg, handleAddEditBrn, handleAddEditEmp, handleAddEditSrv, handleAddPortal, handleAddInvestment, handleDelete, handleRecharge, handleTransfer, handleAddUser, handleEditUser, handleUpdateUser, handlePaySalary, handleSettlePayment, handleQuickSettle, openSettleModal, handleRefund, openRefundModal, openPreview, handleLogoUpload, handleSaveSettings, downloadPDF, handleGenerateContract, handleGenerateOffer, handleAddCustomField, handleRemoveCustomField, handleCustomFieldChange, 
     handleAddTenant, handleToggleSubscription, handleDeleteTenant, 
     handleProfilePicUpload, handleSaveProfile,
-    handleAddAdvance, handleReturnAdvance, handleDownloadPDF, printInvoice, shareWhatsApp, shareEmail
+    handleAddAdvance, handleReturnAdvance, handleDownloadPDF, printInvoice, shareWhatsApp, shareEmail,
+    handleAddMistake
   };
 }
