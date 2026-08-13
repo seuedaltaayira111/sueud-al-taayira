@@ -179,7 +179,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
 };
 
 // ==========================================
-// DETAILED REFUND INVOICE TEMPLATE
+// DETAILED REFUND INVOICE TEMPLATE (PROFIT HIDDEN, PAYMENT STATUS ADDED)
 // ==========================================
 const getRefundHTML = (inv, s) => {
   const setting = s || {};
@@ -187,9 +187,8 @@ const getRefundHTML = (inv, s) => {
   const trackUrl = `https://sueud-al-taayira.vercel.app/invoice/${invoiceNo}`;
   const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(trackUrl)}&code=Code128&translate-esc=on`;
   
-  const compRefund = inv.refund_company || 0;
   const custRefund = inv.refund_customer || 0;
-  const refundEarning = compRefund - custRefund;
+  const payMode = inv.payment_method === 'Credit' ? 'Added to Credit Balance' : (inv.payment_method || 'Cash/Bank');
 
   return `
   <!DOCTYPE html>
@@ -217,7 +216,7 @@ const getRefundHTML = (inv, s) => {
       .totals-box { width: 350px; }
       .total-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
       .grand-total { background: #EF4444; color: #fff; padding: 12px 15px; border-radius: 8px; margin-top: 8px; font-size: 16px; display: flex; justify-content: space-between; font-weight: 700; }
-      .profit-total { background: #059669; color: #fff; padding: 12px 15px; border-radius: 8px; margin-top: 8px; font-size: 16px; display: flex; justify-content: space-between; font-weight: 700; }
+      .status-box { background: #f1f5f9; padding: 10px 15px; border-radius: 8px; margin-top: 8px; font-size: 14px; display: flex; justify-content: space-between; font-weight: 600; color: #334155; }
       .footer { background: #f8fafc; padding: 20px 30px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
       .codes img { height: 70px; mix-blend-mode: multiply; }
       .footer-text { text-align: center; font-size: 12px; color: #94a3b8; }
@@ -256,9 +255,8 @@ const getRefundHTML = (inv, s) => {
         
         <div class="totals-section">
           <div class="totals-box">
-            <div class="total-row"><span>Refund from Airline/Portal / استرجاع من الشركة</span> <strong>${compRefund.toFixed(2)} SAR</strong></div>
-            <div class="total-row"><span>Refund to Customer / استرجاع العميل</span> <strong>${custRefund.toFixed(2)} SAR</strong></div>
-            <div class="profit-total"><span>Refund Earning / ربح الاسترجاع</span> <strong>${refundEarning.toFixed(2)} SAR</strong></div>
+            <div class="grand-total"><span>Total Refunded to Customer / المبلغ المسترجع للعميل</span> <strong>${custRefund.toFixed(2)} SAR</strong></div>
+            <div class="status-box"><span>Refund Paid Via / طريقة الدفع</span> <strong style="color: ${inv.payment_method === 'Credit' ? '#7c3aed' : '#059669'}">${payMode}</strong></div>
           </div>
         </div>
       </div>
