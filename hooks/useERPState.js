@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 // ==========================================
-// PREMIUM INVOICE TEMPLATE (WITH CREDIT & PREV BOOKING)
+// PREMIUM INVOICE TEMPLATE
 // ==========================================
 const getInvoiceHTML = (inv, s, lang = 'en') => {
   const setting = s || {};
@@ -179,7 +179,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
 };
 
 // ==========================================
-// DETAILED REFUND INVOICE TEMPLATE (WITH EARNINGS & BARCODE)
+// DETAILED REFUND INVOICE TEMPLATE
 // ==========================================
 const getRefundHTML = (inv, s) => {
   const setting = s || {};
@@ -187,7 +187,6 @@ const getRefundHTML = (inv, s) => {
   const trackUrl = `https://yourdomain.com/invoice/${invoiceNo}`;
   const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(trackUrl)}&code=Code128&translate-esc=on`;
   
-  // Calculate Refund Earning (Company gets 1000, Customer gets 900, Profit = 100)
   const compRefund = inv.refund_company || 0;
   const custRefund = inv.refund_customer || 0;
   const refundEarning = compRefund - custRefund;
@@ -277,8 +276,40 @@ const getRefundHTML = (inv, s) => {
   `;
 };
 
-const getExpenseHTML = (exp, s) => `<div>Expense ${exp.invoice_no}</div>`;
-const getContractHTML = (s, name, date, isOffer, type, markup, terms) => `<div>Contract for ${name}</div>`;
+const getExpenseHTML = (exp, s) => {
+  return `
+  <!DOCTYPE html><html><head><style>
+  body { font-family: 'Poppins', sans-serif; padding: 20px; }
+  .exp-box { max-width: 600px; margin: auto; border: 1px solid #ccc; padding: 20px; border-radius: 8px; }
+  h1 { color: #1E3A8A; }
+  </style></head><body>
+    <div class="exp-box">
+      <h1>Expense Voucher: ${exp.invoice_no}</h1>
+      <p><strong>Vendor:</strong> ${exp.vendor_name}</p>
+      <p><strong>Date:</strong> ${exp.expense_date}</p>
+      <p><strong>Type:</strong> ${exp.expense_type}</p>
+      <p><strong>Amount:</strong> ${(exp.amount || 0).toFixed(2)} SAR</p>
+      <p><strong>Paid Via:</strong> ${exp.payment_mode}</p>
+    </div>
+  </body></html>`;
+};
+
+const getContractHTML = (s, name, date, isOffer, type, markup, terms) => {
+  return `
+  <!DOCTYPE html><html><head><style>
+  body { font-family: 'Poppins', sans-serif; padding: 40px; line-height: 1.6; }
+  h1 { color: #1E3A8A; text-align: center; }
+  </style></head><body>
+    <h1>${isOffer ? 'Corporate Offer' : 'Corporate Contract'}</h1>
+    <p><strong>Company:</strong> ${name}</p>
+    <p><strong>Date:</strong> ${date}</p>
+    <p><strong>Service Type:</strong> ${type}</p>
+    <p><strong>Service Fee/Markup:</strong> ${markup} SAR</p>
+    <br/>
+    <h3>Terms & Conditions</h3>
+    <pre>${terms}</pre>
+  </body></html>`;
+};
 
 // ==========================================
 // MAIN HOOK START
@@ -360,8 +391,18 @@ export default function useERPState() {
     search: 'Search...', download_excel: 'Export Excel', logout: 'Logout', changePass: 'Change Password'
   };
 
-  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
-  const logAction = async (action) => { if (!userProfile?.id) return; try { await supabase.from('audits').insert([{ user_email: userProfile.email, action, tenant_id: userProfile.tenant_id }]); } catch (e) {} };
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const logAction = async (action) => {
+    if (!userProfile?.id) return;
+    try {
+      await supabase.from('audits').insert([{ user_email: userProfile.email, action, tenant_id: userProfile.tenant_id }]);
+    } catch (e) { console.error("Audit Error:", e) }
+  };
+
   const fetchAll = useCallback(async () => {
     if (!userProfile?.tenant_id) return;
     const tId = userProfile.tenant_id;
@@ -381,8 +422,14 @@ export default function useERPState() {
         supabase.from('payroll').select('*, employees(name)').eq('tenant_id', tId),
         supabase.from('employee_advances').select('*, employees(name)').eq('tenant_id', tId)
       ]);
-      setData({ invoices: inv.data || [], customers: cust.data || [], corporates: corp.data || [], creditors: cred.data || [], portals: por.data || [], cashbook: cash.data || [], expenses: exp.data || [], employees: emp.data || [], appUsers: appU.data || [], settings: set.data || {}, tenants: ten.data || [], payroll: pay.data || [], empAdvances: adv.data || [], investments: [], branches: [], packages: [], vendors: [], services: [], recharges: [], audits: [] });
-    } catch (err) {}
+      setData({
+        invoices: inv.data || [], customers: cust.data || [], corporates: corp.data || [],
+        creditors: cred.data || [], portals: por.data || [], cashbook: cash.data || [],
+        expenses: exp.data || [], employees: emp.data || [], appUsers: appU.data || [],
+        settings: set.data || {}, tenants: ten.data || [], payroll: pay.data || [],
+        empAdvances: adv.data || [], investments: [], branches: [], packages: [], vendors: [], services: [], recharges: [], audits: [] 
+      });
+    } catch (err) { console.error("Fetch Error:", err); }
   }, [userProfile]);
 
   const exportToExcel = (data, filename) => { alert("Excel export function needs to be implemented."); };
