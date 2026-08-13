@@ -14,12 +14,11 @@ const styles = {
 };
 
 export default function ERPViewsCore(props) {
-  // Added shareWhatsApp and shareEmail to props
   const { page, data, tr, today, invForm, setInvForm, handleCreateInvoice, handleDownloadPDF, printInvoice, exportToExcel, search, setSearch, payFilter, setPayFilter, handleEditInvoice, handleDeleteInvoice, openRefundModal, editInvId, openPreview, openSettleModal, handleQuickSettle, handleAddEditCust, custForm, setCustForm, editCustId, handleAddEditCorp, corpForm, setCorpForm, editCorpId, handleAddEditCred, creditorForm, setCreditorForm, editCredId, handleEditCust, handleEditCorp, handleEditCred, handleDelete, shareWhatsApp, shareEmail } = props;
 
   if (page === 'dashboard') {
     const s = data.settings || {};
-    const activeInv = data.invoices.filter(i => !i.invoice_no.startsWith('REF-'));
+    const activeInv = data.invoices.filter(i => !i.invoice_no.startsWith('REF-') && i.status !== 'Draft' && i.status !== 'Recurring');
     const tSales = activeInv.reduce((s,i) => s + (i.total || 0), 0);
     const tProfit = activeInv.reduce((s,i) => s + (i.profit || 0), 0);
     const cashBal = data.cashbook.filter(c => c.type === 'Cash-In').reduce((s,c) => s + (c.amount || 0), 0) - data.cashbook.filter(c => c.type === 'Cash-Out').reduce((s,c) => s + (c.amount || 0), 0);
@@ -88,10 +87,75 @@ export default function ERPViewsCore(props) {
           <div><label style={styles.label}>Journey Type</label><select value={invForm.flightJourney} onChange={e => setInvForm({...invForm, flightJourney: e.target.value})} style={styles.input}><option>Single</option><option>Round Trip</option><option>Multi-city</option></select></div>
           <div><label style={styles.label}>Fare Type</label><select value={invForm.refundable} onChange={e => setInvForm({...invForm, refundable: e.target.value})} style={styles.input}><option>Refundable</option><option>Non-Refundable</option></select></div>
           <div><label style={styles.label}>Booking Type</label><select value={invForm.bookingType} onChange={e => setInvForm({...invForm, bookingType: e.target.value, linkedInvId: ''})} style={styles.input}><option>New Booking</option><option>Reissue</option><option>Extra Luggage</option><option>Previous Booking</option></select></div>
-          {invForm.bookingType === 'Previous Booking' && (<div><label style={styles.label}>Select Previous Booking</label><select value={invForm.linkedInvId} onChange={e => { const linkedInv = data.invoices.find(i => i.id === e.target.value); setInvForm({...invForm, linkedInvId: e.target.value, useCredit: linkedInv?.refund_customer || 0}); }} style={styles.input} required><option value="">Select Old Invoice</option>{data.invoices.filter(i => i.invoice_no.startsWith('REF-') || (i.refund_customer > 0)).map(i => <option key={i.id} value={i.id}>{i.invoice_no} - {i.customers?.name} (Refund: {i.refund_customer || 0})</option>)}</select></div>)}
+          
+          {invForm.bookingType === 'Previous Booking' && (
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={styles.label}>Select Previous Booking (Refund Credit)</label>
+              <select value={invForm.linkedInvId} onChange={e => { 
+                const linkedInv = data.invoices.find(i => i.id === e.target.value); 
+                setInvForm({
+                  ...invForm, 
+                  linkedInvId: e.target.value, 
+                  useCredit: linkedInv?.refund_customer || 0, 
+                  creditCustId: linkedInv?.customer_id || '',
+                  // Auto-fill old details
+                  pnr: linkedInv?.pnr || invForm.pnr,
+                  ticketNo: linkedInv?.ticket_no || invForm.ticketNo,
+                  airline: linkedInv?.airline || invForm.airline,
+                  flightSector: linkedInv?.flight_sector || invForm.flightSector
+                }); 
+              }} style={styles.input} required>
+                <option value="">Select Refund Invoice</option>
+                {data.invoices.filter(i => i.invoice_no.startsWith('REF-') && (i.refund_customer > 0)).map(i => 
+                  <option key={i.id} value={i.id}>{i.invoice_no} - {i.customers?.name} (Credit: {i.refund_customer || 0})</option>
+                )}
+              </select>
+              {invForm.linkedInvId && (() => {
+                const linkedInv = data.invoices.find(i => i.id === invForm.linkedInvId);
+                return (
+                  <div style={{ background: '#f1f5f9', padding: '15px', borderRadius: '8px', marginTop: '10px', border: '1px solid #cbd5e1' }}>
+                    <h4 style={{ margin: '0 0 10px', color: '#1E3A8A' }}>Previous Booking Details (Auto-Filled)</h4>
+                    <p style={{ margin: '5px 0', fontSize: '14px' }}><strong>Old Ticket No:</strong> {linkedInv?.ticket_no || 'N/A'}</p>
+                    <p style={{ margin: '5px 0', fontSize: '14px' }}><strong>Old PNR:</strong> {linkedInv?.pnr || 'N/A'}</p>
+                    <p style={{ margin: '5px 0', fontSize: '14px' }}><strong>Airline/Sector:</strong> {linkedInv?.airline || 'N/A'} - {linkedInv?.flight_sector || 'N/A'}</p>
+                    <p style={{ margin: '5px 0', fontSize: '14px', color: '#7c3aed' }}><strong>Credit Auto-Deducted:</strong> {(parseFloat(invForm.useCredit) || 0).toFixed(2)} SAR</p>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+          
           <div><label style={styles.label}>Sales Person</label><select value={invForm.employeeId} onChange={e => setInvForm({...invForm, employeeId: e.target.value})} style={styles.input} required><option value="">Select Sales Person</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
           <div><label style={styles.label}>Payment Method</label><select value={invForm.payment} onChange={e => setInvForm({...invForm, payment: e.target.value, useCredit: 0, creditCustId: ''})} style={styles.input}><option>Cash</option><option>Bank Transfer</option><option>Credit</option><option>Credit Balance</option><option>Tabby</option><option>Tamara</option></select></div>
-          {invForm.payment === 'Credit Balance' && (<><div><label style={styles.label}>Select Customer (Credit Available)</label><select value={invForm.creditCustId} onChange={e => { const c = data.customers.find(x => x.id === e.target.value); setInvForm({...invForm, creditCustId: e.target.value, useCredit: c?.store_credit || 0}); }} style={styles.input} required><option value="">Select Customer</option>{data.customers.filter(c => (c.store_credit || 0) > 0).map(c => <option key={c.id} value={c.id}>{c.name} (Avl: {(c.store_credit || 0).toFixed(2)})</option>)}</select></div><div><label style={styles.label}>Use Credit Amount</label><input type="number" step="0.01" value={invForm.useCredit} onChange={e => setInvForm({...invForm, useCredit: e.target.value})} style={styles.input} required /></div></>)}
+          
+          {invForm.payment === 'Credit Balance' && (
+            <>
+              <div><label style={styles.label}>Select Customer (Credit Available)</label><select value={invForm.creditCustId} onChange={e => { const c = data.customers.find(x => x.id === e.target.value); setInvForm({...invForm, creditCustId: e.target.value, useCredit: c?.store_credit || 0}); }} style={styles.input} required><option value="">Select Customer</option>{data.customers.filter(c => (c.store_credit || 0) > 0).map(c => <option key={c.id} value={c.id}>{c.name} (Avl: {(c.store_credit || 0).toFixed(2)})</option>)}</select></div>
+              <div><label style={styles.label}>Use Credit Amount</label><input type="number" step="0.01" value={invForm.useCredit} onChange={e => setInvForm({...invForm, useCredit: e.target.value})} style={styles.input} required /></div>
+              
+              {/* LIVE CALCULATION DISPLAY */}
+              <div style={{ gridColumn: '1 / -1', background: '#f8fafc', padding: '15px', borderRadius: '8px', marginTop: '10px', border: '1px solid #cbd5e1' }}>
+                <h4 style={{ margin: '0 0 10px', color: '#1E3A8A' }}>Live Payment Calculation</h4>
+                {(() => {
+                  const qty = parseInt(invForm.qty) || 1;
+                  const sell = (parseFloat(invForm.sell) || 0) * qty;
+                  const discount = parseFloat(invForm.discount) || 0;
+                  const taxRate = parseFloat(invForm.taxRate) || 0;
+                  const total = (sell - discount) + ((sell - discount) * (taxRate / 100));
+                  const creditUsed = parseFloat(invForm.useCredit) || 0;
+                  const remaining = total - creditUsed;
+                  return (
+                    <>
+                      <p style={{ margin: '5px 0', fontSize: '14px' }}><strong>Invoice Total:</strong> {total.toFixed(2)} SAR</p>
+                      <p style={{ margin: '5px 0', fontSize: '14px', color: '#7c3aed' }}><strong>Credit Applied:</strong> - {creditUsed.toFixed(2)} SAR</p>
+                      <p style={{ margin: '5px 0', fontSize: '16px', color: remaining > 0 ? '#EF4444' : '#059669' }}><strong>Remaining to Pay (Cash/Bank):</strong> {remaining > 0 ? remaining.toFixed(2) : '0.00'} SAR</p>
+                    </>
+                  );
+                })()}
+              </div>
+            </>
+          )}
+          
           <div><label style={styles.label}>Paid Amount (Cash/Bank)</label><input type="number" step="0.01" value={invForm.paid} onChange={e => setInvForm({...invForm, paid: e.target.value})} style={styles.input} required /></div>
           {invForm.payment === 'Credit' && (<><div><label style={styles.label}>Select Creditor</label><select value={invForm.creditorId} onChange={e => setInvForm({...invForm, creditorId: e.target.value})} style={styles.input} required><option value="">Select Creditor</option>{data.creditors.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div><div><label style={styles.label}>Credit Due Date</label><input type="date" value={invForm.creditDueDate} onChange={e => setInvForm({...invForm, creditDueDate: e.target.value})} style={styles.input} required /></div></>)}
           {invForm.payment === 'Tabby' && <div><label style={styles.label}>Tabby Order No</label><input value={invForm.tabbyNo} onChange={e => setInvForm({...invForm, tabbyNo: e.target.value})} style={styles.input} required /></div>}
@@ -104,7 +168,7 @@ export default function ERPViewsCore(props) {
 
   if (page === 'list' || page === 'refunds') {
     const isInvoices = page === 'list';
-    const allData = isInvoices ? data.invoices.filter(i => !i.invoice_no.startsWith('REF-')) : data.invoices.filter(i => i.invoice_no.startsWith('REF-'));
+    const allData = isInvoices ? data.invoices.filter(i => !i.invoice_no.startsWith('REF-') && i.status !== 'Draft' && i.status !== 'Recurring') : data.invoices.filter(i => i.invoice_no.startsWith('REF-'));
     const filteredData = allData.filter(inv => (payFilter === 'All' || inv.payment_method === payFilter) && (inv.invoice_no.toLowerCase().includes(search.toLowerCase()) || inv.customers?.name.toLowerCase().includes(search.toLowerCase()) || inv.corporates?.name.toLowerCase().includes(search.toLowerCase())));
     
     return (
@@ -143,9 +207,9 @@ export default function ERPViewsCore(props) {
                     <button onClick={() => openPreview(inv)} style={{ ...styles.btnPrimary, padding: '5px 8px', width: 'auto', fontSize: '11px' }}>Preview</button>
                     <button onClick={() => handleDownloadPDF(inv, 'en')} style={{ ...styles.btnPrimary, padding: '5px 8px', width: 'auto', fontSize: '11px' }}>PDF</button>
                     <button onClick={() => printInvoice(inv, 'ar')} style={{ ...styles.btnWarning, padding: '5px 8px', fontSize: '11px' }}>Print</button>
-                    <button onClick={() => shareWhatsApp(inv)} style={{ ...styles.btnSuccess, padding: '5px 8px', fontSize: '11px' }}>🟢 WhatsApp</button>
-                    <button onClick={() => shareEmail(inv)} style={{ ...styles.btnInfo, padding: '5px 8px', fontSize: '11px' }}>✉️ Email</button>
-                    {isInvoices && <button onClick={() => handleEditInvoice(inv)} style={{ ...styles.btnWarning, padding: '5px 8px', fontSize: '11px' }}>Edit</button>}
+                    {isInvoices && <button onClick={() => shareWhatsApp(inv)} style={{ ...styles.btnSuccess, padding: '5px 8px', fontSize: '11px' }}>🟢 WhatsApp</button>}
+                    {isInvoices && <button onClick={() => shareEmail(inv)} style={{ ...styles.btnInfo, padding: '5px 8px', fontSize: '11px' }}>✉️ Email</button>}
+                    <button onClick={() => handleEditInvoice(inv)} style={{ ...styles.btnWarning, padding: '5px 8px', fontSize: '11px' }}>Edit</button>
                     <button onClick={() => handleDeleteInvoice(inv)} style={{ ...styles.btnDanger, padding: '5px 8px', fontSize: '11px' }}>Delete</button>
                     {isInvoices && (inv.due_amount > 0) && <button onClick={() => handleQuickSettle(inv)} style={{ ...styles.btnSuccess, padding: '5px 8px', fontSize: '11px' }}>Quick Settle</button>}
                     {isInvoices && <button onClick={() => openRefundModal(inv)} style={{ ...styles.btnDanger, padding: '5px 8px', fontSize: '11px' }}>Refund</button>}
