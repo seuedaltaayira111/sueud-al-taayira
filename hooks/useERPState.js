@@ -13,7 +13,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
   const dir = isAr ? 'rtl' : 'ltr';
   
   const invoiceNo = inv.invoice_no || 'N/A';
-  const trackUrl = `https://yourdomain.com/invoice/${invoiceNo}`;
+  const trackUrl = `https://sueud-al-taayira.vercel.app/invoice/${invoiceNo}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(trackUrl)}`;
   const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(trackUrl)}&code=Code128&translate-esc=on`;
 
@@ -179,15 +179,17 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
 };
 
 // ==========================================
-// REFUND INVOICE TEMPLATE (TICKET DETAILS + ONLY CUST REFUND + BARCODE)
+// DETAILED REFUND INVOICE TEMPLATE
 // ==========================================
 const getRefundHTML = (inv, s) => {
   const setting = s || {};
   const invoiceNo = inv.invoice_no || 'N/A';
-  const trackUrl = `https://yourdomain.com/invoice/${invoiceNo}`;
+  const trackUrl = `https://sueud-al-taayira.vercel.app/invoice/${invoiceNo}`;
   const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(trackUrl)}&code=Code128&translate-esc=on`;
   
+  const compRefund = inv.refund_company || 0;
   const custRefund = inv.refund_customer || 0;
+  const refundEarning = compRefund - custRefund;
 
   return `
   <!DOCTYPE html>
@@ -215,6 +217,7 @@ const getRefundHTML = (inv, s) => {
       .totals-box { width: 350px; }
       .total-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
       .grand-total { background: #EF4444; color: #fff; padding: 12px 15px; border-radius: 8px; margin-top: 8px; font-size: 16px; display: flex; justify-content: space-between; font-weight: 700; }
+      .profit-total { background: #059669; color: #fff; padding: 12px 15px; border-radius: 8px; margin-top: 8px; font-size: 16px; display: flex; justify-content: space-between; font-weight: 700; }
       .footer { background: #f8fafc; padding: 20px 30px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
       .codes img { height: 70px; mix-blend-mode: multiply; }
       .footer-text { text-align: center; font-size: 12px; color: #94a3b8; }
@@ -253,7 +256,9 @@ const getRefundHTML = (inv, s) => {
         
         <div class="totals-section">
           <div class="totals-box">
-            <div class="grand-total"><span>Total Refunded to Customer / المبلغ المسترجع للعميل</span> <strong>${custRefund.toFixed(2)} SAR</strong></div>
+            <div class="total-row"><span>Refund from Airline/Portal / استرجاع من الشركة</span> <strong>${compRefund.toFixed(2)} SAR</strong></div>
+            <div class="total-row"><span>Refund to Customer / استرجاع العميل</span> <strong>${custRefund.toFixed(2)} SAR</strong></div>
+            <div class="profit-total"><span>Refund Earning / ربح الاسترجاع</span> <strong>${refundEarning.toFixed(2)} SAR</strong></div>
           </div>
         </div>
       </div>
@@ -290,7 +295,7 @@ export default function useERPState() {
     invoices: [], customers: [], corporates: [], creditors: [], portals: [],
     cashbook: [], expenses: [], investments: [], employees: [], payroll: [],
     appUsers: [], branches: [], packages: [], vendors: [], services: [],
-    recharges: [], audits: [], empAdvances: [], tenants: [], settings: {}
+    recharges: [], audits: [], empAdvances: [], tenants: [], settings: {}, staffMistakes: []
   });
 
   const [page, setPage] = useState('dashboard');
@@ -354,7 +359,7 @@ export default function useERPState() {
     audit: 'Audit Logs', statements: 'Statements', contract: 'Contracts', offer: 'Offers',
     superadmin: 'SuperAdmin', profile: 'Profile', profitability: 'Profitability',
     search: 'Search...', download_excel: 'Export Excel', logout: 'Logout', changePass: 'Change Password',
-    quotations: 'Quotations', ai_dashboard: 'AI Dashboard', hr_advanced: 'HR & Payroll Advanced'
+    quotations: 'Quotations', ai_dashboard: 'AI Dashboard', hr_advanced: 'HR & Payroll Advanced', staff_mistakes: 'Staff Mistakes & Loss'
   };
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
@@ -363,7 +368,7 @@ export default function useERPState() {
     if (!userProfile?.tenant_id) return;
     const tId = userProfile.tenant_id;
     try {
-      const [inv, cust, corp, cred, por, cash, exp, emp, appU, set, ten, pay, adv] = await Promise.all([
+      const [inv, cust, corp, cred, por, cash, exp, emp, appU, set, ten, pay, adv, mistakes] = await Promise.all([
         supabase.from('invoices').select(`*, customers(name), corporates(name), employees(name)`).eq('tenant_id', tId),
         supabase.from('customers').select('*').eq('tenant_id', tId),
         supabase.from('corporates').select('*').eq('tenant_id', tId),
@@ -376,9 +381,13 @@ export default function useERPState() {
         supabase.from('settings').select('*').eq('tenant_id', tId).maybeSingle(),
         supabase.from('tenants').select('*'),
         supabase.from('payroll').select('*, employees(name)').eq('tenant_id', tId),
-        supabase.from('employee_advances').select('*, employees(name)').eq('tenant_id', tId)
+        supabase.from('employee_advances').select('*, employees(name)').eq('tenant_id', tId),
+        supabase.from('staff_mistakes').select('*, employees(name)').eq('tenant_id', tId)
       ]);
-      setData({ invoices: inv.data || [], customers: cust.data || [], corporates: corp.data || [], creditors: cred.data || [], portals: por.data || [], cashbook: cash.data || [], expenses: exp.data || [], employees: emp.data || [], appUsers: appU.data || [], settings: set.data || {}, tenants: ten.data || [], payroll: pay.data || [], empAdvances: adv.data || [], investments: [], branches: [], packages: [], vendors: [], services: [], recharges: [], audits: [] });
+      setData({ 
+        invoices: inv.data || [], customers: cust.data || [], corporates: corp.data || [], creditors: cred.data || [], portals: por.data || [], cashbook: cash.data || [], expenses: exp.data || [], employees: emp.data || [], appUsers: appU.data || [], settings: set.data || {}, tenants: ten.data || [], payroll: pay.data || [], empAdvances: adv.data || [], staffMistakes: mistakes.data || [],
+        investments: [], branches: [], packages: [], vendors: [], services: [], recharges: [], audits: [] 
+      });
     } catch (err) {}
   }, [userProfile]);
 
