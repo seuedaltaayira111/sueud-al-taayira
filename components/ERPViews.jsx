@@ -16,7 +16,7 @@ export default function ERPViews(props) {
   const isSystemPage = ['users', 'settings', 'reports', 'audit', 'statements', 'contract', 'offer', 'superadmin', 'profile', 'profitability'].includes(page);
   const isAdvancedPage = ['quotations', 'ai_dashboard', 'hr_advanced'].includes(page);
   const isEnterprisePage = ['credit_limits', 'supplier_statement', 'multi_branch'].includes(page);
-  const isProPage = ['customer_statement', 'recurring_invoices', 'expense_approval', 'notifications'].includes(page);
+  const isProPage = ['customer_statement', 'recurring_invoices', 'expense_approval', 'notifications', 'staff_mistakes'].includes(page);
 
   return (
     <>
