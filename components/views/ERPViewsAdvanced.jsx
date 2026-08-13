@@ -1,27 +1,29 @@
 'use client';
 
 import React, { useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
 const styles = { 
   input: { width: '100%', padding: '10px', margin: '5px 0', border: '1px solid #cbd5e1', borderRadius: '6px', outline: 'none', boxSizing: 'border-box' }, 
   btnPrimary: { padding: '10px 15px', background: '#1E3A8A', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }, 
   btnSuccess: { padding: '8px 12px', background: '#059669', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
+  btnWarning: { padding: '8px 12px', background: '#FBBF24', color: '#1E3A8A', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
   card: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px', border: '1px solid #e2e8f0' }, 
   label: { fontSize: '14px', fontWeight: 'bold', color: '#333', marginBottom: '5px', display: 'block', marginTop: '10px' } 
 };
 
 export default function ERPViewsAdvanced(props) {
-  const { page, data, tr, today } = props;
+  const { page, data, tr, today, userProfile, showToast, setData } = props;
+  const [quoteForm, setQuoteForm] = useState({ customer_name: '', service_type: 'Flight Ticket', price: '', valid_until: today });
 
   // 1. AI DASHBOARD LAYER
   if (page === 'ai_dashboard') {
-    const activeInvoices = data.invoices.filter(i => !i.invoice_no.startsWith('REF-'));
+    const activeInvoices = data.invoices.filter(i => !i.invoice_no.startsWith('REF-') && i.status !== 'Draft');
     const tSales = activeInvoices.reduce((s, i) => s + (i.total || 0), 0);
     const tProfit = activeInvoices.reduce((s, i) => s + (i.profit || 0), 0);
     const pendingPayments = activeInvoices.filter(i => i.due_amount > 0);
     const totalDue = pendingPayments.reduce((s, i) => s + i.due_amount, 0);
     
-    // Top Employee
     const empProfits = {};
     activeInvoices.forEach(inv => {
       const empName = inv.employees?.name || 'Unknown';
@@ -30,7 +32,6 @@ export default function ERPViewsAdvanced(props) {
     });
     const topEmployee = Object.keys(empProfits).map(k => ({ name: k, profit: empProfits[k] })).sort((a,b) => b.profit - a.profit)[0];
 
-    // AI Insights (Basic Logic)
     const aiInsights = [];
     if (totalDue > 0) aiInsights.push(`⚠️ You have ${totalDue.toFixed(2)} SAR pending from ${pendingPayments.length} customers. Follow up needed.`);
     if (topEmployee) aiInsights.push(`🏆 ${topEmployee.name} is your top performer with ${topEmployee.profit.toFixed(2)} SAR in profit.`);
@@ -69,24 +70,74 @@ export default function ERPViewsAdvanced(props) {
     );
   }
 
-  // 2. QUOTATIONS PANEL
+  // 2. QUOTATIONS PANEL (WORKING LOGIC)
   if (page === 'quotations') {
+    const quotations = data.invoices.filter(i => i.status === 'Draft');
+
+    const handleCreateQuote = async (e) => {
+      e.preventDefault();
+      try {
+        const quoteNo = `QUO-${Date.now()}`;
+        const payload = {
+          invoice_no: quoteNo,
+          sector: quoteForm.service_type,
+          total_sell: parseFloat(quoteForm.price) || 0,
+          total: parseFloat(quoteForm.price) || 0,
+          invoice_date: today,
+          status: 'Draft',
+          tenant_id: userProfile.tenant_id
+        };
+        const { data: newQuote, error } = await supabase.from('invoices').insert([payload]).select().single();
+        if (error) throw error;
+        setData(prev => ({ ...prev, invoices: [newQuote, ...prev.invoices] }));
+        showToast('Quotation Created Successfully!');
+        setQuoteForm({ customer_name: '', service_type: 'Flight Ticket', price: '', valid_until: today });
+      } catch (err) {
+        showToast('Error: ' + err.message);
+      }
+    };
+
+    const convertToInvoice = async (quote) => {
+      try {
+        const { error } = await supabase.from('invoices').update({ status: 'Confirmed' }).eq('id', quote.id);
+        if (error) throw error;
+        setData(prev => ({ ...prev, invoices: prev.invoices.map(i => i.id === quote.id ? { ...i, status: 'Confirmed' } : i) }));
+        showToast('Quotation converted to Invoice! You can edit it in Invoices tab.');
+      } catch (err) {
+        showToast('Error: ' + err.message);
+      }
+    };
+
     return (
       <div>
         <h2 style={{ color: '#1E3A8A' }}>📄 Quotation Management</h2>
         <div style={styles.card}>
           <h3>Create New Quotation</h3>
-          <form onSubmit={(e) => { e.preventDefault(); alert('Quotation logic will be linked to invoice form with status "Draft"'); }} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-            <div><label style={styles.label}>Customer Name</label><input style={styles.input} required /></div>
-            <div><label style={styles.label}>Service Type</label><select style={styles.input}><option>Flight Ticket</option><option>Tour Package</option><option>Visa</option></select></div>
-            <div><label style={styles.label}>Estimated Price (SAR)</label><input type="number" style={styles.input} required /></div>
-            <div><label style={styles.label}>Valid Until</label><input type="date" style={styles.input} defaultValue={today} required /></div>
+          <form onSubmit={handleCreateQuote} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+            <div><label style={styles.label}>Customer Name</label><input style={styles.input} value={quoteForm.customer_name} onChange={e => setQuoteForm({...quoteForm, customer_name: e.target.value})} required /></div>
+            <div><label style={styles.label}>Service Type</label><select style={styles.input} value={quoteForm.service_type} onChange={e => setQuoteForm({...quoteForm, service_type: e.target.value})}><option>Flight Ticket</option><option>Tour Package</option><option>Visa</option></select></div>
+            <div><label style={styles.label}>Estimated Price (SAR)</label><input type="number" style={styles.input} value={quoteForm.price} onChange={e => setQuoteForm({...quoteForm, price: e.target.value})} required /></div>
+            <div><label style={styles.label}>Valid Until</label><input type="date" style={styles.input} value={quoteForm.valid_until} onChange={e => setQuoteForm({...quoteForm, valid_until: e.target.value})} required /></div>
             <button type="submit" style={{ ...styles.btnPrimary, gridColumn: '1 / -1' }}>Generate Quotation</button>
           </form>
         </div>
         <div style={styles.card}>
-          <h3>Recent Quotations</h3>
-          <p style={{ color: '#64748b' }}>Quotations created will appear here. You can convert them to Invoices with one click.</p>
+          <h3>Recent Quotations (Drafts)</h3>
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+            <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{padding:'10px', textAlign:'left'}}>Quote No</th><th style={{padding:'10px'}}>Service</th><th style={{padding:'10px'}}>Amount</th><th style={{padding:'10px'}}>Action</th></tr></thead>
+            <tbody>
+              {quotations.length === 0 ? <tr><td colSpan="4" style={{padding:'15px', textAlign:'center'}}>No quotations found.</td></tr> : 
+                quotations.map(q => (
+                  <tr key={q.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{padding:'10px'}}>{q.invoice_no}</td>
+                    <td style={{padding:'10px', textAlign:'center'}}>{q.sector}</td>
+                    <td style={{padding:'10px', textAlign:'center'}}>{(q.total || 0).toFixed(2)} SAR</td>
+                    <td style={{padding:'10px', textAlign:'center'}}><button onClick={() => convertToInvoice(q)} style={styles.btnSuccess}>Convert to Invoice</button></td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
         </div>
       </div>
     );
@@ -109,9 +160,9 @@ export default function ERPViewsAdvanced(props) {
             </thead>
             <tbody>
               {data.employees.map(emp => {
-                const empInv = data.invoices.filter(i => i.employee_id === emp.id && !i.invoice_no.startsWith('REF-'));
+                const empInv = data.invoices.filter(i => i.employee_id === emp.id && !i.invoice_no.startsWith('REF-') && i.status !== 'Draft');
                 const achieved = empInv.reduce((s, i) => s + (i.total || 0), 0);
-                const target = 10000; // Static for now, can be made dynamic
+                const target = 10000; // Static target for now
                 const perc = target > 0 ? (achieved / target) * 100 : 0;
                 return (
                   <tr key={emp.id} style={{ borderBottom: '1px solid #E2E8F0' }}>
