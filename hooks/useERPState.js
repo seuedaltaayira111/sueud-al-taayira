@@ -179,7 +179,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
 };
 
 // ==========================================
-// DETAILED REFUND INVOICE TEMPLATE
+// REFUND INVOICE TEMPLATE (TICKET DETAILS + ONLY CUST REFUND + BARCODE)
 // ==========================================
 const getRefundHTML = (inv, s) => {
   const setting = s || {};
@@ -187,9 +187,7 @@ const getRefundHTML = (inv, s) => {
   const trackUrl = `https://yourdomain.com/invoice/${invoiceNo}`;
   const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(trackUrl)}&code=Code128&translate-esc=on`;
   
-  const compRefund = inv.refund_company || 0;
   const custRefund = inv.refund_customer || 0;
-  const refundEarning = compRefund - custRefund;
 
   return `
   <!DOCTYPE html>
@@ -217,7 +215,6 @@ const getRefundHTML = (inv, s) => {
       .totals-box { width: 350px; }
       .total-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
       .grand-total { background: #EF4444; color: #fff; padding: 12px 15px; border-radius: 8px; margin-top: 8px; font-size: 16px; display: flex; justify-content: space-between; font-weight: 700; }
-      .profit-total { background: #059669; color: #fff; padding: 12px 15px; border-radius: 8px; margin-top: 8px; font-size: 16px; display: flex; justify-content: space-between; font-weight: 700; }
       .footer { background: #f8fafc; padding: 20px 30px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
       .codes img { height: 70px; mix-blend-mode: multiply; }
       .footer-text { text-align: center; font-size: 12px; color: #94a3b8; }
@@ -244,19 +241,19 @@ const getRefundHTML = (inv, s) => {
       </div>
       <div class="body">
         <div class="card">
-          <h4>Refund Details / تفاصيل الاسترجاع</h4>
+          <h4>Customer & Ticket Details / تفاصيل العميل والتذكرة</h4>
           <p><strong>Customer Name / اسم العميل:</strong> <span>${inv.customers?.name || 'N/A'}</span></p>
           <p><strong>Original Invoice / الفاتورة الأصلية:</strong> <span>${inv.linked_inv_id || 'N/A'}</span></p>
-          <p><strong>Passenger / الركاب:</strong> <span>${inv.passenger_names || 'N/A'}</span></p>
           <p><strong>Airline / الشركة:</strong> <span>${inv.airline || 'N/A'}</span></p>
+          <p><strong>PNR / رقم الحجز:</strong> <span>${inv.pnr || 'N/A'}</span></p>
+          <p><strong>Ticket No / رقم التذكرة:</strong> <span>${inv.ticket_no || 'N/A'}</span></p>
+          <p><strong>Passenger / الركاب:</strong> <span>${inv.passenger_names || 'N/A'}</span></p>
           <p style="color: #EF4444; font-weight: bold;"><strong>Reason / سبب الإلغاء:</strong> <span>${inv.refund_reason || 'N/A'}</span></p>
         </div>
         
         <div class="totals-section">
           <div class="totals-box">
-            <div class="total-row"><span>Refund from Airline/Portal / استرجاع من الشركة</span> <strong>${compRefund.toFixed(2)} SAR</strong></div>
-            <div class="total-row"><span>Refund to Customer / استرجاع العميل</span> <strong>${custRefund.toFixed(2)} SAR</strong></div>
-            <div class="profit-total"><span>Refund Earning / ربح الاسترجاع</span> <strong>${refundEarning.toFixed(2)} SAR</strong></div>
+            <div class="grand-total"><span>Total Refunded to Customer / المبلغ المسترجع للعميل</span> <strong>${custRefund.toFixed(2)} SAR</strong></div>
           </div>
         </div>
       </div>
@@ -276,40 +273,8 @@ const getRefundHTML = (inv, s) => {
   `;
 };
 
-const getExpenseHTML = (exp, s) => {
-  return `
-  <!DOCTYPE html><html><head><style>
-  body { font-family: 'Poppins', sans-serif; padding: 20px; }
-  .exp-box { max-width: 600px; margin: auto; border: 1px solid #ccc; padding: 20px; border-radius: 8px; }
-  h1 { color: #1E3A8A; }
-  </style></head><body>
-    <div class="exp-box">
-      <h1>Expense Voucher: ${exp.invoice_no}</h1>
-      <p><strong>Vendor:</strong> ${exp.vendor_name}</p>
-      <p><strong>Date:</strong> ${exp.expense_date}</p>
-      <p><strong>Type:</strong> ${exp.expense_type}</p>
-      <p><strong>Amount:</strong> ${(exp.amount || 0).toFixed(2)} SAR</p>
-      <p><strong>Paid Via:</strong> ${exp.payment_mode}</p>
-    </div>
-  </body></html>`;
-};
-
-const getContractHTML = (s, name, date, isOffer, type, markup, terms) => {
-  return `
-  <!DOCTYPE html><html><head><style>
-  body { font-family: 'Poppins', sans-serif; padding: 40px; line-height: 1.6; }
-  h1 { color: #1E3A8A; text-align: center; }
-  </style></head><body>
-    <h1>${isOffer ? 'Corporate Offer' : 'Corporate Contract'}</h1>
-    <p><strong>Company:</strong> ${name}</p>
-    <p><strong>Date:</strong> ${date}</p>
-    <p><strong>Service Type:</strong> ${type}</p>
-    <p><strong>Service Fee/Markup:</strong> ${markup} SAR</p>
-    <br/>
-    <h3>Terms & Conditions</h3>
-    <pre>${terms}</pre>
-  </body></html>`;
-};
+const getExpenseHTML = (exp, s) => `<div>Expense ${exp.invoice_no}</div>`;
+const getContractHTML = (s, name, date, isOffer, type, markup, terms) => `<div>Contract for ${name}</div>`;
 
 // ==========================================
 // MAIN HOOK START
@@ -388,21 +353,12 @@ export default function useERPState() {
     invest: 'Investors', hr: 'Human Resources', users: 'Users', settings: 'Settings', reports: 'Reports',
     audit: 'Audit Logs', statements: 'Statements', contract: 'Contracts', offer: 'Offers',
     superadmin: 'SuperAdmin', profile: 'Profile', profitability: 'Profitability',
-    search: 'Search...', download_excel: 'Export Excel', logout: 'Logout', changePass: 'Change Password'
+    search: 'Search...', download_excel: 'Export Excel', logout: 'Logout', changePass: 'Change Password',
+    quotations: 'Quotations', ai_dashboard: 'AI Dashboard', hr_advanced: 'HR & Payroll Advanced'
   };
 
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
-  };
-
-  const logAction = async (action) => {
-    if (!userProfile?.id) return;
-    try {
-      await supabase.from('audits').insert([{ user_email: userProfile.email, action, tenant_id: userProfile.tenant_id }]);
-    } catch (e) { console.error("Audit Error:", e) }
-  };
-
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
+  const logAction = async (action) => { if (!userProfile?.id) return; try { await supabase.from('audits').insert([{ user_email: userProfile.email, action, tenant_id: userProfile.tenant_id }]); } catch (e) {} };
   const fetchAll = useCallback(async () => {
     if (!userProfile?.tenant_id) return;
     const tId = userProfile.tenant_id;
@@ -422,14 +378,8 @@ export default function useERPState() {
         supabase.from('payroll').select('*, employees(name)').eq('tenant_id', tId),
         supabase.from('employee_advances').select('*, employees(name)').eq('tenant_id', tId)
       ]);
-      setData({
-        invoices: inv.data || [], customers: cust.data || [], corporates: corp.data || [],
-        creditors: cred.data || [], portals: por.data || [], cashbook: cash.data || [],
-        expenses: exp.data || [], employees: emp.data || [], appUsers: appU.data || [],
-        settings: set.data || {}, tenants: ten.data || [], payroll: pay.data || [],
-        empAdvances: adv.data || [], investments: [], branches: [], packages: [], vendors: [], services: [], recharges: [], audits: [] 
-      });
-    } catch (err) { console.error("Fetch Error:", err); }
+      setData({ invoices: inv.data || [], customers: cust.data || [], corporates: corp.data || [], creditors: cred.data || [], portals: por.data || [], cashbook: cash.data || [], expenses: exp.data || [], employees: emp.data || [], appUsers: appU.data || [], settings: set.data || {}, tenants: ten.data || [], payroll: pay.data || [], empAdvances: adv.data || [], investments: [], branches: [], packages: [], vendors: [], services: [], recharges: [], audits: [] });
+    } catch (err) {}
   }, [userProfile]);
 
   const exportToExcel = (data, filename) => { alert("Excel export function needs to be implemented."); };
