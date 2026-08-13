@@ -20,7 +20,7 @@ export default function Home() {
   const menu = [
     { id: 'dashboard', label: erp.tr.dashboard, show: true },
     { id: 'ai_dashboard', label: '🤖 AI Dashboard', show: true }, 
-    { id: 'notifications', label: '🔔 Notifications', show: true }, // NEW NOTIFICATIONS
+    { id: 'notifications', label: '🔔 Notifications', show: true }, 
     { id: 'superadmin', label: '👑 SuperAdmin Panel', show: isSuperAdmin },
     
     // Invoices & Sales
@@ -28,7 +28,7 @@ export default function Home() {
     { id: 'list', label: erp.tr.list, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'refunds', label: erp.tr.refunds, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'quotations', label: '📄 Quotations', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices }, 
-    { id: 'recurring_invoices', label: '🔁 Recurring Invoices', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices }, // NEW RECURRING
+    { id: 'recurring_invoices', label: '🔁 Recurring Invoices', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices }, 
     { id: 'profitability', label: '📊 Profit Analyzer', show: true }, 
     
     // Customers & Vendors
@@ -37,7 +37,7 @@ export default function Home() {
     { id: 'creditors', label: erp.tr.creditors, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'credit', label: erp.tr.credit, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'credit_limits', label: '💳 Credit Limits', show: erp.userProfile.is_admin || erp.userProfile.can_access_bank }, 
-    { id: 'customer_statement', label: '📊 Cust Statement', show: erp.userProfile.is_admin || erp.userProfile.can_access_reports }, // NEW CUST STMT
+    { id: 'customer_statement', label: '📊 Cust Statement', show: erp.userProfile.is_admin || erp.userProfile.can_access_reports }, 
     { id: 'portals', label: erp.tr.portals, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'vendors', label: erp.tr.vendors, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'supplier_statement', label: '📦 Supplier Statement', show: erp.userProfile.is_admin || erp.userProfile.can_access_bank }, 
@@ -50,11 +50,12 @@ export default function Home() {
     { id: 'offer', label: 'Corporate Offer', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'bank', label: erp.tr.bank, show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
     { id: 'invest', label: erp.tr.invest, show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
-    { id: 'expense_approval', label: '🛡️ Expense Approval', show: erp.userProfile.is_admin }, // NEW EXPENSE APPROVAL
+    { id: 'expense_approval', label: '🛡️ Expense Approval', show: erp.userProfile.is_admin }, 
     
     // HR & Reports
     { id: 'hr', label: erp.tr.hr, show: erp.userProfile.is_admin || erp.userProfile.can_access_hr },
     { id: 'hr_advanced', label: '🎯 Targets & HR', show: erp.userProfile.is_admin || erp.userProfile.can_access_hr }, 
+    { id: 'staff_mistakes', label: '⚠️ Staff Mistakes', show: erp.userProfile.is_admin || erp.userProfile.can_access_hr }, // NEW STAFF MISTAKES PANEL
     { id: 'statements', label: erp.tr.statements, show: erp.userProfile.is_admin || erp.userProfile.can_access_reports },
     { id: 'users', label: erp.tr.users, show: erp.userProfile.is_admin },
     { id: 'reports', label: erp.tr.reports, show: erp.userProfile.is_admin || erp.userProfile.can_access_reports },
@@ -149,9 +150,12 @@ export default function Home() {
           profileForm={erp.profileForm} setProfileForm={erp.setProfileForm}
           handleProfilePicUpload={erp.handleProfilePicUpload} handleSaveProfile={erp.handleSaveProfile}
           
-          // WHATSAPP & EMAIL PROPS PASSED HERE
+          // WHATSAPP & EMAIL PROPS
           shareWhatsApp={erp.shareWhatsApp}
           shareEmail={erp.shareEmail}
+          
+          // STAFF MISTAKES PROP
+          handleAddMistake={erp.handleAddMistake}
         />
       </ERPLayout>
     </>
