@@ -1,6 +1,7 @@
 'use client';
 
 import { supabase } from '@/lib/supabase';
+import { handleShareWhatsApp, handleShareEmail } from '@/lib/invoiceUtils';
 
 export default function useERPActions(state) {
   const { 
@@ -183,6 +184,17 @@ export default function useERPActions(state) {
     printWindow.document.write(html);
     printWindow.document.close();
     printWindow.print();
+  };
+
+  // WHATSAPP & EMAIL SHARE FUNCTIONS
+  const shareWhatsApp = (inv) => {
+    if (inv.invoice_no.startsWith('REF-')) return showToast('Refund invoices cannot be shared via WhatsApp directly!');
+    handleShareWhatsApp(inv, data.settings);
+  };
+
+  const shareEmail = (inv) => {
+    if (inv.invoice_no.startsWith('REF-')) return showToast('Refund invoices cannot be shared via Email directly!');
+    handleShareEmail(inv, data.settings);
   };
 
   const handleGenerateContract = (e) => {
@@ -387,9 +399,7 @@ export default function useERPActions(state) {
   };
 
   const handleAddExpItem = () => setExpForm(prev => ({ ...prev, items: [...prev.items, { name: '', qty: 1, price: 0 }] }));
-  
   const handleRemoveExpItem = (index) => setExpForm(prev => ({ ...prev, items: prev.items.filter((_, i) => i !== index) }));
-  
   const handleExpItemChange = (index, field, value) => {
     setExpForm(prev => {
       const items = [...prev.items];
@@ -1129,6 +1139,6 @@ export default function useERPActions(state) {
     handleLogout, handleChangePassword, handleSendMessage, handleEditInvoice, handleCreateInvoice, handleDeleteInvoice, handleAddExpItem, handleRemoveExpItem, handleExpItemChange, handleAddExpense, handleEditExpense, handleDeleteExpense, handlePreviewExpense, handleAddEditCust, handleAddEditCorp, handleAddEditCred, handleAddEditVend, handleAddEditPkg, handleAddEditBrn, handleAddEditEmp, handleAddEditSrv, handleAddPortal, handleAddInvestment, handleDelete, handleRecharge, handleTransfer, handleAddUser, handleEditUser, handleUpdateUser, handlePaySalary, handleSettlePayment, handleQuickSettle, openSettleModal, handleRefund, openRefundModal, openPreview, handleLogoUpload, handleSaveSettings, downloadPDF, handleGenerateContract, handleGenerateOffer, handleAddCustomField, handleRemoveCustomField, handleCustomFieldChange, 
     handleAddTenant, handleToggleSubscription, handleDeleteTenant, 
     handleProfilePicUpload, handleSaveProfile,
-    handleAddAdvance, handleReturnAdvance, handleDownloadPDF, printInvoice
+    handleAddAdvance, handleReturnAdvance, handleDownloadPDF, printInvoice, shareWhatsApp, shareEmail
   };
 }
