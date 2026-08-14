@@ -17,7 +17,72 @@ export default function ERPViewsPro(props) {
   const [stmtCustId, setStmtCustId] = useState('');
   const [recForm, setRecForm] = useState({ customer_id: '', amount: '', interval: 'Monthly' });
 
-  // 1. CUSTOMER STATEMENT (Running Balance)
+  // 1. REFUND STATEMENT & PROFIT PANEL
+  if (page === 'refund_statement') {
+    const refunds = data.invoices.filter(i => i.invoice_no.startsWith('REF-'));
+    const totalCompRefund = refunds.reduce((s, r) => s + (r.refund_company || 0), 0);
+    const totalCustRefund = refunds.reduce((s, r) => s + (r.refund_customer || 0), 0);
+    const totalOfficeProfit = totalCompRefund - totalCustRefund;
+
+    const portalRefunds = {};
+    refunds.forEach(r => {
+      const portalName = data.portals.find(p => p.id === r.portal_id)?.name || 'Unknown Portal';
+      if (!portalRefunds[portalName]) portalRefunds[portalName] = { comp: 0, cust: 0 };
+      portalRefunds[portalName].comp += (r.refund_company || 0);
+      portalRefunds[portalName].cust += (r.refund_customer || 0);
+    });
+
+    return (
+      <div>
+        <h2 style={{ color: '#1E3A8A' }}>📊 Refund Statement & Earnings</h2>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+          <div style={{...styles.card, borderLeft: '5px solid #EF4444'}}>
+            <h3 style={{color: '#555'}}>Refund from Airlines</h3>
+            <h2 style={{color: '#1E3A8A'}}>{totalCompRefund.toFixed(2)} SAR</h2>
+          </div>
+          <div style={{...styles.card, borderLeft: '5px solid #FBBF24'}}>
+            <h3 style={{color: '#555'}}>Refund to Customers</h3>
+            <h2 style={{color: '#EF4444'}}>{totalCustRefund.toFixed(2)} SAR</h2>
+          </div>
+          <div style={{...styles.card, borderLeft: '5px solid #059669'}}>
+            <h3 style={{color: '#555'}}>Office Profit from Refunds</h3>
+            <h2 style={{color: '#059669'}}>{totalOfficeProfit.toFixed(2)} SAR</h2>
+          </div>
+        </div>
+
+        <div style={styles.card}>
+          <h3>Portal-wise Refund Breakdown</h3>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr style={{ background: '#1E3A8A', color: 'white' }}>
+              <th style={{padding:'10px', textAlign:'left'}}>Portal</th>
+              <th style={{padding:'10px'}}>Company Refund</th>
+              <th style={{padding:'10px'}}>Customer Refund</th>
+              <th style={{padding:'10px'}}>Office Earned</th>
+            </tr></thead>
+            <tbody>
+              {Object.keys(portalRefunds).length === 0 ? <tr><td colSpan="4" style={{padding:'15px', textAlign:'center'}}>No refunds recorded yet.</td></tr> : 
+                Object.keys(portalRefunds).map(pName => {
+                  const p = portalRefunds[pName];
+                  const earned = p.comp - p.cust;
+                  return (
+                    <tr key={pName} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{padding:'10px', fontWeight: 'bold'}}>{pName}</td>
+                      <td style={{padding:'10px', textAlign:'center', color: '#1E3A8A'}}>{p.comp.toFixed(2)}</td>
+                      <td style={{padding:'10px', textAlign:'center', color: '#EF4444'}}>{p.cust.toFixed(2)}</td>
+                      <td style={{padding:'10px', textAlign:'center', color: '#059669', fontWeight: 'bold'}}>{earned.toFixed(2)}</td>
+                    </tr>
+                  );
+                })
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. CUSTOMER STATEMENT
   if (page === 'customer_statement') {
     const custInvs = data.invoices.filter(i => i.customer_id === stmtCustId && !i.invoice_no.startsWith('REF-'));
     let runningBalance = 0;
@@ -61,7 +126,7 @@ export default function ERPViewsPro(props) {
     );
   }
 
-  // 2. RECURRING INVOICES
+  // 3. RECURRING INVOICES
   if (page === 'recurring_invoices') {
     const recurringInvs = data.invoices.filter(i => i.is_recurring);
 
@@ -121,7 +186,7 @@ export default function ERPViewsPro(props) {
     );
   }
 
-  // 3. EXPENSE APPROVAL SYSTEM
+  // 4. EXPENSE APPROVAL SYSTEM
   if (page === 'expense_approval') {
     const pendingExpenses = data.expenses.filter(e => e.approval_status === 'Pending');
     const updateApproval = async (expId, status) => {
@@ -160,7 +225,7 @@ export default function ERPViewsPro(props) {
     );
   }
 
-  // 4. NOTIFICATIONS CENTER
+  // 5. NOTIFICATIONS CENTER
   if (page === 'notifications') {
     const pendingInv = data.invoices.filter(i => i.due_amount > 0 && !i.invoice_no.startsWith('REF-'));
     const pendingExp = data.expenses.filter(e => e.approval_status === 'Pending');
@@ -185,7 +250,7 @@ export default function ERPViewsPro(props) {
     );
   }
 
-  // 5. STAFF MISTAKES & LOSS PANEL
+  // 6. STAFF MISTAKES & LOSS PANEL
   if (page === 'staff_mistakes') {
     return (
       <div>
