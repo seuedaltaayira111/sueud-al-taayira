@@ -393,17 +393,46 @@ export default function useERPActions(state) {
   };
 
   const handleDeleteInvoice = async (inv) => {
-    if (inv.invoice_no.startsWith('REF-')) return showToast('Refund invoices cannot be deleted directly!');
-    if (!confirm('Delete this invoice permanently? This will reverse the portal balance.')) return;
+    if (!confirm('Delete this invoice permanently? This will reverse all accounting entries.')) return;
     
-    const portal = data.portals.find(p => p.id === inv.portal_id);
-    if (portal) {
-      const newBal = (portal.current_balance || 0) + (inv.total_cost || 0);
-      await supabase.from('portals').update({ current_balance: newBal }).eq('id', portal.id);
+    try {
+      // If it's a Refund Invoice (REF-)
+      if (inv.invoice_no.startsWith('REF-')) {
+        // If customer was given credit, reverse it
+        if (inv.payment_method === 'Credit' && inv.refund_customer > 0 && inv.customer_id) {
+          const cust = data.customers.find(c => c.id === inv.customer_id);
+          if (cust) {
+            const newCredit = (cust.store_credit || 0) - (inv.refund_customer || 0);
+            await supabase.from('customers').update({ store_credit: newCredit }).eq('id', cust.id);
+          }
+        }
+        // If customer was given cash/bank, delete that cashbook entry
+        const cbEntry = data.cashbook.find(c => c.description.includes(`Refund to customer for ${inv.linked_inv_id}`));
+        if (cbEntry) await supabase.from('cashbook').delete().eq('id', cbEntry.id);
+        
+        await supabase.from('invoices').delete().eq('id', inv.id);
+        setData(prev => ({ 
+          ...prev, 
+          invoices: prev.invoices.filter(i => i.id !== inv.id), 
+          cashbook: prev.cashbook.filter(c => c.id !== cbEntry?.id),
+          customers: prev.customers.map(c => c.id === inv.customer_id ? { ...c, store_credit: (c.store_credit || 0) - (inv.refund_customer || 0) } : c)
+        }));
+        showToast('Refund Invoice Deleted & Entries Reversed!');
+        return;
+      }
+
+      // If Normal Invoice
+      const portal = data.portals.find(p => p.id === inv.portal_id);
+      if (portal) {
+        const newBal = (portal.current_balance || 0) + (inv.total_cost || 0);
+        await supabase.from('portals').update({ current_balance: newBal }).eq('id', portal.id);
+      }
+      await supabase.from('invoices').delete().eq('id', inv.id);
+      setData(prev => ({ ...prev, invoices: prev.invoices.filter(i => i.id !== inv.id), portals: prev.portals.map(p => p.id === inv.portal_id ? { ...p, current_balance: (p.current_balance || 0) + (inv.total_cost || 0) } : p) }));
+      showToast('Invoice Deleted & Portal Balance Reversed!');
+    } catch (err) {
+      showToast('Error: ' + err.message);
     }
-    await supabase.from('invoices').delete().eq('id', inv.id);
-    setData(prev => ({ ...prev, invoices: prev.invoices.filter(i => i.id !== inv.id), portals: prev.portals.map(p => p.id === inv.portal_id ? { ...p, current_balance: (p.current_balance || 0) + (inv.total_cost || 0) } : p) }));
-    showToast('Invoice Deleted & Portal Balance Reversed!');
   };
 
   const handleAddExpItem = () => setExpForm(prev => ({ ...prev, items: [...prev.items, { name: '', qty: 1, price: 0 }] }));
@@ -1056,6 +1085,7 @@ export default function useERPActions(state) {
       if (invErr) throw invErr; 
       
       const refNo = `REF-${Date.now()}`; 
+      // Copying ALL details from old invoice to Refund Invoice
       const { data: newRefInv, error: refErr } = await supabase.from('invoices').insert([{ 
         invoice_no: refNo, 
         customer_id: inv.customer_id, 
@@ -1084,6 +1114,7 @@ export default function useERPActions(state) {
       }]).select(`*, customers(name), employees(name)`).single(); 
       if (refErr) throw refErr; 
       
+      // Add money back to the Portal from which the ticket was booked
       if (inv.portal_id && compRef > 0) { 
         const portal = data.portals.find(p => p.id === inv.portal_id); 
         const newPortalBal = (portal.current_balance || 0) + compRef; 
@@ -1198,6 +1229,7 @@ export default function useERPActions(state) {
 
       if (error) throw error;
 
+      // If employee is paying, add to their advance deduction
       if (e.target.paid_by_emp.checked) {
         const { data: newAdv, error: advErr } = await supabase.from('employee_advances').insert([{ 
           employee_id: empId, amount: lossAmount, date: today, status: 'Pending', tenant_id: userProfile.tenant_id 
@@ -1209,7 +1241,9 @@ export default function useERPActions(state) {
       setData(prev => ({ ...prev, staffMistakes: [newMistake, ...(prev.staffMistakes || [])] }));
       showToast('Mistake Loss Recorded & Linked to Salary!');
       e.target.reset();
-    } catch (err) { showToast('Error: ' + err.message); }
+    } catch (err) { 
+      showToast('Error: ' + err.message); 
+    }
   };
 
   return {
