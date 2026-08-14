@@ -243,8 +243,8 @@ export default function ERPViewsAdvanced(props) {
         </div>
         
         <div style={styles.card}>
-          <h3>📅 Daily Time-Based Attendance & Leave</h3>
-          <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '15px' }}>Mark Check-in and Check-out time. System will automatically calculate Overtime (>9 hrs) and Salary Deduction (<8 hrs).</p>
+          <h3>📅 Daily Time-Based Attendance &amp; Leave</h3>
+          <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '15px' }}>Mark Check-in and Check-out time. System will automatically calculate Overtime ({'>9 hrs'}) and Salary Deduction ({'<8 hrs'}).</p>
           <form onSubmit={markAttendance} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr auto', gap: '15px', alignItems: 'flex-end' }}>
             <div>
               <label style={styles.label}>Employee</label>
