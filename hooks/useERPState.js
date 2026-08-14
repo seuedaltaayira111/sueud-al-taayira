@@ -4,11 +4,67 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
-// PREMIUM INVOICE TEMPLATE
+// ==========================================
+// MASSIVE TRANSLATION ENGINE (EN/AR)
+// ==========================================
+const translations = {
+  en: {
+    dashboard: 'Dashboard', create: 'Create Invoice', list: 'Invoices', refunds: 'Refunds',
+    customers: 'Customers', corporates: 'Corporates', creditors: 'Creditors', credit: 'Credit Balances',
+    vendors: 'Vendors', packages: 'Packages', branches: 'Branches', portals: 'Portals', bank: 'Bank & Cash',
+    invest: 'Investors', hr: 'Human Resources', users: 'Users', settings: 'Settings', reports: 'Reports',
+    audit: 'Audit Logs', statements: 'Statements', contract: 'Contracts', offer: 'Offers',
+    superadmin: 'SuperAdmin', profile: 'Profile', profitability: 'Profitability',
+    search: 'Search...', download_excel: 'Export Excel', logout: 'Logout', changePass: 'Change Password',
+    quotations: 'Quotations', ai_dashboard: 'AI Dashboard', hr_advanced: 'HR & Payroll', staff_mistakes: 'Staff Mistakes & Loss',
+    custType: 'Customer Type', individual: 'Individual', corporate: 'Corporate', selectCustomer: 'Select Customer', newCustomer: 'New Customer',
+    customerName: 'Customer Name', customerPhone: 'Customer Phone', passengers: 'Passengers', addPassenger: '+ Add Passenger',
+    portal: 'Portal', service: 'Service', flightTicket: 'Flight Ticket', hotel: 'Hotel', tourPackage: 'Tour Package', visitVisa: 'Visit Visa', umrahVisa: 'Umrah Visa', newService: 'New Service',
+    flightType: 'Flight Type', domestic: 'Domestic', international: 'International', airline: 'Airline', sector: 'Sector', pnr: 'PNR', ticketNo: 'Ticket No',
+    hotelName: 'Hotel Name', checkIn: 'Check In', checkOut: 'Check Out', serviceName: 'Service Name', qty: 'Qty', cost: 'Cost', sell: 'Sell', discount: 'Discount',
+    vatRate: 'VAT Rate', invoiceDate: 'Invoice Date', journeyType: 'Journey Type', single: 'Single', roundTrip: 'Round Trip', multiCity: 'Multi-city',
+    fareType: 'Fare Type', refundable: 'Refundable', nonRefundable: 'Non-Refundable', bookingType: 'Booking Type', newBooking: 'New Booking', reissue: 'Reissue', extraLuggage: 'Extra Luggage', previousBooking: 'Previous Booking',
+    salesPerson: 'Sales Person', paymentMethod: 'Payment Method', cash: 'Cash', bankTransfer: 'Bank Transfer', credit: 'Credit', creditBalance: 'Credit Balance', tabby: 'Tabby', tamara: 'Tamara',
+    paidAmount: 'Paid Amount (Cash/Bank)', useCreditAmount: 'Use Credit Amount', generateInvoice: 'Generate Invoice', updateInvoice: 'Update Invoice',
+    invNo: 'Inv No', total: 'Total', due: 'Due', method: 'Method', actions: 'Actions', preview: 'Preview', print: 'Print', edit: 'Edit', delete: 'Delete', quickSettle: 'Quick Settle', refund: 'Refund',
+    changePassword: 'Change Password', newPassword: 'New Password', settlePayment: 'Settle Payment', processRefund: 'Process Refund',
+    companyRefund: 'Company Refund (Portal)', customerRefund: 'Customer Refund Amount', customerRefundMethod: 'Customer Refund Method',
+    refundReason: 'Refund Reason', documentPreview: 'Document Preview', close: 'Close', cancel: 'Cancel', save: 'Save', mark: 'Mark', logLoss: 'Log Loss'
+  },
+  ar: {
+    dashboard: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'الفواتير', refunds: 'الاسترجاعات',
+    customers: 'العملاء', corporates: 'الشركات', creditors: 'الدائنون', credit: 'أرصدة الائتمان',
+    vendors: 'الموردون', packages: 'الباقات', branches: 'الفروع', portals: 'البوابات', bank: 'البنك والصندوق',
+    invest: 'المستثمرون', hr: 'الموارد البشرية', users: 'المستخدمون', settings: 'الإعدادات', reports: 'التقارير',
+    audit: 'سجل التدقيق', statements: 'الكشوف', contract: 'العقود', offer: 'العروض',
+    superadmin: 'المدير العام', profile: 'الملف الشخصي', profitability: 'الربحية',
+    search: 'بحث...', download_excel: 'تصدير إكسل', logout: 'تسجيل الخروج', changePass: 'تغيير كلمة المرور',
+    quotations: 'عروض الأسعار', ai_dashboard: 'لوحة الذكاء الاصطناعي', hr_advanced: 'الموارد البشرية والرواتب', staff_mistakes: 'أخطاء الموظفين والخسائر',
+    custType: 'نوع العميل', individual: 'فرد', corporate: 'شركة', selectCustomer: 'اختر العميل', newCustomer: 'عميل جديد',
+    customerName: 'اسم العميل', customerPhone: 'هاتف العميل', passengers: 'الركاب', addPassenger: '+ إضافة راكب',
+    portal: 'البوابة', service: 'الخدمة', flightTicket: 'تذكرة طيران', hotel: 'فندق', tourPackage: 'باقة سياحية', visitVisa: 'تأشيرة زيارة', umrahVisa: 'تأشيرة عمرة', newService: 'خدمة جديدة',
+    flightType: 'نوع الرحلة', domestic: 'داخلية', international: 'دولية', airline: 'خط الطيران', sector: 'القطاع', pnr: 'رقم الحجز', ticketNo: 'رقم التذكرة',
+    hotelName: 'اسم الفندق', checkIn: 'تاريخ الوصول', checkOut: 'تاريخ المغادرة', serviceName: 'اسم الخدمة', qty: 'الكمية', cost: 'التكلفة', sell: 'البيع', discount: 'الخصم',
+    vatRate: 'نسبة الضريبة', invoiceDate: 'تاريخ الفاتورة', journeyType: 'نوع الرحلة', single: 'ذهاب', roundTrip: 'ذهاب وعودة', multiCity: 'مدن متعددة',
+    fareType: 'نوع الأجرة', refundable: 'قابلة للاسترداد', nonRefundable: 'غير قابلة للاسترداد', bookingType: 'نوع الحجز', newBooking: 'حجز جديد', reissue: 'إعادة إصدار', extraLuggage: 'أمتعة إضافية', previousBooking: 'حجز سابق',
+    salesPerson: 'موظف المبيعات', paymentMethod: 'طريقة الدفع', cash: 'نقداً', bankTransfer: 'تحويل بنكي', credit: 'آجل', creditBalance: 'رصيد ائتماني', tabby: 'تابي', tamara: 'تمارا',
+    paidAmount: 'المبلغ المدفوع (نقداً/بنك)', useCreditAmount: 'استخدام مبلغ الرصيد', generateInvoice: 'إنشاء الفاتورة', updateInvoice: 'تحديث الفاتورة',
+    invNo: 'رقم الفاتورة', total: 'الإجمالي', due: 'المتبقي', method: 'الطريقة', actions: 'إجراءات', preview: 'معاينة', print: 'طباعة', edit: 'تعديل', delete: 'حذف', quickSettle: 'تسوية سريعة', refund: 'استرجاع',
+    changePassword: 'تغيير كلمة المرور', newPassword: 'كلمة المرور الجديدة', settlePayment: 'تسوية الدفعة', processRefund: 'معالجة الاسترجاع',
+    companyRefund: 'استرجاع الشركة (البوابة)', customerRefund: 'مبلغ استرجاع العميل', customerRefundMethod: 'طريقة استرجاع العميل',
+    refundReason: 'سبب الاسترجاع', documentPreview: 'معاينة المستند', close: 'إغلاق', cancel: 'إلغاء', save: 'حفظ', mark: 'تسجيل', logLoss: 'تسجيل خسارة'
+  }
+};
+
+// ==========================================
+// PREMIUM BILINGUAL INVOICE TEMPLATE
+// ==========================================
 const getInvoiceHTML = (inv, s, lang = 'en') => {
   const setting = s || {};
   const isAr = lang === 'ar';
   const dir = isAr ? 'rtl' : 'ltr';
+  const t = translations[lang];
+  
   const invoiceNo = inv.invoice_no || 'N/A';
   const trackUrl = `https://sueud-al-taayira.vercel.app/invoice/${invoiceNo}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(trackUrl)}`;
@@ -16,14 +72,14 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
 
   return `
   <!DOCTYPE html>
-  <html lang="${isAr ? 'ar' : 'en'}" dir="${dir}">
+  <html lang="${lang}" dir="${dir}">
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice ${invoiceNo}</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-      body { font-family: 'Poppins', 'Cairo', sans-serif; background: #e2e8f0; margin: 0; padding: 20px; color: #1e293b; -webkit-print-color-adjust: exact; }
+      body { font-family: ${isAr ? "'Cairo', sans-serif" : "'Poppins', sans-serif"}; background: #e2e8f0; margin: 0; padding: 20px; color: #1e293b; -webkit-print-color-adjust: exact; }
       .invoice-container { max-width: 850px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; border-top: 8px solid #1E3A8A; }
       .header { padding: 25px 30px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
       .company-info h2 { margin: 0; font-size: 28px; color: #1E3A8A; font-weight: 800; direction: rtl; font-family: 'Cairo', sans-serif; }
@@ -39,7 +95,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
       .card h4 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; color: #1E3A8A; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; }
       .card p { margin: 5px 0; font-size: 13px; display: flex; justify-content: space-between; }
       .card p strong { color: #334155; }
-      .card p span { color: #64748b; font-weight: 600; text-align: right; max-width: 60%; word-wrap: break-word; }
+      .card p span { color: #64748b; font-weight: 600; text-align: ${isAr ? 'left' : 'right'}; max-width: 60%; word-wrap: break-word; }
       .table-wrapper { background: #fff; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; margin-bottom: 20px; }
       table { width: 100%; border-collapse: collapse; }
       thead th { background: #1E3A8A; color: #fff; padding: 12px; font-size: 13px; text-align: ${isAr ? 'right' : 'left'}; }
@@ -47,7 +103,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
       thead th.right { text-align: right; }
       tbody td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; color: #334155; vertical-align: top; }
       tbody td.center { text-align: center; }
-      tbody td.right { text-align: right; font-weight: 600; }
+      tbody td.right { text-align: ${isAr ? 'left' : 'right'}; font-weight: 600; }
       .service-badge { display: inline-block; background: #DBEAFE; color: #1E3A8A; padding: 3px 8px; border-radius: 15px; font-size: 11px; font-weight: 600; margin-top: 5px; }
       .totals-section { display: flex; justify-content: flex-end; margin-bottom: 20px; }
       .totals-box { width: 320px; }
@@ -86,42 +142,42 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
           </p>
         </div>
         <div class="invoice-meta">
-          <h3>Tax Invoice / فاتورة</h3>
-          <p>Invoice No / رقم: <span>${invoiceNo}</span></p>
-          <p>Date / التاريخ: <span>${inv.invoice_date || ''}</span></p>
-          <p>Status / الحالة: <span>${inv.due_amount > 0 ? 'Unpaid' : 'Paid'}</span></p>
+          <h3>${isAr ? 'فاتورة ضريبية' : 'Tax Invoice'}</h3>
+          <p>${isAr ? 'رقم الفاتورة' : 'Invoice No'}: <span>${invoiceNo}</span></p>
+          <p>${isAr ? 'التاريخ' : 'Date'}: <span>${inv.invoice_date || ''}</span></p>
+          <p>${isAr ? 'الحالة' : 'Status'}: <span>${inv.due_amount > 0 ? (isAr ? 'غير مدفوعة' : 'Unpaid') : (isAr ? 'مدفوعة' : 'Paid')}</span></p>
         </div>
       </div>
       <div class="body">
         <div class="details-grid">
           <div class="card">
-            <h4>Customer Info / معلومات العميل</h4>
-            <p><strong>Name / الاسم:</strong> <span>${inv.customers?.name || inv.corporates?.name || 'Walk-in'}</span></p>
-            <p><strong>Phone / الجوال:</strong> <span>${inv.customers?.phone || 'N/A'}</span></p>
-            <p><strong>Sales Person / موظف المبيعات:</strong> <span>${inv.employees?.name || 'N/A'}</span></p>
+            <h4>${isAr ? 'معلومات العميل' : 'Customer Info'}</h4>
+            <p><strong>${isAr ? 'الاسم' : 'Name'}:</strong> <span>${inv.customers?.name || inv.corporates?.name || 'Walk-in'}</span></p>
+            <p><strong>${isAr ? 'الجوال' : 'Phone'}:</strong> <span>${inv.customers?.phone || 'N/A'}</span></p>
+            <p><strong>${isAr ? 'موظف المبيعات' : 'Sales Person'}:</strong> <span>${inv.employees?.name || 'N/A'}</span></p>
           </div>
           <div class="card" style="border-left-color: #D97706;">
-            <h4>Booking Details / تفاصيل الحجز</h4>
-            <p><strong>Service / الخدمة:</strong> <span>${inv.service_type || 'Flight'}</span></p>
-            <p><strong>Airline / الشركة:</strong> <span>${inv.airline || 'N/A'}</span></p>
-            <p><strong>Ticket No / رقم التذكرة:</strong> <span>${inv.ticket_no || 'N/A'}</span></p>
-            <p><strong>PNR / رقم الحجز:</strong> <span>${inv.pnr || 'N/A'}</span></p>
-            <p><strong>Passenger / الركاب:</strong> <span>${inv.passenger_names ? inv.passenger_names.replace(/\n/g, ', ') : 'N/A'}</span></p>
+            <h4>${isAr ? 'تفاصيل الحجز' : 'Booking Details'}</h4>
+            <p><strong>${isAr ? 'الخدمة' : 'Service'}:</strong> <span>${inv.service_type || 'Flight'}</span></p>
+            <p><strong>${isAr ? 'خط الطيران' : 'Airline'}:</strong> <span>${inv.airline || 'N/A'}</span></p>
+            <p><strong>${isAr ? 'رقم التذكرة' : 'Ticket No'}:</strong> <span>${inv.ticket_no || 'N/A'}</span></p>
+            <p><strong>${isAr ? 'رقم الحجز' : 'PNR'}:</strong> <span>${inv.pnr || 'N/A'}</span></p>
+            <p><strong>${isAr ? 'الركاب' : 'Passenger'}:</strong> <span>${inv.passenger_names ? inv.passenger_names.replace(/\n/g, ', ') : 'N/A'}</span></p>
           </div>
         </div>
         ${inv.linked_inv_id ? `
         <div class="card" style="margin-bottom: 20px; border-left-color: #64748b; background: #f1f5f9;">
-          <h4>Linked Previous Booking / الحجز السابق</h4>
-          <p><strong>Original Invoice No / رقم الفاتورة الأصلية:</strong> <span>${inv.linked_inv_id}</span></p>
+          <h4>${isAr ? 'الحجز السابق المرتبط' : 'Linked Previous Booking'}</h4>
+          <p><strong>${isAr ? 'رقم الفاتورة الأصلية' : 'Original Invoice No'}:</strong> <span>${inv.linked_inv_id}</span></p>
         </div>` : ''}
         <div class="table-wrapper">
           <table>
             <thead>
               <tr>
-                <th>Description / الوصف</th>
-                <th class="center">Qty / الكمية</th>
-                <th class="right">Unit Price / السعر</th>
-                <th class="right">Total / الإجمالي</th>
+                <th>${isAr ? 'الوصف' : 'Description'}</th>
+                <th class="center">${isAr ? 'الكمية' : 'Qty'}</th>
+                <th class="right">${isAr ? 'سعر الوحدة' : 'Unit Price'}</th>
+                <th class="right">${isAr ? 'الإجمالي' : 'Total'}</th>
               </tr>
             </thead>
             <tbody>
@@ -139,29 +195,29 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
         </div>
         <div class="totals-section">
           <div class="totals-box">
-            <div class="total-row"><span>Total Before Tax / الإجمالي قبل الضريبة</span> <strong>${(inv.total_sell || 0).toFixed(2)} SAR</strong></div>
-            <div class="total-row"><span>VAT (15%) / قيمة الضريبة</span> <strong>${(inv.vat || 0).toFixed(2)} SAR</strong></div>
-            <div class="grand-total"><span>Grand Total / الإجمالي شامل الضريبة</span> <strong>${(inv.total || 0).toFixed(2)} SAR</strong></div>
-            ${inv.used_credit > 0 ? `<div class="total-row" style="margin-top: 10px; border-bottom: none;"><span>Credit Used / رصيد مستخدم</span> <strong class="credit-used">- ${inv.used_credit.toFixed(2)} SAR</strong></div>` : ''}
-            <div class="total-row" style="${inv.used_credit > 0 ? '' : 'margin-top: 10px;'} border-bottom: none;"><span>Cash Paid / المدفوع نقداً</span> <strong class="paid-amount">${((inv.paid_amount || 0) - (inv.used_credit || 0)).toFixed(2)} SAR</strong></div>
-            <div class="total-row"><span>Due Amount / المتبقي</span> <strong class="due-amount">${(inv.due_amount || 0).toFixed(2)} SAR</strong></div>
-            <div class="total-row" style="border-bottom: none;"><span>Payment Method / طريقة الدفع</span> <strong>${inv.payment_method || 'Cash'}</strong></div>
+            <div class="total-row"><span>${isAr ? 'الإجمالي قبل الضريبة' : 'Total Before Tax'}</span> <strong>${(inv.total_sell || 0).toFixed(2)} SAR</strong></div>
+            <div class="total-row"><span>${isAr ? 'قيمة الضريبة (15%)' : 'VAT (15%)'}</span> <strong>${(inv.vat || 0).toFixed(2)} SAR</strong></div>
+            <div class="grand-total"><span>${isAr ? 'الإجمالي شامل الضريبة' : 'Grand Total'}</span> <strong>${(inv.total || 0).toFixed(2)} SAR</strong></div>
+            ${inv.used_credit > 0 ? `<div class="total-row" style="margin-top: 10px; border-bottom: none;"><span>${isAr ? 'رصيد مستخدم' : 'Credit Used'}</span> <strong class="credit-used">- ${inv.used_credit.toFixed(2)} SAR</strong></div>` : ''}
+            <div class="total-row" style="${inv.used_credit > 0 ? '' : 'margin-top: 10px;'} border-bottom: none;"><span>${isAr ? 'المدفوع نقداً' : 'Cash Paid'}</span> <strong class="paid-amount">${((inv.paid_amount || 0) - (inv.used_credit || 0)).toFixed(2)} SAR</strong></div>
+            <div class="total-row"><span>${isAr ? 'المتبقي' : 'Due Amount'}</span> <strong class="due-amount">${(inv.due_amount || 0).toFixed(2)} SAR</strong></div>
+            <div class="total-row" style="border-bottom: none;"><span>${isAr ? 'طريقة الدفع' : 'Payment Method'}</span> <strong>${inv.payment_method || 'Cash'}</strong></div>
           </div>
         </div>
       </div>
       <div class="footer">
         <div class="codes">
           <img src="${barcodeUrl}" alt="Barcode" crossorigin="anonymous"><br>
-          <small style="color:#94a3b8; font-size: 10px;">Scan Barcode / امسح الباركود</small>
+          <small style="color:#94a3b8; font-size: 10px;">${isAr ? 'امسح الباركود' : 'Scan Barcode'}</small>
         </div>
         <div class="footer-text">
           <strong>${setting.company_name_ar || 'صعود الطائرة للسفر السياحة'}</strong>
-          <p>${setting.invoice_footer || 'Thank you for choosing us! / شكراً لاختياركم خدماتنا'}</p>
-          <p>THIS IS A SYSTEM GENERATED INVOICE / هذه فاتورة صادرة من النظام</p>
+          <p>${setting.invoice_footer || (isAr ? 'شكراً لاختياركم خدماتنا' : 'Thank you for choosing us!')}</p>
+          <p>${isAr ? 'هذه فاتورة صادرة من النظام' : 'THIS IS A SYSTEM GENERATED INVOICE'}</p>
         </div>
         <div class="codes">
           <img src="${qrCodeUrl}" alt="QR Code" crossorigin="anonymous"><br>
-          <small style="color:#94a3b8; font-size: 10px;">Scan for Online / امسح للإلكتروني</small>
+          <small style="color:#94a3b8; font-size: 10px;">${isAr ? 'امسح للإلكتروني' : 'Scan for Online'}</small>
         </div>
       </div>
     </div>
@@ -170,30 +226,31 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
   `;
 };
 
-// REFUND INVOICE TEMPLATE (PROFIT HIDDEN, PAYMENT STATUS ADDED)
-const getRefundHTML = (inv, s) => {
+// REFUND INVOICE TEMPLATE (BILINGUAL)
+const getRefundHTML = (inv, s, lang = 'en') => {
   const setting = s || {};
+  const isAr = lang === 'ar';
   const invoiceNo = inv.invoice_no || 'N/A';
   const trackUrl = `https://sueud-al-taayira.vercel.app/invoice/${invoiceNo}`;
   const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(trackUrl)}&code=Code128&translate-esc=on`;
   const custRefund = inv.refund_customer || 0;
-  const payMode = inv.payment_method === 'Credit' ? 'Added to Credit Balance' : (inv.payment_method || 'Cash/Bank');
+  const payMode = inv.payment_method === 'Credit' ? (isAr ? 'أضيف إلى الرصيد الائتماني' : 'Added to Credit Balance') : (inv.payment_method || (isAr ? 'نقداً/بنك' : 'Cash/Bank'));
 
   return `
   <!DOCTYPE html>
-  <html dir="rtl">
+  <html lang="${lang}" dir="${isAr ? 'rtl' : 'ltr'}">
   <head>
     <meta charset="UTF-8">
     <title>Refund Invoice ${invoiceNo}</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-      body { font-family: 'Poppins', 'Cairo', sans-serif; background: #e2e8f0; margin: 0; padding: 20px; color: #1e293b; -webkit-print-color-adjust: exact; }
+      body { font-family: ${isAr ? "'Cairo', sans-serif" : "'Poppins', sans-serif"}; background: #e2e8f0; margin: 0; padding: 20px; color: #1e293b; -webkit-print-color-adjust: exact; }
       .invoice-container { max-width: 850px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; border-top: 8px solid #EF4444; }
       .header { padding: 25px 30px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
       .company-info h2 { margin: 0; font-size: 28px; color: #EF4444; font-weight: 800; direction: rtl; font-family: 'Cairo', sans-serif; }
       .company-info h1 { margin: 3px 0 0; font-size: 18px; color: #1e293b; font-weight: 700; }
       .company-info p { margin: 8px 0 0; font-size: 12px; color: #64748b; line-height: 1.5; }
-      .invoice-meta { text-align: left; background: #EF4444; padding: 15px 25px; border-radius: 10px; color: #fff; }
+      .invoice-meta { text-align: ${isAr ? 'left' : 'right'}; background: #EF4444; padding: 15px 25px; border-radius: 10px; color: #fff; }
       .invoice-meta h3 { margin: 0 0 8px; font-size: 20px; color: #fff; text-transform: uppercase; }
       .invoice-meta p { margin: 3px 0; font-size: 13px; }
       .invoice-meta span { color: #fff; font-weight: 700; }
@@ -225,36 +282,36 @@ const getRefundHTML = (inv, s) => {
           </p>
         </div>
         <div class="invoice-meta">
-          <h3>Credit Note / إشعار دائن</h3>
-          <p>Refund No / رقم الاسترجاع: <span>${invoiceNo}</span></p>
-          <p>Date / التاريخ: <span>${inv.invoice_date || ''}</span></p>
+          <h3>${isAr ? 'إشعار دائن' : 'Credit Note'}</h3>
+          <p>${isAr ? 'رقم الاسترجاع' : 'Refund No'}: <span>${invoiceNo}</span></p>
+          <p>${isAr ? 'التاريخ' : 'Date'}: <span>${inv.invoice_date || ''}</span></p>
         </div>
       </div>
       <div class="body">
         <div class="card">
-          <h4>Customer & Ticket Details / تفاصيل العميل والتذكرة</h4>
-          <p><strong>Customer Name / اسم العميل:</strong> <span>${inv.customers?.name || 'N/A'}</span></p>
-          <p><strong>Original Invoice / الفاتورة الأصلية:</strong> <span>${inv.linked_inv_id || 'N/A'}</span></p>
-          <p><strong>Airline / الشركة:</strong> <span>${inv.airline || 'N/A'}</span></p>
-          <p><strong>PNR / رقم الحجز:</strong> <span>${inv.pnr || 'N/A'}</span></p>
-          <p><strong>Ticket No / رقم التذكرة:</strong> <span>${inv.ticket_no || 'N/A'}</span></p>
-          <p><strong>Passenger / الركاب:</strong> <span>${inv.passenger_names || 'N/A'}</span></p>
-          <p style="color: #EF4444; font-weight: bold;"><strong>Reason / سبب الإلغاء:</strong> <span>${inv.refund_reason || 'N/A'}</span></p>
+          <h4>${isAr ? 'تفاصيل العميل والتذكرة' : 'Customer & Ticket Details'}</h4>
+          <p><strong>${isAr ? 'اسم العميل' : 'Customer Name'}:</strong> <span>${inv.customers?.name || 'N/A'}</span></p>
+          <p><strong>${isAr ? 'الفاتورة الأصلية' : 'Original Invoice'}:</strong> <span>${inv.linked_inv_id || 'N/A'}</span></p>
+          <p><strong>${isAr ? 'خط الطيران' : 'Airline'}:</strong> <span>${inv.airline || 'N/A'}</span></p>
+          <p><strong>${isAr ? 'رقم الحجز' : 'PNR'}:</strong> <span>${inv.pnr || 'N/A'}</span></p>
+          <p><strong>${isAr ? 'رقم التذكرة' : 'Ticket No'}:</strong> <span>${inv.ticket_no || 'N/A'}</span></p>
+          <p><strong>${isAr ? 'الركاب' : 'Passenger'}:</strong> <span>${inv.passenger_names || 'N/A'}</span></p>
+          <p style="color: #EF4444; font-weight: bold;"><strong>${isAr ? 'سبب الإلغاء' : 'Reason'}:</strong> <span>${inv.refund_reason || 'N/A'}</span></p>
         </div>
         <div class="totals-section">
           <div class="totals-box">
-            <div class="grand-total"><span>Total Refunded to Customer / المبلغ المسترجع للعميل</span> <strong>${custRefund.toFixed(2)} SAR</strong></div>
-            <div class="status-box"><span>Refund Paid Via / طريقة الدفع</span> <strong style="color: ${inv.payment_method === 'Credit' ? '#7c3aed' : '#059669'}">${payMode}</strong></div>
+            <div class="grand-total"><span>${isAr ? 'المبلغ المسترجع للعميل' : 'Total Refunded to Customer'}</span> <strong>${custRefund.toFixed(2)} SAR</strong></div>
+            <div class="status-box"><span>${isAr ? 'طريقة الدفع' : 'Refund Paid Via'}</span> <strong style="color: ${inv.payment_method === 'Credit' ? '#7c3aed' : '#059669'}">${payMode}</strong></div>
           </div>
         </div>
       </div>
       <div class="footer">
         <div class="codes">
           <img src="${barcodeUrl}" alt="Barcode" crossorigin="anonymous"><br>
-          <small style="color:#94a3b8; font-size: 10px;">Scan Barcode / امسح الباركود</small>
+          <small style="color:#94a3b8; font-size: 10px;">${isAr ? 'امسح الباركود' : 'Scan Barcode'}</small>
         </div>
         <div class="footer-text">
-          <p>This is a system generated refund invoice / هذا إشعار دائن صادر من النظام</p>
+          <p>${isAr ? 'هذا إشعار دائن صادر من النظام' : 'This is a system generated refund invoice'}</p>
         </div>
         <div class="codes" style="visibility: hidden;"><img src="${barcodeUrl}" alt="QR"></div>
       </div>
@@ -267,18 +324,23 @@ const getRefundHTML = (inv, s) => {
 const getExpenseHTML = (exp, s) => `<div>Expense ${exp.invoice_no}</div>`;
 const getContractHTML = (s, name, date, isOffer, type, markup, terms) => `<div>Contract for ${name}</div>`;
 
+// ==========================================
+// MAIN HOOK START
+// ==========================================
 export default function useERPState() {
   const router = useRouter();
   const today = new Date().toISOString().split('T')[0];
+
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [toast, setToast] = useState(null);
+  const [lang, setLang] = useState('en'); // Default English
   const [data, setData] = useState({
     invoices: [], customers: [], corporates: [], creditors: [], portals: [], cashbook: [], expenses: [], investments: [], employees: [], payroll: [], appUsers: [], branches: [], packages: [], vendors: [], services: [], recharges: [], audits: [], empAdvances: [], tenants: [], settings: {}, staffMistakes: []
   });
+
   const [page, setPage] = useState('dashboard');
   const [tblPage, setTblPage] = useState(1);
-  const [lang, setLang] = useState('en');
   const [modal, setModal] = useState({ type: null, data: null });
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([{ sender: 'bot', text: 'Hello! How can I help you?' }]);
@@ -327,16 +389,7 @@ export default function useERPState() {
   const [editSrvId, setEditSrvId] = useState(null);
   const [editUserId, setEditUserId] = useState(null);
 
-  const tr = {
-    dashboard: 'Dashboard', dash: 'Dashboard', create: 'Create Invoice', list: 'Invoices', refunds: 'Refunds',
-    customers: 'Customers', corporates: 'Corporates', creditors: 'Creditors', credit: 'Credit Balances',
-    vendors: 'Vendors', packages: 'Packages', branches: 'Branches', portals: 'Portals', bank: 'Bank & Cash',
-    invest: 'Investors', hr: 'Human Resources', users: 'Users', settings: 'Settings', reports: 'Reports',
-    audit: 'Audit Logs', statements: 'Statements', contract: 'Contracts', offer: 'Offers',
-    superadmin: 'SuperAdmin', profile: 'Profile', profitability: 'Profitability',
-    search: 'Search...', download_excel: 'Export Excel', logout: 'Logout', changePass: 'Change Password',
-    quotations: 'Quotations', ai_dashboard: 'AI Dashboard', hr_advanced: 'HR & Payroll Advanced', staff_mistakes: 'Staff Mistakes & Loss'
-  };
+  const tr = translations[lang]; // Active translation dictionary
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
   const logAction = async (action) => { if (!userProfile?.id) return; try { await supabase.from('audits').insert([{ user_email: userProfile.email, action, tenant_id: userProfile.tenant_id }]); } catch (e) {} };
@@ -366,7 +419,30 @@ export default function useERPState() {
       });
     } catch (err) {}
   }, [userProfile]);
-  const exportToExcel = (data, filename) => { alert("Excel export function needs to be implemented."); };
+
+  const exportToExcel = (data, filename) => {
+    if (!data || data.length === 0) return showToast('No data to export');
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row => headers.map(header => {
+        let val = row[header];
+        if (typeof val === 'object' && val !== null) val = val.name || JSON.stringify(val);
+        return `"${val !== undefined && val !== null ? String(val).replace(/"/g, '""') : ''}"`;
+      }).join(','))
+    ].join('\n');
+    
+    const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${filename}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('Excel/CSV Exported Successfully!');
+  };
   const filterData = (arr, dateField) => arr.filter(item => { const d = item[dateField]; return !d || (d >= repDate.from && d <= repDate.to); });
 
   useEffect(() => {
@@ -386,6 +462,7 @@ export default function useERPState() {
 
   return {
     user, data, setData, userProfile, setUserProfile, toast, showToast, logAction, fetchAll,
+    lang, setLang, tr, // Return translation engine
     invForm, setInvForm, expForm, setExpForm, corpForm, setCorpForm, creditorForm, setCreditorForm,
     custForm, setCustForm, vendorForm, setVendorForm, pkgForm, setPkgForm, brnForm, setBrnForm,
     empForm, setEmpForm, srvForm, setSrvForm, investForm, setInvestForm, settleForm, setSettleForm,
@@ -398,8 +475,8 @@ export default function useERPState() {
     contractCorpName, setContractCorpName, contractType, setContractType, contractMarkup, setContractMarkup,
     contractTerms, setContractTerms, tenantForm, setTenantForm, profileForm, setProfileForm,
     ledgerEmpId, setLedgerEmpId, ledgerCustId, setLedgerCustId, repDate, setRepDate,
-    reportTab, setReportTab, statementTab, setStatementTab, page, setPage, lang, setLang,
+    reportTab, setReportTab, statementTab, setStatementTab, page, setPage, 
     chatOpen, setChatOpen, search, setSearch, payFilter, setPayFilter, tblPage, setTblPage, 
-    exportToExcel, filterData, tr
+    exportToExcel, filterData
   };
 }
