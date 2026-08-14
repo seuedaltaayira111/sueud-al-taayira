@@ -91,7 +91,7 @@ export default function ERPViewsEnterprise(props) {
         <h2 style={{ color: '#1E3A8A' }}>🏢 Multi-Branch Overview</h2>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
           {data.branches.map(br => {
-            const brInv = data.invoices.filter(i => i.branch_id === br.id); // Assuming branch_id might exist later
+            const brInv = data.invoices.filter(i => i.branch_id === br.id);
             const sales = brInv.reduce((s, i) => s + (i.total || 0), 0);
             return (
               <div key={br.id} style={styles.card}>
