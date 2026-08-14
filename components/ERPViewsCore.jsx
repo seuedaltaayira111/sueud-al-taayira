@@ -98,7 +98,6 @@ export default function ERPViewsCore(props) {
                   linkedInvId: e.target.value, 
                   useCredit: linkedInv?.refund_customer || 0, 
                   creditCustId: linkedInv?.customer_id || '',
-                  // Auto-fill old details
                   pnr: linkedInv?.pnr || invForm.pnr,
                   ticketNo: linkedInv?.ticket_no || invForm.ticketNo,
                   airline: linkedInv?.airline || invForm.airline,
