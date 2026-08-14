@@ -4,14 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
-// ==========================================
 // PREMIUM INVOICE TEMPLATE
-// ==========================================
 const getInvoiceHTML = (inv, s, lang = 'en') => {
   const setting = s || {};
   const isAr = lang === 'ar';
   const dir = isAr ? 'rtl' : 'ltr';
-  
   const invoiceNo = inv.invoice_no || 'N/A';
   const trackUrl = `https://sueud-al-taayira.vercel.app/invoice/${invoiceNo}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(trackUrl)}`;
@@ -95,7 +92,6 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
           <p>Status / الحالة: <span>${inv.due_amount > 0 ? 'Unpaid' : 'Paid'}</span></p>
         </div>
       </div>
-
       <div class="body">
         <div class="details-grid">
           <div class="card">
@@ -113,13 +109,11 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
             <p><strong>Passenger / الركاب:</strong> <span>${inv.passenger_names ? inv.passenger_names.replace(/\n/g, ', ') : 'N/A'}</span></p>
           </div>
         </div>
-
         ${inv.linked_inv_id ? `
         <div class="card" style="margin-bottom: 20px; border-left-color: #64748b; background: #f1f5f9;">
           <h4>Linked Previous Booking / الحجز السابق</h4>
           <p><strong>Original Invoice No / رقم الفاتورة الأصلية:</strong> <span>${inv.linked_inv_id}</span></p>
         </div>` : ''}
-
         <div class="table-wrapper">
           <table>
             <thead>
@@ -143,7 +137,6 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
             </tbody>
           </table>
         </div>
-
         <div class="totals-section">
           <div class="totals-box">
             <div class="total-row"><span>Total Before Tax / الإجمالي قبل الضريبة</span> <strong>${(inv.total_sell || 0).toFixed(2)} SAR</strong></div>
@@ -156,7 +149,6 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
           </div>
         </div>
       </div>
-
       <div class="footer">
         <div class="codes">
           <img src="${barcodeUrl}" alt="Barcode" crossorigin="anonymous"><br>
@@ -178,15 +170,12 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
   `;
 };
 
-// ==========================================
-// DETAILED REFUND INVOICE TEMPLATE (PROFIT HIDDEN, PAYMENT STATUS ADDED)
-// ==========================================
+// REFUND INVOICE TEMPLATE (PROFIT HIDDEN, PAYMENT STATUS ADDED)
 const getRefundHTML = (inv, s) => {
   const setting = s || {};
   const invoiceNo = inv.invoice_no || 'N/A';
   const trackUrl = `https://sueud-al-taayira.vercel.app/invoice/${invoiceNo}`;
   const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(trackUrl)}&code=Code128&translate-esc=on`;
-  
   const custRefund = inv.refund_customer || 0;
   const payMode = inv.payment_method === 'Credit' ? 'Added to Credit Balance' : (inv.payment_method || 'Cash/Bank');
 
@@ -252,7 +241,6 @@ const getRefundHTML = (inv, s) => {
           <p><strong>Passenger / الركاب:</strong> <span>${inv.passenger_names || 'N/A'}</span></p>
           <p style="color: #EF4444; font-weight: bold;"><strong>Reason / سبب الإلغاء:</strong> <span>${inv.refund_reason || 'N/A'}</span></p>
         </div>
-        
         <div class="totals-section">
           <div class="totals-box">
             <div class="grand-total"><span>Total Refunded to Customer / المبلغ المسترجع للعميل</span> <strong>${custRefund.toFixed(2)} SAR</strong></div>
@@ -279,23 +267,15 @@ const getRefundHTML = (inv, s) => {
 const getExpenseHTML = (exp, s) => `<div>Expense ${exp.invoice_no}</div>`;
 const getContractHTML = (s, name, date, isOffer, type, markup, terms) => `<div>Contract for ${name}</div>`;
 
-// ==========================================
-// MAIN HOOK START
-// ==========================================
 export default function useERPState() {
   const router = useRouter();
   const today = new Date().toISOString().split('T')[0];
-
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [toast, setToast] = useState(null);
   const [data, setData] = useState({
-    invoices: [], customers: [], corporates: [], creditors: [], portals: [],
-    cashbook: [], expenses: [], investments: [], employees: [], payroll: [],
-    appUsers: [], branches: [], packages: [], vendors: [], services: [],
-    recharges: [], audits: [], empAdvances: [], tenants: [], settings: {}, staffMistakes: []
+    invoices: [], customers: [], corporates: [], creditors: [], portals: [], cashbook: [], expenses: [], investments: [], employees: [], payroll: [], appUsers: [], branches: [], packages: [], vendors: [], services: [], recharges: [], audits: [], empAdvances: [], tenants: [], settings: {}, staffMistakes: []
   });
-
   const [page, setPage] = useState('dashboard');
   const [tblPage, setTblPage] = useState(1);
   const [lang, setLang] = useState('en');
@@ -315,7 +295,6 @@ export default function useERPState() {
   const [contractType, setContractType] = useState('Flight Tickets');
   const [contractMarkup, setContractMarkup] = useState(0);
   const [contractTerms, setContractTerms] = useState('');
-
   const [invForm, setInvForm] = useState({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: '', bookingDate: today, invoiceDate: today, bookingType: 'New Booking', linkedInvId: '', service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' });
   const [expForm, setExpForm] = useState({ vendor_name: '', vendor_vat: '', expense_date: today, expense_type: 'Office Supplies', payment_mode: 'Cash', items: [{ name: '', qty: 1, price: 0 }], taxRate: '15', desc: '' });
   const [custForm, setCustForm] = useState({ name: '', phone: '', store_credit: 0 });
@@ -336,7 +315,6 @@ export default function useERPState() {
   const [refundForm, setRefundForm] = useState({ id: '', date: today, compRefund: 0, custRefund: 0, mode: 'Cash', reason: '', portalId: '' });
   const [tenantForm, setTenantForm] = useState({ agency_name: '', owner_email: '', subscription_end_date: '', company_name_ar: '', vat_no: '', cr_no: '', phone: '', address_ar: '' });
   const [profileForm, setProfileForm] = useState({ username: '', avatar_url: '', phone: '', address: '' });
-
   const [editInvId, setEditInvId] = useState(null);
   const [editExpId, setEditExpId] = useState(null);
   const [editCustId, setEditCustId] = useState(null);
@@ -388,7 +366,6 @@ export default function useERPState() {
       });
     } catch (err) {}
   }, [userProfile]);
-
   const exportToExcel = (data, filename) => { alert("Excel export function needs to be implemented."); };
   const filterData = (arr, dateField) => arr.filter(item => { const d = item[dateField]; return !d || (d >= repDate.from && d <= repDate.to); });
 
