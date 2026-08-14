@@ -16,13 +16,12 @@ export default function ERPViewsAdvanced(props) {
   const { page, data, tr, today, userProfile, showToast, setData } = props;
   const [editTargetId, setEditTargetId] = useState(null);
   const [targetVal, setTargetVal] = useState(0);
-  const [attForm, setAttForm] = useState({ empId: '', status: 'Present', overtime: 0 });
+  const [attForm, setAttForm] = useState({ empId: '', checkIn: '09:00', checkOut: '18:00', leaveType: 'None' });
   const [attendance, setAttendance] = useState([]);
 
-  // Fetch Attendance
   useEffect(() => {
     if (page === 'hr_advanced' && userProfile?.tenant_id) {
-      supabase.from('attendance').select('*, employees(name)').eq('tenant_id', userProfile.tenant_id).then(({ data: att }) => {
+      supabase.from('attendance').select('*, employees(name)').eq('tenant_id', userProfile.tenant_id).order('date', { ascending: false }).then(({ data: att }) => {
         setAttendance(att || []);
       });
     }
@@ -38,21 +37,37 @@ export default function ERPViewsAdvanced(props) {
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
+  const calcOvertime = (checkIn, checkOut) => {
+    const [inH, inM] = checkIn.split(':').map(Number);
+    const [outH, outM] = checkOut.split(':').map(Number);
+    let totalMins = (outH * 60 + outM) - (inH * 60 + inM);
+    if (totalMins < 0) totalMins += 24 * 60; // Overnight shift
+    const workedHrs = totalMins / 60;
+    return workedHrs > 9 ? (workedHrs - 9).toFixed(1) : 0; // 9 hours standard
+  };
+
   const markAttendance = async (e) => {
     e.preventDefault();
     if (!attForm.empId) return showToast('Please select an employee');
     try {
+      const ot = attForm.leaveType === 'None' ? calcOvertime(attForm.checkIn, attForm.checkOut) : 0;
+      const status = attForm.leaveType === 'None' ? 'Present' : 'Leave';
+      
       const { data: newAtt, error } = await supabase.from('attendance').insert([{ 
         employee_id: attForm.empId, 
         date: today, 
-        status: attForm.status, 
-        overtime: parseFloat(attForm.overtime) || 0, 
+        status: status,
+        leave_type: attForm.leaveType,
+        check_in: attForm.leaveType === 'None' ? attForm.checkIn : null,
+        check_out: attForm.leaveType === 'None' ? attForm.checkOut : null,
+        overtime: ot, 
         tenant_id: userProfile.tenant_id 
       }]).select('*, employees(name)').single();
+      
       if (error) throw error;
       setAttendance(prev => [newAtt, ...prev]);
-      showToast('Attendance Marked Successfully!');
-      setAttForm({ empId: '', status: 'Present', overtime: 0 });
+      showToast(`Attendance Marked! OT: ${ot} hrs`);
+      setAttForm({ empId: '', checkIn: '09:00', checkOut: '18:00', leaveType: 'None' });
     } catch (err) { 
       showToast('Error: ' + err.message); 
     }
@@ -160,7 +175,7 @@ export default function ERPViewsAdvanced(props) {
     );
   }
 
-  // 3. ADVANCED HR & TARGETS (EDITABLE & WORKING)
+  // 3. ADVANCED HR & ATTENDANCE (TIME-BASED)
   if (page === 'hr_advanced') {
     return (
       <div>
@@ -210,8 +225,9 @@ export default function ERPViewsAdvanced(props) {
         </div>
         
         <div style={styles.card}>
-          <h3>📅 Mark Attendance & Leaves</h3>
-          <form onSubmit={markAttendance} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '15px', alignItems: 'flex-end' }}>
+          <h3>📅 Daily Time-Based Attendance</h3>
+          <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '15px' }}>Mark Check-in and Check-out time. System will automatically calculate Overtime after 9 working hours.</p>
+          <form onSubmit={markAttendance} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr auto', gap: '15px', alignItems: 'flex-end' }}>
             <div>
               <label style={styles.label}>Employee</label>
               <select style={styles.input} value={attForm.empId} onChange={e => setAttForm({...attForm, empId: e.target.value})} required>
@@ -220,27 +236,40 @@ export default function ERPViewsAdvanced(props) {
               </select>
             </div>
             <div>
-              <label style={styles.label}>Status</label>
-              <select style={styles.input} value={attForm.status} onChange={e => setAttForm({...attForm, status: e.target.value})}>
-                <option>Present</option><option>Absent</option><option>Leave</option>
-              </select>
+              <label style={styles.label}>Check-In</label>
+              <input type="time" style={styles.input} value={attForm.checkIn} onChange={e => setAttForm({...attForm, checkIn: e.target.value})} disabled={attForm.leaveType !== 'None'} />
             </div>
             <div>
-              <label style={styles.label}>Overtime (Hrs)</label>
-              <input type="number" style={styles.input} value={attForm.overtime} onChange={e => setAttForm({...attForm, overtime: e.target.value})} />
+              <label style={styles.label}>Check-Out</label>
+              <input type="time" style={styles.input} value={attForm.checkOut} onChange={e => setAttForm({...attForm, checkOut: e.target.value})} disabled={attForm.leaveType !== 'None'} />
+            </div>
+            <div>
+              <label style={styles.label}>Leave Type</label>
+              <select style={styles.input} value={attForm.leaveType} onChange={e => setAttForm({...attForm, leaveType: e.target.value})}>
+                <option>None</option><option>Paid Leave</option><option>Unpaid Leave</option><option>Sick Leave</option>
+              </select>
             </div>
             <button type="submit" style={{...styles.btnPrimary, height: '42px'}}>Mark</button>
           </form>
           
           <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
-            <thead><tr style={{ background: '#f1f5f9' }}><th style={{padding:'10px', textAlign:'left'}}>Date</th><th style={{padding:'10px'}}>Employee</th><th style={{padding:'10px'}}>Status</th><th style={{padding:'10px'}}>Overtime</th></tr></thead>
+            <thead><tr style={{ background: '#f1f5f9' }}>
+              <th style={{padding:'10px', textAlign:'left'}}>Date</th>
+              <th style={{padding:'10px'}}>Employee</th>
+              <th style={{padding:'10px'}}>Check-In</th>
+              <th style={{padding:'10px'}}>Check-Out</th>
+              <th style={{padding:'10px'}}>Overtime</th>
+              <th style={{padding:'10px'}}>Status</th>
+            </tr></thead>
             <tbody>
-              {attendance.length === 0 ? <tr><td colSpan="4" style={{padding:'10px', textAlign:'center'}}>No attendance marked yet.</td></tr> : attendance.slice(0, 10).map(a => (
+              {attendance.length === 0 ? <tr><td colSpan="6" style={{padding:'10px', textAlign:'center'}}>No attendance marked yet.</td></tr> : attendance.slice(0, 15).map(a => (
                 <tr key={a.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                   <td style={{padding:'10px'}}>{a.date}</td>
                   <td style={{padding:'10px', textAlign:'center'}}>{a.employees?.name || 'N/A'}</td>
-                  <td style={{padding:'10px', textAlign:'center', color: a.status === 'Present' ? '#059669' : '#EF4444'}}>{a.status}</td>
-                  <td style={{padding:'10px', textAlign:'center'}}>{a.overtime || 0} hrs</td>
+                  <td style={{padding:'10px', textAlign:'center'}}>{a.check_in || '-'}</td>
+                  <td style={{padding:'10px', textAlign:'center'}}>{a.check_out || '-'}</td>
+                  <td style={{padding:'10px', textAlign:'center', color: '#059669', fontWeight: 'bold'}}>{a.overtime ? `${a.overtime} hrs` : '0'}</td>
+                  <td style={{padding:'10px', textAlign:'center', color: a.status === 'Present' ? '#059669' : '#D97706'}}>{a.leave_type !== 'None' ? a.leave_type : a.status}</td>
                 </tr>
               ))}
             </tbody>
