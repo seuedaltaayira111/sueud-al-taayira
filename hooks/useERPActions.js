@@ -5,7 +5,7 @@ import { handleShareWhatsApp, handleShareEmail } from '@/lib/invoiceUtils';
 
 export default function useERPActions(state) {
   const { 
-    user, data, setData, userProfile, showToast, logAction, fetchAll, 
+    user, data, setData, userProfile, showToast, logAction, fetchAll, lang,
     invForm, setInvForm, expForm, setExpForm, corpForm, setCorpForm, creditorForm, setCreditorForm, 
     custForm, setCustForm, vendorForm, setVendorForm, pkgForm, setPkgForm, brnForm, setBrnForm, 
     empForm, setEmpForm, srvForm, setSrvForm, investForm, setInvestForm, settleForm, setSettleForm, 
@@ -168,15 +168,15 @@ export default function useERPActions(state) {
     }
   };
 
-  const handleDownloadPDF = async (inv, lang = 'en') => {
+  const handleDownloadPDF = async (inv) => {
     const s = data.settings;
-    const html = inv.invoice_no.startsWith('REF-') ? getRefundHTML(inv, s) : getInvoiceHTML(inv, s, lang);
+    const html = inv.invoice_no.startsWith('REF-') ? getRefundHTML(inv, s, lang) : getInvoiceHTML(inv, s, lang);
     await downloadPDF(html, `${inv.invoice_no}.pdf`);
   };
 
-  const printInvoice = (inv, lang = 'en') => {
+  const printInvoice = (inv) => {
     const s = data.settings;
-    const html = inv.invoice_no.startsWith('REF-') ? getRefundHTML(inv, s) : getInvoiceHTML(inv, s, lang);
+    const html = inv.invoice_no.startsWith('REF-') ? getRefundHTML(inv, s, lang) : getInvoiceHTML(inv, s, lang);
     const printWindow = window.open('', '_blank');
     printWindow.document.write(html);
     printWindow.document.close();
@@ -1085,7 +1085,7 @@ export default function useERPActions(state) {
       if (invErr) throw invErr; 
       
       const refNo = `REF-${Date.now()}`; 
-      // Copying ALL details from old invoice to Refund Invoice
+      // FIX: linked_inv_id is UUID, so pass inv.id instead of inv.invoice_no
       const { data: newRefInv, error: refErr } = await supabase.from('invoices').insert([{ 
         invoice_no: refNo, 
         customer_id: inv.customer_id, 
@@ -1109,7 +1109,7 @@ export default function useERPActions(state) {
         refund_company: compRef, 
         refund_customer: custRef, 
         refund_reason: refundForm.reason, 
-        linked_inv_id: inv.invoice_no,
+        linked_inv_id: inv.id, // FIXED UUID ERROR HERE
         tenant_id: userProfile.tenant_id 
       }]).select(`*, customers(name), employees(name)`).single(); 
       if (refErr) throw refErr; 
@@ -1163,7 +1163,7 @@ export default function useERPActions(state) {
   
   const openPreview = (inv) => { 
     const s = data.settings; 
-    const html = inv.invoice_no.startsWith('REF-') ? getRefundHTML(inv, s) : getInvoiceHTML(inv, s, 'en'); 
+    const html = inv.invoice_no.startsWith('REF-') ? getRefundHTML(inv, s, lang) : getInvoiceHTML(inv, s, lang); 
     setPreviewHTML(html); 
     setModal({ type: 'preview', data: inv }); 
   };
