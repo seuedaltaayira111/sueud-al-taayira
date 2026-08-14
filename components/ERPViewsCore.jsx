@@ -125,7 +125,7 @@ export default function ERPViewsCore(props) {
           )}
           
           <div><label style={styles.label}>{tr.salesPerson}</label><select value={invForm.employeeId} onChange={e => setInvForm({...invForm, employeeId: e.target.value})} style={styles.input} required><option value="">Select Sales Person</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
-          <div><label style={styles.label}>{tr.paymentMethod}</label><select value={invForm.payment} onChange={e => setInvForm({...invForm, payment: e.target.value, useCredit: 0, creditCustId: ''})} style={styles.input}><option>{tr.cash}</option><option>{tr.bankTransfer}</option><option>{tr.credit}</option><option>{tr.creditBalance}</option><option>{tr.tabby}</option><option>{tr.tamara}</option></select></div>
+          <div><label style={styles.label}>{tr.paymentMethod}</label><select value={invForm.payment} onChange={e => setInvForm({...invForm, payment: e.target.value, useCredit: 0, creditCustId: ''})} style={styles.input}><option>{tr.cash}</option><option>{tr.bankTransfer}</option><option>{tr.network}</option><option>{tr.credit}</option><option>{tr.creditBalance}</option><option>{tr.tabby}</option><option>{tr.tamara}</option></select></div>
           
           {invForm.payment === 'Credit Balance' && (
             <>
@@ -179,7 +179,7 @@ export default function ERPViewsCore(props) {
         <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
           <input placeholder={tr.search} value={search} onChange={e => setSearch(e.target.value)} style={styles.input} />
           <select value={payFilter} onChange={e => setPayFilter(e.target.value)} style={{...styles.input, maxWidth: '200px'}}>
-            <option>All</option><option>Cash</option><option>Bank Transfer</option><option>Credit</option><option>Credit Balance</option><option>Tabby</option><option>Tamara</option>
+            <option>All</option><option>Cash</option><option>Bank Transfer</option><option>Network</option><option>Credit</option><option>Credit Balance</option><option>Tabby</option><option>Tamara</option>
           </select>
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', borderRadius: '12px', overflow: 'hidden' }}>
