@@ -24,12 +24,13 @@ const translations = {
     hotelName: 'Hotel Name', checkIn: 'Check In', checkOut: 'Check Out', serviceName: 'Service Name', qty: 'Qty', cost: 'Cost', sell: 'Sell', discount: 'Discount',
     vatRate: 'VAT Rate', invoiceDate: 'Invoice Date', journeyType: 'Journey Type', single: 'Single', roundTrip: 'Round Trip', multiCity: 'Multi-city',
     fareType: 'Fare Type', refundable: 'Refundable', nonRefundable: 'Non-Refundable', bookingType: 'Booking Type', newBooking: 'New Booking', reissue: 'Reissue', extraLuggage: 'Extra Luggage', previousBooking: 'Previous Booking',
-    salesPerson: 'Sales Person', paymentMethod: 'Payment Method', cash: 'Cash', bankTransfer: 'Bank Transfer', credit: 'Credit', creditBalance: 'Credit Balance', tabby: 'Tabby', tamara: 'Tamara',
-    paidAmount: 'Paid Amount (Cash/Bank)', useCreditAmount: 'Use Credit Amount', generateInvoice: 'Generate Invoice', updateInvoice: 'Update Invoice',
+    salesPerson: 'Sales Person', paymentMethod: 'Payment Method', cash: 'Cash', bankTransfer: 'Bank Transfer', network: 'Network', credit: 'Credit', creditBalance: 'Credit Balance', tabby: 'Tabby', tamara: 'Tamara',
+    paidAmount: 'Paid Amount (Cash/Bank)', useCreditAmount: 'Use Credit Amount', generateInvoice: 'Generate Invoice', updateInvoice: 'Update Invoice', editInvoice: 'Edit Invoice',
     invNo: 'Inv No', total: 'Total', due: 'Due', method: 'Method', actions: 'Actions', preview: 'Preview', print: 'Print', edit: 'Edit', delete: 'Delete', quickSettle: 'Quick Settle', refund: 'Refund',
     changePassword: 'Change Password', newPassword: 'New Password', settlePayment: 'Settle Payment', processRefund: 'Process Refund',
     companyRefund: 'Company Refund (Portal)', customerRefund: 'Customer Refund Amount', customerRefundMethod: 'Customer Refund Method',
-    refundReason: 'Refund Reason', documentPreview: 'Document Preview', close: 'Close', cancel: 'Cancel', save: 'Save', mark: 'Mark', logLoss: 'Log Loss'
+    refundReason: 'Refund Reason', documentPreview: 'Document Preview', close: 'Close', cancel: 'Cancel', save: 'Save', mark: 'Mark', logLoss: 'Log Loss',
+    notifications: 'Notifications', customer_statement: 'Cust Statement', recurring_invoices: 'Recurring Invoices', expense_approval: 'Expense Approval', refund_statement: 'Refund Statement', credit_limits: 'Credit Limits', supplier_statement: 'Supplier Statement', multi_branch: 'Multi-Branch'
   },
   ar: {
     dashboard: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'الفواتير', refunds: 'الاسترجاعات',
@@ -47,28 +48,29 @@ const translations = {
     hotelName: 'اسم الفندق', checkIn: 'تاريخ الوصول', checkOut: 'تاريخ المغادرة', serviceName: 'اسم الخدمة', qty: 'الكمية', cost: 'التكلفة', sell: 'البيع', discount: 'الخصم',
     vatRate: 'نسبة الضريبة', invoiceDate: 'تاريخ الفاتورة', journeyType: 'نوع الرحلة', single: 'ذهاب', roundTrip: 'ذهاب وعودة', multiCity: 'مدن متعددة',
     fareType: 'نوع الأجرة', refundable: 'قابلة للاسترداد', nonRefundable: 'غير قابلة للاسترداد', bookingType: 'نوع الحجز', newBooking: 'حجز جديد', reissue: 'إعادة إصدار', extraLuggage: 'أمتعة إضافية', previousBooking: 'حجز سابق',
-    salesPerson: 'موظف المبيعات', paymentMethod: 'طريقة الدفع', cash: 'نقداً', bankTransfer: 'تحويل بنكي', credit: 'آجل', creditBalance: 'رصيد ائتماني', tabby: 'تابي', tamara: 'تمارا',
-    paidAmount: 'المبلغ المدفوع (نقداً/بنك)', useCreditAmount: 'استخدام مبلغ الرصيد', generateInvoice: 'إنشاء الفاتورة', updateInvoice: 'تحديث الفاتورة',
+    salesPerson: 'موظف المبيعات', paymentMethod: 'طريقة الدفع', cash: 'نقداً', bankTransfer: 'تحويل بنكي', network: 'شبكة', credit: 'آجل', creditBalance: 'رصيد ائتماني', tabby: 'تابي', tamara: 'تمارا',
+    paidAmount: 'المبلغ المدفوع (نقداً/بنك)', useCreditAmount: 'استخدام مبلغ الرصيد', generateInvoice: 'إنشاء الفاتورة', updateInvoice: 'تحديث الفاتورة', editInvoice: 'تعديل الفاتورة',
     invNo: 'رقم الفاتورة', total: 'الإجمالي', due: 'المتبقي', method: 'الطريقة', actions: 'إجراءات', preview: 'معاينة', print: 'طباعة', edit: 'تعديل', delete: 'حذف', quickSettle: 'تسوية سريعة', refund: 'استرجاع',
     changePassword: 'تغيير كلمة المرور', newPassword: 'كلمة المرور الجديدة', settlePayment: 'تسوية الدفعة', processRefund: 'معالجة الاسترجاع',
     companyRefund: 'استرجاع الشركة (البوابة)', customerRefund: 'مبلغ استرجاع العميل', customerRefundMethod: 'طريقة استرجاع العميل',
-    refundReason: 'سبب الاسترجاع', documentPreview: 'معاينة المستند', close: 'إغلاق', cancel: 'إلغاء', save: 'حفظ', mark: 'تسجيل', logLoss: 'تسجيل خسارة'
+    refundReason: 'سبب الاسترجاع', documentPreview: 'معاينة المستند', close: 'إغلاق', cancel: 'إلغاء', save: 'حفظ', mark: 'تسجيل', logLoss: 'تسجيل خسارة',
+    notifications: 'الإشعارات', customer_statement: 'كشف العميل', recurring_invoices: 'الفواتير المتكررة', expense_approval: 'موافقة المصروفات', refund_statement: 'كشف الاسترجاعات', credit_limits: 'حدود الائتمان', supplier_statement: 'كشف الموردين', multi_branch: 'متعدد الفروع'
   }
 };
 
 // ==========================================
-// PREMIUM BILINGUAL INVOICE TEMPLATE
+// PREMIUM BILINGUAL INVOICE TEMPLATE (PRINT & BARCODE FIXED)
 // ==========================================
 const getInvoiceHTML = (inv, s, lang = 'en') => {
   const setting = s || {};
   const isAr = lang === 'ar';
   const dir = isAr ? 'rtl' : 'ltr';
-  const t = translations[lang];
   
   const invoiceNo = inv.invoice_no || 'N/A';
   const trackUrl = `https://sueud-al-taayira.vercel.app/invoice/${invoiceNo}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(trackUrl)}`;
   const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(trackUrl)}&code=Code128&translate-esc=on`;
+  const linkedInvNo = inv.linked_inv_id ? inv.linked_inv_id : null;
 
   return `
   <!DOCTYPE html>
@@ -79,7 +81,8 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
     <title>Invoice ${invoiceNo}</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-      body { font-family: ${isAr ? "'Cairo', sans-serif" : "'Poppins', sans-serif"}; background: #e2e8f0; margin: 0; padding: 20px; color: #1e293b; -webkit-print-color-adjust: exact; }
+      * { box-sizing: border-box; }
+      body { font-family: ${isAr ? "'Cairo', sans-serif" : "'Poppins', sans-serif"}; background: #e2e8f0; margin: 0; padding: 20px; color: #1e293b; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .invoice-container { max-width: 850px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; border-top: 8px solid #1E3A8A; }
       .header { padding: 25px 30px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
       .company-info h2 { margin: 0; font-size: 28px; color: #1E3A8A; font-weight: 800; direction: rtl; font-family: 'Cairo', sans-serif; }
@@ -90,7 +93,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
       .invoice-meta p { margin: 3px 0; font-size: 13px; font-weight: 500; }
       .invoice-meta span { color: #FBBF24; font-weight: 700; }
       .body { padding: 25px 30px; }
-      .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+      .details-grid { display: grid; gridTemplateColumns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
       .card { background: #f8fafc; border-radius: 10px; padding: 15px; border-left: 4px solid #1E3A8A; }
       .card h4 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; color: #1E3A8A; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; }
       .card p { margin: 5px 0; font-size: 13px; display: flex; justify-content: space-between; }
@@ -120,11 +123,12 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
       .footer-text { text-align: center; font-size: 11px; color: #94a3b8; line-height: 1.5; }
       .footer-text strong { color: #64748b; display: block; font-size: 14px; margin-bottom: 4px; }
       @media print {
-        body { background: #fff; padding: 0; }
-        .invoice-container { box-shadow: none; border-radius: 0; max-width: 100%; border: none; }
+        body { background: #fff; padding: 0; margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .invoice-container { box-shadow: none; border-radius: 0; max-width: 100%; border: none; margin: 0; }
         .header { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .footer { position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .body { padding-top: 160px; padding-bottom: 120px; }
+        img { max-width: 100% !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       }
     </style>
   </head>
@@ -165,10 +169,10 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
             <p><strong>${isAr ? 'الركاب' : 'Passenger'}:</strong> <span>${inv.passenger_names ? inv.passenger_names.replace(/\n/g, ', ') : 'N/A'}</span></p>
           </div>
         </div>
-        ${inv.linked_inv_id ? `
+        ${linkedInvNo ? `
         <div class="card" style="margin-bottom: 20px; border-left-color: #64748b; background: #f1f5f9;">
           <h4>${isAr ? 'الحجز السابق المرتبط' : 'Linked Previous Booking'}</h4>
-          <p><strong>${isAr ? 'رقم الفاتورة الأصلية' : 'Original Invoice No'}:</strong> <span>${inv.linked_inv_id}</span></p>
+          <p><strong>${isAr ? 'رقم الفاتورة الأصلية' : 'Original Invoice No'}:</strong> <span>${linkedInvNo}</span></p>
         </div>` : ''}
         <div class="table-wrapper">
           <table>
@@ -244,7 +248,8 @@ const getRefundHTML = (inv, s, lang = 'en') => {
     <title>Refund Invoice ${invoiceNo}</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-      body { font-family: ${isAr ? "'Cairo', sans-serif" : "'Poppins', sans-serif"}; background: #e2e8f0; margin: 0; padding: 20px; color: #1e293b; -webkit-print-color-adjust: exact; }
+      * { box-sizing: border-box; }
+      body { font-family: ${isAr ? "'Cairo', sans-serif" : "'Poppins', sans-serif"}; background: #e2e8f0; margin: 0; padding: 20px; color: #1e293b; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .invoice-container { max-width: 850px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; border-top: 8px solid #EF4444; }
       .header { padding: 25px 30px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
       .company-info h2 { margin: 0; font-size: 28px; color: #EF4444; font-weight: 800; direction: rtl; font-family: 'Cairo', sans-serif; }
@@ -266,6 +271,11 @@ const getRefundHTML = (inv, s, lang = 'en') => {
       .footer { background: #f8fafc; padding: 20px 30px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
       .codes img { height: 70px; mix-blend-mode: multiply; }
       .footer-text { text-align: center; font-size: 12px; color: #94a3b8; }
+      @media print {
+        body { background: #fff; padding: 0; margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .invoice-container { box-shadow: none; border-radius: 0; max-width: 100%; border: none; margin: 0; }
+        img { max-width: 100% !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      }
     </style>
   </head>
   <body>
