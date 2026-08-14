@@ -372,7 +372,7 @@ export default function useERPActions(state) {
         
         let newCashEntry = null; 
         if (cashPaid > 0 && invForm.payment !== 'Credit' && invForm.payment !== 'Credit Balance') { 
-          const cbType = invForm.payment === 'Cash' ? 'Cash-In' : (invForm.payment === 'Bank Transfer' ? 'Bank-In' : null); 
+          const cbType = invForm.payment === 'Cash' ? 'Cash-In' : (invForm.payment === 'Bank Transfer' || invForm.payment === 'Network' ? 'Bank-In' : null); 
           if (cbType) { 
             const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: invForm.invoiceDate, type: cbType, description: `Payment for ${invNo}`, amount: cashPaid, tenant_id: userProfile.tenant_id }]).select().single(); 
             if (cbErr) console.error("Cashbook entry failed:", cbErr.message);
@@ -506,7 +506,7 @@ export default function useERPActions(state) {
         
         if (expErr) throw expErr;
         
-        const cbType = expForm.payment_mode === 'Cash' ? 'Cash-Out' : (expForm.payment_mode === 'Bank Transfer' ? 'Bank-Out' : 'Investor-Out');
+        const cbType = expForm.payment_mode === 'Cash' ? 'Cash-Out' : ((expForm.payment_mode === 'Bank Transfer' || expForm.payment_mode === 'Network') ? 'Bank-Out' : 'Investor-Out');
         const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ 
           trans_date: expForm.expense_date || today, 
           type: cbType, 
@@ -538,7 +538,7 @@ export default function useERPActions(state) {
         
         if (expErr) throw expErr;
         
-        const cbType = expForm.payment_mode === 'Cash' ? 'Cash-Out' : (expForm.payment_mode === 'Bank Transfer' ? 'Bank-Out' : 'Investor-Out');
+        const cbType = expForm.payment_mode === 'Cash' ? 'Cash-Out' : ((expForm.payment_mode === 'Bank Transfer' || expForm.payment_mode === 'Network') ? 'Bank-Out' : 'Investor-Out');
         const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ 
           trans_date: expForm.expense_date || today, 
           type: cbType, 
@@ -1085,7 +1085,7 @@ export default function useERPActions(state) {
       if (invErr) throw invErr; 
       
       const refNo = `REF-${Date.now()}`; 
-      // FIX: linked_inv_id is UUID, so pass inv.id instead of inv.invoice_no
+      // FIX: linked_inv_id should be invoice number (text) to display on invoice
       const { data: newRefInv, error: refErr } = await supabase.from('invoices').insert([{ 
         invoice_no: refNo, 
         customer_id: inv.customer_id, 
@@ -1109,7 +1109,7 @@ export default function useERPActions(state) {
         refund_company: compRef, 
         refund_customer: custRef, 
         refund_reason: refundForm.reason, 
-        linked_inv_id: inv.id, // FIXED UUID ERROR HERE
+        linked_inv_id: inv.invoice_no, // FIXED: Pass invoice number string, not UUID
         tenant_id: userProfile.tenant_id 
       }]).select(`*, customers(name), employees(name)`).single(); 
       if (refErr) throw refErr; 
