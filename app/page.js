@@ -8,115 +8,103 @@ import { useEffect } from 'react';
 export default function Home() {
   const erp = useERP();
 
+  // Safe translation getter (Agar tr missing ho toh fallback use karega)
+  const t = (key, fallback) => erp.tr?.[key] || fallback || key;
+
+  // Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.altKey && e.key.toLowerCase() === 'n') { e.preventDefault(); erp.setPage('create'); }
+      if (e.altKey && e.key.toLowerCase() === 'l') { e.preventDefault(); erp.setPage('list'); }
+      if (e.altKey && e.key.toLowerCase() === 'd') { e.preventDefault(); erp.setPage('dashboard'); }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [erp.setPage]);
+
   // Yahan userProfile null check karna zaroori hai, warna app crash ho jayega
   if (!erp.user || !erp.userProfile) {
     return <div style={{ padding: 50, textAlign: 'center', fontFamily: 'sans-serif' }}>Loading ERP...</div>;
   }
 
-  // Safe access using optional chaining (?.)
   const isSuperAdmin = erp.userProfile?.role === 'SuperAdmin' || 
                        erp.user?.email === 'atallah@sueud.com' || 
                        erp.user?.email === 'hamdan@sueud.com';
 
-  // Menu items using translation engine (tr)
   const menu = [
-    { id: 'dashboard', label: erp.tr.dashboard, show: true },
-    { id: 'ai_dashboard', label: erp.tr.ai_dashboard, show: true }, 
-    { id: 'notifications', label: erp.tr.notifications, show: true }, 
-    { id: 'superadmin', label: erp.tr.superadmin, show: isSuperAdmin },
+    { id: 'dashboard', label: t('dashboard', 'Dashboard'), show: true },
+    { id: 'ai_dashboard', label: t('ai_dashboard', 'AI Dashboard'), show: true }, 
+    { id: 'notifications', label: t('notifications', 'Notifications'), show: true }, 
+    { id: 'superadmin', label: t('superadmin', 'SuperAdmin'), show: isSuperAdmin },
     
     // Invoices & Sales
-    { id: 'create', label: erp.tr.create, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
-    { id: 'list', label: erp.tr.list, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
-    { id: 'refunds', label: erp.tr.refunds, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
-    { id: 'quotations', label: erp.tr.quotations, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices }, 
-    { id: 'recurring_invoices', label: erp.tr.recurring_invoices, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices }, 
-    { id: 'profitability', label: erp.tr.profitability, show: true }, 
-    { id: 'ai_pricing', label: '🤖 AI Pricing', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices }, // NEW AI PRICING MENU
+    { id: 'create', label: t('create', 'Create Invoice'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
+    { id: 'list', label: t('list', 'Invoices'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
+    { id: 'refunds', label: t('refunds', 'Refunds'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
+    { id: 'quotations', label: t('quotations', 'Quotations'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices }, 
+    { id: 'recurring_invoices', label: t('recurring_invoices', 'Recurring Invoices'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices }, 
+    { id: 'profitability', label: t('profitability', 'Profitability'), show: true }, 
+    { id: 'ai_pricing', label: '🤖 AI Pricing', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices }, 
     
     // Customers & Vendors
-    { id: 'customers', label: erp.tr.customers, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
-    { id: 'corporates', label: erp.tr.corporates, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
-    { id: 'creditors', label: erp.tr.creditors, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
-    { id: 'credit', label: erp.tr.credit, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
-    { id: 'credit_limits', label: erp.tr.credit_limits, show: erp.userProfile.is_admin || erp.userProfile.can_access_bank }, 
-    { id: 'customer_statement', label: erp.tr.customer_statement, show: erp.userProfile.is_admin || erp.userProfile.can_access_reports }, 
-    { id: 'portals', label: erp.tr.portals, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
-    { id: 'vendors', label: erp.tr.vendors, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
-    { id: 'supplier_statement', label: erp.tr.supplier_statement, show: erp.userProfile.is_admin || erp.userProfile.can_access_bank }, 
-    { id: 'packages', label: erp.tr.packages, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
-    { id: 'branches', label: erp.tr.branches, show: erp.userProfile.is_admin || erp.userProfile.can_access_settings },
-    { id: 'multi_branch', label: erp.tr.multi_branch, show: erp.userProfile.is_admin }, 
+    { id: 'customers', label: t('customers', 'Customers'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
+    { id: 'corporates', label: t('corporates', 'Corporates'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
+    { id: 'creditors', label: t('creditors', 'Creditors'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
+    { id: 'credit', label: t('credit', 'Credit Balances'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
+    { id: 'credit_limits', label: t('credit_limits', 'Credit Limits'), show: erp.userProfile.is_admin || erp.userProfile.can_access_bank }, 
+    { id: 'customer_statement', label: t('customer_statement', 'Cust Statement'), show: erp.userProfile.is_admin || erp.userProfile.can_access_reports }, 
+    { id: 'portals', label: t('portals', 'Portals'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
+    { id: 'vendors', label: t('vendors', 'Vendors'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
+    { id: 'supplier_statement', label: t('supplier_statement', 'Supplier Statement'), show: erp.userProfile.is_admin || erp.userProfile.can_access_bank }, 
+    { id: 'packages', label: t('packages', 'Packages'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
+    { id: 'branches', label: t('branches', 'Branches'), show: erp.userProfile.is_admin || erp.userProfile.can_access_settings },
+    { id: 'multi_branch', label: t('multi_branch', 'Multi-Branch'), show: erp.userProfile.is_admin }, 
     
     // Contracts & Finance
     { id: 'contract', label: 'Corporate Contract', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'offer', label: 'Corporate Offer', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
-    { id: 'bank', label: erp.tr.bank, show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
-    { id: 'invest', label: erp.tr.invest, show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
-    { id: 'expense_approval', label: erp.tr.expense_approval, show: erp.userProfile.is_admin }, 
+    { id: 'bank', label: t('bank', 'Bank & Cash'), show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
+    { id: 'invest', label: t('invest', 'Investors'), show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
+    { id: 'expense_approval', label: t('expense_approval', 'Expense Approval'), show: erp.userProfile.is_admin }, 
     
     // HR & Reports
-    { id: 'hr', label: erp.tr.hr, show: erp.userProfile.is_admin || erp.userProfile.can_access_hr },
-    { id: 'hr_advanced', label: erp.tr.hr_advanced, show: erp.userProfile.is_admin || erp.userProfile.can_access_hr }, 
-    { id: 'staff_mistakes', label: erp.tr.staff_mistakes, show: erp.userProfile.is_admin || erp.userProfile.can_access_hr }, 
-    { id: 'statements', label: erp.tr.statements, show: erp.userProfile.is_admin || erp.userProfile.can_access_reports },
-    { id: 'refund_statement', label: erp.tr.refund_statement, show: erp.userProfile.is_admin || erp.userProfile.can_access_reports },
-    { id: 'users', label: erp.tr.users, show: erp.userProfile.is_admin },
-    { id: 'reports', label: erp.tr.reports, show: erp.userProfile.is_admin || erp.userProfile.can_access_reports },
-    { id: 'audit', label: erp.tr.audit, show: erp.userProfile.is_admin },
+    { id: 'hr', label: t('hr', 'Human Resources'), show: erp.userProfile.is_admin || erp.userProfile.can_access_hr },
+    { id: 'hr_advanced', label: t('hr_advanced', 'HR & Payroll'), show: erp.userProfile.is_admin || erp.userProfile.can_access_hr }, 
+    { id: 'staff_mistakes', label: t('staff_mistakes', 'Staff Mistakes'), show: erp.userProfile.is_admin || erp.userProfile.can_access_hr }, 
+    { id: 'statements', label: t('statements', 'Statements'), show: erp.userProfile.is_admin || erp.userProfile.can_access_reports },
+    { id: 'refund_statement', label: t('refund_statement', 'Refund Statement'), show: erp.userProfile.is_admin || erp.userProfile.can_access_reports },
+    { id: 'users', label: t('users', 'Users'), show: erp.userProfile.is_admin },
+    { id: 'reports', label: t('reports', 'Reports'), show: erp.userProfile.is_admin || erp.userProfile.can_access_reports },
+    { id: 'audit', label: t('audit', 'Audit Logs'), show: erp.userProfile.is_admin },
     
     // System
-    { id: 'settings', label: erp.tr.settings, show: erp.userProfile.is_admin || erp.userProfile.can_access_settings },
-    { id: 'profile', label: erp.tr.profile, show: true },
+    { id: 'settings', label: t('settings', 'Settings'), show: erp.userProfile.is_admin || erp.userProfile.can_access_settings },
+    { id: 'profile', label: t('profile', 'Profile'), show: true },
   ].filter(m => m.show);
-
-  // NEW FEATURE: Keyboard Shortcuts for fast navigation
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      // Alt + N = New Invoice
-      if (e.altKey && e.key.toLowerCase() === 'n') {
-        e.preventDefault();
-        erp.setPage('create');
-      }
-      // Alt + L = Invoice List
-      if (e.altKey && e.key.toLowerCase() === 'l') {
-        e.preventDefault();
-        erp.setPage('list');
-      }
-      // Alt + D = Dashboard
-      if (e.altKey && e.key.toLowerCase() === 'd') {
-        e.preventDefault();
-        erp.setPage('dashboard');
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [erp.setPage]);
 
   return (
     <>
       {erp.toast && <div style={{ position: 'fixed', top: '20px', right: '20px', background: '#1E3A8A', color: '#FBBF24', padding: '15px 25px', borderRadius: '12px', zIndex: 9999, boxShadow: '0 5px 15px rgba(0,0,0,0.2)', fontWeight: '600' }}>{erp.toast}</div>}
       
       <ERPLayout 
-        tr={erp.tr} lang={erp.lang} setLang={erp.setLang} page={erp.page} setPage={erp.setPage} 
+        tr={erp.tr || {}} lang={erp.lang} setLang={erp.setLang} page={erp.page} setPage={erp.setPage} 
         modal={erp.modal} setModal={erp.setModal} passForm={erp.passForm} setPassForm={erp.setPassForm} 
         handleChangePassword={erp.handleChangePassword} handleLogout={erp.handleLogout} 
         handleSendMessage={erp.handleSendMessage} chatOpen={erp.chatOpen} setChatOpen={erp.setChatOpen} 
         chatMessages={erp.chatMessages} chatInput={erp.chatInput} setChatInput={erp.setChatInput} 
         userProfile={erp.userProfile} menu={menu}
         settleForm={erp.settleForm} setSettleForm={erp.setSettleForm} handleSettlePayment={erp.handleSettlePayment}
-        refundForm={erp.refundForm} setRefundForm={erp.setRefundForm} handleRefund={erp.handleRefund}
+        refundForm={erp.refundForm || {}} setRefundForm={erp.setRefundForm} handleRefund={erp.handleRefund}
         previewHTML={erp.previewHTML}
         downloadPDF={erp.downloadPDF}
       >
         <ERPViews 
-          page={erp.page} data={erp.data} tr={erp.tr} today={erp.today}
+          page={erp.page} data={erp.data} tr={erp.tr || {}} today={erp.today}
           ledgerCustId={erp.ledgerCustId} setLedgerCustId={erp.setLedgerCustId}
           ledgerEmpId={erp.ledgerEmpId} setLedgerEmpId={erp.setLedgerEmpId}
           
           invForm={erp.invForm} setInvForm={erp.setInvForm} 
-          handleCreateInvoice={erp.handleCreateInvoice} downloadPDF={erp.handleDownloadPDF}
+          handleCreateInvoice={erp.handleCreateInvoice} downloadPDF={erp.handleDownloadPDF || erp.downloadPDF}
           printInvoice={erp.printInvoice} exportToExcel={erp.exportToExcel} 
           search={erp.search} setSearch={erp.setSearch} 
           tblPage={erp.tblPage} setTblPage={erp.setTblPage} 
@@ -178,11 +166,9 @@ export default function Home() {
           profileForm={erp.profileForm} setProfileForm={erp.setProfileForm}
           handleProfilePicUpload={erp.handleProfilePicUpload} handleSaveProfile={erp.handleSaveProfile}
           
-          // WHATSAPP & EMAIL PROPS PASSED HERE
           shareWhatsApp={erp.shareWhatsApp}
           shareEmail={erp.shareEmail}
           
-          // STAFF MISTAKES & SALARY SLIP PROP
           handleAddMistake={erp.handleAddMistake}
           handleGenerateSlip={erp.handleGenerateSlip}
         />
