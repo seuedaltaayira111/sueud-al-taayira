@@ -48,6 +48,9 @@ export default function ERPModals({ modal, setModal, passForm, setPassForm, hand
           <div style={styles.card}>
             <h3 style={{ color: '#F59E0B' }}>Process Refund</h3>
             <form onSubmit={handleRefund}>
+              <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#94A3B8' }}>Refund Date</label>
+              <input type="date" value={refundForm.date} onChange={e => setRefundForm({...refundForm, date: e.target.value})} style={styles.input} required />
+              
               <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#94A3B8' }}>Company Refund (Goes back to Portal)</label>
               <input type="number" step="0.01" value={refundForm.compRefund} onChange={e => setRefundForm({...refundForm, compRefund: e.target.value})} style={styles.input} required />
               
