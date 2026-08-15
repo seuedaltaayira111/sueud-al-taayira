@@ -86,7 +86,7 @@ export default function ERPViewsCore(props) {
           <div><label style={styles.label}>{tr.invoiceDate}</label><input type="date" value={invForm.invoiceDate} onChange={e => setInvForm({...invForm, invoiceDate: e.target.value})} style={styles.input} required /></div>
           <div><label style={styles.label}>{tr.journeyType}</label><select value={invForm.flightJourney} onChange={e => setInvForm({...invForm, flightJourney: e.target.value})} style={styles.input}><option>{tr.single}</option><option>{tr.roundTrip}</option><option>{tr.multiCity}</option></select></div>
           <div><label style={styles.label}>{tr.fareType}</label><select value={invForm.refundable} onChange={e => setInvForm({...invForm, refundable: e.target.value})} style={styles.input}><option>{tr.refundable}</option><option>{tr.nonRefundable}</option></select></div>
-          <div><label style={styles.label}>{tr.bookingType}</label><select value={invForm.bookingType} onChange={e => setInvForm({...invForm, bookingType: e.target.value, linkedInvId: ''})} style={styles.input}><option>{tr.newBooking}</option><option>{tr.reissue}</option><option>{tr.extraLuggage}</option><option>{tr.previousBooking}</option></select></div>
+          <div><label style={styles.label}>{tr.bookingType}</label><select value={invForm.bookingType} onChange={e => setInvForm({...invForm, bookingType: e.target.value, linkedInvId: '', oldTicketNo: '', oldPnr: ''})} style={styles.input}><option>{tr.newBooking}</option><option>{tr.reissue}</option><option>{tr.extraLuggage}</option><option>{tr.previousBooking}</option></select></div>
           
           {invForm.bookingType === 'Previous Booking' && (
             <div style={{ gridColumn: '1 / -1' }}>
@@ -95,13 +95,12 @@ export default function ERPViewsCore(props) {
                 const linkedInv = data.invoices.find(i => i.id === e.target.value); 
                 setInvForm({
                   ...invForm, 
-                  linkedInvId: e.target.value, 
+                  linkedInvId: linkedInv?.invoice_no || '', // Store Invoice No (Text)
                   useCredit: linkedInv?.refund_customer || 0, 
                   creditCustId: linkedInv?.customer_id || '',
-                  pnr: linkedInv?.pnr || invForm.pnr,
-                  ticketNo: linkedInv?.ticket_no || invForm.ticketNo,
-                  airline: linkedInv?.airline || invForm.airline,
-                  flightSector: linkedInv?.flight_sector || invForm.flightSector
+                  oldTicketNo: linkedInv?.ticket_no || '', // Store Old Ticket No
+                  oldPnr: linkedInv?.pnr || '',            // Store Old PNR
+                  // Do NOT overwrite new booking details (pnr, ticketNo, etc.) so user can enter new ones
                 }); 
               }} style={styles.input} required>
                 <option value="">Select Refund Invoice</option>
@@ -110,13 +109,13 @@ export default function ERPViewsCore(props) {
                 )}
               </select>
               {invForm.linkedInvId && (() => {
-                const linkedInv = data.invoices.find(i => i.id === invForm.linkedInvId);
+                const linkedInv = data.invoices.find(i => i.invoice_no === invForm.linkedInvId);
                 return (
                   <div style={{ background: '#f1f5f9', padding: '15px', borderRadius: '8px', marginTop: '10px', border: '1px solid #cbd5e1' }}>
                     <h4 style={{ margin: '0 0 10px', color: '#1E3A8A' }}>Previous Booking Details (Auto-Filled)</h4>
-                    <p style={{ margin: '5px 0', fontSize: '14px' }}><strong>Old Ticket No:</strong> {linkedInv?.ticket_no || 'N/A'}</p>
-                    <p style={{ margin: '5px 0', fontSize: '14px' }}><strong>Old PNR:</strong> {linkedInv?.pnr || 'N/A'}</p>
-                    <p style={{ margin: '5px 0', fontSize: '14px' }}><strong>Airline/Sector:</strong> {linkedInv?.airline || 'N/A'} - {linkedInv?.flight_sector || 'N/A'}</p>
+                    <p style={{ margin: '5px 0', fontSize: '14px' }}><strong>Original Invoice No:</strong> {invForm.linkedInvId}</p>
+                    <p style={{ margin: '5px 0', fontSize: '14px' }}><strong>Old Ticket No:</strong> {invForm.oldTicketNo || 'N/A'}</p>
+                    <p style={{ margin: '5px 0', fontSize: '14px' }}><strong>Old PNR:</strong> {invForm.oldPnr || 'N/A'}</p>
                     <p style={{ margin: '5px 0', fontSize: '14px', color: '#7c3aed' }}><strong>Credit Auto-Deducted:</strong> {(parseFloat(invForm.useCredit) || 0).toFixed(2)} SAR</p>
                   </div>
                 );
@@ -125,7 +124,7 @@ export default function ERPViewsCore(props) {
           )}
           
           <div><label style={styles.label}>{tr.salesPerson}</label><select value={invForm.employeeId} onChange={e => setInvForm({...invForm, employeeId: e.target.value})} style={styles.input} required><option value="">Select Sales Person</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
-          <div><label style={styles.label}>{tr.paymentMethod}</label><select value={invForm.payment} onChange={e => setInvForm({...invForm, payment: e.target.value, useCredit: 0, creditCustId: ''})} style={styles.input}><option>{tr.cash}</option><option>{tr.bankTransfer}</option><option>{tr.network}</option><option>{tr.credit}</option><option>{tr.creditBalance}</option><option>{tr.tabby}</option><option>{tr.tamara}</option></select></div>
+          <div><label style={styles.label}>{tr.paymentMethod}</label><select value={invForm.payment} onChange={e => setInvForm({...invForm, payment: e.target.value, useCredit: 0, creditCustId: ''})} style={styles.input}><option>{tr.cash}</option><option>{tr.bankTransfer}</option><option>{tr.card}</option><option>{tr.credit}</option><option>{tr.creditBalance}</option><option>{tr.tabby}</option><option>{tr.tamara}</option></select></div>
           
           {invForm.payment === 'Credit Balance' && (
             <>
@@ -179,7 +178,7 @@ export default function ERPViewsCore(props) {
         <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
           <input placeholder={tr.search} value={search} onChange={e => setSearch(e.target.value)} style={styles.input} />
           <select value={payFilter} onChange={e => setPayFilter(e.target.value)} style={{...styles.input, maxWidth: '200px'}}>
-            <option>All</option><option>Cash</option><option>Bank Transfer</option><option>Network</option><option>Credit</option><option>Credit Balance</option><option>Tabby</option><option>Tamara</option>
+            <option>All</option><option>Cash</option><option>Bank Transfer</option><option>Card / Network</option><option>Credit</option><option>Credit Balance</option><option>Tabby</option><option>Tamara</option>
           </select>
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', borderRadius: '12px', overflow: 'hidden' }}>
