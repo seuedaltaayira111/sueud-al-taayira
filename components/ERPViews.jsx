@@ -7,18 +7,17 @@ import ERPViewsSystem from './views/ERPViewsSystem';
 import ERPViewsAdvanced from './views/ERPViewsAdvanced';
 import ERPViewsEnterprise from './views/ERPViewsEnterprise';
 import ERPViewsPro from './views/ERPViewsPro';
-import ERPViewsTools from './views/ERPViewsTools';
 
 export default function ERPViews(props) {
   const { page } = props;
 
-  const isCorePage = ['dashboard', 'create', 'list', 'refunds', 'customers', 'corporates', 'creditors', 'credit'].includes(page);
+  // Added 'ai_pricing' to isSystemPage so it routes properly without needing a separate Tools file
+  const isCorePage = ['dashboard', 'create', 'list', 'refunds', 'customers', 'corporates', 'creditors', 'credit', 'ai_pricing'].includes(page);
   const isAdminPage = ['vendors', 'packages', 'branches', 'portals', 'bank', 'invest', 'hr'].includes(page);
   const isSystemPage = ['users', 'settings', 'reports', 'audit', 'statements', 'contract', 'offer', 'superadmin', 'profile', 'profitability'].includes(page);
   const isAdvancedPage = ['quotations', 'ai_dashboard', 'hr_advanced'].includes(page);
   const isEnterprisePage = ['credit_limits', 'supplier_statement', 'multi_branch'].includes(page);
   const isProPage = ['customer_statement', 'recurring_invoices', 'expense_approval', 'notifications', 'staff_mistakes', 'refund_statement'].includes(page);
-  const isToolsPage = ['ai_pricing'].includes(page);
 
   return (
     <>
@@ -28,7 +27,6 @@ export default function ERPViews(props) {
       {isAdvancedPage && <ERPViewsAdvanced {...props} />}
       {isEnterprisePage && <ERPViewsEnterprise {...props} />}
       {isProPage && <ERPViewsPro {...props} />}
-      {isToolsPage && <ERPViewsTools {...props} />}
     </>
   );
 }
