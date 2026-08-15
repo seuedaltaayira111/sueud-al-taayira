@@ -17,10 +17,11 @@ export default function ERPViewsAdvanced(props) {
   const { page, data, tr, today, userProfile, showToast, setData, handlePaySalary, handleGenerateSlip } = props;
   const [editTargetId, setEditTargetId] = useState(null);
   const [targetVal, setTargetVal] = useState(0);
-  const [attForm, setAttForm] = useState({ empId: '', checkIn: '09:00', checkOut: '18:00', status: 'Present', leaveStart: today, leaveEnd: today });
+  const [attForm, setAttForm] = useState({ empId: '', date: today, checkIn: '09:00', checkOut: '18:00', status: 'Present', leaveStart: today, leaveEnd: today });
   const [attendance, setAttendance] = useState([]);
-  const [payForm, setPayForm] = useState({ empId: '', base: 0, comm: 0, adv_ded: 0, month: today.substring(0, 7), mode: 'Cash' });
+  const [payForm, setPayForm] = useState({ empId: '', base: 0, comm: 0, adv_ded: 0, gift: 0, month: today.substring(0, 7), mode: 'Cash' });
 
+  // Fetch Attendance History
   useEffect(() => {
     if (page === 'hr_advanced' && userProfile?.tenant_id) {
       supabase.from('attendance').select('*, employees(name)').eq('tenant_id', userProfile.tenant_id).order('date', { ascending: false }).then(({ data: att }) => {
@@ -59,7 +60,7 @@ export default function ERPViewsAdvanced(props) {
     try {
       let payload = {
         employee_id: attForm.empId, 
-        date: today, 
+        date: attForm.date, 
         status: attForm.status,
         tenant_id: userProfile.tenant_id
       };
@@ -87,10 +88,17 @@ export default function ERPViewsAdvanced(props) {
       if (payload.deduction > 0) msg += ` ${tr.deduction || 'Deduction'}: ${payload.deduction} hrs.`;
       showToast(msg);
       
-      setAttForm({ empId: '', checkIn: '09:00', checkOut: '18:00', status: 'Present', leaveStart: today, leaveEnd: today });
+      setAttForm({ empId: '', date: today, checkIn: '09:00', checkOut: '18:00', status: 'Present', leaveStart: today, leaveEnd: today });
     } catch (err) { 
       showToast('Error: ' + err.message); 
     }
+  };
+
+  // Auto-fill Salary Form when Employee is selected
+  const handlePayEmpChange = (empId) => {
+    const emp = data.employees.find(e => e.id === empId);
+    const pendingAdv = data.empAdvances.filter(a => a.employee_id === empId && a.status === 'Pending').reduce((sum, a) => sum + a.amount, 0);
+    setPayForm({ ...payForm, empId, base: emp?.salary || 0, adv_ded: pendingAdv });
   };
 
   // 1. AI DASHBOARD LAYER
@@ -247,7 +255,11 @@ export default function ERPViewsAdvanced(props) {
         <div style={styles.card}>
           <h3>📅 Daily Time-Based Attendance & Leave</h3>
           <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '15px' }}>Mark Check-in and Check-out time. System will automatically calculate Overtime ({'>9 hrs'}) and Salary Deduction ({'<8 hrs'}).</p>
-          <form onSubmit={markAttendance} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr auto', gap: '15px', alignItems: 'flex-end' }}>
+          <form onSubmit={markAttendance} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr auto', gap: '15px', alignItems: 'flex-end' }}>
+            <div>
+              <label style={styles.label}>{tr.attendanceDate || 'Date'}</label>
+              <input type="date" style={styles.input} value={attForm.date} onChange={e => setAttForm({...attForm, date: e.target.value})} required />
+            </div>
             <div>
               <label style={styles.label}>{tr.selectEmployee || 'Employee'}</label>
               <select style={styles.input} value={attForm.empId} onChange={e => setAttForm({...attForm, empId: e.target.value})} required>
@@ -316,34 +328,38 @@ export default function ERPViewsAdvanced(props) {
         {/* PAY SALARY & GENERATE SLIP */}
         <div style={styles.card}>
           <h3>💰 {tr.paySalary || 'Pay Salary'}</h3>
-          <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '15px' }}>System will automatically fetch Overtime & Mistakes Deduction for the selected month.</p>
-          <form onSubmit={handlePaySalary} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr 1fr 1fr auto', gap: '15px', alignItems: 'flex-end' }}>
+          <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '15px' }}>Select Employee to Auto-Fill Basic Salary & Pending Advances. Commission & Overtime will auto-calculate from Sales & Attendance.</p>
+          <form onSubmit={handlePaySalary} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr 1fr 1fr 1fr auto', gap: '15px', alignItems: 'flex-end' }}>
             <div>
               <label style={styles.label}>{tr.selectEmployee || 'Employee'}</label>
-              <select name="emp" style={styles.input} required>
+              <select name="emp" style={styles.input} value={payForm.empId} onChange={e => handlePayEmpChange(e.target.value)} required>
                 <option value="">Select Employee</option>
                 {data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
               </select>
             </div>
             <div>
-              <label style={styles.label}>Base Salary</label>
-              <input name="base" type="number" style={styles.input} placeholder="Base" required />
+              <label style={styles.label}>{tr.baseSalary || 'Base'}</label>
+              <input name="base" type="number" style={styles.input} value={payForm.base} onChange={e => setPayForm({...payForm, base: e.target.value})} required />
             </div>
             <div>
-              <label style={styles.label}>Commission</label>
-              <input name="comm" type="number" style={styles.input} placeholder="Commission" required />
+              <label style={styles.label}>{tr.commission || 'Commission %'}</label>
+              <input name="comm" type="number" style={styles.input} value={payForm.comm} onChange={e => setPayForm({...payForm, comm: e.target.value})} required />
             </div>
             <div>
-              <label style={styles.label}>Adv. Deduct</label>
-              <input name="adv_ded" type="number" style={styles.input} placeholder="Adv. Deduct" required />
+              <label style={styles.label}>{tr.advDed || 'Adv. Deduct'}</label>
+              <input name="adv_ded" type="number" style={styles.input} value={payForm.adv_ded} onChange={e => setPayForm({...payForm, adv_ded: e.target.value})} required />
             </div>
             <div>
-              <label style={styles.label}>Month</label>
-              <input name="month" type="text" defaultValue={today.substring(0, 7)} style={styles.input} placeholder="YYYY-MM" required />
+              <label style={styles.label}>{tr.gift || 'Gift'}</label>
+              <input name="gift" type="number" style={styles.input} value={payForm.gift} onChange={e => setPayForm({...payForm, gift: e.target.value})} required />
             </div>
             <div>
-              <label style={styles.label}>Mode</label>
-              <select name="mode" style={styles.input}><option>Cash</option><option>Bank Transfer</option></select>
+              <label style={styles.label}>{tr.month || 'Month'}</label>
+              <input name="month" type="text" style={styles.input} value={payForm.month} onChange={e => setPayForm({...payForm, month: e.target.value})} required />
+            </div>
+            <div>
+              <label style={styles.label}>{tr.mode || 'Mode'}</label>
+              <select name="mode" style={styles.input} value={payForm.mode} onChange={e => setPayForm({...payForm, mode: e.target.value})}><option>Cash</option><option>Bank Transfer</option></select>
             </div>
             <button type="submit" style={{...styles.btnPrimary, height: '42px'}}>Pay</button>
           </form>
