@@ -14,7 +14,7 @@ export default function useERPActions(state) {
     editCredId, setEditCredId, editCustId, setEditCustId, editVendId, setEditVendId, editPkgId, setEditPkgId, 
     editBrnId, setEditBrnId, editEmpId, setEditEmpId, editSrvId, setEditSrvId, editUserId, setEditUserId, 
     modal, setModal, passForm, setPassForm, chatInput, setChatInput, chatMessages, setChatMessages, 
-    previewHTML, setPreviewHTML, getInvoiceHTML, getRefundHTML, getExpenseHTML, getContractHTML, 
+    previewHTML, setPreviewHTML, getInvoiceHTML, getRefundHTML, getExpenseHTML, getSalarySlipHTML, getContractHTML, 
     today, router, contractCorpName, contractType, contractMarkup, contractTerms, tenantForm, setTenantForm, 
     profileForm, setProfileForm, ledgerEmpId 
   } = state;
@@ -211,7 +211,6 @@ export default function useERPActions(state) {
     setModal({ type: 'preview', data: null });
   };
 
-  // FIX: If Refund Invoice, open Refund Modal to Edit. If Normal, open Invoice Form.
   const handleEditInvoice = (inv) => {
     if (inv.invoice_no.startsWith('REF-')) {
       setRefundForm({
@@ -240,8 +239,8 @@ export default function useERPActions(state) {
       refundable: inv.refundable_status || 'Refundable',
       bookingType: inv.booking_type || 'New Booking', 
       linkedInvId: inv.linked_inv_id || '',
-      oldTicketNo: inv.old_ticket_no || '', // Load old ticket no
-      oldPnr: inv.old_pnr || '',            // Load old pnr
+      oldTicketNo: inv.old_ticket_no || '', 
+      oldPnr: inv.old_pnr || '',            
       flightSector: inv.flight_sector || '', 
       airline: inv.airline || '', 
       pnr: inv.pnr || '', 
@@ -332,8 +331,8 @@ export default function useERPActions(state) {
         refundable_status: invForm.refundable,
         booking_type: invForm.bookingType, 
         linked_inv_id: invForm.linkedInvId || null,
-        old_ticket_no: invForm.oldTicketNo || null, // SAVE OLD TICKET NO
-        old_pnr: invForm.oldPnr || null,            // SAVE OLD PNR
+        old_ticket_no: invForm.oldTicketNo || null, 
+        old_pnr: invForm.oldPnr || null,            
         pnr: invForm.pnr, 
         ticket_no: invForm.ticketNo, 
         sector: desc, 
@@ -356,6 +355,7 @@ export default function useERPActions(state) {
         tabby_order_no: invForm.payment === 'Tabby' ? invForm.tabbyNo : null, 
         tamara_order_no: invForm.payment === 'Tamara' ? invForm.tamaraNo : null, 
         ticket_status: invForm.ticketStatus, 
+        status: due > 0 ? 'Unpaid' : 'Paid', 
         tenant_id: userProfile.tenant_id
       };
       
@@ -400,9 +400,7 @@ export default function useERPActions(state) {
     if (!confirm('Delete this invoice permanently? This will reverse all accounting entries.')) return;
     
     try {
-      // If it's a Refund Invoice (REF-)
       if (inv.invoice_no.startsWith('REF-')) {
-        // If customer was given credit, reverse it
         if (inv.payment_method === 'Credit' && inv.refund_customer > 0 && inv.customer_id) {
           const cust = data.customers.find(c => c.id === inv.customer_id);
           if (cust) {
@@ -410,8 +408,7 @@ export default function useERPActions(state) {
             await supabase.from('customers').update({ store_credit: newCredit }).eq('id', cust.id);
           }
         }
-        // If customer was given cash/bank, delete that cashbook entry
-        const cbEntry = data.cashbook.find(c => c.description.includes(`Refund to customer for ${inv.linked_inv_id}`));
+        const cbEntry = data.cashbook.find(c => c.description.includes(`Refund to customer for ${inv.invoice_no}`));
         if (cbEntry) await supabase.from('cashbook').delete().eq('id', cbEntry.id);
         
         await supabase.from('invoices').delete().eq('id', inv.id);
@@ -421,19 +418,36 @@ export default function useERPActions(state) {
           cashbook: prev.cashbook.filter(c => c.id !== cbEntry?.id),
           customers: prev.customers.map(c => c.id === inv.customer_id ? { ...c, store_credit: (c.store_credit || 0) - (inv.refund_customer || 0) } : c)
         }));
-        showToast('Refund Invoice Deleted & Entries Reversed!');
+        showToast('Refund Invoice Deleted & Cash/Credit Reversed!');
         return;
       }
 
-      // If Normal Invoice
+      if (inv.used_credit > 0 && inv.customer_id) {
+        const cust = data.customers.find(c => c.id === inv.customer_id);
+        if (cust) {
+          const newCredit = (cust.store_credit || 0) + (inv.used_credit || 0);
+          await supabase.from('customers').update({ store_credit: newCredit }).eq('id', cust.id);
+        }
+      }
+
       const portal = data.portals.find(p => p.id === inv.portal_id);
       if (portal) {
         const newBal = (portal.current_balance || 0) + (inv.total_cost || 0);
         await supabase.from('portals').update({ current_balance: newBal }).eq('id', portal.id);
       }
+      
+      const cbEntry = data.cashbook.find(c => c.description.includes(`Payment for ${inv.invoice_no}`));
+      if (cbEntry) await supabase.from('cashbook').delete().eq('id', cbEntry.id);
+
       await supabase.from('invoices').delete().eq('id', inv.id);
-      setData(prev => ({ ...prev, invoices: prev.invoices.filter(i => i.id !== inv.id), portals: prev.portals.map(p => p.id === inv.portal_id ? { ...p, current_balance: (p.current_balance || 0) + (inv.total_cost || 0) } : p) }));
-      showToast('Invoice Deleted & Portal Balance Reversed!');
+      setData(prev => ({ 
+        ...prev, 
+        invoices: prev.invoices.filter(i => i.id !== inv.id), 
+        portals: prev.portals.map(p => p.id === inv.portal_id ? { ...p, current_balance: (p.current_balance || 0) + (inv.total_cost || 0) } : p),
+        cashbook: prev.cashbook.filter(c => c.id !== cbEntry?.id),
+        customers: prev.customers.map(c => c.id === inv.customer_id ? { ...c, store_credit: (c.store_credit || 0) + (inv.used_credit || 0) } : c)
+      }));
+      showToast('Invoice Deleted & All Balances Reversed!');
     } catch (err) {
       showToast('Error: ' + err.message);
     }
@@ -964,14 +978,24 @@ export default function useERPActions(state) {
       const base = parseFloat(e.target.base.value) || 0; 
       const comm = parseFloat(e.target.comm.value) || 0; 
       const advDed = parseFloat(e.target.adv_ded.value) || 0; 
-      const netPaid = base + comm - advDed;
       const mode = e.target.mode.value; 
       const emp = data.employees.find(em => em.id === empId); 
       
+      // Fetch Overtime from Attendance
+      const { data: attData } = await supabase.from('attendance').select('overtime').eq('employee_id', empId).eq('status', 'Present').gte('date', today.substring(0, 7) + '-01').lte('date', today);
+      const totalOT = attData?.reduce((s, a) => s + (parseFloat(a.overtime) || 0), 0) * 10; // Assuming 10 SAR per OT hour
+
+      // Fetch Mistakes Deduction
+      const { data: mistakesData } = await supabase.from('staff_mistakes').select('loss_amount').eq('employee_id', empId).eq('paid_by_employee', true).gte('date', today.substring(0, 7) + '-01').lte('date', today);
+      const totalMistakes = mistakesData?.reduce((s, m) => s + (parseFloat(m.loss_amount) || 0), 0);
+
+      const netPaid = base + comm + totalOT - advDed - totalMistakes;
+
       const { data: newPay, error: payErr } = await supabase.from('payroll').insert([{ 
         employee_id: empId, base_salary: base, commission: comm, advance_deduction: advDed,
-        amount: netPaid, month: e.target.month.value, payment_mode: mode, tenant_id: userProfile.tenant_id 
-      }]).select('*, employees(name)').single(); 
+        overtime: totalOT, mistakes_deduction: totalMistakes,
+        amount: netPaid, month: e.target.month.value, payment_mode: mode, payment_date: today, tenant_id: userProfile.tenant_id 
+      }]).select('*, employees(name, role)').single(); 
       
       if (payErr) throw payErr; 
       
@@ -999,11 +1023,20 @@ export default function useERPActions(state) {
         cashbook: [nC, ...prev.cashbook] 
       })); 
       
-      showToast('Salary Paid!'); 
+      showToast('Salary Paid! Overtime & Mistakes Calculated.');
       e.target.reset(); 
     } catch (err) { 
       showToast('Error: ' + err.message); 
     } 
+  };
+
+  const handleGenerateSlip = (pay) => {
+    const s = data.settings;
+    const html = getSalarySlipHTML(pay, s, lang);
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.print();
   };
 
   const handleSettlePayment = async (e) => { 
@@ -1013,7 +1046,7 @@ export default function useERPActions(state) {
       if (!inv) return; 
       const newPaid = (inv.paid_amount || 0) + (inv.due_amount || 0); 
       const { data: upInv, error: invErr } = await supabase.from('invoices').update({ 
-        paid_amount: newPaid, due_amount: 0, settlement_date: settleForm.date, payment_method: settleForm.mode 
+        paid_amount: newPaid, due_amount: 0, settlement_date: settleForm.date, payment_method: settleForm.mode, status: 'Paid' 
       }).eq('id', inv.id).select(`*, customers(name)`).single(); 
       if (invErr) throw invErr; 
       
@@ -1037,7 +1070,7 @@ export default function useERPActions(state) {
     try {
       const newPaid = (inv.paid_amount || 0) + (inv.due_amount || 0);
       const { data: upInv, error: invErr } = await supabase.from('invoices').update({ 
-        paid_amount: newPaid, due_amount: 0, settlement_date: today, payment_method: 'Cash' 
+        paid_amount: newPaid, due_amount: 0, settlement_date: today, payment_method: 'Cash', status: 'Paid' 
       }).eq('id', inv.id).select(`*, customers(name)`).single();
       if (invErr) throw invErr;
       
@@ -1057,7 +1090,6 @@ export default function useERPActions(state) {
   const handleRefund = async (e) => { 
     e.preventDefault(); 
     try { 
-      // Check if we are EDITING an existing REF- invoice
       const existingRefInv = data.invoices.find(i => i.id === refundForm.id && i.invoice_no.startsWith('REF-'));
       
       if (existingRefInv) {
@@ -1077,7 +1109,6 @@ export default function useERPActions(state) {
         return;
       }
 
-      // Creating NEW Refund
       const inv = data.invoices.find(i => i.id === refundForm.id); 
       if (!inv) return; 
       const compRef = parseFloat(refundForm.compRefund) || 0; 
@@ -1089,7 +1120,6 @@ export default function useERPActions(state) {
       if (invErr) throw invErr; 
       
       const refNo = `REF-${Date.now()}`; 
-      // FIX: linked_inv_id should be invoice number (text) to display on invoice
       const { data: newRefInv, error: refErr } = await supabase.from('invoices').insert([{ 
         invoice_no: refNo, 
         customer_id: inv.customer_id, 
@@ -1113,12 +1143,11 @@ export default function useERPActions(state) {
         refund_company: compRef, 
         refund_customer: custRef, 
         refund_reason: refundForm.reason, 
-        linked_inv_id: inv.invoice_no, // FIXED: Pass invoice number string, not UUID
+        linked_inv_id: inv.invoice_no, 
         tenant_id: userProfile.tenant_id 
       }]).select(`*, customers(name), employees(name)`).single(); 
       if (refErr) throw refErr; 
       
-      // Add money back to the Portal from which the ticket was booked
       if (inv.portal_id && compRef > 0) { 
         const portal = data.portals.find(p => p.id === inv.portal_id); 
         const newPortalBal = (portal.current_balance || 0) + compRef; 
@@ -1215,7 +1244,6 @@ export default function useERPActions(state) {
     } 
   };
 
-  // STAFF MISTAKE / LOSS HANDLER
   const handleAddMistake = async (e) => {
     e.preventDefault();
     try {
@@ -1233,7 +1261,6 @@ export default function useERPActions(state) {
 
       if (error) throw error;
 
-      // If employee is paying, add to their advance deduction
       if (e.target.paid_by_emp.checked) {
         const { data: newAdv, error: advErr } = await supabase.from('employee_advances').insert([{ 
           employee_id: empId, amount: lossAmount, date: today, status: 'Pending', tenant_id: userProfile.tenant_id 
@@ -1255,6 +1282,6 @@ export default function useERPActions(state) {
     handleAddTenant, handleToggleSubscription, handleDeleteTenant, 
     handleProfilePicUpload, handleSaveProfile,
     handleAddAdvance, handleReturnAdvance, handleDownloadPDF, printInvoice, shareWhatsApp, shareEmail,
-    handleAddMistake
+    handleAddMistake, handleGenerateSlip
   };
 }
