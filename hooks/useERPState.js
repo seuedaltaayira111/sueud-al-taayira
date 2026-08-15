@@ -24,7 +24,7 @@ const translations = {
     hotelName: 'Hotel Name', checkIn: 'Check In', checkOut: 'Check Out', serviceName: 'Service Name', qty: 'Qty', cost: 'Cost', sell: 'Sell', discount: 'Discount',
     vatRate: 'VAT Rate', invoiceDate: 'Invoice Date', journeyType: 'Journey Type', single: 'Single', roundTrip: 'Round Trip', multiCity: 'Multi-city',
     fareType: 'Fare Type', refundable: 'Refundable', nonRefundable: 'Non-Refundable', bookingType: 'Booking Type', newBooking: 'New Booking', reissue: 'Reissue', extraLuggage: 'Extra Luggage', previousBooking: 'Previous Booking',
-    salesPerson: 'Sales Person', paymentMethod: 'Payment Method', cash: 'Cash', bankTransfer: 'Bank Transfer', network: 'Network', credit: 'Credit', creditBalance: 'Credit Balance', tabby: 'Tabby', tamara: 'Tamara',
+    salesPerson: 'Sales Person', paymentMethod: 'Payment Method', cash: 'Cash', bankTransfer: 'Bank Transfer', card: 'Card / Network', credit: 'Credit', creditBalance: 'Credit Balance', tabby: 'Tabby', tamara: 'Tamara',
     paidAmount: 'Paid Amount (Cash/Bank)', useCreditAmount: 'Use Credit Amount', generateInvoice: 'Generate Invoice', updateInvoice: 'Update Invoice', editInvoice: 'Edit Invoice',
     invNo: 'Inv No', total: 'Total', due: 'Due', method: 'Method', actions: 'Actions', preview: 'Preview', print: 'Print', edit: 'Edit', delete: 'Delete', quickSettle: 'Quick Settle', refund: 'Refund',
     changePassword: 'Change Password', newPassword: 'New Password', settlePayment: 'Settle Payment', processRefund: 'Process Refund',
@@ -48,7 +48,7 @@ const translations = {
     hotelName: 'اسم الفندق', checkIn: 'تاريخ الوصول', checkOut: 'تاريخ المغادرة', serviceName: 'اسم الخدمة', qty: 'الكمية', cost: 'التكلفة', sell: 'البيع', discount: 'الخصم',
     vatRate: 'نسبة الضريبة', invoiceDate: 'تاريخ الفاتورة', journeyType: 'نوع الرحلة', single: 'ذهاب', roundTrip: 'ذهاب وعودة', multiCity: 'مدن متعددة',
     fareType: 'نوع الأجرة', refundable: 'قابلة للاسترداد', nonRefundable: 'غير قابلة للاسترداد', bookingType: 'نوع الحجز', newBooking: 'حجز جديد', reissue: 'إعادة إصدار', extraLuggage: 'أمتعة إضافية', previousBooking: 'حجز سابق',
-    salesPerson: 'موظف المبيعات', paymentMethod: 'طريقة الدفع', cash: 'نقداً', bankTransfer: 'تحويل بنكي', network: 'شبكة', credit: 'آجل', creditBalance: 'رصيد ائتماني', tabby: 'تابي', tamara: 'تمارا',
+    salesPerson: 'موظف المبيعات', paymentMethod: 'طريقة الدفع', cash: 'نقداً', bankTransfer: 'تحويل بنكي', card: 'بطاقة / شبكة', credit: 'آجل', creditBalance: 'رصيد ائتماني', tabby: 'تابي', tamara: 'تمارا',
     paidAmount: 'المبلغ المدفوع (نقداً/بنك)', useCreditAmount: 'استخدام مبلغ الرصيد', generateInvoice: 'إنشاء الفاتورة', updateInvoice: 'تحديث الفاتورة', editInvoice: 'تعديل الفاتورة',
     invNo: 'رقم الفاتورة', total: 'الإجمالي', due: 'المتبقي', method: 'الطريقة', actions: 'إجراءات', preview: 'معاينة', print: 'طباعة', edit: 'تعديل', delete: 'حذف', quickSettle: 'تسوية سريعة', refund: 'استرجاع',
     changePassword: 'تغيير كلمة المرور', newPassword: 'كلمة المرور الجديدة', settlePayment: 'تسوية الدفعة', processRefund: 'معالجة الاسترجاع',
@@ -59,7 +59,7 @@ const translations = {
 };
 
 // ==========================================
-// PREMIUM BILINGUAL INVOICE TEMPLATE (PRINT & BARCODE FIXED)
+// PREMIUM BILINGUAL INVOICE TEMPLATE
 // ==========================================
 const getInvoiceHTML = (inv, s, lang = 'en') => {
   const setting = s || {};
@@ -70,7 +70,6 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
   const trackUrl = `https://sueud-al-taayira.vercel.app/invoice/${invoiceNo}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(trackUrl)}`;
   const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(trackUrl)}&code=Code128&translate-esc=on`;
-  const linkedInvNo = inv.linked_inv_id ? inv.linked_inv_id : null;
 
   return `
   <!DOCTYPE html>
@@ -93,7 +92,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
       .invoice-meta p { margin: 3px 0; font-size: 13px; font-weight: 500; }
       .invoice-meta span { color: #FBBF24; font-weight: 700; }
       .body { padding: 25px 30px; }
-      .details-grid { display: grid; gridTemplateColumns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+      .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
       .card { background: #f8fafc; border-radius: 10px; padding: 15px; border-left: 4px solid #1E3A8A; }
       .card h4 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; color: #1E3A8A; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; }
       .card p { margin: 5px 0; font-size: 13px; display: flex; justify-content: space-between; }
@@ -161,7 +160,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
             <p><strong>${isAr ? 'موظف المبيعات' : 'Sales Person'}:</strong> <span>${inv.employees?.name || 'N/A'}</span></p>
           </div>
           <div class="card" style="border-left-color: #D97706;">
-            <h4>${isAr ? 'تفاصيل الحجز' : 'Booking Details'}</h4>
+            <h4>${isAr ? 'تفاصيل الحجز الجديد' : 'New Booking Details'}</h4>
             <p><strong>${isAr ? 'الخدمة' : 'Service'}:</strong> <span>${inv.service_type || 'Flight'}</span></p>
             <p><strong>${isAr ? 'خط الطيران' : 'Airline'}:</strong> <span>${inv.airline || 'N/A'}</span></p>
             <p><strong>${isAr ? 'رقم التذكرة' : 'Ticket No'}:</strong> <span>${inv.ticket_no || 'N/A'}</span></p>
@@ -169,10 +168,12 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
             <p><strong>${isAr ? 'الركاب' : 'Passenger'}:</strong> <span>${inv.passenger_names ? inv.passenger_names.replace(/\n/g, ', ') : 'N/A'}</span></p>
           </div>
         </div>
-        ${linkedInvNo ? `
+        ${inv.linked_inv_id ? `
         <div class="card" style="margin-bottom: 20px; border-left-color: #64748b; background: #f1f5f9;">
-          <h4>${isAr ? 'الحجز السابق المرتبط' : 'Linked Previous Booking'}</h4>
-          <p><strong>${isAr ? 'رقم الفاتورة الأصلية' : 'Original Invoice No'}:</strong> <span>${linkedInvNo}</span></p>
+          <h4>${isAr ? 'تفاصيل الحجز السابق' : 'Previous Booking Details'}</h4>
+          <p><strong>${isAr ? 'رقم الفاتورة الأصلية' : 'Original Invoice No'}:</strong> <span>${inv.linked_inv_id}</span></p>
+          <p><strong>${isAr ? 'رقم التذكرة القديم' : 'Old Ticket No'}:</strong> <span>${inv.old_ticket_no || 'N/A'}</span></p>
+          <p><strong>${isAr ? 'رقم الحجز القديم' : 'Old PNR'}:</strong> <span>${inv.old_pnr || 'N/A'}</span></p>
         </div>` : ''}
         <div class="table-wrapper">
           <table>
@@ -331,7 +332,50 @@ const getRefundHTML = (inv, s, lang = 'en') => {
   `;
 };
 
-const getExpenseHTML = (exp, s) => `<div>Expense ${exp.invoice_no}</div>`;
+// EXPENSE INVOICE TEMPLATE (BILINGUAL)
+const getExpenseHTML = (exp, s, lang = 'en') => {
+  const setting = s || {};
+  const isAr = lang === 'ar';
+  const expNo = exp.invoice_no || 'N/A';
+  return `
+  <!DOCTYPE html>
+  <html lang="${lang}" dir="${isAr ? 'rtl' : 'ltr'}">
+  <head>
+    <meta charset="UTF-8">
+    <title>Expense ${expNo}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+      body { font-family: ${isAr ? "'Cairo', sans-serif" : "'Poppins', sans-serif"}; padding: 20px; color: #1e293b; }
+      .card { max-width: 600px; margin: auto; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; }
+      h1 { color: #1E3A8A; text-align: center; }
+      table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+      th, td { padding: 10px; border: 1px solid #e2e8f0; text-align: ${isAr ? 'right' : 'left'}; }
+      th { background: #f1f5f9; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>${isAr ? 'سند صرف' : 'Expense Voucher'}</h1>
+      <p><strong>${isAr ? 'الرقم' : 'No'}:</strong> ${expNo}</p>
+      <p><strong>${isAr ? 'التاريخ' : 'Date'}:</strong> ${exp.expense_date}</p>
+      <p><strong>${isAr ? 'المورد' : 'Vendor'}:</strong> ${exp.vendor_name}</p>
+      <p><strong>${isAr ? 'النوع' : 'Type'}:</strong> ${exp.expense_type}</p>
+      <table>
+        <thead><tr><th>${isAr ? 'الصنف' : 'Item'}</th><th>${isAr ? 'الكمية' : 'Qty'}</th><th>${isAr ? 'السعر' : 'Price'}</th></tr></thead>
+        <tbody>
+          ${(exp.items && exp.items.length > 0 ? exp.items : [{name: exp.item_name, qty: 1, price: exp.amount}]).map(it => `
+            <tr><td>${it.name}</td><td>${it.qty}</td><td>${parseFloat(it.price).toFixed(2)}</td></tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <h3 style="text-align: ${isAr ? 'left' : 'right'}; color: #EF4444;">${isAr ? 'الإجمالي' : 'Total'}: ${(exp.amount || 0).toFixed(2)} SAR</h3>
+      <p><strong>${isAr ? 'طريقة الدفع' : 'Paid Via'}:</strong> ${exp.payment_mode}</p>
+    </div>
+  </body>
+  </html>
+  `;
+};
+
 const getContractHTML = (s, name, date, isOffer, type, markup, terms) => `<div>Contract for ${name}</div>`;
 
 // ==========================================
@@ -367,7 +411,10 @@ export default function useERPState() {
   const [contractType, setContractType] = useState('Flight Tickets');
   const [contractMarkup, setContractMarkup] = useState(0);
   const [contractTerms, setContractTerms] = useState('');
-  const [invForm, setInvForm] = useState({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: '', bookingDate: today, invoiceDate: today, bookingType: 'New Booking', linkedInvId: '', service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' });
+  
+  // Added oldTicketNo and oldPnr for Previous Booking feature
+  const [invForm, setInvForm] = useState({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: '', bookingDate: today, invoiceDate: today, bookingType: 'New Booking', linkedInvId: '', oldTicketNo: '', oldPnr: '', service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' });
+  
   const [expForm, setExpForm] = useState({ vendor_name: '', vendor_vat: '', expense_date: today, expense_type: 'Office Supplies', payment_mode: 'Cash', items: [{ name: '', qty: 1, price: 0 }], taxRate: '15', desc: '' });
   const [custForm, setCustForm] = useState({ name: '', phone: '', store_credit: 0 });
   const [corpForm, setCorpForm] = useState({ name: '', vat_no: '', phone: '', address: '' });
