@@ -7,14 +7,17 @@ import ERPViews from '@/components/ERPViews';
 export default function Home() {
   const erp = useERP();
 
+  // Yahan userProfile null check karna zaroori hai, warna app crash ho jayega
   if (!erp.user || !erp.userProfile) {
     return <div style={{ padding: 50, textAlign: 'center', fontFamily: 'sans-serif' }}>Loading ERP...</div>;
   }
 
+  // Safe access using optional chaining (?.)
   const isSuperAdmin = erp.userProfile?.role === 'SuperAdmin' || 
                        erp.user?.email === 'atallah@sueud.com' || 
                        erp.user?.email === 'hamdan@sueud.com';
 
+  // Menu items using translation engine (tr)
   const menu = [
     { id: 'dashboard', label: erp.tr.dashboard, show: true },
     { id: 'ai_dashboard', label: erp.tr.ai_dashboard, show: true }, 
@@ -149,10 +152,13 @@ export default function Home() {
           profileForm={erp.profileForm} setProfileForm={erp.setProfileForm}
           handleProfilePicUpload={erp.handleProfilePicUpload} handleSaveProfile={erp.handleSaveProfile}
           
+          // WHATSAPP & EMAIL PROPS PASSED HERE
           shareWhatsApp={erp.shareWhatsApp}
           shareEmail={erp.shareEmail}
           
+          // STAFF MISTAKES & SALARY SLIP PROP
           handleAddMistake={erp.handleAddMistake}
+          handleGenerateSlip={erp.handleGenerateSlip}
         />
       </ERPLayout>
     </>
