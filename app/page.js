@@ -3,6 +3,7 @@
 import useERP from '@/hooks/useERP';
 import ERPLayout from '@/components/ERPLayout';
 import ERPViews from '@/components/ERPViews';
+import { useEffect } from 'react';
 
 export default function Home() {
   const erp = useERP();
@@ -31,6 +32,7 @@ export default function Home() {
     { id: 'quotations', label: erp.tr.quotations, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices }, 
     { id: 'recurring_invoices', label: erp.tr.recurring_invoices, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices }, 
     { id: 'profitability', label: erp.tr.profitability, show: true }, 
+    { id: 'ai_pricing', label: '🤖 AI Pricing', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices }, // NEW AI PRICING MENU
     
     // Customers & Vendors
     { id: 'customers', label: erp.tr.customers, show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
@@ -67,6 +69,30 @@ export default function Home() {
     { id: 'settings', label: erp.tr.settings, show: erp.userProfile.is_admin || erp.userProfile.can_access_settings },
     { id: 'profile', label: erp.tr.profile, show: true },
   ].filter(m => m.show);
+
+  // NEW FEATURE: Keyboard Shortcuts for fast navigation
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Alt + N = New Invoice
+      if (e.altKey && e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        erp.setPage('create');
+      }
+      // Alt + L = Invoice List
+      if (e.altKey && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        erp.setPage('list');
+      }
+      // Alt + D = Dashboard
+      if (e.altKey && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        erp.setPage('dashboard');
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [erp.setPage]);
 
   return (
     <>
