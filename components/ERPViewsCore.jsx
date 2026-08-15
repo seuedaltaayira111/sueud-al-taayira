@@ -63,7 +63,7 @@ export default function ERPViewsCore(props) {
 
   if (page === 'create') return (
     <div style={styles.card}>
-      <h2 style={{ color: '#1E3A8A' }}>{editInvId ? tr.editInvoice || 'Edit Invoice' : tr.create}</h2>
+      <h2 style={{ color: '#1E3A8A' }}>{editInvId ? tr.editInvoice : tr.create}</h2>
       <form onSubmit={handleCreateInvoice}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
           {invForm.payment !== 'Credit Balance' && (<div><label style={styles.label}>{tr.custType}</label><select value={invForm.custType} onChange={e => setInvForm({...invForm, custType: e.target.value})} style={styles.input}><option>{tr.individual}</option><option>{tr.corporate}</option></select></div>)}
@@ -95,12 +95,11 @@ export default function ERPViewsCore(props) {
                 const linkedInv = data.invoices.find(i => i.id === e.target.value); 
                 setInvForm({
                   ...invForm, 
-                  linkedInvId: linkedInv?.invoice_no || '', // Store Invoice No (Text)
+                  linkedInvId: linkedInv?.invoice_no || '', 
                   useCredit: linkedInv?.refund_customer || 0, 
                   creditCustId: linkedInv?.customer_id || '',
-                  oldTicketNo: linkedInv?.ticket_no || '', // Store Old Ticket No
-                  oldPnr: linkedInv?.pnr || '',            // Store Old PNR
-                  // Do NOT overwrite new booking details (pnr, ticketNo, etc.) so user can enter new ones
+                  oldTicketNo: linkedInv?.ticket_no || '', 
+                  oldPnr: linkedInv?.pnr || '',            
                 }); 
               }} style={styles.input} required>
                 <option value="">Select Refund Invoice</option>
@@ -131,7 +130,6 @@ export default function ERPViewsCore(props) {
               <div><label style={styles.label}>Select Customer (Credit Available)</label><select value={invForm.creditCustId} onChange={e => { const c = data.customers.find(x => x.id === e.target.value); setInvForm({...invForm, creditCustId: e.target.value, useCredit: c?.store_credit || 0}); }} style={styles.input} required><option value="">Select Customer</option>{data.customers.filter(c => (c.store_credit || 0) > 0).map(c => <option key={c.id} value={c.id}>{c.name} (Avl: {(c.store_credit || 0).toFixed(2)})</option>)}</select></div>
               <div><label style={styles.label}>{tr.useCreditAmount}</label><input type="number" step="0.01" value={invForm.useCredit} onChange={e => setInvForm({...invForm, useCredit: e.target.value})} style={styles.input} required /></div>
               
-              {/* LIVE CALCULATION DISPLAY */}
               <div style={{ gridColumn: '1 / -1', background: '#f8fafc', padding: '15px', borderRadius: '8px', marginTop: '10px', border: '1px solid #cbd5e1' }}>
                 <h4 style={{ margin: '0 0 10px', color: '#1E3A8A' }}>Live Payment Calculation</h4>
                 {(() => {
@@ -155,6 +153,7 @@ export default function ERPViewsCore(props) {
           )}
           
           <div><label style={styles.label}>{tr.paidAmount}</label><input type="number" step="0.01" value={invForm.paid} onChange={e => setInvForm({...invForm, paid: e.target.value})} style={styles.input} required /></div>
+          <div><label style={styles.label}>Invoice Status</label><select value={invForm.status || 'Unpaid'} onChange={e => setInvForm({...invForm, status: e.target.value})} style={styles.input}><option value="Unpaid">Unpaid</option><option value="Paid">Paid</option></select></div>
           {invForm.payment === 'Credit' && (<><div><label style={styles.label}>Select Creditor</label><select value={invForm.creditorId} onChange={e => setInvForm({...invForm, creditorId: e.target.value})} style={styles.input} required><option value="">Select Creditor</option>{data.creditors.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div><div><label style={styles.label}>Credit Due Date</label><input type="date" value={invForm.creditDueDate} onChange={e => setInvForm({...invForm, creditDueDate: e.target.value})} style={styles.input} required /></div></>)}
           {invForm.payment === 'Tabby' && <div><label style={styles.label}>Tabby Order No</label><input value={invForm.tabbyNo} onChange={e => setInvForm({...invForm, tabbyNo: e.target.value})} style={styles.input} required /></div>}
           {invForm.payment === 'Tamara' && <div><label style={styles.label}>Tamara Order No</label><input value={invForm.tamaraNo} onChange={e => setInvForm({...invForm, tamaraNo: e.target.value})} style={styles.input} required /></div>}
