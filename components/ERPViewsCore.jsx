@@ -80,10 +80,27 @@ export default function ERPViewsCore(props) {
             <>
               <div>
                 <label style={styles.label}>{tr.selectCustomer}</label>
-                <select value={invForm.custId} onChange={e => setInvForm({...invForm, custId: e.target.value})} style={styles.input}>
-                  <option value="new">{tr.newCustomer}</option>
-                  {data.customers.map(c => <option key={c.id} value={c.id}>{c.name} ({tr.credit}: {c.store_credit || 0})</option>)}
-                </select>
+                {/* SEARCHABLE CUSTOMER DROPDOWN */}
+                <input 
+                  type="text" 
+                  list="customers-list" 
+                  value={invForm.custName} 
+                  onChange={e => {
+                    const val = e.target.value;
+                    const cust = data.customers.find(c => c.name.toLowerCase() === val.toLowerCase());
+                    if (cust) {
+                      setInvForm({...invForm, custName: cust.name, custId: cust.id, custPhone: cust.phone});
+                    } else {
+                      setInvForm({...invForm, custName: val, custId: 'new'});
+                    }
+                  }} 
+                  placeholder="Search or type new name..." 
+                  style={styles.input} 
+                  required 
+                />
+                <datalist id="customers-list">
+                  {data.customers.map(c => <option key={c.id} value={c.name}>{c.name} (Phone: {c.phone})</option>)}
+                </datalist>
               </div>
               {invForm.custId !== 'new' && (() => {
                 const cust = data.customers.find(c => c.id === invForm.custId);
@@ -94,11 +111,8 @@ export default function ERPViewsCore(props) {
                   </div>
                 ) : null;
               })()}
-              {invForm.custId === 'new' && (
-                <>
-                  <div><label style={styles.label}>{tr.customerName}</label><input value={invForm.custName} onChange={e => setInvForm({...invForm, custName: e.target.value})} style={styles.input} required /></div>
-                  <div><label style={styles.label}>{tr.customerPhone}</label><input value={invForm.custPhone} onChange={e => setInvForm({...invForm, custPhone: e.target.value})} style={styles.input} /></div>
-                </>
+              {invForm.custId === 'new' && invForm.custName && (
+                <div><label style={styles.label}>{tr.customerPhone}</label><input value={invForm.custPhone} onChange={e => setInvForm({...invForm, custPhone: e.target.value})} style={styles.input} /></div>
               )}
             </>
           ) : invForm.payment !== 'Credit Balance' && invForm.custType === 'Corporate' ? (
@@ -166,10 +180,10 @@ export default function ERPViewsCore(props) {
             <div style={{ gridColumn: '1 / -1' }}>
               <label style={styles.label}>Select Previous Booking (Refund Credit)</label>
               <select value={invForm.linkedInvId} onChange={e => { 
-                const linkedInv = data.invoices.find(i => i.id === e.target.value); 
+                const linkedInv = data.invoices.find(i => i.invoice_no === e.target.value); 
                 setInvForm({
                   ...invForm, 
-                  linkedInvId: linkedInv?.invoice_no || '', 
+                  linkedInvId: e.target.value, 
                   useCredit: linkedInv?.refund_customer || 0, 
                   creditCustId: linkedInv?.customer_id || '',
                   oldTicketNo: linkedInv?.ticket_no || '', 
@@ -182,7 +196,7 @@ export default function ERPViewsCore(props) {
               }} style={styles.input} required>
                 <option value="">Select Refund Invoice</option>
                 {data.invoices.filter(i => i.invoice_no.startsWith('REF-') && (i.refund_customer > 0)).map(i => 
-                  <option key={i.id} value={i.id}>{i.invoice_no} - {i.customers?.name} (Credit: {i.refund_customer || 0})</option>
+                  <option key={i.id} value={i.invoice_no}>{i.invoice_no} - {i.customers?.name} (Credit: {i.refund_customer || 0})</option>
                 )}
               </select>
               {invForm.linkedInvId && (
@@ -205,32 +219,39 @@ export default function ERPViewsCore(props) {
           <div><label style={styles.label}>{tr.salesPerson}</label><select value={invForm.employeeId} onChange={e => setInvForm({...invForm, employeeId: e.target.value})} style={styles.input} required><option value="">Select Sales Person</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
           <div><label style={styles.label}>{tr.paymentMethod}</label><select value={invForm.payment} onChange={e => setInvForm({...invForm, payment: e.target.value, useCredit: 0, creditCustId: ''})} style={styles.input}><option>{tr.cash}</option><option>{tr.bankTransfer}</option><option>{tr.card}</option><option>{tr.credit}</option><option>{tr.creditBalance}</option><option>{tr.tabby}</option><option>{tr.tamara}</option></select></div>
           
-          {invForm.payment === 'Credit Balance' && (
-            <>
-              <div><label style={styles.label}>Select Customer (Credit Available)</label><select value={invForm.creditCustId} onChange={e => { const c = data.customers.find(x => x.id === e.target.value); setInvForm({...invForm, creditCustId: e.target.value, useCredit: c?.store_credit || 0}); }} style={styles.input} required><option value="">Select Customer</option>{data.customers.filter(c => (c.store_credit || 0) > 0).map(c => <option key={c.id} value={c.id}>{c.name} (Avl: {(c.store_credit || 0).toFixed(2)})</option>)}</select></div>
-              <div><label style={styles.label}>{tr.useCreditAmount}</label><input type="number" step="0.01" value={invForm.useCredit} onChange={e => setInvForm({...invForm, useCredit: e.target.value})} style={styles.input} required /></div>
-              
-              <div style={{ gridColumn: '1 / -1', background: '#f8fafc', padding: '15px', borderRadius: '8px', marginTop: '10px', border: '1px solid #cbd5e1' }}>
-                <h4 style={{ margin: '0 0 10px', color: '#1E3A8A' }}>Live Payment Calculation</h4>
-                {(() => {
-                  const qty = parseInt(invForm.qty) || 1;
-                  const sell = (parseFloat(invForm.sell) || 0) * qty;
-                  const discount = parseFloat(invForm.discount) || 0;
-                  const taxRate = parseFloat(invForm.taxRate) || 0;
-                  const total = (sell - discount) + ((sell - discount) * (taxRate / 100));
-                  const creditUsed = parseFloat(invForm.useCredit) || 0;
-                  const remaining = total - creditUsed;
-                  return (
-                    <>
-                      <p style={{ margin: '5px 0', fontSize: '14px' }}><strong>Invoice Total:</strong> {total.toFixed(2)} SAR</p>
-                      <p style={{ margin: '5px 0', fontSize: '14px', color: '#7c3aed' }}><strong>Credit Applied:</strong> - {creditUsed.toFixed(2)} SAR</p>
-                      <p style={{ margin: '5px 0', fontSize: '16px', color: remaining > 0 ? '#EF4444' : '#059669' }}><strong>Remaining to Pay (Cash/Bank):</strong> {remaining > 0 ? remaining.toFixed(2) : '0.00'} SAR</p>
-                    </>
-                  );
-                })()}
-              </div>
-            </>
-          )}
+          {/* SIMPLIFIED CREDIT BALANCE LOGIC */}
+          {invForm.payment === 'Credit Balance' && invForm.custId !== 'new' && (() => {
+            const cust = data.customers.find(c => c.id === invForm.custId);
+            const creditAvl = cust?.store_credit || 0;
+            return (
+              <>
+                <div style={{ gridColumn: '1 / -1', background: '#f0fdf4', padding: '15px', borderRadius: '8px', marginTop: '10px', border: '1px solid #bbf7d0' }}>
+                  <h4 style={{ margin: '0 0 10px', color: '#059669' }}>Credit Balance Available: {creditAvl.toFixed(2)} SAR</h4>
+                  <label style={styles.label}>Enter Amount to Deduct</label>
+                  <input type="number" step="0.01" max={creditAvl} value={invForm.useCredit} onChange={e => setInvForm({...invForm, useCredit: e.target.value})} style={styles.input} required />
+                </div>
+                <div style={{ gridColumn: '1 / -1', background: '#f8fafc', padding: '15px', borderRadius: '8px', marginTop: '10px', border: '1px solid #cbd5e1' }}>
+                  <h4 style={{ margin: '0 0 10px', color: '#1E3A8A' }}>Live Payment Calculation</h4>
+                  {(() => {
+                    const qty = parseInt(invForm.qty) || 1;
+                    const sell = (parseFloat(invForm.sell) || 0) * qty;
+                    const discount = parseFloat(invForm.discount) || 0;
+                    const taxRate = parseFloat(invForm.taxRate) || 0;
+                    const total = (sell - discount) + ((sell - discount) * (taxRate / 100));
+                    const creditUsed = parseFloat(invForm.useCredit) || 0;
+                    const remaining = total - creditUsed;
+                    return (
+                      <>
+                        <p style={{ margin: '5px 0', fontSize: '14px' }}><strong>Invoice Total:</strong> {total.toFixed(2)} SAR</p>
+                        <p style={{ margin: '5px 0', fontSize: '14px', color: '#7c3aed' }}><strong>Credit Applied:</strong> - {creditUsed.toFixed(2)} SAR</p>
+                        <p style={{ margin: '5px 0', fontSize: '16px', color: remaining > 0 ? '#EF4444' : '#059669' }}><strong>Remaining to Pay (Cash/Bank):</strong> {remaining > 0 ? remaining.toFixed(2) : '0.00'} SAR</p>
+                      </>
+                    );
+                  })()}
+                </div>
+              </>
+            );
+          })()}
           
           <div><label style={styles.label}>{tr.paidAmount}</label><input type="number" step="0.01" value={invForm.paid} onChange={e => setInvForm({...invForm, paid: e.target.value})} style={styles.input} required /></div>
           <div><label style={styles.label}>Invoice Status</label><select value={invForm.status || 'Unpaid'} onChange={e => setInvForm({...invForm, status: e.target.value})} style={styles.input}><option value="Unpaid">Unpaid</option><option value="Paid">Paid</option></select></div>
@@ -295,7 +316,6 @@ export default function ERPViewsCore(props) {
                     <button onClick={() => handleEditInvoice(inv)} style={{ ...styles.btnWarning, padding: '5px 8px', fontSize: '11px' }}>{tr.edit}</button>
                     <button onClick={() => handleDeleteInvoice(inv)} style={{ ...styles.btnDanger, padding: '5px 8px', fontSize: '11px' }}>{tr.delete}</button>
                     {isInvoices && (inv.due_amount > 0) && <button onClick={() => handleQuickSettle(inv)} style={{ ...styles.btnSuccess, padding: '5px 8px', fontSize: '11px' }}>{tr.quickSettle}</button>}
-                    {/* ONE REFUND PER INVOICE LOGIC: Show refund button only if status is not 'refunded' */}
                     {isInvoices && inv.status !== 'refunded' && <button onClick={() => openRefundModal(inv)} style={{ ...styles.btnDanger, padding: '5px 8px', fontSize: '11px' }}>{tr.refund}</button>}
                   </div>
                 </td>
