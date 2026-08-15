@@ -215,7 +215,7 @@ export default function useERPActions(state) {
     if (inv.invoice_no.startsWith('REF-')) {
       setRefundForm({
         id: inv.id,
-        date: inv.invoice_date || today,
+        date: inv.refund_date || inv.invoice_date || today,
         compRefund: inv.refund_company || 0,
         custRefund: inv.refund_customer || 0,
         mode: inv.payment_method || 'Cash',
@@ -241,6 +241,10 @@ export default function useERPActions(state) {
       linkedInvId: inv.linked_inv_id || '',
       oldTicketNo: inv.old_ticket_no || '', 
       oldPnr: inv.old_pnr || '',            
+      oldAirline: inv.old_airline || '',
+      oldSector: inv.old_sector || '',
+      oldSellPrice: inv.old_sell_price || 0,
+      oldBookingDate: inv.old_booking_date || '',
       flightSector: inv.flight_sector || '', 
       airline: inv.airline || '', 
       pnr: inv.pnr || '', 
@@ -255,7 +259,8 @@ export default function useERPActions(state) {
       useCredit: inv.used_credit || 0, 
       invoiceDate: inv.invoice_date || today,
       employeeId: inv.employee_id || '', 
-      passengers: inv.passenger_names ? inv.passenger_names.split('\n') : ['']
+      passengers: inv.passenger_names ? inv.passenger_names.split('\n') : [''],
+      status: inv.status || 'Unpaid'
     });
     state.setPage('create');
   };
@@ -333,6 +338,10 @@ export default function useERPActions(state) {
         linked_inv_id: invForm.linkedInvId || null,
         old_ticket_no: invForm.oldTicketNo || null, 
         old_pnr: invForm.oldPnr || null,            
+        old_airline: invForm.oldAirline || null,
+        old_sector: invForm.oldSector || null,
+        old_sell_price: parseFloat(invForm.oldSellPrice) || 0,
+        old_booking_date: invForm.oldBookingDate || null,
         pnr: invForm.pnr, 
         ticket_no: invForm.ticketNo, 
         sector: desc, 
@@ -355,7 +364,7 @@ export default function useERPActions(state) {
         tabby_order_no: invForm.payment === 'Tabby' ? invForm.tabbyNo : null, 
         tamara_order_no: invForm.payment === 'Tamara' ? invForm.tamaraNo : null, 
         ticket_status: invForm.ticketStatus, 
-        status: due > 0 ? 'Unpaid' : 'Paid', 
+        status: invForm.status || (due > 0 ? 'Unpaid' : 'Paid'), 
         tenant_id: userProfile.tenant_id
       };
       
@@ -388,7 +397,7 @@ export default function useERPActions(state) {
       }
       
       setInvForm({ 
-        custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: data.portals[0]?.id || '', bookingDate: today, invoiceDate: today, bookingType: 'New Booking', linkedInvId: '', oldTicketNo: '', oldPnr: '', service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' 
+        custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: data.portals[0]?.id || '', bookingDate: today, invoiceDate: today, bookingType: 'New Booking', linkedInvId: '', oldTicketNo: '', oldPnr: '', oldAirline: '', oldSector: '', oldSellPrice: 0, oldBookingDate: '', service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '', status: 'Unpaid'
       }); 
       state.setPage('list');
     } catch (err) { 
@@ -396,11 +405,14 @@ export default function useERPActions(state) {
     }
   };
 
+  // FIX: Deeply Connected Accounting for Delete & One Refund Per Invoice
   const handleDeleteInvoice = async (inv) => {
     if (!confirm('Delete this invoice permanently? This will reverse all accounting entries.')) return;
     
     try {
+      // If it's a Refund Invoice (REF-)
       if (inv.invoice_no.startsWith('REF-')) {
+        // Reverse customer credit if it was added to credit balance
         if (inv.payment_method === 'Credit' && inv.refund_customer > 0 && inv.customer_id) {
           const cust = data.customers.find(c => c.id === inv.customer_id);
           if (cust) {
@@ -408,20 +420,42 @@ export default function useERPActions(state) {
             await supabase.from('customers').update({ store_credit: newCredit }).eq('id', cust.id);
           }
         }
+        // Reverse cash/bank refund if it was paid in cash/bank
         const cbEntry = data.cashbook.find(c => c.description.includes(`Refund to customer for ${inv.invoice_no}`));
         if (cbEntry) await supabase.from('cashbook').delete().eq('id', cbEntry.id);
+        
+        // Deduct the company refund back from the portal
+        if (inv.portal_id && inv.refund_company > 0) {
+          const portal = data.portals.find(p => p.id === inv.portal_id);
+          if (portal) {
+            const newPortalBal = (portal.current_balance || 0) - (inv.refund_company || 0);
+            await supabase.from('portals').update({ current_balance: newPortalBal }).eq('id', inv.portal_id);
+          }
+        }
+        
+        // Restore original invoice status to allow refund again
+        const originalInvId = inv.linked_inv_id;
+        if (originalInvId) {
+          // linked_inv_id stores the invoice_no (text) of the original invoice
+          const { data: origInv } = await supabase.from('invoices').select('id').eq('invoice_no', originalInvId).single();
+          if (origInv) {
+            await supabase.from('invoices').update({ status: 'Unpaid' }).eq('id', origInv.id); // Restore to Unpaid or Confirmed
+          }
+        }
         
         await supabase.from('invoices').delete().eq('id', inv.id);
         setData(prev => ({ 
           ...prev, 
-          invoices: prev.invoices.filter(i => i.id !== inv.id), 
+          invoices: prev.invoices.map(i => i.invoice_no === originalInvId ? { ...i, status: 'Unpaid' } : i).filter(i => i.id !== inv.id), 
           cashbook: prev.cashbook.filter(c => c.id !== cbEntry?.id),
-          customers: prev.customers.map(c => c.id === inv.customer_id ? { ...c, store_credit: (c.store_credit || 0) - (inv.refund_customer || 0) } : c)
+          customers: prev.customers.map(c => c.id === inv.customer_id ? { ...c, store_credit: (c.store_credit || 0) - (inv.refund_customer || 0) } : c),
+          portals: prev.portals.map(p => p.id === inv.portal_id ? { ...p, current_balance: (p.current_balance || 0) - (inv.refund_company || 0) } : p)
         }));
-        showToast('Refund Invoice Deleted & Cash/Credit Reversed!');
+        showToast('Refund Invoice Deleted & Original Invoice Restored!');
         return;
       }
 
+      // If Normal Invoice with Previous Booking (Credit Used)
       if (inv.used_credit > 0 && inv.customer_id) {
         const cust = data.customers.find(c => c.id === inv.customer_id);
         if (cust) {
@@ -430,12 +464,14 @@ export default function useERPActions(state) {
         }
       }
 
+      // If Normal Invoice (Portal Balance Reverse)
       const portal = data.portals.find(p => p.id === inv.portal_id);
       if (portal) {
         const newBal = (portal.current_balance || 0) + (inv.total_cost || 0);
         await supabase.from('portals').update({ current_balance: newBal }).eq('id', portal.id);
       }
       
+      // Delete Cashbook entry for normal invoice payment
       const cbEntry = data.cashbook.find(c => c.description.includes(`Payment for ${inv.invoice_no}`));
       if (cbEntry) await supabase.from('cashbook').delete().eq('id', cbEntry.id);
 
@@ -576,6 +612,7 @@ export default function useERPActions(state) {
     }
   };
 
+  // FIX: Duplicate Customer Check
   const handleAddEditCust = async (e) => { 
     e.preventDefault(); 
     const pl = { name: custForm.name, phone: custForm.phone, store_credit: parseFloat(custForm.store_credit) || 0, tenant_id: userProfile.tenant_id }; 
@@ -587,6 +624,10 @@ export default function useERPActions(state) {
         showToast('Updated!'); 
         setEditCustId(null); 
       } else { 
+        // Check if customer with same name and phone already exists
+        const exists = data.customers.find(c => c.name.toLowerCase() === pl.name.toLowerCase() && c.phone === pl.phone);
+        if (exists) throw new Error('Customer with this name and phone already exists!'); 
+        
         const { data: nItem, error } = await supabase.from('customers').insert([{...pl, type: 'Individual'}]).select().single(); 
         if (error) throw error; 
         setData(prev => ({...prev, customers: [...prev.customers, nItem]})); 
@@ -971,30 +1012,38 @@ export default function useERPActions(state) {
     }
   };
 
+  // FIX: Pay Salary with Auto Overtime, Commission, Advance & Mistakes Deduction
   const handlePaySalary = async (e) => { 
     e.preventDefault(); 
     try { 
       const empId = e.target.emp.value; 
       const base = parseFloat(e.target.base.value) || 0; 
-      const comm = parseFloat(e.target.comm.value) || 0; 
+      const gift = parseFloat(e.target.gift.value) || 0;
       const advDed = parseFloat(e.target.adv_ded.value) || 0; 
       const mode = e.target.mode.value; 
+      const month = e.target.month.value;
       const emp = data.employees.find(em => em.id === empId); 
       
       // Fetch Overtime from Attendance
-      const { data: attData } = await supabase.from('attendance').select('overtime').eq('employee_id', empId).eq('status', 'Present').gte('date', today.substring(0, 7) + '-01').lte('date', today);
+      const { data: attData } = await supabase.from('attendance').select('overtime').eq('employee_id', empId).eq('status', 'Present').gte('date', month + '-01').lte('date', today);
       const totalOT = attData?.reduce((s, a) => s + (parseFloat(a.overtime) || 0), 0) * 10; // Assuming 10 SAR per OT hour
 
       // Fetch Mistakes Deduction
-      const { data: mistakesData } = await supabase.from('staff_mistakes').select('loss_amount').eq('employee_id', empId).eq('paid_by_employee', true).gte('date', today.substring(0, 7) + '-01').lte('date', today);
+      const { data: mistakesData } = await supabase.from('staff_mistakes').select('loss_amount').eq('employee_id', empId).eq('paid_by_employee', true).gte('date', month + '-01').lte('date', today);
       const totalMistakes = mistakesData?.reduce((s, m) => s + (parseFloat(m.loss_amount) || 0), 0);
 
-      const netPaid = base + comm + totalOT - advDed - totalMistakes;
+      // Calculate Commission automatically based on sales
+      const empInv = data.invoices.filter(i => i.employee_id === empId && !i.invoice_no.startsWith('REF-') && i.status !== 'Draft' && i.invoice_date?.startsWith(month));
+      const totalSales = empInv.reduce((s, i) => s + (i.total || 0), 0);
+      const commRate = emp.commission_rate || 0;
+      const comm = (totalSales * commRate) / 100;
+
+      const netPaid = base + comm + totalOT + gift - advDed - totalMistakes;
 
       const { data: newPay, error: payErr } = await supabase.from('payroll').insert([{ 
         employee_id: empId, base_salary: base, commission: comm, advance_deduction: advDed,
-        overtime: totalOT, mistakes_deduction: totalMistakes,
-        amount: netPaid, month: e.target.month.value, payment_mode: mode, payment_date: today, tenant_id: userProfile.tenant_id 
+        overtime: totalOT, mistakes_deduction: totalMistakes, gift: gift,
+        amount: netPaid, month: month, payment_mode: mode, payment_date: today, tenant_id: userProfile.tenant_id 
       }]).select('*, employees(name, role)').single(); 
       
       if (payErr) throw payErr; 
@@ -1023,7 +1072,7 @@ export default function useERPActions(state) {
         cashbook: [nC, ...prev.cashbook] 
       })); 
       
-      showToast('Salary Paid! Overtime & Mistakes Calculated.');
+      showToast('Salary Paid! Auto Calculated.');
       e.target.reset(); 
     } catch (err) { 
       showToast('Error: ' + err.message); 
@@ -1087,6 +1136,7 @@ export default function useERPActions(state) {
     }
   };
 
+  // FIX: Refund with Date, One Refund Per Invoice logic
   const handleRefund = async (e) => { 
     e.preventDefault(); 
     try { 
@@ -1098,6 +1148,7 @@ export default function useERPActions(state) {
           refund_customer: parseFloat(refundForm.custRefund) || 0,
           refund_reason: refundForm.reason,
           invoice_date: refundForm.date,
+          refund_date: refundForm.date,
           total: -(parseFloat(refundForm.custRefund) || 0),
           total_sell: -(parseFloat(refundForm.custRefund) || 0),
           paid_amount: -(parseFloat(refundForm.custRefund) || 0)
@@ -1115,7 +1166,7 @@ export default function useERPActions(state) {
       const custRef = parseFloat(refundForm.custRefund) || 0; 
       
       const { data: upInv, error: invErr } = await supabase.from('invoices').update({ 
-        status: 'refunded', refund_company: compRef, refund_customer: custRef 
+        status: 'refunded' 
       }).eq('id', inv.id).select(`*, customers(name), employees(name)`).single(); 
       if (invErr) throw invErr; 
       
@@ -1127,6 +1178,7 @@ export default function useERPActions(state) {
         portal_id: inv.portal_id, 
         booking_date: today, 
         invoice_date: refundForm.date, 
+        refund_date: refundForm.date, 
         service_type: inv.service_type, 
         employee_id: inv.employee_id, 
         airline: inv.airline, 
@@ -1169,14 +1221,18 @@ export default function useERPActions(state) {
         } else { 
           const cbType = refundForm.mode === 'Cash' ? 'Cash-Out' : 'Bank-Out'; 
           const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ 
-            trans_date: refundForm.date, type: cbType, description: `Refund to customer for ${inv.invoice_no}`, amount: custRef, tenant_id: userProfile.tenant_id 
+            trans_date: refundForm.date, 
+            type: cbType, 
+            description: `Refund to customer for ${inv.invoice_no}`, 
+            amount: custRef, 
+            tenant_id: userProfile.tenant_id 
           }]).select().single(); 
           if (cbErr) throw cbErr; 
           newCashEntry = nC; 
         } 
       } 
       setData(prev => ({ ...prev, invoices: [newRefInv, prev.invoices.map(i => i.id === inv.id ? upInv : i)].flat(), cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook })); 
-      showToast('Refund Processed! All details copied.'); 
+      showToast('Refund Processed!'); 
       setModal({ type: null, data: null }); 
     } catch (err) { 
       showToast('Error: ' + err.message); 
