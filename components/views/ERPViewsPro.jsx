@@ -13,7 +13,7 @@ const styles = {
 };
 
 export default function ERPViewsPro(props) {
-  const { page, data, tr, today, userProfile, showToast, setData, handleAddMistake } = props;
+  const { page, data, tr, today, userProfile, showToast, setData, handleAddMistake, exportToExcel } = props;
   const [stmtCustId, setStmtCustId] = useState('');
   const [recForm, setRecForm] = useState({ customer_id: '', amount: '', interval: 'Monthly' });
 
@@ -82,10 +82,21 @@ export default function ERPViewsPro(props) {
     );
   }
 
-  // 2. CUSTOMER STATEMENT
+  // 2. CUSTOMER STATEMENT (FIXED & DOWNLOADABLE)
   if (page === 'customer_statement') {
     const custInvs = data.invoices.filter(i => i.customer_id === stmtCustId && !i.invoice_no.startsWith('REF-'));
     let runningBalance = 0;
+    const cust = data.customers.find(c => c.id === stmtCustId);
+
+    const handleDownloadStmt = () => {
+      if (!stmtCustId) return showToast('Please select a customer first');
+      let bal = 0;
+      const csvData = custInvs.map(inv => {
+        bal += (inv.total || 0) - (inv.paid_amount || 0);
+        return { Date: inv.invoice_date, InvoiceNo: inv.invoice_no, Debit: inv.total, Credit: inv.paid_amount, Balance: bal.toFixed(2) };
+      });
+      exportToExcel(csvData, `Statement_${cust?.name || stmtCustId}`);
+    };
 
     return (
       <div>
@@ -100,7 +111,10 @@ export default function ERPViewsPro(props) {
 
         {stmtCustId && (
           <div style={styles.card}>
-            <h3>Transaction History</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+              <h3>Transaction History - {cust?.name}</h3>
+              <button onClick={handleDownloadStmt} style={styles.btnSuccess}>Download Statement</button>
+            </div>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{padding:'10px', textAlign:'left'}}>Date</th><th style={{padding:'10px'}}>Invoice No</th><th style={{padding:'10px'}}>Debit (Inv)</th><th style={{padding:'10px'}}>Credit (Paid)</th><th style={{padding:'10px'}}>Balance</th></tr></thead>
               <tbody>
