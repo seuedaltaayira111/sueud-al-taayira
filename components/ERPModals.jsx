@@ -64,6 +64,12 @@ export default function ERPModals({ modal, setModal, passForm, setPassForm, hand
                 <option value="Credit">Credit (Store for next booking)</option>
               </select>
 
+              {refundForm.mode === 'Credit' && (
+                <p style={{ fontSize: '14px', color: '#059669', fontWeight: 'bold', marginTop: '5px' }}>
+                  Available Credit Balance: {refundForm.creditBalance.toFixed(2)} SAR
+                </p>
+              )}
+
               <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#94A3B8' }}>Refund Reason / سبب الاسترجاع</label>
               <select value={refundForm.reason} onChange={e => setRefundForm({...refundForm, reason: e.target.value})} style={styles.input} required>
                 <option value="">Select Reason</option>
