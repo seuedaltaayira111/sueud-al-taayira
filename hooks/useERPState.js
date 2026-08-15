@@ -30,7 +30,8 @@ const translations = {
     changePassword: 'Change Password', newPassword: 'New Password', settlePayment: 'Settle Payment', processRefund: 'Process Refund',
     companyRefund: 'Company Refund (Portal)', customerRefund: 'Customer Refund Amount', customerRefundMethod: 'Customer Refund Method',
     refundReason: 'Refund Reason', documentPreview: 'Document Preview', close: 'Close', cancel: 'Cancel', save: 'Save', mark: 'Mark', logLoss: 'Log Loss',
-    notifications: 'Notifications', customer_statement: 'Cust Statement', recurring_invoices: 'Recurring Invoices', expense_approval: 'Expense Approval', refund_statement: 'Refund Statement', credit_limits: 'Credit Limits', supplier_statement: 'Supplier Statement', multi_branch: 'Multi-Branch'
+    notifications: 'Notifications', customer_statement: 'Cust Statement', recurring_invoices: 'Recurring Invoices', expense_approval: 'Expense Approval', refund_statement: 'Refund Statement', credit_limits: 'Credit Limits', supplier_statement: 'Supplier Statement', multi_branch: 'Multi-Branch',
+    selectEmployee: 'Select Employee', target: 'Target', achieved: 'Achieved', percentage: 'Percentage', checkInTime: 'Check-In', checkOutTime: 'Check-Out', overtime: 'Overtime', deduction: 'Deduction', status: 'Status', present: 'Present', leave: 'Leave', absent: 'Absent', paySalary: 'Pay Salary', generateSlip: 'Generate Salary Slip'
   },
   ar: {
     dashboard: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'الفواتير', refunds: 'الاسترجاعات',
@@ -54,12 +55,13 @@ const translations = {
     changePassword: 'تغيير كلمة المرور', newPassword: 'كلمة المرور الجديدة', settlePayment: 'تسوية الدفعة', processRefund: 'معالجة الاسترجاع',
     companyRefund: 'استرجاع الشركة (البوابة)', customerRefund: 'مبلغ استرجاع العميل', customerRefundMethod: 'طريقة استرجاع العميل',
     refundReason: 'سبب الاسترجاع', documentPreview: 'معاينة المستند', close: 'إغلاق', cancel: 'إلغاء', save: 'حفظ', mark: 'تسجيل', logLoss: 'تسجيل خسارة',
-    notifications: 'الإشعارات', customer_statement: 'كشف العميل', recurring_invoices: 'الفواتير المتكررة', expense_approval: 'موافقة المصروفات', refund_statement: 'كشف الاسترجاعات', credit_limits: 'حدود الائتمان', supplier_statement: 'كشف الموردين', multi_branch: 'متعدد الفروع'
+    notifications: 'الإشعارات', customer_statement: 'كشف العميل', recurring_invoices: 'الفواتير المتكررة', expense_approval: 'موافقة المصروفات', refund_statement: 'كشف الاسترجاعات', credit_limits: 'حدود الائتمان', supplier_statement: 'كشف الموردين', multi_branch: 'متعدد الفروع',
+    selectEmployee: 'اختر الموظف', target: 'الهدف', achieved: 'المحقق', percentage: 'النسبة', checkInTime: 'الحضور', checkOutTime: 'الانصراف', overtime: 'العمل الإضافي', deduction: 'الخصم', status: 'الحالة', present: 'حاضر', leave: 'إجازة', absent: 'غائب', paySalary: 'صرف الراتب', generateSlip: 'إنشاء قسيمة راتب'
   }
 };
 
 // ==========================================
-// PREMIUM BILINGUAL INVOICE TEMPLATE
+// PREMIUM BILINGUAL INVOICE TEMPLATE (WITH PREVIOUS BOOKING)
 // ==========================================
 const getInvoiceHTML = (inv, s, lang = 'en') => {
   const setting = s || {};
@@ -169,11 +171,12 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
           </div>
         </div>
         ${inv.linked_inv_id ? `
-        <div class="card" style="margin-bottom: 20px; border-left-color: #64748b; background: #f1f5f9;">
-          <h4>${isAr ? 'تفاصيل الحجز السابق' : 'Previous Booking Details'}</h4>
+        <div class="card" style="margin-bottom: 20px; border-left-color: #7c3aed; background: #f5f3ff;">
+          <h4 style="color: #7c3aed; border-bottom-color: #ddd6fe;">${isAr ? 'تفاصيل الحجز السابق' : 'Previous Booking Details'}</h4>
           <p><strong>${isAr ? 'رقم الفاتورة الأصلية' : 'Original Invoice No'}:</strong> <span>${inv.linked_inv_id}</span></p>
           <p><strong>${isAr ? 'رقم التذكرة القديم' : 'Old Ticket No'}:</strong> <span>${inv.old_ticket_no || 'N/A'}</span></p>
           <p><strong>${isAr ? 'رقم الحجز القديم' : 'Old PNR'}:</strong> <span>${inv.old_pnr || 'N/A'}</span></p>
+          <p style="color: #7c3aed; font-weight: bold;"><strong>${isAr ? 'الرصيد المستخدم' : 'Credit Used'}:</strong> <span>${(inv.used_credit || 0).toFixed(2)} SAR</span></p>
         </div>` : ''}
         <div class="table-wrapper">
           <table>
@@ -337,6 +340,8 @@ const getExpenseHTML = (exp, s, lang = 'en') => {
   const setting = s || {};
   const isAr = lang === 'ar';
   const expNo = exp.invoice_no || 'N/A';
+  const trackUrl = `https://sueud-al-taayira.vercel.app/expense/${expNo}`;
+  const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(trackUrl)}&code=Code128&translate-esc=on`;
   return `
   <!DOCTYPE html>
   <html lang="${lang}" dir="${isAr ? 'rtl' : 'ltr'}">
@@ -345,12 +350,16 @@ const getExpenseHTML = (exp, s, lang = 'en') => {
     <title>Expense ${expNo}</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
-      body { font-family: ${isAr ? "'Cairo', sans-serif" : "'Poppins', sans-serif"}; padding: 20px; color: #1e293b; }
-      .card { max-width: 600px; margin: auto; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; }
-      h1 { color: #1E3A8A; text-align: center; }
+      * { box-sizing: border-box; }
+      body { font-family: ${isAr ? "'Cairo', sans-serif" : "'Poppins', sans-serif"}; padding: 20px; background: #e2e8f0; margin: 0; color: #1e293b; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .card { max-width: 600px; margin: auto; background: #fff; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; border-top: 8px solid #059669; }
+      h1 { color: #059669; text-align: center; margin-top: 0; }
       table { width: 100%; border-collapse: collapse; margin-top: 20px; }
       th, td { padding: 10px; border: 1px solid #e2e8f0; text-align: ${isAr ? 'right' : 'left'}; }
       th { background: #f1f5f9; }
+      .codes { text-align: center; margin-top: 20px; }
+      .codes img { height: 60px; mix-blend-mode: multiply; }
+      @media print { body { background: #fff; padding: 0; margin: 0; } .card { border: none; } }
     </style>
   </head>
   <body>
@@ -370,6 +379,118 @@ const getExpenseHTML = (exp, s, lang = 'en') => {
       </table>
       <h3 style="text-align: ${isAr ? 'left' : 'right'}; color: #EF4444;">${isAr ? 'الإجمالي' : 'Total'}: ${(exp.amount || 0).toFixed(2)} SAR</h3>
       <p><strong>${isAr ? 'طريقة الدفع' : 'Paid Via'}:</strong> ${exp.payment_mode}</p>
+      <div class="codes">
+        <img src="${barcodeUrl}" alt="Barcode" crossorigin="anonymous"><br>
+        <small style="color:#94a3b8; font-size: 10px;">${isAr ? 'امسح الباركود' : 'Scan Barcode'}</small>
+      </div>
+    </div>
+  </body>
+  </html>
+  `;
+};
+
+// SALARY SLIP TEMPLATE (BEAUTIFUL & AI MESSAGE)
+const getSalarySlipHTML = (pay, s, lang = 'en') => {
+  const setting = s || {};
+  const isAr = lang === 'ar';
+  const slipNo = `SLIP-${pay.id.substring(0,8)}`;
+  const aiMessages = isAr ? [
+    "جزاك الله خيراً على جهودك المتميزة. استمر في العطاء والتميز!",
+    "عملك الدؤوب يصنع الفرق. شكراً لك من القلب!",
+    "أنت فخر فريقنا. نتمنى لك دوام التوفيق والنجاح!"
+  ] : [
+    "Thank you for your outstanding efforts. Keep up the great work!",
+    "Your hard work makes a difference. Thank you from the bottom of our hearts!",
+    "You are the pride of our team. We wish you continued success!"
+  ];
+  const aiMsg = aiMessages[Math.floor(Math.random() * aiMessages.length)];
+
+  return `
+  <!DOCTYPE html>
+  <html lang="${lang}" dir="${isAr ? 'rtl' : 'ltr'}">
+  <head>
+    <meta charset="UTF-8">
+    <title>Salary Slip ${slipNo}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      * { box-sizing: border-box; }
+      body { font-family: ${isAr ? "'Cairo', sans-serif" : "'Poppins', sans-serif"}; background: #e2e8f0; margin: 0; padding: 20px; color: #1e293b; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .slip-container { max-width: 800px; margin: auto; background: #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; border: 1px solid #e2e8f0; }
+      .header { background: linear-gradient(135deg, #1E3A8A, #2563EB); color: #fff; padding: 30px; display: flex; justify-content: space-between; align-items: center; }
+      .header h1 { margin: 0; font-size: 24px; }
+      .header h2 { margin: 5px 0 0; font-size: 18px; color: #FBBF24; }
+      .body { padding: 30px; }
+      .emp-details { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; background: #f8fafc; padding: 20px; border-radius: 8px; }
+      .emp-details p { margin: 5px 0; font-size: 14px; }
+      .table-wrapper { margin-bottom: 30px; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { padding: 12px; border: 1px solid #e2e8f0; text-align: ${isAr ? 'right' : 'left'}; }
+      th { background: #1E3A8A; color: #fff; font-size: 14px; }
+      td { font-size: 14px; }
+      .total-row { background: #f1f5f9; font-weight: bold; }
+      .net-pay { background: #059669; color: #fff; padding: 15px; border-radius: 8px; text-align: center; margin-top: 20px; font-size: 20px; font-weight: bold; }
+      .ai-msg { background: #f0f9ff; border-left: 4px solid #2563EB; padding: 15px; margin-top: 20px; border-radius: 8px; font-style: italic; color: #1e293b; }
+      .footer { text-align: center; padding: 20px; background: #f8fafc; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
+      @media print { body { background: #fff; padding: 0; margin: 0; } .slip-container { box-shadow: none; border: none; border-radius: 0; } }
+    </style>
+  </head>
+  <body>
+    <div class="slip-container">
+      <div class="header">
+        <div>
+          <h1>${setting.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
+          <h2>${setting.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
+        </div>
+        <div style="text-align: ${isAr ? 'left' : 'right'};">
+          <h1>${isAr ? 'قسيمة راتب' : 'Salary Slip'}</h1>
+          <p>${isAr ? 'رقم' : 'Slip No'}: ${slipNo}</p>
+          <p>${isAr ? 'الشهر' : 'Month'}: ${pay.month}</p>
+        </div>
+      </div>
+      <div class="body">
+        <div class="emp-details">
+          <div>
+            <p><strong>${isAr ? 'اسم الموظف' : 'Employee Name'}:</strong> ${pay.employees?.name || 'N/A'}</p>
+            <p><strong>${isAr ? 'المسمى الوظيفي' : 'Role'}:</strong> ${pay.employees?.role || 'N/A'}</p>
+          </div>
+          <div style="text-align: ${isAr ? 'left' : 'right'};">
+            <p><strong>${isAr ? 'تاريخ الصرف' : 'Payment Date'}:</strong> ${pay.payment_date || 'N/A'}</p>
+            <p><strong>${isAr ? 'طريقة الدفع' : 'Payment Mode'}:</strong> ${pay.payment_mode}</p>
+          </div>
+        </div>
+        
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>${isAr ? 'الوصف' : 'Description'}</th>
+                <th style="text-align: right;">${isAr ? 'المبلغ (SAR)' : 'Amount (SAR)'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>${isAr ? 'الراتب الأساسي' : 'Basic Salary'}</td><td style="text-align: right;">${(pay.base_salary || 0).toFixed(2)}</td></tr>
+              <tr><td>${isAr ? 'العمولة' : 'Commission'}</td><td style="text-align: right;">${(pay.commission || 0).toFixed(2)}</td></tr>
+              <tr><td>${isAr ? 'العمل الإضافي' : 'Overtime'}</td><td style="text-align: right;">${(pay.overtime || 0).toFixed(2)}</td></tr>
+              <tr><td>${isAr ? 'خصم السلفة' : 'Advance Deduction'}</td><td style="text-align: right; color: #EF4444;">- ${(pay.advance_deduction || 0).toFixed(2)}</td></tr>
+              <tr><td>${isAr ? 'خصم الأخطاء' : 'Mistakes Deduction'}</td><td style="text-align: right; color: #EF4444;">- ${(pay.mistakes_deduction || 0).toFixed(2)}</td></tr>
+              <tr class="total-row"><td>${isAr ? 'صافي الراتب' : 'Net Pay'}</td><td style="text-align: right;">${(pay.amount || 0).toFixed(2)}</td></tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="net-pay">
+          ${isAr ? 'صافي الراتب المدفوع' : 'Total Net Pay'}: ${(pay.amount || 0).toFixed(2)} SAR
+        </div>
+        
+        <div class="ai-msg">
+          <strong>🤖 ${isAr ? 'رسالة إدارية' : 'Management Message'}:</strong><br>
+          ${aiMsg}
+        </div>
+      </div>
+      <div class="footer">
+        <p>${isAr ? 'هذه قسيمة راتب إلكترونية صادرة من النظام' : 'This is a system generated salary slip'}</p>
+        <p>${setting.company_name_en || 'SUEUD AL TAAYIRA'} | ${setting.phone || ''}</p>
+      </div>
     </div>
   </body>
   </html>
@@ -528,7 +649,7 @@ export default function useERPState() {
     editCredId, setEditCredId, editCustId, setEditCustId, editVendId, setEditVendId, editPkgId, setEditPkgId,
     editBrnId, setEditBrnId, editEmpId, setEditEmpId, editSrvId, setEditSrvId, editUserId, setEditUserId,
     modal, setModal, passForm, setPassForm, chatInput, setChatInput, chatMessages, setChatMessages,
-    previewHTML, setPreviewHTML, getInvoiceHTML, getRefundHTML, getExpenseHTML, getContractHTML, today, router,
+    previewHTML, setPreviewHTML, getInvoiceHTML, getRefundHTML, getExpenseHTML, getSalarySlipHTML, getContractHTML, today, router,
     contractCorpName, setContractCorpName, contractType, setContractType, contractMarkup, setContractMarkup,
     contractTerms, setContractTerms, tenantForm, setTenantForm, profileForm, setProfileForm,
     ledgerEmpId, setLedgerEmpId, ledgerCustId, setLedgerCustId, repDate, setRepDate,
