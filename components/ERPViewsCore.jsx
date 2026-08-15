@@ -55,7 +55,7 @@ export default function ERPViewsCore(props) {
         <h2 style={{ color: '#1E3A8A' }}>{tr.credit}</h2>
         <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', marginTop: '20px' }}>
           <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{ padding: '12px', textAlign: 'left' }}>Customer</th><th style={{ padding: '12px' }}>Phone</th><th style={{ padding: '12px' }}>Available Credit (SAR)</th></tr></thead>
-          <tbody>{creditCustomers.length === 0 ? <tr><td colSpan="3" style={{padding: '20px', textAlign: 'center'}}>No credit balances available.</td></tr> : creditCustomers.map(c => <tr key={c.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{c.name}</td><td style={{ padding: '12px' }}>{c.phone}</td><td style={{ padding: '12px', color: '#059669', fontWeight: 'bold' }}>{(c.store_credit || 0).toFixed(2)}</td></tr>)}</tbody>
+          <tbody>{creditCustomers.length === 0 ? <tr><td colSpan="3" style={{padding: '20px', textAlign:'center'}}>No credit balances available.</td></tr> : creditCustomers.map(c => <tr key={c.id} style={{ borderBottom: '1px solid #E2E8F0' }}><td style={{ padding: '12px' }}>{c.name}</td><td style={{ padding: '12px' }}>{c.phone}</td><td style={{ padding: '12px', color: '#059669', fontWeight: 'bold' }}>{(c.store_credit || 0).toFixed(2)}</td></tr>)}</tbody>
         </table>
       </div>
     );
@@ -80,7 +80,6 @@ export default function ERPViewsCore(props) {
             <>
               <div>
                 <label style={styles.label}>{tr.selectCustomer}</label>
-                {/* SEARCHABLE CUSTOMER DROPDOWN */}
                 <input 
                   type="text" 
                   list="customers-list" 
@@ -219,14 +218,14 @@ export default function ERPViewsCore(props) {
           <div><label style={styles.label}>{tr.salesPerson}</label><select value={invForm.employeeId} onChange={e => setInvForm({...invForm, employeeId: e.target.value})} style={styles.input} required><option value="">Select Sales Person</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
           <div><label style={styles.label}>{tr.paymentMethod}</label><select value={invForm.payment} onChange={e => setInvForm({...invForm, payment: e.target.value, useCredit: 0, creditCustId: ''})} style={styles.input}><option>{tr.cash}</option><option>{tr.bankTransfer}</option><option>{tr.card}</option><option>{tr.credit}</option><option>{tr.creditBalance}</option><option>{tr.tabby}</option><option>{tr.tamara}</option></select></div>
           
-          {/* SIMPLIFIED CREDIT BALANCE LOGIC */}
+          {/* SIMPLIFIED CREDIT BALANCE LOGIC WITH CUSTOMER NAME */}
           {invForm.payment === 'Credit Balance' && invForm.custId !== 'new' && (() => {
             const cust = data.customers.find(c => c.id === invForm.custId);
             const creditAvl = cust?.store_credit || 0;
             return (
               <>
                 <div style={{ gridColumn: '1 / -1', background: '#f0fdf4', padding: '15px', borderRadius: '8px', marginTop: '10px', border: '1px solid #bbf7d0' }}>
-                  <h4 style={{ margin: '0 0 10px', color: '#059669' }}>Credit Balance Available: {creditAvl.toFixed(2)} SAR</h4>
+                  <h4 style={{ margin: '0 0 10px', color: '#059669' }}>Customer: {cust?.name} | Available Credit: {creditAvl.toFixed(2)} SAR</h4>
                   <label style={styles.label}>Enter Amount to Deduct</label>
                   <input type="number" step="0.01" max={creditAvl} value={invForm.useCredit} onChange={e => setInvForm({...invForm, useCredit: e.target.value})} style={styles.input} required />
                 </div>
