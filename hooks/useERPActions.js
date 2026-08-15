@@ -240,6 +240,8 @@ export default function useERPActions(state) {
       refundable: inv.refundable_status || 'Refundable',
       bookingType: inv.booking_type || 'New Booking', 
       linkedInvId: inv.linked_inv_id || '',
+      oldTicketNo: inv.old_ticket_no || '', // Load old ticket no
+      oldPnr: inv.old_pnr || '',            // Load old pnr
       flightSector: inv.flight_sector || '', 
       airline: inv.airline || '', 
       pnr: inv.pnr || '', 
@@ -330,6 +332,8 @@ export default function useERPActions(state) {
         refundable_status: invForm.refundable,
         booking_type: invForm.bookingType, 
         linked_inv_id: invForm.linkedInvId || null,
+        old_ticket_no: invForm.oldTicketNo || null, // SAVE OLD TICKET NO
+        old_pnr: invForm.oldPnr || null,            // SAVE OLD PNR
         pnr: invForm.pnr, 
         ticket_no: invForm.ticketNo, 
         sector: desc, 
@@ -372,7 +376,7 @@ export default function useERPActions(state) {
         
         let newCashEntry = null; 
         if (cashPaid > 0 && invForm.payment !== 'Credit' && invForm.payment !== 'Credit Balance') { 
-          const cbType = invForm.payment === 'Cash' ? 'Cash-In' : (invForm.payment === 'Bank Transfer' || invForm.payment === 'Network' ? 'Bank-In' : null); 
+          const cbType = invForm.payment === 'Cash' ? 'Cash-In' : (invForm.payment === 'Bank Transfer' || invForm.payment === 'Card / Network' ? 'Bank-In' : null); 
           if (cbType) { 
             const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: invForm.invoiceDate, type: cbType, description: `Payment for ${invNo}`, amount: cashPaid, tenant_id: userProfile.tenant_id }]).select().single(); 
             if (cbErr) console.error("Cashbook entry failed:", cbErr.message);
@@ -384,7 +388,7 @@ export default function useERPActions(state) {
       }
       
       setInvForm({ 
-        custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: data.portals[0]?.id || '', bookingDate: today, invoiceDate: today, bookingType: 'New Booking', linkedInvId: '', service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' 
+        custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: data.portals[0]?.id || '', bookingDate: today, invoiceDate: today, bookingType: 'New Booking', linkedInvId: '', oldTicketNo: '', oldPnr: '', service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '' 
       }); 
       state.setPage('list');
     } catch (err) { 
@@ -474,7 +478,7 @@ export default function useERPActions(state) {
 
   const handlePreviewExpense = (exp) => {
     const s = data.settings;
-    const html = getExpenseHTML(exp, s);
+    const html = getExpenseHTML(exp, s, lang);
     setPreviewHTML(html);
     setModal({ type: 'preview', data: exp });
   };
@@ -506,7 +510,7 @@ export default function useERPActions(state) {
         
         if (expErr) throw expErr;
         
-        const cbType = expForm.payment_mode === 'Cash' ? 'Cash-Out' : ((expForm.payment_mode === 'Bank Transfer' || expForm.payment_mode === 'Network') ? 'Bank-Out' : 'Investor-Out');
+        const cbType = expForm.payment_mode === 'Cash' ? 'Cash-Out' : ((expForm.payment_mode === 'Bank Transfer' || expForm.payment_mode === 'Card / Network') ? 'Bank-Out' : 'Investor-Out');
         const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ 
           trans_date: expForm.expense_date || today, 
           type: cbType, 
@@ -538,7 +542,7 @@ export default function useERPActions(state) {
         
         if (expErr) throw expErr;
         
-        const cbType = expForm.payment_mode === 'Cash' ? 'Cash-Out' : ((expForm.payment_mode === 'Bank Transfer' || expForm.payment_mode === 'Network') ? 'Bank-Out' : 'Investor-Out');
+        const cbType = expForm.payment_mode === 'Cash' ? 'Cash-Out' : ((expForm.payment_mode === 'Bank Transfer' || expForm.payment_mode === 'Card / Network') ? 'Bank-Out' : 'Investor-Out');
         const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ 
           trans_date: expForm.expense_date || today, 
           type: cbType, 
