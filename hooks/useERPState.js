@@ -9,12 +9,15 @@ import { useRouter } from 'next/navigation';
 // ==========================================
 const translations = {
   en: {
-    dashboard: 'Dashboard', create: 'Create Invoice', list: 'Invoices', refunds: 'Refunds', customers: 'Customers', corporates: 'Corporates', creditors: 'Creditors', credit: 'Credit Balances', vendors: 'Vendors', packages: 'Packages', branches: 'Branches', portals: 'Portals', bank: 'Bank & Cash', invest: 'Investors', hr: 'Human Resources', users: 'Users', settings: 'Settings', reports: 'Reports', audit: 'Audit Logs', statements: 'Statements', contract: 'Contracts', offer: 'Offers', superadmin: 'SuperAdmin', profile: 'Profile', profitability: 'Profitability', search: 'Search...', download_excel: 'Export Excel', logout: 'Logout', changePass: 'Change Password', quotations: 'Quotations', ai_dashboard: 'AI Dashboard', hr_advanced: 'HR & Payroll', staff_mistakes: 'Staff Mistakes', notifications: 'Notifications', customer_statement: 'Cust Statement', recurring_invoices: 'Recurring Invoices', expense_approval: 'Expense Approval', refund_statement: 'Refund Statement', credit_limits: 'Credit Limits', supplier_statement: 'Supplier Statement', multi_branch: 'Multi-Branch', custType: 'Customer Type', individual: 'Individual', corporate: 'Corporate', selectCustomer: 'Select Customer', newCustomer: 'New Customer', customerName: 'Customer Name', customerPhone: 'Customer Phone', passengers: 'Passengers', addPassenger: '+ Add Passenger', portal: 'Portal', service: 'Service', flightTicket: 'Flight Ticket', hotel: 'Hotel', tourPackage: 'Tour Package', visitVisa: 'Visit Visa', umrahVisa: 'Umrah Visa', newService: 'New Service', flightType: 'Flight Type', domestic: 'Domestic', international: 'International', airline: 'Airline', sector: 'Sector', pnr: 'PNR', ticketNo: 'Ticket No', hotelName: 'Hotel Name', checkIn: 'Check In', checkOut: 'Check Out', serviceName: 'Service Name', qty: 'Qty', cost: 'Cost', sell: 'Sell', discount: 'Discount', vatRate: 'VAT Rate', invoiceDate: 'Invoice Date', journeyType: 'Journey Type', single: 'Single', roundTrip: 'Round Trip', multiCity: 'Multi-city', fareType: 'Fare Type', refundable: 'Refundable', nonRefundable: 'Non-Refundable', bookingType: 'Booking Type', newBooking: 'New Booking', reissue: 'Reissue', extraLuggage: 'Extra Luggage', previousBooking: 'Previous Booking', salesPerson: 'Sales Person', paymentMethod: 'Payment Method', cash: 'Cash', bankTransfer: 'Bank Transfer', card: 'Card / Network', credit: 'Credit', creditBalance: 'Credit Balance', tabby: 'Tabby', tamara: 'Tamara', paidAmount: 'Paid Amount', useCreditAmount: 'Use Credit Amount', generateInvoice: 'Generate Invoice', updateInvoice: 'Update Invoice', editInvoice: 'Edit Invoice', invNo: 'Inv No', total: 'Total', due: 'Due', method: 'Method', actions: 'Actions', preview: 'Preview', print: 'Print', edit: 'Edit', delete: 'Delete', quickSettle: 'Quick Settle', refund: 'Refund', settlePayment: 'Settle Payment', processRefund: 'Process Refund', companyRefund: 'Company Refund', customerRefund: 'Customer Refund', refundReason: 'Refund Reason', refundDate: 'Refund Date', documentPreview: 'Document Preview', close: 'Close', cancel: 'Cancel', save: 'Save', mark: 'Mark', logLoss: 'Log Loss', selectEmployee: 'Select Employee', target: 'Target', achieved: 'Achieved', percentage: 'Percentage', checkInTime: 'Check-In', checkOutTime: 'Check-Out', overtime: 'Overtime', deduction: 'Deduction', status: 'Status', present: 'Present', leave: 'Leave', absent: 'Absent', paySalary: 'Pay Salary', generateSlip: 'Generate Slip', baseSalary: 'Base Salary', commission: 'Commission', advDed: 'Adv. Deduct', gift: 'Gift', month: 'Month', mode: 'Mode', attendanceDate: 'Date' },
-  ar: { dashboard: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'الفواتير', refunds: 'الاسترجاعات', customers: 'العملاء', corporates: 'الشركات', creditors: 'الدائنون', credit: 'أرصدة الائتمان', vendors: 'الموردون', packages: 'الباقات', branches: 'الفروع', portals: 'البوابات', bank: 'البنك والصندوق', invest: 'المستثمرون', hr: 'الموارد البشرية', users: 'المستخدمون', settings: 'الإعدادات', reports: 'التقارير', audit: 'سجل التدقيق', statements: 'الكشوف', contract: 'العقود', offer: 'العروض', superadmin: 'المدير العام', profile: 'الملف الشخصي', profitability: 'الربحية', search: 'بحث...', download_excel: 'تصدير إكسل', logout: 'تسجيل الخروج', changePass: 'تغيير كلمة المرور', quotations: 'عروض الأسعار', ai_dashboard: 'لوحة الذكاء الاصطناعي', hr_advanced: 'الموارد البشرية والرواتب', staff_mistakes: 'أخطاء الموظفين', notifications: 'الإشعارات', customer_statement: 'كشف العميل', recurring_invoices: 'الفواتير المتكررة', expense_approval: 'موافقة المصروفات', refund_statement: 'كشف الاسترجاعات', credit_limits: 'حدود الائتمان', supplier_statement: 'كشف الموردين', multi_branch: 'متعدد الفروع', custType: 'نوع العميل', individual: 'فرد', corporate: 'شركة', selectCustomer: 'اختر العميل', newCustomer: 'عميل جديد', customerName: 'اسم العميل', customerPhone: 'هاتف العميل', passengers: 'الركاب', addPassenger: '+ إضافة راكب', portal: 'البوابة', service: 'الخدمة', flightTicket: 'تذكرة طيران', hotel: 'فندق', tourPackage: 'باقة سياحية', visitVisa: 'تأشيرة زيارة', umrahVisa: 'تأشيرة عمرة', newService: 'خدمة جديدة', flightType: 'نوع الرحلة', domestic: 'داخلية', international: 'دولية', airline: 'خط الطيران', sector: 'القطاع', pnr: 'رقم الحجز', ticketNo: 'رقم التذكرة', hotelName: 'اسم الفندق', checkIn: 'تاريخ الوصول', checkOut: 'تاريخ المغادرة', serviceName: 'اسم الخدمة', qty: 'الكمية', cost: 'التكلفة', sell: 'البيع', discount: 'الخصم', vatRate: 'نسبة الضريبة', invoiceDate: 'تاريخ الفاتورة', journeyType: 'نوع الرحلة', single: 'ذهاب', roundTrip: 'ذهاب وعودة', multiCity: 'مدن متعددة', fareType: 'نوع الأجرة', refundable: 'قابلة للاسترداد', nonRefundable: 'غير قابلة للاسترداد', bookingType: 'نوع الحجز', newBooking: 'حجز جديد', reissue: 'إعادة إصدار', extraLuggage: 'أمتعة إضافية', previousBooking: 'حجز سابق', salesPerson: 'موظف المبيعات', paymentMethod: 'طريقة الدفع', cash: 'نقداً', bankTransfer: 'تحويل بنكي', card: 'بطاقة / شبكة', credit: 'آجل', creditBalance: 'رصيد ائتماني', tabby: 'تابي', tamara: 'تمارا', paidAmount: 'المبلغ المدفوع', useCreditAmount: 'استخدام مبلغ الرصيد', generateInvoice: 'إنشاء الفاتورة', updateInvoice: 'تحديث الفاتورة', editInvoice: 'تعديل الفاتورة', invNo: 'رقم الفاتورة', total: 'الإجمالي', due: 'المتبقي', method: 'الطريقة', actions: 'إجراءات', preview: 'معاينة', print: 'طباعة', edit: 'تعديل', delete: 'حذف', quickSettle: 'تسوية سريعة', refund: 'استرجاع', settlePayment: 'تسوية الدفعة', processRefund: 'معالجة الاسترجاع', companyRefund: 'استرجاع الشركة', customerRefund: 'استرجاع العميل', refundReason: 'سبب الاسترجاع', refundDate: 'تاريخ الاسترجاع', documentPreview: 'معاينة المستند', close: 'إغلاق', cancel: 'إلغاء', save: 'حفظ', mark: 'تسجيل', logLoss: 'تسجيل خسارة', selectEmployee: 'اختر الموظف', target: 'الهدف', achieved: 'المحقق', percentage: 'النسبة', checkInTime: 'الحضور', checkOutTime: 'الانصراف', overtime: 'العمل الإضافي', deduction: 'الخصم', status: 'الحالة', present: 'حاضر', leave: 'إجازة', absent: 'غائب', paySalary: 'صرف الراتب', generateSlip: 'إنشاء قسيمة', baseSalary: 'الراتب الأساسي', commission: 'العمولة', advDed: 'خصم السلفة', gift: 'مكافأة', month: 'الشهر', mode: 'الطريقة', attendanceDate: 'التاريخ' }
+    dashboard: 'Dashboard', create: 'Create Invoice', list: 'Invoices', refunds: 'Refunds', customers: 'Customers', corporates: 'Corporates', creditors: 'Creditors', credit: 'Credit Balances', vendors: 'Vendors', packages: 'Packages', branches: 'Branches', portals: 'Portals', bank: 'Bank & Cash', invest: 'Investors', hr: 'Human Resources', users: 'Users', settings: 'Settings', reports: 'Reports', audit: 'Audit Logs', statements: 'Statements', contract: 'Contracts', offer: 'Offers', superadmin: 'SuperAdmin', profile: 'Profile', profitability: 'Profitability', search: 'Search...', download_excel: 'Export Excel', logout: 'Logout', changePass: 'Change Password', quotations: 'Quotations', ai_dashboard: 'AI Dashboard', hr_advanced: 'HR & Payroll', staff_mistakes: 'Staff Mistakes & Loss', custType: 'Customer Type', individual: 'Individual', corporate: 'Corporate', selectCustomer: 'Select Customer', newCustomer: 'New Customer', customerName: 'Customer Name', customerPhone: 'Customer Phone', passengers: 'Passengers', addPassenger: '+ Add Passenger', portal: 'Portal', service: 'Service', flightTicket: 'Flight Ticket', hotel: 'Hotel', tourPackage: 'Tour Package', visitVisa: 'Visit Visa', umrahVisa: 'Umrah Visa', newService: 'New Service', flightType: 'Flight Type', domestic: 'Domestic', international: 'International', airline: 'Airline', sector: 'Sector', pnr: 'PNR', ticketNo: 'Ticket No', hotelName: 'Hotel Name', checkIn: 'Check In', checkOut: 'Check Out', serviceName: 'Service Name', qty: 'Qty', cost: 'Cost', sell: 'Sell', discount: 'Discount', vatRate: 'VAT Rate', invoiceDate: 'Invoice Date', journeyType: 'Journey Type', single: 'Single', roundTrip: 'Round Trip', multiCity: 'Multi-city', fareType: 'Fare Type', refundable: 'Refundable', nonRefundable: 'Non-Refundable', bookingType: 'Booking Type', newBooking: 'New Booking', reissue: 'Reissue', extraLuggage: 'Extra Luggage', previousBooking: 'Previous Booking', salesPerson: 'Sales Person', paymentMethod: 'Payment Method', cash: 'Cash', bankTransfer: 'Bank Transfer', card: 'Card / Network', credit: 'Credit', creditBalance: 'Credit Balance', tabby: 'Tabby', tamara: 'Tamara', paidAmount: 'Paid Amount (Cash/Bank)', useCreditAmount: 'Use Credit Amount', generateInvoice: 'Generate Invoice', updateInvoice: 'Update Invoice', editInvoice: 'Edit Invoice', invNo: 'Inv No', total: 'Total', due: 'Due', method: 'Method', actions: 'Actions', preview: 'Preview', print: 'Print', edit: 'Edit', delete: 'Delete', quickSettle: 'Quick Settle', refund: 'Refund', changePassword: 'Change Password', newPassword: 'New Password', settlePayment: 'Settle Payment', processRefund: 'Process Refund', companyRefund: 'Company Refund (Portal)', customerRefund: 'Customer Refund Amount', customerRefundMethod: 'Customer Refund Method', refundReason: 'Refund Reason', refundDate: 'Refund Date', documentPreview: 'Document Preview', close: 'Close', cancel: 'Cancel', save: 'Save', mark: 'Mark', logLoss: 'Log Loss', notifications: 'Notifications', customer_statement: 'Cust Statement', recurring_invoices: 'Recurring Invoices', expense_approval: 'Expense Approval', refund_statement: 'Refund Statement', credit_limits: 'Credit Limits', supplier_statement: 'Supplier Statement', multi_branch: 'Multi-Branch', selectEmployee: 'Select Employee', target: 'Target', achieved: 'Achieved', percentage: 'Percentage', checkInTime: 'Check-In', checkOutTime: 'Check-Out', overtime: 'Overtime', deduction: 'Deduction', status: 'Status', present: 'Present', leave: 'Leave', absent: 'Absent', paySalary: 'Pay Salary', generateSlip: 'Generate Salary Slip', attendanceDate: 'Date', baseSalary: 'Base Salary', commission: 'Commission', advDed: 'Adv. Deduct', gift: 'Gift', month: 'Month', mode: 'Mode'
+  },
+  ar: {
+    dashboard: 'لوحة التحكم', create: 'إنشاء فاتورة', list: 'الفواتير', refunds: 'الاسترجاعات', customers: 'العملاء', corporates: 'الشركات', creditors: 'الدائنون', credit: 'أرصدة الائتمان', vendors: 'الموردون', packages: 'الباقات', branches: 'الفروع', portals: 'البوابات', bank: 'البنك والصندوق', invest: 'المستثمرون', hr: 'الموارد البشرية', users: 'المستخدمون', settings: 'الإعدادات', reports: 'التقارير', audit: 'سجل التدقيق', statements: 'الكشوف', contract: 'العقود', offer: 'العروض', superadmin: 'المدير العام', profile: 'الملف الشخصي', profitability: 'الربحية', search: 'بحث...', download_excel: 'تصدير إكسل', logout: 'تسجيل الخروج', changePass: 'تغيير كلمة المرور', quotations: 'عروض الأسعار', ai_dashboard: 'لوحة الذكاء الاصطناعي', hr_advanced: 'الموارد البشرية والرواتب', staff_mistakes: 'أخطاء الموظفين والخسائر', custType: 'نوع العميل', individual: 'فرد', corporate: 'شركة', selectCustomer: 'اختر العميل', newCustomer: 'عميل جديد', customerName: 'اسم العميل', customerPhone: 'هاتف العميل', passengers: 'الركاب', addPassenger: '+ إضافة راكب', portal: 'البوابة', service: 'الخدمة', flightTicket: 'تذكرة طيران', hotel: 'فندق', tourPackage: 'باقة سياحية', visitVisa: 'تأشيرة زيارة', umrahVisa: 'تأشيرة عمرة', newService: 'خدمة جديدة', flightType: 'نوع الرحلة', domestic: 'داخلية', international: 'دولية', airline: 'خط الطيران', sector: 'القطاع', pnr: 'رقم الحجز', ticketNo: 'رقم التذكرة', hotelName: 'اسم الفندق', checkIn: 'تاريخ الوصول', checkOut: 'تاريخ المغادرة', serviceName: 'اسم الخدمة', qty: 'الكمية', cost: 'التكلفة', sell: 'البيع', discount: 'الخصم', vatRate: 'نسبة الضريبة', invoiceDate: 'تاريخ الفاتورة', journeyType: 'نوع الرحلة', single: 'ذهاب', roundTrip: 'ذهاب وعودة', multiCity: 'مدن متعددة', fareType: 'نوع الأجرة', refundable: 'قابلة للاسترداد', nonRefundable: 'غير قابلة للاسترداد', bookingType: 'نوع الحجز', newBooking: 'حجز جديد', reissue: 'إعادة إصدار', extraLuggage: 'أمتعة إضافية', previousBooking: 'حجز سابق', salesPerson: 'موظف المبيعات', paymentMethod: 'طريقة الدفع', cash: 'نقداً', bankTransfer: 'تحويل بنكي', card: 'بطاقة / شبكة', credit: 'آجل', creditBalance: 'رصيد ائتماني', tabby: 'تابي', tamara: 'تمارا', paidAmount: 'المبلغ المدفوع (نقداً/بنك)', useCreditAmount: 'استخدام مبلغ الرصيد', generateInvoice: 'إنشاء الفاتورة', updateInvoice: 'تحديث الفاتورة', editInvoice: 'تعديل الفاتورة', invNo: 'رقم الفاتورة', total: 'الإجمالي', due: 'المتبقي', method: 'الطريقة', actions: 'إجراءات', preview: 'معاينة', print: 'طباعة', edit: 'تعديل', delete: 'حذف', quickSettle: 'تسوية سريعة', refund: 'استرجاع', changePassword: 'تغيير كلمة المرور', newPassword: 'كلمة المرور الجديدة', settlePayment: 'تسوية الدفعة', processRefund: 'معالجة الاسترجاع', companyRefund: 'استرجاع الشركة (البوابة)', customerRefund: 'مبلغ استرجاع العميل', customerRefundMethod: 'طريقة استرجاع العميل', refundReason: 'سبب الاسترجاع', refundDate: 'تاريخ الاسترجاع', documentPreview: 'معاينة المستند', close: 'إغلاق', cancel: 'إلغاء', save: 'حفظ', mark: 'تسجيل', logLoss: 'تسجيل خسارة', notifications: 'الإشعارات', customer_statement: 'كشف العميل', recurring_invoices: 'الفواتير المتكررة', expense_approval: 'موافقة المصروفات', refund_statement: 'كشف الاسترجاعات', credit_limits: 'حدود الائتمان', supplier_statement: 'كشف الموردين', multi_branch: 'متعدد الفروع', selectEmployee: 'اختر الموظف', target: 'الهدف', achieved: 'المحقق', percentage: 'النسبة', checkInTime: 'الحضور', checkOutTime: 'الانصراف', overtime: 'العمل الإضافي', deduction: 'الخصم', status: 'الحالة', present: 'حاضر', leave: 'إجازة', absent: 'غائب', paySalary: 'صرف الراتب', generateSlip: 'إنشاء قسيمة راتب', attendanceDate: 'التاريخ', baseSalary: 'الراتب الأساسي', commission: 'العمولة', advDed: 'خصم السلفة', gift: 'مكافأة', month: 'الشهر', mode: 'الطريقة'
+  }
 };
 
 // ==========================================
-// PREMIUM SALE INVOICE TEMPLATE (Bilingual & Complete Details)
+// PREMIUM SALE INVOICE TEMPLATE (Navy & Gold)
 // ==========================================
 const getInvoiceHTML = (inv, s, lang = 'en') => {
   const setting = s || {};
@@ -24,12 +27,12 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
   const trackUrl = `https://sueud-al-taayira.vercel.app/invoice/${invoiceNo}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(trackUrl)}`;
   const T = (en, ar) => isAr ? `${ar} / ${en}` : `${en} / ${ar}`;
-
   return `
   <!DOCTYPE html>
   <html lang="${lang}" dir="${dir}">
   <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice ${invoiceNo}</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -37,32 +40,21 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
       body { font-family: ${isAr ? "'Cairo', sans-serif" : "'Poppins', sans-serif"}; background: #e2e8f0; margin: 0; padding: 20px; color: #334155; }
       .invoice-box { max-width: 850px; margin: auto; background: #fff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
       .header { display: flex; justify-content: space-between; padding: 40px; background: #ffffff; border-bottom: 4px solid #f1f5f9; }
-      .company-info h2 { margin: 0; font-size: 24px; color: #0f172a; font-weight: 800; direction: rtl; font-family: 'Cairo', sans-serif; }
-      .company-info h1 { margin: 5px 0 0; font-size: 16px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+      .company-info h2 { margin: 0; font-size: 24px; color: #0f172a; font-weight: 800; direction: rtl; } .company-info h1 { margin: 5px 0 0; font-size: 16px; color: #94a3b8; text-transform: uppercase; }
       .company-info p { margin: 15px 0 0; font-size: 12px; color: #64748b; line-height: 1.6; direction: rtl; text-align: right; }
-      .invoice-meta { text-align: ${isAr ? 'left' : 'right'}; }
-      .invoice-meta h3 { margin: 0 0 10px; font-size: 28px; color: #d97706; text-transform: uppercase; font-weight: 800; letter-spacing: -1px; }
+      .invoice-meta { text-align: ${isAr ? 'left' : 'right'}; } .invoice-meta h3 { margin: 0 0 10px; font-size: 28px; color: #d97706; text-transform: uppercase; font-weight: 800; }
       .invoice-meta p { margin: 4px 0; font-size: 14px; color: #64748b; } .invoice-meta span { color: #0f172a; font-weight: 700; }
       .status-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-top: 10px; background: ${inv.due_amount > 0 ? '#FEF3C7' : '#D1FAE5'}; color: ${inv.due_amount > 0 ? '#D97706' : '#059669'}; }
-      .body { padding: 40px; }
-      .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px; }
-      .info-block { padding: 20px; background: #f8fafc; border-radius: 12px; border-left: 4px solid #1e293b; }
-      .info-block h4 { margin: 0 0 15px; font-size: 12px; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; font-weight: 700; }
-      .info-block p { margin: 8px 0; font-size: 14px; display: flex; justify-content: space-between; } .info-block p strong { color: #334155; font-weight: 600; }
-      .info-block p span { color: #0f172a; font-weight: 500; text-align: ${isAr ? 'left' : 'right'}; }
-      .table-wrapper { margin-bottom: 40px; } table { width: 100%; border-collapse: collapse; }
-      thead th { text-align: ${isAr ? 'right' : 'left'}; padding: 15px; background: #0f172a; color: #fff; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
-      thead th.center { text-align: center; } thead th.right { text-align: right; }
-      tbody td { padding: 20px 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #334155; vertical-align: top; }
-      tbody td.center { text-align: center; } tbody td.right { text-align: ${isAr ? 'left' : 'right'}; font-weight: 600; color: #0f172a; }
+      .body { padding: 40px; } .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px; }
+      .info-block { padding: 20px; background: #f8fafc; border-radius: 12px; border-left: 4px solid #1e293b; } .info-block h4 { margin: 0 0 15px; font-size: 12px; text-transform: uppercase; color: #64748b; }
+      .info-block p { margin: 8px 0; font-size: 14px; display: flex; justify-content: space-between; } .info-block p strong { color: #334155; } .info-block p span { color: #0f172a; font-weight: 500; text-align: ${isAr ? 'left' : 'right'}; }
+      table { width: 100%; border-collapse: collapse; margin-bottom: 40px; } thead th { text-align: ${isAr ? 'right' : 'left'}; padding: 15px; background: #0f172a; color: #fff; font-size: 12px; text-transform: uppercase; }
+      tbody td { padding: 20px 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #334155; } tbody td.right { text-align: ${isAr ? 'left' : 'right'}; font-weight: 600; color: #0f172a; }
       .totals-section { display: flex; justify-content: flex-end; margin-bottom: 40px; } .totals-box { width: 300px; }
-      .total-row { display: flex; justify-content: space-between; padding: 12px 0; font-size: 14px; color: #64748b; } .total-row strong { color: #0f172a; font-weight: 600; }
-      .grand-total { display: flex; justify-content: space-between; padding: 20px; background: #0f172a; color: #fff; border-radius: 12px; margin-top: 10px; font-size: 20px; font-weight: 700; }
-      .grand-total span { color: #94a3b8; font-size: 14px; font-weight: 400; } .grand-total strong { color: #d97706; }
+      .total-row { display: flex; justify-content: space-between; padding: 12px 0; font-size: 14px; color: #64748b; } .total-row strong { color: #0f172a; }
+      .grand-total { display: flex; justify-content: space-between; padding: 20px; background: #0f172a; color: #fff; border-radius: 12px; margin-top: 10px; font-size: 20px; font-weight: 700; } .grand-total strong { color: #d97706; }
       .footer { padding: 30px 40px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; }
-      .qr-code { text-align: center; } .qr-code img { height: 100px; width: 100px; border-radius: 8px; border: 1px solid #e2e8f0; padding: 5px; background: #fff; }
-      .footer-text { text-align: center; } .footer-text p { margin: 5px 0; font-size: 12px; color: #64748b; }
-      .footer-text strong { display: block; font-size: 16px; color: #0f172a; margin-bottom: 5px; font-family: 'Cairo', sans-serif; }
+      .qr-code img { height: 100px; width: 100px; border-radius: 8px; border: 1px solid #e2e8f0; padding: 5px; background: #fff; }
       @media print { body { background: #fff; padding: 0; margin: 0; } .invoice-box { box-shadow: none; border-radius: 0; margin: 0; max-width: 100%; } img { max-width: 100% !important; } }
     </style>
   </head>
@@ -70,9 +62,9 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
     <div class="invoice-box">
       <div class="header">
         <div class="company-info">
-          <h2>${setting.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
+          <h2>${setting.company_name_ar || 'صعود الطائرة'}</h2>
           <h1>${setting.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
-          <p>${setting.address_ar || 'الرياض, المملكة العربية السعودية'}<br>هاتف: ${setting.phone || '+966 500000000'}<br>ضريبة: ${setting.vat_no || 'N/A'} | سجل تجاري: ${setting.cr_no || 'N/A'}<br>ترخيص: ${setting.license_no || 'N/A'} | ترخيص سياحي: ${setting.tourist_license_no || 'N/A'}</p>
+          <p>${setting.address_ar || 'الرياض'}<br>${setting.phone || ''}<br>ضريبة: ${setting.vat_no || 'N/A'}</p>
         </div>
         <div class="invoice-meta">
           <h3>${T('Invoice', 'فاتورة')}</h3>
@@ -85,7 +77,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
         <div class="details-grid">
           <div class="info-block">
             <h4>${T('Bill To', 'الفاتورة إلى')}</h4>
-            <p><strong>${T('Name', 'الاسم')}:</strong> <span>${inv.customers?.name || inv.corporates?.name || 'N/A'}</span></p>
+            <p><strong>${T('Name', 'الاسم')}:</strong> <span>${inv.customers?.name || 'N/A'}</span></p>
             <p><strong>${T('Phone', 'الهاتف')}:</strong> <span>${inv.customers?.phone || 'N/A'}</span></p>
             <p><strong>${T('Sales Person', 'موظف المبيعات')}:</strong> <span>${inv.employees?.name || 'N/A'}</span></p>
           </div>
@@ -95,7 +87,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
             <p><strong>${T('Airline', 'خط الطيران')}:</strong> <span>${inv.airline || 'N/A'}</span></p>
             <p><strong>${T('Ticket No', 'رقم التذكرة')}:</strong> <span>${inv.ticket_no || 'N/A'}</span></p>
             <p><strong>${T('PNR', 'رقم الحجز')}:</strong> <span>${inv.pnr || 'N/A'}</span></p>
-            <p><strong>${T('Passenger', 'الركاب')}:</strong> <span>${inv.passenger_names ? inv.passenger_names.replace(/\n/g, ', ') : 'N/A'}</span></p>
+            <p><strong>${T('Passenger', 'الركاب')}:</strong> <span>${inv.passenger_names || 'N/A'}</span></p>
           </div>
         </div>
         ${inv.linked_inv_id ? `
@@ -103,15 +95,26 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
           <h4 style="color: #64748b;">${T('Previous Booking', 'الحجز السابق')}</h4>
           <p><strong>${T('Original Invoice', 'الفاتورة الأصلية')}:</strong> <span>${inv.linked_inv_id}</span></p>
           <p><strong>${T('Old Ticket No', 'رقم التذكرة القديم')}:</strong> <span>${inv.old_ticket_no || 'N/A'}</span></p>
-          <p><strong>${T('Old PNR', 'رقم الحجز القديم')}:</strong> <span>${inv.old_pnr || 'N/A'}</span></p>
           <p><strong>${T('Credit Used', 'الرصيد المستخدم')}:</strong> <span style="color: #64748b; font-weight: bold;">${(inv.used_credit || 0).toFixed(2)} SAR</span></p>
         </div>` : ''}
-        <div class="table-wrapper">
-          <table>
-            <thead><tr><th>${T('Description', 'الوصف')}</th><th class="center">${T('Qty', 'الكمية')}</th><th class="right">${T('Unit Price', 'سعر الوحدة')}</th><th class="right">${T('Total', 'الإجمالي')}</th></tr></thead>
-            <tbody><tr><td><strong>${inv.sector || inv.service_type}</strong></td><td class="center">${inv.qty || 1}</td><td class="right">${((inv.total_sell || 0) / (inv.qty || 1)).toFixed(2)} SAR</td><td class="right">${(inv.total_sell || 0).toFixed(2)} SAR</td></tr></tbody>
-          </table>
-        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>${T('Description', 'الوصف')}</th>
+              <th class="center">${T('Qty', 'الكمية')}</th>
+              <th class="right">${T('Unit Price', 'سعر الوحدة')}</th>
+              <th class="right">${T('Total', 'الإجمالي')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>${inv.sector || inv.service_type}</strong></td>
+              <td class="center">${inv.qty || 1}</td>
+              <td class="right">${((inv.total_sell || 0) / (inv.qty || 1)).toFixed(2)}</td>
+              <td class="right">${(inv.total_sell || 0).toFixed(2)}</td>
+            </tr>
+          </tbody>
+        </table>
         <div class="totals-section">
           <div class="totals-box">
             <div class="total-row"><span>${T('Subtotal', 'الإجمالي قبل الضريبة')}</span> <strong>${(inv.total_sell || 0).toFixed(2)} SAR</strong></div>
@@ -123,8 +126,11 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
         </div>
       </div>
       <div class="footer">
-        <div class="qr-code"><img src="${qrCodeUrl}" alt="QR Code" crossorigin="anonymous"><p style="margin: 8px 0 0; font-size: 10px; color: #94a3b8;">${T('Scan to View', 'امسح للعرض')}</p></div>
-        <div class="footer-text"><strong>${setting.company_name_ar || 'صعود الطائرة'}</strong><p>${setting.invoice_footer || T('Thank you!', 'شكراً!')}</p><p>${T('System Generated', 'صادر من النظام')}</p></div>
+        <div class="qr-code"><img src="${qrCodeUrl}" alt="QR Code" crossorigin="anonymous"></div>
+        <div style="text-align: center; font-size: 12px; color: #64748b;">
+          <strong>${setting.company_name_ar || ''}</strong>
+          <p>${setting.invoice_footer || T('Thank you!', 'شكراً!')}</p>
+        </div>
         <div style="width: 100px; visibility: hidden;"></div>
       </div>
     </div>
@@ -134,18 +140,13 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
 };
 
 // ==========================================
-// PREMIUM REFUND INVOICE TEMPLATE (Bilingual & Full Ticket Details)
+// PREMIUM REFUND INVOICE TEMPLATE (Red Theme)
 // ==========================================
 const getRefundHTML = (inv, s, lang = 'en') => {
-  const setting = s || {};
-  const isAr = lang === 'ar';
-  const invoiceNo = inv.invoice_no || 'N/A';
-  const trackUrl = `https://sueud-al-taayira.vercel.app/invoice/${invoiceNo}`;
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(trackUrl)}`;
-  const custRefund = inv.refund_customer || 0;
-  const payMode = inv.payment_method === 'Credit' ? (isAr ? 'أضيف إلى الرصيد الائتماني' : 'Added to Credit Balance') : (inv.payment_method || (isAr ? 'نقداً/بنك' : 'Cash/Bank'));
+  const setting = s || {}; const isAr = lang === 'ar'; const invoiceNo = inv.invoice_no || 'N/A';
+  const trackUrl = `https://sueud-al-taayira.vercel.app/invoice/${invoiceNo}`; const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(trackUrl)}`;
+  const custRefund = inv.refund_customer || 0; const payMode = inv.payment_method === 'Credit' ? (isAr ? 'أضيف إلى الرصيد' : 'Added to Credit Balance') : (inv.payment_method || (isAr ? 'نقداً/بنك' : 'Cash/Bank'));
   const T = (en, ar) => isAr ? `${ar} / ${en}` : `${en} / ${ar}`;
-
   return `
   <!DOCTYPE html>
   <html lang="${lang}" dir="${isAr ? 'rtl' : 'ltr'}">
@@ -158,22 +159,13 @@ const getRefundHTML = (inv, s, lang = 'en') => {
       body { font-family: ${isAr ? "'Cairo', sans-serif" : "'Poppins', sans-serif"}; background: #e2e8f0; margin: 0; padding: 20px; color: #334155; }
       .invoice-box { max-width: 850px; margin: auto; background: #fff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
       .header { display: flex; justify-content: space-between; padding: 40px; background: #fff; border-bottom: 4px solid #f1f5f9; }
-      .company-info h2 { margin: 0; font-size: 24px; color: #0f172a; font-weight: 800; direction: rtl; font-family: 'Cairo', sans-serif; }
-      .company-info h1 { margin: 5px 0 0; font-size: 16px; color: #94a3b8; font-weight: 600; text-transform: uppercase; }
-      .company-info p { margin: 15px 0 0; font-size: 12px; color: #64748b; line-height: 1.6; direction: rtl; text-align: right; }
-      .invoice-meta { text-align: ${isAr ? 'left' : 'right'}; }
-      .invoice-meta h3 { margin: 0 0 10px; font-size: 28px; color: #dc2626; text-transform: uppercase; font-weight: 800; letter-spacing: -1px; }
-      .invoice-meta p { margin: 4px 0; font-size: 14px; color: #64748b; } .invoice-meta span { color: #0f172a; font-weight: 700; }
-      .body { padding: 40px; }
-      .info-block { padding: 20px; background: #fff1f2; border-radius: 12px; border-left: 4px solid #dc2626; margin-bottom: 30px; }
-      .info-block h4 { margin: 0 0 15px; font-size: 12px; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; }
-      .info-block p { margin: 8px 0; font-size: 14px; display: flex; justify-content: space-between; } .info-block p strong { color: #334155; font-weight: 600; }
-      .info-block p span { color: #0f172a; font-weight: 500; }
+      .company-info h2 { margin: 0; font-size: 24px; color: #0f172a; font-weight: 800; direction: rtl; } .company-info p { margin: 15px 0 0; font-size: 12px; color: #64748b; direction: rtl; text-align: right; }
+      .invoice-meta h3 { margin: 0 0 10px; font-size: 28px; color: #dc2626; text-transform: uppercase; font-weight: 800; } .invoice-meta p { margin: 4px 0; font-size: 14px; color: #64748b; } .invoice-meta span { color: #0f172a; font-weight: 700; }
+      .body { padding: 40px; } .info-block { padding: 20px; background: #fff1f2; border-radius: 12px; border-left: 4px solid #dc2626; margin-bottom: 30px; } .info-block h4 { margin: 0 0 15px; font-size: 12px; text-transform: uppercase; color: #64748b; }
+      .info-block p { margin: 8px 0; font-size: 14px; display: flex; justify-content: space-between; } .info-block p strong { color: #334155; } .info-block p span { color: #0f172a; font-weight: 500; }
       .grand-total { display: flex; justify-content: space-between; padding: 20px; background: #dc2626; color: #fff; border-radius: 12px; margin-bottom: 15px; font-size: 20px; font-weight: 700; }
       .status-box { display: flex; justify-content: space-between; padding: 15px 20px; background: #f1f5f9; border-radius: 8px; font-size: 14px; color: #334155; }
-      .footer { padding: 30px 40px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; }
-      .qr-code img { height: 100px; width: 100px; border-radius: 8px; border: 1px solid #e2e8f0; padding: 5px; background: #fff; }
-      .footer-text { text-align: center; font-size: 12px; color: #64748b; }
+      .footer { padding: 30px 40px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; } .qr-code img { height: 100px; width: 100px; border-radius: 8px; border: 1px solid #e2e8f0; padding: 5px; background: #fff; }
       @media print { body { background: #fff; padding: 0; margin: 0; } .invoice-box { box-shadow: none; border-radius: 0; margin: 0; max-width: 100%; } img { max-width: 100% !important; } }
     </style>
   </head>
@@ -181,9 +173,8 @@ const getRefundHTML = (inv, s, lang = 'en') => {
     <div class="invoice-box">
       <div class="header">
         <div class="company-info">
-          <h2>${setting.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
-          <h1>${setting.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
-          <p>${setting.address_ar || 'الرياض'}<br>${setting.phone || ''}<br>ضريبة: ${setting.vat_no || 'N/A'}</p>
+          <h2>${setting.company_name_ar || 'صعود الطائرة'}</h2>
+          <p>${setting.address_ar || ''}<br>${setting.phone || ''}<br>ضريبة: ${setting.vat_no || 'N/A'}</p>
         </div>
         <div class="invoice-meta">
           <h3>${T('Credit Note', 'إشعار دائن')}</h3>
@@ -207,7 +198,7 @@ const getRefundHTML = (inv, s, lang = 'en') => {
       </div>
       <div class="footer">
         <div class="qr-code"><img src="${qrCodeUrl}" alt="QR Code" crossorigin="anonymous"></div>
-        <div class="footer-text"><p>${T('System Generated Refund Invoice', 'إشعار دائن صادر من النظام')}</p></div>
+        <div style="text-align: center; font-size: 12px; color: #64748b;"><p>${T('System Generated Refund Invoice', 'إشعار دائن صادر من النظام')}</p></div>
         <div style="width: 100px; visibility: hidden;"></div>
       </div>
     </div>
@@ -216,100 +207,129 @@ const getRefundHTML = (inv, s, lang = 'en') => {
 };
 
 // ==========================================
-// PREMIUM EXPENSE INVOICE TEMPLATE (Bilingual)
+// PREMIUM EXPENSE INVOICE TEMPLATE (Orange Theme)
 // ==========================================
 const getExpenseHTML = (exp, s, lang = 'en') => {
-  const setting = s || {};
-  const isAr = lang === 'ar';
-  const expNo = exp.invoice_no || 'N/A';
-  const trackUrl = `https://sueud-al-taayira.vercel.app/expense/${expNo}`;
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(trackUrl)}`;
+  const setting = s || {}; const isAr = lang === 'ar'; const expNo = exp.invoice_no || 'N/A';
+  const trackUrl = `https://sueud-al-taayira.vercel.app/expense/${expNo}`; const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(trackUrl)}`;
   const T = (en, ar) => isAr ? `${ar} / ${en}` : `${en} / ${ar}`;
   return `
-  <!DOCTYPE html><html lang="${lang}" dir="${isAr ? 'rtl' : 'ltr'}"><head><meta charset="UTF-8"><title>Expense ${expNo}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <style>* { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; } body { font-family: ${isAr ? "'Cairo', sans-serif" : "'Poppins', sans-serif"}; padding: 20px; background: #e2e8f0; margin: 0; color: #334155; }
-  .invoice-box { max-width: 600px; margin: auto; background: #fff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
-  .header { display: flex; justify-content: space-between; padding: 30px; background: #fff; border-bottom: 4px solid #f1f5f9; }
-  .company-info h2 { margin: 0; font-size: 20px; color: #0f172a; font-weight: 800; direction: rtl; } .company-info p { margin: 5px 0 0; font-size: 11px; color: #64748b; direction: rtl; text-align: right; }
-  .meta h2 { margin: 0; font-size: 24px; color: #d97706; font-weight: 800; text-transform: uppercase; text-align: right; }
-  .body { padding: 40px; } .info-block { margin-bottom: 30px; } .info-block p { margin: 8px 0; font-size: 14px; display: flex; justify-content: space-between; } .info-block p strong { color: #64748b; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-  th { background: #d97706; color: #fff; padding: 15px; font-size: 12px; text-transform: uppercase; text-align: left; }
-  td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #0f172a; }
-  .grand-total { display: flex; justify-content: space-between; padding: 20px; background: #d97706; color: #fff; border-radius: 12px; font-size: 20px; font-weight: 700; }
-  .footer { padding: 30px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; }
-  .qr-code img { height: 100px; width: 100px; border-radius: 8px; border: 1px solid #e2e8f0; padding: 5px; background: #fff; }
-  @media print { body { background: #fff; padding: 0; margin: 0; } .invoice-box { box-shadow: none; border-radius: 0; max-width: 100%; } img { max-width: 100% !important; } }</style></head>
-  <body><div class="invoice-box">
-    <div class="header">
-      <div class="company-info"><h2>${setting.company_name_ar || 'صعود الطائرة'}</h2><p>${setting.address_ar || ''}<br>${setting.phone || ''}</p></div>
-      <div class="meta"><h2>${T('Expense', 'مصروف')}</h2></div>
+  <!DOCTYPE html>
+  <html lang="${lang}" dir="${isAr ? 'rtl' : 'ltr'}">
+  <head>
+    <meta charset="UTF-8">
+    <title>Expense ${expNo}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+      * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      body { font-family: ${isAr ? "'Cairo', sans-serif" : "'Poppins', sans-serif"}; padding: 20px; background: #e2e8f0; margin: 0; color: #334155; }
+      .invoice-box { max-width: 600px; margin: auto; background: #fff; border: 1px solid #e2e8f0; padding: 20px; border-radius: 16px; border-top: 8px solid #ea580c; box-shadow: 0 15px 40px rgba(0,0,0,0.15); }
+      h1 { color: #ea580c; text-align: center; margin-top: 0; } table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+      th, td { padding: 10px; border: 1px solid #e2e8f0; text-align: ${isAr ? 'right' : 'left'}; } th { background: #fff7ed; color: #7c2d12; }
+      .codes { text-align: center; margin-top: 20px; } .codes img { height: 60px; mix-blend-mode: multiply; }
+      @media print { body { background: #fff; padding: 0; margin: 0; } .invoice-box { border: none; box-shadow: none; border-radius: 0; max-width: 100%; } img { max-width: 100% !important; } }
+    </style>
+  </head>
+  <body>
+    <div class="invoice-box">
+      <h1>${T('Expense Voucher', 'سند صرف')}</h1>
+      <p><strong>${T('No', 'الرقم')}:</strong> ${expNo}</p>
+      <p><strong>${T('Date', 'التاريخ')}:</strong> ${exp.expense_date}</p>
+      <p><strong>${T('Vendor', 'المورد')}:</strong> ${exp.vendor_name}</p>
+      <p><strong>${T('Type', 'النوع')}:</strong> ${exp.expense_type}</p>
+      <table>
+        <thead><tr><th>${T('Item', 'الصنف')}</th><th>${T('Qty', 'الكمية')}</th><th>${T('Price', 'السعر')}</th></tr></thead>
+        <tbody>
+          ${(exp.items && exp.items.length > 0 ? exp.items : [{name: exp.item_name, qty: 1, price: exp.amount}]).map(it => `<tr><td>${it.name}</td><td>${it.qty}</td><td>${parseFloat(it.price).toFixed(2)}</td></tr>`).join('')}
+        </tbody>
+      </table>
+      <h3 style="text-align: ${isAr ? 'left' : 'right'}; color: #ea580c;">${T('Total', 'الإجمالي')}: ${(exp.amount || 0).toFixed(2)} SAR</h3>
+      <p><strong>${T('Paid Via', 'طريقة الدفع')}:</strong> ${exp.payment_mode}</p>
+      <div class="codes"><img src="${qrCodeUrl}" alt="QR Code" crossorigin="anonymous"><br><small style="color:#94a3b8; font-size: 10px;">${T('Scan QR Code', 'امسح رمز الاستجابة')}</small></div>
     </div>
-    <div class="body">
-      <div class="info-block">
-        <p><strong>${T('Voucher No', 'رقم السند')}:</strong> <span>${expNo}</span></p>
-        <p><strong>${T('Date', 'التاريخ')}:</strong> <span>${exp.expense_date}</span></p>
-        <p><strong>${T('Vendor', 'المورد')}:</strong> <span>${exp.vendor_name}</span></p>
-        <p><strong>${T('Type', 'النوع')}:</strong> <span>${exp.expense_type}</span></p>
-      </div>
-      <table><thead><tr><th>${T('Item', 'الصنف')}</th><th>${T('Qty', 'الكمية')}</th><th>${T('Price', 'السعر')}</th></tr></thead>
-      <tbody>${(exp.items && exp.items.length > 0 ? exp.items : [{name: exp.item_name, qty: 1, price: exp.amount}]).map(it => `<tr><td>${it.name}</td><td>${it.qty}</td><td>${parseFloat(it.price).toFixed(2)}</td></tr>`).join('')}</tbody></table>
-      <div class="grand-total"><span>${T('Total Amount', 'الإجمالي')}</span> <strong>${(exp.amount || 0).toFixed(2)} SAR</strong></div>
-    </div>
-    <div class="footer">
-      <div class="qr-code"><img src="${qrCodeUrl}" alt="QR Code" crossorigin="anonymous"></div>
-      <div style="text-align: right; color: #64748b; font-size: 14px;"><p>${T('Paid Via', 'طريقة الدفع')}: <strong>${exp.payment_mode}</strong></p></div>
-    </div>
-  </div></body></html>`;
+  </body>
+  </html>`;
 };
 
 // ==========================================
-// PREMIUM SALARY SLIP TEMPLATE (Bilingual & Company Details)
+// PREMIUM SALARY SLIP TEMPLATE (Indigo Theme)
 // ==========================================
 const getSalarySlipHTML = (pay, s, lang = 'en') => {
-  const setting = s || {};
-  const isAr = lang === 'ar';
-  const slipNo = `SLIP-${pay.id.substring(0,8)}`;
-  const aiMsg = isAr ? "جزاك الله خيراً على جهودك." : "Thank you for your hard work!";
+  const setting = s || {}; const isAr = lang === 'ar'; const slipNo = `SLIP-${pay.id.substring(0,8)}`;
+  const aiMsg = isAr ? "جزاك الله خيراً على جهودك المتميزة. استمر في العطاء والتميز!" : "Thank you for your outstanding efforts. Keep up the great work!";
   const T = (en, ar) => isAr ? `${ar} / ${en}` : `${en} / ${ar}`;
   return `
-  <!DOCTYPE html><html lang="${lang}" dir="${isAr ? 'rtl' : 'ltr'}"><head><meta charset="UTF-8"><title>Salary Slip ${slipNo}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>* { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; } body { font-family: ${isAr ? "'Cairo', sans-serif" : "'Poppins', sans-serif"}; background: #e2e8f0; margin: 0; padding: 20px; color: #334155; }
-  .slip-container { max-width: 800px; margin: auto; background: #fff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
-  .header { background: #4f46e5; color: #fff; padding: 40px; display: flex; justify-content: space-between; align-items: center; }
-  .company-info h1 { margin: 0; font-size: 24px; font-weight: 800; } .company-info h2 { margin: 5px 0 0; font-size: 16px; color: #c7d2fe; font-weight: 500; }
-  .company-info p { margin: 10px 0 0; font-size: 12px; color: #e0e7ff; }
-  .slip-meta { text-align: right; } .slip-meta h1 { margin: 0; font-size: 24px; font-weight: 800; } .slip-meta p { margin: 5px 0; color: #c7d2fe; }
-  .body { padding: 40px; } .emp-details { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; background: #f8fafc; padding: 20px; border-radius: 12px; }
-  .emp-details p { margin: 8px 0; font-size: 14px; display: flex; justify-content: space-between; } .emp-details p strong { color: #64748b; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-  th { background: #4f46e5; color: #fff; padding: 15px; font-size: 12px; text-transform: uppercase; text-align: left; }
-  td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; } .total-row { background: #eef2ff; font-weight: bold; }
-  .net-pay { display: flex; justify-content: space-between; padding: 25px; background: #0f172a; color: #fff; border-radius: 12px; margin-bottom: 30px; font-size: 24px; font-weight: 800; }
-  .ai-msg { background: #eef2ff; border-left: 4px solid #4f46e5; padding: 20px; border-radius: 12px; font-style: italic; color: #312e81; }
-  .footer { text-align: center; padding: 20px; background: #f8fafc; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
-  @media print { body { background: #fff; padding: 0; margin: 0; } .slip-container { box-shadow: none; border-radius: 0; max-width: 100%; } }</style></head>
-  <body><div class="slip-container">
-    <div class="header">
-      <div class="company-info"><h1>${setting.company_name_en || 'SUEUD AL TAAYIRA'}</h1><h2>${setting.company_name_ar || 'صعود الطائرة'}</h2><p>${setting.address_ar || ''} | ${setting.phone || ''}</p></div>
-      <div class="slip-meta"><h1>${T('Salary Slip', 'قسيمة راتب')}</h1><p>${T('No', 'رقم')}: ${slipNo} | ${T('Month', 'الشهر')}: ${pay.month}</p></div>
+  <!DOCTYPE html>
+  <html lang="${lang}" dir="${isAr ? 'rtl' : 'ltr'}">
+  <head>
+    <meta charset="UTF-8">
+    <title>Salary Slip ${slipNo}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      body { font-family: ${isAr ? "'Cairo', sans-serif" : "'Poppins', sans-serif"}; background: #e2e8f0; margin: 0; padding: 20px; color: #334155; }
+      .slip-container { max-width: 800px; margin: auto; background: #fff; border-radius: 16px; box-shadow: 0 15px 40px rgba(0,0,0,0.15); overflow: hidden; border: 1px solid #e2e8f0; }
+      .header { background: #4f46e5; color: #fff; padding: 30px; display: flex; justify-content: space-between; align-items: center; }
+      .header h1 { margin: 0; font-size: 24px; font-weight: 800; } .header h2 { margin: 5px 0 0; font-size: 16px; color: #c7d2fe; }
+      .body { padding: 30px; } .emp-details { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; background: #f5f3ff; padding: 20px; border-radius: 8px; }
+      .emp-details p { margin: 5px 0; font-size: 14px; } table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+      th, td { padding: 12px; border: 1px solid #e2e8f0; text-align: ${isAr ? 'right' : 'left'}; } th { background: #4f46e5; color: #f59e0b; font-size: 14px; } td { font-size: 14px; }
+      .total-row { background: #f5f3ff; font-weight: bold; } .net-pay { background: #4f46e5; color: #f59e0b; padding: 15px; border-radius: 8px; text-align: center; margin-top: 20px; font-size: 20px; font-weight: bold; }
+      .ai-msg { background: #f0f9ff; border-left: 4px solid #4f46e5; padding: 15px; margin-top: 20px; border-radius: 8px; font-style: italic; color: #1e293b; }
+      .footer { text-align: center; padding: 20px; background: #f8fafc; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
+      @media print { body { background: #fff; padding: 0; margin: 0; } .slip-container { box-shadow: none; border: none; border-radius: 0; max-width: 100%; } }
+    </style>
+  </head>
+  <body>
+    <div class="slip-container">
+      <div class="header">
+        <div>
+          <h1>${setting.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
+          <h2>${setting.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
+        </div>
+        <div style="text-align: ${isAr ? 'left' : 'right'};">
+          <h1>${T('Salary Slip', 'قسيمة راتب')}</h1>
+          <p>${T('No', 'رقم')}: ${slipNo}</p>
+          <p>${T('Month', 'الشهر')}: ${pay.month}</p>
+        </div>
+      </div>
+      <div class="body">
+        <div class="emp-details">
+          <div>
+            <p><strong>${T('Employee Name', 'اسم الموظف')}:</strong> ${pay.employees?.name || 'N/A'}</p>
+            <p><strong>${T('Role', 'المسمى الوظيفي')}:</strong> ${pay.employees?.role || 'N/A'}</p>
+          </div>
+          <div style="text-align: ${isAr ? 'left' : 'right'};">
+            <p><strong>${T('Payment Date', 'تاريخ الصرف')}:</strong> ${pay.payment_date || 'N/A'}</p>
+            <p><strong>${T('Payment Mode', 'طريقة الدفع')}:</strong> ${pay.payment_mode}</p>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>${T('Description', 'الوصف')}</th>
+              <th style="text-align: right;">${T('Amount (SAR)', 'المبلغ (ر.س)')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>${T('Basic Salary', 'الراتب الأساسي')}</td><td style="text-align: right;">${(pay.base_salary || 0).toFixed(2)}</td></tr>
+            <tr><td>${T('Commission', 'العمولة')}</td><td style="text-align: right;">${(pay.commission || 0).toFixed(2)}</td></tr>
+            <tr><td>${T('Overtime', 'العمل الإضافي')}</td><td style="text-align: right;">${(pay.overtime || 0).toFixed(2)}</td></tr>
+            <tr><td>${T('Advance Deduction', 'خصم السلفة')}</td><td style="text-align: right; color: #EF4444;">- ${(pay.advance_deduction || 0).toFixed(2)}</td></tr>
+            <tr><td>${T('Mistakes Deduction', 'خصم الأخطاء')}</td><td style="text-align: right; color: #EF4444;">- ${(pay.mistakes_deduction || 0).toFixed(2)}</td></tr>
+            <tr class="total-row"><td>${T('Net Pay', 'صافي الراتب')}</td><td style="text-align: right;">${(pay.amount || 0).toFixed(2)}</td></tr>
+          </tbody>
+        </table>
+        <div class="net-pay">${T('Total Net Pay', 'صافي الراتب المدفوع')}: ${(pay.amount || 0).toFixed(2)} SAR</div>
+        <div class="ai-msg"><strong>🤖 ${T('Management Message', 'رسالة إدارية')}:</strong><br>${aiMsg}</div>
+      </div>
+      <div class="footer">
+        <p>${T('This is a system generated salary slip', 'هذه قسيمة راتب إلكترونية صادرة من النظام')}</p>
+        <p>${setting.company_name_en || 'SUEUD AL TAAYIRA'} | ${setting.phone || ''}</p>
+      </div>
     </div>
-    <div class="body">
-      <div class="emp-details"><div><p><strong>${T('Employee', 'الموظف')}:</strong> <span>${pay.employees?.name || 'N/A'}</span></p><p><strong>${T('Role', 'المسمى')}:</strong> <span>${pay.employees?.role || 'N/A'}</span></p></div>
-      <div style="text-align: right;"><p><strong>${T('Date', 'التاريخ')}:</strong> <span>${pay.payment_date || 'N/A'}</span></p><p><strong>${T('Mode', 'الطريقة')}:</strong> <span>${pay.payment_mode}</span></p></div></div>
-      <table><thead><tr><th>${T('Description', 'الوصف')}</th><th style="text-align: right;">${T('Amount', 'المبلغ')}</th></tr></thead>
-      <tbody><tr><td>${T('Basic Salary', 'الراتب الأساسي')}</td><td style="text-align: right;">${(pay.base_salary || 0).toFixed(2)}</td></tr>
-      <tr><td>${T('Commission', 'العمولة')}</td><td style="text-align: right;">${(pay.commission || 0).toFixed(2)}</td></tr>
-      <tr><td>${T('Overtime', 'العمل الإضافي')}</td><td style="text-align: right;">${(pay.overtime || 0).toFixed(2)}</td></tr>
-      <tr><td>${T('Advance Deduction', 'خصم السلفة')}</td><td style="text-align: right; color: #dc2626;">- ${(pay.advance_deduction || 0).toFixed(2)}</td></tr>
-      <tr class="total-row"><td>${T('Net Pay', 'صافي الراتب')}</td><td style="text-align: right;">${(pay.amount || 0).toFixed(2)}</td></tr></tbody></table>
-      <div class="net-pay"><span>${T('Total Net Pay', 'صافي المدفوع')}</span> <strong>${(pay.amount || 0).toFixed(2)} SAR</strong></div>
-      <div class="ai-msg"><strong>🤖 ${T('Message', 'رسالة')}:</strong><br>${aiMsg}</div>
-    </div>
-    <div class="footer"><p>${T('System Generated Salary Slip', 'قسيمة راتب صادرة من النظام')}</p></div>
-  </div></body></html>`;
+  </body>
+  </html>`;
 };
 
 const getContractHTML = (s, name, date, isOffer, type, markup, terms) => `<div>Contract for ${name}</div>`;
@@ -325,9 +345,7 @@ export default function useERPState() {
   const [userProfile, setUserProfile] = useState(null);
   const [toast, setToast] = useState(null);
   const [lang, setLang] = useState('en');
-  const [data, setData] = useState({
-    invoices: [], customers: [], corporates: [], creditors: [], portals: [], cashbook: [], expenses: [], investments: [], employees: [], payroll: [], appUsers: [], branches: [], packages: [], vendors: [], services: [], recharges: [], audits: [], empAdvances: [], tenants: [], settings: {}, staffMistakes: []
-  });
+  const [data, setData] = useState({ invoices: [], customers: [], corporates: [], creditors: [], portals: [], cashbook: [], expenses: [], investments: [], employees: [], payroll: [], appUsers: [], branches: [], packages: [], vendors: [], services: [], recharges: [], audits: [], empAdvances: [], tenants: [], settings: {}, staffMistakes: [] });
 
   const [page, setPage] = useState('dashboard');
   const [tblPage, setTblPage] = useState(1);
@@ -369,17 +387,8 @@ export default function useERPState() {
   const [refundForm, setRefundForm] = useState({ id: '', date: today, compRefund: 0, custRefund: 0, mode: 'Cash', reason: '', portalId: '', creditBalance: 0 });
   const [tenantForm, setTenantForm] = useState({ agency_name: '', owner_email: '', subscription_end_date: '', company_name_ar: '', vat_no: '', cr_no: '', phone: '', address_ar: '' });
   const [profileForm, setProfileForm] = useState({ username: '', avatar_url: '', phone: '', address: '' });
-  const [editInvId, setEditInvId] = useState(null);
-  const [editExpId, setEditExpId] = useState(null);
-  const [editCustId, setEditCustId] = useState(null);
-  const [editCorpId, setEditCorpId] = useState(null);
-  const [editCredId, setEditCredId] = useState(null);
-  const [editVendId, setEditVendId] = useState(null);
-  const [editPkgId, setEditPkgId] = useState(null);
-  const [editBrnId, setEditBrnId] = useState(null);
-  const [editEmpId, setEditEmpId] = useState(null);
-  const [editSrvId, setEditSrvId] = useState(null);
-  const [editUserId, setEditUserId] = useState(null);
+  const [editInvId, setEditInvId] = useState(null); const [editExpId, setEditExpId] = useState(null); const [editCustId, setEditCustId] = useState(null); const [editCorpId, setEditCorpId] = useState(null); const [editCredId, setEditCredId] = useState(null);
+  const [editVendId, setEditVendId] = useState(null); const [editPkgId, setEditPkgId] = useState(null); const [editBrnId, setEditBrnId] = useState(null); const [editEmpId, setEditEmpId] = useState(null); const [editSrvId, setEditSrvId] = useState(null); const [editUserId, setEditUserId] = useState(null);
 
   const tr = translations[lang];
 
@@ -451,10 +460,6 @@ export default function useERPState() {
     modal, setModal, passForm, setPassForm, chatInput, setChatInput, chatMessages, setChatMessages,
     previewHTML, setPreviewHTML, getInvoiceHTML, getRefundHTML, getExpenseHTML, getSalarySlipHTML, getContractHTML, today, router, 
     contractCorpName, setContractCorpName, contractType, setContractType, contractMarkup, setContractMarkup,
-    contractTerms, setContractTerms, tenantForm, setTenantForm, profileForm, setProfileForm,
-    ledgerEmpId, setLedgerEmpId, ledgerCustId, setLedgerCustId, repDate, setRepDate,
-    reportTab, setReportTab, statementTab, setStatementTab, page, setPage, 
-    chatOpen, setChatOpen, search, setSearch, payFilter, setPayFilter, tblPage, setTblPage, 
-    exportToExcel, filterData
+    contractTerms, setContractTerms, tenantForm, setTenantForm, profileForm, setProfileForm, ledgerEmpId, setLedgerEmpId, ledgerCustId, setLedgerCustId, repDate, setRepDate, reportTab, setReportTab, statementTab, setStatementTab, page, setPage, chatOpen, setChatOpen, search, setSearch, payFilter, setPayFilter, tblPage, setTblPage, exportToExcel, filterData
   };
 }
