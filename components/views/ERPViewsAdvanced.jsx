@@ -8,16 +8,18 @@ const styles = {
   btnPrimary: { padding: '10px 15px', background: '#1E3A8A', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }, 
   btnSuccess: { padding: '8px 12px', background: '#059669', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
   btnWarning: { padding: '8px 12px', background: '#FBBF24', color: '#1E3A8A', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
+  btnInfo: { padding: '8px 12px', background: '#2563EB', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
   card: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px', border: '1px solid #e2e8f0' }, 
   label: { fontSize: '14px', fontWeight: 'bold', color: '#333', marginBottom: '5px', display: 'block', marginTop: '10px' } 
 };
 
 export default function ERPViewsAdvanced(props) {
-  const { page, data, tr, today, userProfile, showToast, setData } = props;
+  const { page, data, tr, today, userProfile, showToast, setData, handlePaySalary, handleGenerateSlip } = props;
   const [editTargetId, setEditTargetId] = useState(null);
   const [targetVal, setTargetVal] = useState(0);
   const [attForm, setAttForm] = useState({ empId: '', checkIn: '09:00', checkOut: '18:00', status: 'Present', leaveStart: today, leaveEnd: today });
   const [attendance, setAttendance] = useState([]);
+  const [payForm, setPayForm] = useState({ empId: '', base: 0, comm: 0, adv_ded: 0, month: today.substring(0, 7), mode: 'Cash' });
 
   useEffect(() => {
     if (page === 'hr_advanced' && userProfile?.tenant_id) {
@@ -32,7 +34,7 @@ export default function ERPViewsAdvanced(props) {
       const { data: upEmp, error } = await supabase.from('employees').update({ target: parseFloat(targetVal) || 0 }).eq('id', empId).select().single();
       if (error) throw error;
       setData(prev => ({ ...prev, employees: prev.employees.map(e => e.id === empId ? upEmp : e) }));
-      showToast('Target Updated!');
+      showToast(tr.save || 'Target Updated!');
       setEditTargetId(null);
     } catch (err) { showToast('Error: ' + err.message); }
   };
@@ -53,7 +55,7 @@ export default function ERPViewsAdvanced(props) {
 
   const markAttendance = async (e) => {
     e.preventDefault();
-    if (!attForm.empId) return showToast('Please select an employee');
+    if (!attForm.empId) return showToast(tr.selectEmployee || 'Please select an employee');
     try {
       let payload = {
         employee_id: attForm.empId, 
@@ -66,8 +68,8 @@ export default function ERPViewsAdvanced(props) {
         const { ot, deduction } = calcAttendance(attForm.checkIn, attForm.checkOut);
         payload.check_in = attForm.checkIn;
         payload.check_out = attForm.checkOut;
-        payload.overtime = ot;
-        payload.deduction = deduction;
+        payload.overtime = parseFloat(ot);
+        payload.deduction = parseFloat(deduction);
       } else if (attForm.status === 'Leave') {
         payload.leave_start = attForm.leaveStart;
         payload.leave_end = attForm.leaveEnd;
@@ -80,9 +82,9 @@ export default function ERPViewsAdvanced(props) {
       
       setAttendance(prev => [newAtt, ...prev]);
       
-      let msg = `Attendance Marked!`;
-      if (payload.overtime > 0) msg += ` OT: ${payload.overtime} hrs.`;
-      if (payload.deduction > 0) msg += ` Salary Deducted: ${payload.deduction} hrs.`;
+      let msg = `${tr.mark || 'Attendance Marked'}!`;
+      if (payload.overtime > 0) msg += ` ${tr.overtime || 'OT'}: ${payload.overtime} hrs.`;
+      if (payload.deduction > 0) msg += ` ${tr.deduction || 'Deduction'}: ${payload.deduction} hrs.`;
       showToast(msg);
       
       setAttForm({ empId: '', checkIn: '09:00', checkOut: '18:00', status: 'Present', leaveStart: today, leaveEnd: today });
@@ -115,7 +117,7 @@ export default function ERPViewsAdvanced(props) {
     return (
       <div>
         <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', padding: '30px', borderRadius: '12px', marginBottom: '20px' }}>
-          <h2 style={{ margin: 0, fontSize: '28px' }}>🤖 AI ERP Assistant</h2>
+          <h2 style={{ margin: 0, fontSize: '28px' }}>🤖 {tr.ai_dashboard || 'AI ERP Assistant'}</h2>
           <p style={{ margin: '5px 0 0', opacity: 0.9, fontSize: '16px' }}>Real-time business insights based on your data.</p>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '20px' }}>
@@ -193,7 +195,7 @@ export default function ERPViewsAdvanced(props) {
     );
   }
 
-  // 3. ADVANCED HR & ATTENDANCE (TIME-BASED WITH LEAVES)
+  // 3. ADVANCED HR & ATTENDANCE (TIME-BASED WITH LEAVES & SALARY SLIP)
   if (page === 'hr_advanced') {
     return (
       <div>
@@ -203,9 +205,9 @@ export default function ERPViewsAdvanced(props) {
             <thead>
               <tr style={{ background: '#1E3A8A', color: 'white' }}>
                 <th style={{ padding: '12px', textAlign: 'left' }}>Employee</th>
-                <th style={{ padding: '12px' }}>Target (SAR)</th>
-                <th style={{ padding: '12px' }}>Achieved (SAR)</th>
-                <th style={{ padding: '12px' }}>Percentage</th>
+                <th style={{ padding: '12px' }}>{tr.target || 'Target'} (SAR)</th>
+                <th style={{ padding: '12px' }}>{tr.achieved || 'Achieved'} (SAR)</th>
+                <th style={{ padding: '12px' }}>{tr.percentage || 'Percentage'}</th>
                 <th style={{ padding: '12px' }}>Action</th>
               </tr>
             </thead>
@@ -233,7 +235,7 @@ export default function ERPViewsAdvanced(props) {
                       <small style={{ fontWeight: 'bold' }}>{perc.toFixed(0)}%</small>
                     </td>
                     <td style={{ padding: '12px', textAlign: 'center' }}>
-                      {editTargetId === emp.id ? <button onClick={() => saveTarget(emp.id)} style={styles.btnSuccess}>Save</button> : <button onClick={() => { setEditTargetId(emp.id); setTargetVal(target); }} style={styles.btnWarning}>Edit</button>}
+                      {editTargetId === emp.id ? <button onClick={() => saveTarget(emp.id)} style={styles.btnSuccess}>{tr.save || 'Save'}</button> : <button onClick={() => { setEditTargetId(emp.id); setTargetVal(target); }} style={styles.btnWarning}>{tr.edit || 'Edit'}</button>}
                     </td>
                   </tr>
                 );
@@ -243,30 +245,30 @@ export default function ERPViewsAdvanced(props) {
         </div>
         
         <div style={styles.card}>
-          <h3>📅 Daily Time-Based Attendance &amp; Leave</h3>
+          <h3>📅 Daily Time-Based Attendance & Leave</h3>
           <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '15px' }}>Mark Check-in and Check-out time. System will automatically calculate Overtime ({'>9 hrs'}) and Salary Deduction ({'<8 hrs'}).</p>
           <form onSubmit={markAttendance} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr auto', gap: '15px', alignItems: 'flex-end' }}>
             <div>
-              <label style={styles.label}>Employee</label>
+              <label style={styles.label}>{tr.selectEmployee || 'Employee'}</label>
               <select style={styles.input} value={attForm.empId} onChange={e => setAttForm({...attForm, empId: e.target.value})} required>
                 <option value="">Select Employee</option>
                 {data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
               </select>
             </div>
             <div>
-              <label style={styles.label}>Status</label>
+              <label style={styles.label}>{tr.status || 'Status'}</label>
               <select style={styles.input} value={attForm.status} onChange={e => setAttForm({...attForm, status: e.target.value})}>
-                <option>Present</option><option>Leave</option><option>Absent</option>
+                <option>{tr.present || 'Present'}</option><option>{tr.leave || 'Leave'}</option><option>{tr.absent || 'Absent'}</option>
               </select>
             </div>
             {attForm.status === 'Present' ? (
               <>
                 <div>
-                  <label style={styles.label}>Check-In</label>
+                  <label style={styles.label}>{tr.checkInTime || 'Check-In'}</label>
                   <input type="time" style={styles.input} value={attForm.checkIn} onChange={e => setAttForm({...attForm, checkIn: e.target.value})} required />
                 </div>
                 <div>
-                  <label style={styles.label}>Check-Out</label>
+                  <label style={styles.label}>{tr.checkOutTime || 'Check-Out'}</label>
                   <input type="time" style={styles.input} value={attForm.checkOut} onChange={e => setAttForm({...attForm, checkOut: e.target.value})} required />
                 </div>
               </>
@@ -282,7 +284,7 @@ export default function ERPViewsAdvanced(props) {
                 </div>
               </>
             )}
-            <button type="submit" style={{...styles.btnPrimary, height: '42px'}}>Mark</button>
+            <button type="submit" style={{...styles.btnPrimary, height: '42px'}}>{tr.mark || 'Mark'}</button>
           </form>
           
           <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
@@ -291,9 +293,9 @@ export default function ERPViewsAdvanced(props) {
               <th style={{padding:'10px'}}>Employee</th>
               <th style={{padding:'10px'}}>Check-In</th>
               <th style={{padding:'10px'}}>Check-Out</th>
-              <th style={{padding:'10px'}}>Overtime</th>
-              <th style={{padding:'10px'}}>Deduction</th>
-              <th style={{padding:'10px'}}>Status</th>
+              <th style={{padding:'10px'}}>{tr.overtime || 'Overtime'}</th>
+              <th style={{padding:'10px'}}>{tr.deduction || 'Deduction'}</th>
+              <th style={{padding:'10px'}}>{tr.status || 'Status'}</th>
             </tr></thead>
             <tbody>
               {attendance.length === 0 ? <tr><td colSpan="7" style={{padding:'10px', textAlign:'center'}}>No attendance marked yet.</td></tr> : attendance.slice(0, 15).map(a => (
@@ -305,6 +307,68 @@ export default function ERPViewsAdvanced(props) {
                   <td style={{padding:'10px', textAlign:'center', color: '#059669', fontWeight: 'bold'}}>{a.overtime ? `${a.overtime} hrs` : '0'}</td>
                   <td style={{padding:'10px', textAlign:'center', color: '#EF4444', fontWeight: 'bold'}}>{a.deduction ? `${a.deduction} hrs` : '0'}</td>
                   <td style={{padding:'10px', textAlign:'center', color: a.status === 'Present' ? '#059669' : '#D97706'}}>{a.status}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* PAY SALARY & GENERATE SLIP */}
+        <div style={styles.card}>
+          <h3>💰 {tr.paySalary || 'Pay Salary'}</h3>
+          <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '15px' }}>System will automatically fetch Overtime & Mistakes Deduction for the selected month.</p>
+          <form onSubmit={handlePaySalary} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr 1fr 1fr auto', gap: '15px', alignItems: 'flex-end' }}>
+            <div>
+              <label style={styles.label}>{tr.selectEmployee || 'Employee'}</label>
+              <select name="emp" style={styles.input} required>
+                <option value="">Select Employee</option>
+                {data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Base Salary</label>
+              <input name="base" type="number" style={styles.input} placeholder="Base" required />
+            </div>
+            <div>
+              <label style={styles.label}>Commission</label>
+              <input name="comm" type="number" style={styles.input} placeholder="Commission" required />
+            </div>
+            <div>
+              <label style={styles.label}>Adv. Deduct</label>
+              <input name="adv_ded" type="number" style={styles.input} placeholder="Adv. Deduct" required />
+            </div>
+            <div>
+              <label style={styles.label}>Month</label>
+              <input name="month" type="text" defaultValue={today.substring(0, 7)} style={styles.input} placeholder="YYYY-MM" required />
+            </div>
+            <div>
+              <label style={styles.label}>Mode</label>
+              <select name="mode" style={styles.input}><option>Cash</option><option>Bank Transfer</option></select>
+            </div>
+            <button type="submit" style={{...styles.btnPrimary, height: '42px'}}>Pay</button>
+          </form>
+        </div>
+
+        <div style={styles.card}>
+          <h3>📋 {tr.generateSlip || 'Generate Salary Slip'}</h3>
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+            <thead>
+              <tr style={{ background: '#1E3A8A', color: 'white' }}>
+                <th style={{ padding: '12px', textAlign: 'left' }}>Employee</th>
+                <th style={{ padding: '12px' }}>Month</th>
+                <th style={{ padding: '12px' }}>Net Paid</th>
+                <th style={{ padding: '12px' }}>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.payroll.length === 0 ? <tr><td colSpan="4" style={{padding:'15px', textAlign:'center'}}>No salary paid yet.</td></tr> : data.payroll.map(p => (
+                <tr key={p.id} style={{ borderBottom: '1px solid #E2E8F0' }}>
+                  <td style={{ padding: '12px', fontWeight: 'bold' }}>{p.employees?.name || 'N/A'}</td>
+                  <td style={{ padding: '12px', textAlign: 'center' }}>{p.month}</td>
+                  <td style={{ padding: '12px', textAlign: 'center', color: '#059669', fontWeight: 'bold' }}>{(p.amount || 0).toFixed(2)} SAR</td>
+                  <td style={{ padding: '12px', textAlign: 'center' }}>
+                    <button onClick={() => handleGenerateSlip(p)} style={styles.btnInfo}>Download Slip</button>
+                  </td>
                 </tr>
               ))}
             </tbody>
