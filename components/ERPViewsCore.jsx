@@ -68,9 +68,9 @@ export default function ERPViewsCore(props) {
     );
   }
 
-  // ================= CREATE INVOICE (HIGH-TECH DEEPLY ANALYZED FORM) =================
+  // ================= CREATE INVOICE (HIGH-TECH AUTOMATED FORM) =================
   if (page === 'create') {
-    // Deep Live Calculation Logic
+    // Live Calculation Logic
     const qty = parseInt(invForm.qty) || 1;
     const baseSell = (parseFloat(invForm.sell) || 0) * qty;
     const discount = parseFloat(invForm.discount) || 0;
@@ -81,12 +81,39 @@ export default function ERPViewsCore(props) {
     const creditUsed = parseFloat(invForm.useCredit) || 0;
     const balanceToPay = totalNewBooking - creditUsed;
 
+    // Automation: Fetch available credit invoices (Refunds)
+    const availableCreditInvoices = data.invoices.filter(i => i.invoice_no.startsWith('REF-') && (i.refund_customer || 0) > 0);
+
+    // Automation Handler: When user selects a previous refund invoice
+    const handleCreditSelect = (invNo) => {
+      if (!invNo) {
+        setInvForm({ ...invForm, linkedInvId: '', useCredit: 0, oldTicketNo: '', oldPnr: '', oldAirline: '', oldSector: '', oldSellPrice: 0, creditCustId: '' });
+        return;
+      }
+      const linkedInv = data.invoices.find(i => i.invoice_no === invNo);
+      if (linkedInv) {
+        setInvForm({
+          ...invForm,
+          linkedInvId: invNo,
+          useCredit: linkedInv.refund_customer || 0,
+          creditCustId: linkedInv.customer_id || '',
+          custId: linkedInv.customer_id || invForm.custId,
+          custName: linkedInv.customers?.name || invForm.custName,
+          oldTicketNo: linkedInv.old_ticket_no || linkedInv.ticket_no || '',
+          oldPnr: linkedInv.old_pnr || linkedInv.pnr || '',
+          oldAirline: linkedInv.old_airline || linkedInv.airline || '',
+          oldSector: linkedInv.old_sector || linkedInv.flight_sector || '',
+          oldSellPrice: linkedInv.old_sell_price || linkedInv.total_sell || 0
+        });
+      }
+    };
+
     return (
       <div style={styles.card}>
         <h2 style={{ color: '#0F172A', marginBottom: '20px', borderBottom: '2px solid #E2E8F0', paddingBottom: '10px' }}>{editInvId ? tr.editInvoice : tr.create}</h2>
         <form onSubmit={handleCreateInvoice}>
           
-          {/* SECTION 1: CUSTOMER & BOOKING TYPE */}
+          {/* SECTION 1: CUSTOMER DETAILS */}
           <div style={{ marginBottom: '30px' }}>
             <div style={styles.sectionTitle}><span>1. Customer Details</span><span>تفاصيل العميل</span></div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
@@ -155,62 +182,53 @@ export default function ERPViewsCore(props) {
             </div>
           </div>
 
-          {/* SECTION 3: RE-ISSUE & CREDIT AUTOMATION */}
+          {/* SECTION 3: RE-ISSUE & CREDIT AUTOMATION (AUTO-FILL) */}
           <div style={{ marginBottom: '30px', background: '#F8FAFC', padding: '20px', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
             <div style={styles.sectionTitle}><span>3. Booking Type & Re-issue Automation</span><span>أتمتة إعادة الإصدار</span></div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
               <div>
                 <label style={styles.label}>{tr.bookingType} / نوع الحجز</label>
-                <select value={invForm.bookingType} onChange={e => setInvForm({...invForm, bookingType: e.target.value, linkedInvId: '', oldTicketNo: '', oldPnr: '', oldAirline: '', oldSector: '', oldSellPrice: 0, oldBookingDate: '', useCredit: 0})} style={styles.input}>
+                <select value={invForm.bookingType} onChange={e => setInvForm({...invForm, bookingType: e.target.value, linkedInvId: '', oldTicketNo: '', oldPnr: '', oldAirline: '', oldSector: '', oldSellPrice: 0, useCredit: 0})} style={styles.input}>
                   <option>{tr.newBooking}</option><option>{tr.reissue}</option><option>{tr.extraLuggage}</option><option>{tr.previousBooking}</option>
                 </select>
               </div>
               
-              {invForm.bookingType === 'Previous Booking' && (
+              {/* AUTOMATION: If Previous Booking OR Credit Balance is selected, show Refund Invoices List */}
+              {(invForm.bookingType === 'Previous Booking' || invForm.payment === 'Credit Balance') && (
                 <div>
-                  <label style={styles.label}>Select Previous Refund Invoice (Auto-Fill)</label>
-                  <select value={invForm.linkedInvId} onChange={e => { 
-                    const linkedInv = data.invoices.find(i => i.invoice_no === e.target.value); 
-                    setInvForm({ 
-                      ...invForm, 
-                      linkedInvId: e.target.value, 
-                      useCredit: linkedInv?.refund_customer || 0, 
-                      creditCustId: linkedInv?.customer_id || '',
-                      oldTicketNo: linkedInv?.ticket_no || '', 
-                      oldPnr: linkedInv?.pnr || '',            
-                      oldAirline: linkedInv?.airline || '',
-                      oldSector: linkedInv?.flight_sector || '',
-                      oldSellPrice: linkedInv?.total_sell || 0,
-                      oldBookingDate: linkedInv?.invoice_date || ''
-                    }); 
-                  }} style={styles.input} required>
-                    <option value="">Select Refund Invoice</option>
-                    {data.invoices.filter(i => i.invoice_no.startsWith('REF-') && (i.refund_customer > 0)).map(i => 
-                      <option key={i.id} value={i.invoice_no}>{i.invoice_no} - {i.customers?.name} (Credit: {i.refund_customer || 0})</option>
+                  <label style={styles.label}>Select Credit Invoice (Auto-Fill Previous Data) / اختر فاتورة الرصيد</label>
+                  <select value={invForm.linkedInvId} onChange={e => handleCreditSelect(e.target.value)} style={styles.input} required>
+                    <option value="">Select Refund Invoice (Credit Available)</option>
+                    {availableCreditInvoices.map(i => 
+                      <option key={i.id} value={i.invoice_no}>{i.invoice_no} - {i.customers?.name || 'N/A'} (Credit: {i.refund_customer || 0} SAR)</option>
                     )}
                   </select>
                   
+                  {/* AUTO-FILLED DATA BOX */}
                   {invForm.linkedInvId && (
-                    <div style={{ marginTop: '15px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
-                      <div style={{ background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #fde68a' }}>
-                        <div style={{ fontSize: '11px', color: '#92400e', fontWeight: 600, textTransform: 'uppercase' }}>Original Airline</div>
-                        <div style={{ fontSize: '16px', color: '#78350f', fontWeight: 700, marginTop: '5px' }}>{invForm.oldAirline || 'N/A'}</div>
-                      </div>
-                      <div style={{ background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #fde68a' }}>
-                        <div style={{ fontSize: '11px', color: '#92400e', fontWeight: 600, textTransform: 'uppercase' }}>Original Sector</div>
-                        <div style={{ fontSize: '16px', color: '#78350f', fontWeight: 700, marginTop: '5px' }}>{invForm.oldSector || 'N/A'}</div>
-                      </div>
-                      <div style={{ background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #fde68a' }}>
-                        <div style={{ fontSize: '11px', color: '#92400e', fontWeight: 600, textTransform: 'uppercase' }}>Original Ticket No</div>
-                        <div style={{ fontSize: '16px', color: '#78350f', fontWeight: 700, marginTop: '5px' }}>{invForm.oldTicketNo || 'N/A'}</div>
-                      </div>
-                      <div style={{ background: '#fef3c7', padding: '15px', borderRadius: '8px', border: '1px solid #f59e0b' }}>
-                        <div style={{ fontSize: '11px', color: '#92400e', fontWeight: 600, textTransform: 'uppercase' }}>Original Selling Price</div>
-                        <div style={{ fontSize: '18px', color: '#78350f', fontWeight: 800, marginTop: '5px' }}>{parseFloat(invForm.oldSellPrice || 0).toFixed(2)} SAR</div>
-                      </div>
-                      <div style={{ background: '#dcfce7', padding: '15px', borderRadius: '8px', border: '1px solid #86efac' }}>
-                        <div style={{ fontSize: '11px', color: '#059669', fontWeight: 600, textTransform: 'uppercase' }}>Customer Refund (Credit)</div>
-                        <div style={{ fontSize: '18px', color: '#047857', fontWeight: 800, marginTop: '5px' }}>- {creditUsed.toFixed(2)} SAR</div>
+                    <div style={{ marginTop: '15px', background: '#fff', padding: '20px', borderRadius: '12px', border: '2px solid #F59E0B' }}>
+                      <h4 style={{ margin: '0 0 15px', color: '#D97706', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px' }}>✅ Auto-Filled Previous Booking Details</h4>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+                        <div style={{ background: '#F8FAFC', padding: '15px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                          <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Original Airline / الخطوط القديمة</div>
+                          <div style={{ fontSize: '16px', color: '#0F172A', fontWeight: 700, marginTop: '5px' }}>{invForm.oldAirline || 'N/A'}</div>
+                        </div>
+                        <div style={{ background: '#F8FAFC', padding: '15px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                          <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Original Sector / القطاع القديم</div>
+                          <div style={{ fontSize: '16px', color: '#0F172A', fontWeight: 700, marginTop: '5px' }}>{invForm.oldSector || 'N/A'}</div>
+                        </div>
+                        <div style={{ background: '#F8FAFC', padding: '15px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                          <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Original Ticket No / التذكرة القديمة</div>
+                          <div style={{ fontSize: '16px', color: '#0F172A', fontWeight: 700, marginTop: '5px' }}>{invForm.oldTicketNo || 'N/A'}</div>
+                        </div>
+                        <div style={{ background: '#FEF3C7', padding: '15px', borderRadius: '8px', border: '1px solid #F59E0B' }}>
+                          <div style={{ fontSize: '11px', color: '#92400E', fontWeight: 600 }}>Original Selling Price / سعر البيع الأصلي</div>
+                          <div style={{ fontSize: '18px', color: '#78350F', fontWeight: 800, marginTop: '5px' }}>{parseFloat(invForm.oldSellPrice || 0).toFixed(2)} SAR</div>
+                        </div>
+                        <div style={{ background: '#DCFCE7', padding: '15px', borderRadius: '8px', border: '1px solid #86EFAC', gridColumn: '1 / -1' }}>
+                          <div style={{ fontSize: '11px', color: '#059669', fontWeight: 600 }}>Refund Credit Applied / رصيد الاسترجاع المطبق</div>
+                          <div style={{ fontSize: '20px', color: '#047857', fontWeight: 800, marginTop: '5px' }}>- {creditUsed.toFixed(2)} SAR</div>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -224,19 +242,7 @@ export default function ERPViewsCore(props) {
             <div style={styles.sectionTitle}><span>4. Payment & Calculation</span><span>الدفع والحساب</span></div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
               <div><label style={styles.label}>{tr.salesPerson} / موظف المبيعات</label><select value={invForm.employeeId} onChange={e => setInvForm({...invForm, employeeId: e.target.value})} style={styles.input} required><option value="">Select Sales Person</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
-              <div><label style={styles.label}>{tr.paymentMethod} / طريقة الدفع</label><select value={invForm.payment} onChange={e => setInvForm({...invForm, payment: e.target.value, useCredit: 0, creditCustId: ''})} style={styles.input}><option>{tr.cash}</option><option>{tr.bankTransfer}</option><option>{tr.card}</option><option>{tr.credit}</option><option>{tr.creditBalance}</option><option>{tr.tabby}</option><option>{tr.tamara}</option></select></div>
-              
-              {invForm.payment === 'Credit Balance' && invForm.custId !== 'new' && (() => {
-                const cust = data.customers.find(c => c.id === invForm.custId);
-                const creditAvl = cust?.store_credit || 0;
-                return (
-                  <div style={{ gridColumn: '1 / -1', background: '#f0fdf4', padding: '20px', borderRadius: '12px', border: '1px solid #bbf7d0' }}>
-                    <h4 style={{ margin: '0 0 15px', color: '#059669' }}>Customer: {cust?.name} | Available Credit: {creditAvl.toFixed(2)} SAR</h4>
-                    <label style={styles.label}>Enter Amount to Deduct</label>
-                    <input type="number" step="0.01" max={creditAvl} value={invForm.useCredit} onChange={e => setInvForm({...invForm, useCredit: e.target.value})} style={styles.input} required />
-                  </div>
-                );
-              })()}
+              <div><label style={styles.label}>{tr.paymentMethod} / طريقة الدفع</label><select value={invForm.payment} onChange={e => setInvForm({...invForm, payment: e.target.value, useCredit: 0, creditCustId: '', linkedInvId: '', oldTicketNo: '', oldPnr: '', oldAirline: '', oldSector: '', oldSellPrice: 0 })} style={styles.input}><option>{tr.cash}</option><option>{tr.bankTransfer}</option><option>{tr.card}</option><option>{tr.credit}</option><option>{tr.creditBalance}</option><option>{tr.tabby}</option><option>{tr.tamara}</option></select></div>
               
               <div style={{ gridColumn: '1 / -1', background: '#0F172A', color: 'white', padding: '25px', borderRadius: '12px' }}>
                 <h4 style={{ margin: '0 0 20px', color: '#F59E0B', fontSize: '18px' }}>Live Calculation / الحساب المباشر</h4>
@@ -331,7 +337,7 @@ export default function ERPViewsCore(props) {
     );
   }
 
-  // ================= CUSTOMERS, CORPORATES, CREDITORS (Same as before) =================
+  // ================= CUSTOMERS, CORPORATES, CREDITORS =================
   if (page === 'customers') return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
