@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 // ==========================================
-// PREMIUM BILINGUAL INVOICE TEMPLATE
+// PREMIUM BILINGUAL INVOICE TEMPLATE (SAUDI COMPLIANT)
 // ==========================================
 const getInvoiceHTML = (inv, s, lang = 'en') => {
   const setting = s || {};
@@ -20,14 +20,14 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
   ];
   const aiFooterMsg = aiMessages[Math.floor(Math.random() * aiMessages.length)];
   
-  const totalSell = inv.total_sell || 0;
+  const totalSell = inv.total_sell || 0; // This is New Booking Price
   const discount = inv.discount || 0;
   const subTotal = totalSell + discount;
   const vatRate = inv.vat > 0 && totalSell > 0 ? Math.round((inv.vat / totalSell) * 100) : 0;
   const vat = inv.vat || 0;
   const total = inv.total || 0;
   const paidAmount = inv.paid_amount || 0;
-  const usedCredit = inv.used_credit || 0;
+  const usedCredit = inv.used_credit || 0; // Customer Refund used
   const cashPaid = paidAmount - usedCredit;
   const dueAmount = inv.due_amount || 0;
   const unitPrice = (inv.qty || 1) > 0 ? totalSell / inv.qty : totalSell;
@@ -54,7 +54,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
       .company-info .logo { max-height: 100px; max-width: 220px; border-radius: 8px; background: rgba(255,255,255,0.1); padding: 8px; }
       .company-text h2 { font-size: 24px; font-weight: 800; color: #fbbf24; }
       .company-text h1 { font-size: 16px; font-weight: 600; color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 2px; margin-top: 4px; }
-      .company-text p { font-size: 12px; color: rgba(255,255,255,0.6); line-height: 1.7; margin-top: 8px; }
+      .company-text p { font-size: 12px; color: rgba(255,255,255,0.7); line-height: 1.8; margin-top: 8px; }
       .invoice-meta { text-align: right; min-width: 250px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
       .invoice-meta h3 { font-size: 36px; font-weight: 800; color: #fbbf24; text-transform: uppercase; letter-spacing: 1px; }
       .meta-row { display: flex; justify-content: space-between; margin-top: 10px; font-size: 14px; }
@@ -102,7 +102,12 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
           <div class="company-text">
             <h2>${setting.company_name_ar || 'صعود الطائرة للسفر والسياحة'}</h2>
             <h1>${setting.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
-            <p>${setting.address_ar || ''}<br/>VAT: ${setting.vat_no || 'N/A'} | CR: ${setting.cr_no || 'N/A'}</p>
+            <p>
+              ${setting.address_ar || 'Address / العنوان'}<br/>
+              VAT / ضريبة: ${setting.vat_no || 'N/A'} | CR / سجل: ${setting.cr_no || 'N/A'}<br/>
+              License / ترخيص: ${setting.license_no || 'N/A'} | Tourist Lic / ترخيص سياحي: ${setting.tourist_license_no || 'N/A'}<br/>
+              Phone / هاتف: ${setting.phone || 'N/A'}
+            </p>
           </div>
         </div>
         <div class="invoice-meta">
@@ -128,16 +133,18 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
             <div class="info-row"><span class="label">Ticket No / التذكرة</span><span class="value">${inv.ticket_no || 'N/A'}</span></div>
           </div>
         </div>
+        
         ${isReissue ? `
         <div class="reissue-block">
-          <div class="reissue-title"><span>⚠️ PREVIOUS BOOKING DETAILS (RE-ISSUE)</span><span>تفاصيل الحجز السابق</span></div>
+          <div class="reissue-title"><span>⚠️ PREVIOUS BOOKING & REFUND DETAILS</span><span>تفاصيل الحجز السابق والاسترجاع</span></div>
           <div class="reissue-grid">
-            <div class="reissue-item"><div class="lbl">Original Invoice / الفاتورة الأصلية</div><div class="val">${inv.linked_inv_id || 'N/A'}</div></div>
-            <div class="reissue-item"><div class="lbl">Old Ticket No / التذكرة القديمة</div><div class="val">${inv.old_ticket_no || 'N/A'}</div></div>
-            <div class="reissue-item"><div class="lbl">Old Sell Price / السعر القديم</div><div class="val">${parseFloat(inv.old_sell_price || 0).toFixed(2)} SAR</div></div>
-            <div class="reissue-item" style="background:#dcfce7; border-color:#86efac;"><div class="lbl">Credit Applied / الرصيد المستخدم</div><div class="val" style="color:#059669;">- ${usedCredit.toFixed(2)} SAR</div></div>
+            <div class="reissue-item"><div class="lbl">Original Airline / الخطوط القديمة</div><div class="val">${inv.old_airline || 'N/A'}</div></div>
+            <div class="reissue-item"><div class="lbl">Original Ticket No / التذكرة القديمة</div><div class="val">${inv.old_ticket_no || 'N/A'}</div></div>
+            <div class="reissue-item"><div class="lbl">Original Fare / الأجرة الأصلية</div><div class="val">${parseFloat(inv.old_sell_price || 0).toFixed(2)} SAR</div></div>
+            <div class="reissue-item" style="background:#dcfce7; border-color:#86efac;"><div class="lbl">Customer Refund (Credit) / استرجاع العميل</div><div class="val" style="color:#059669;">- ${usedCredit.toFixed(2)} SAR</div></div>
           </div>
         </div>` : ''}
+        
         <table>
           <thead>
             <tr>
@@ -156,13 +163,13 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
             </tr>
           </tbody>
         </table>
+        
         <div class="bottom-section">
           <div class="payment-breakdown">
             <div class="bilingual-title"><span>PAYMENT BREAKDOWN</span><span>تفاصيل الدفع</span></div>
-            <div class="pay-row"><span>Payment Method / طريقة الدفع</span><span style="font-weight:600; color:#2563eb;">${paymentDisplay}</span></div>
-            ${usedCredit > 0 ? `<div class="pay-row"><span>Credit Balance Used / رصيد مستخدم</span><span style="font-weight:600; color:#7c3aed;">- ${usedCredit.toFixed(2)} SAR</span></div>` : ''}
-            ${cashPaid > 0 ? `<div class="pay-row"><span>Cash/Bank Paid / المدفوع</span><span style="font-weight:600; color:#059669;">${cashPaid.toFixed(2)} SAR</span></div>` : ''}
-            <div class="pay-row" style="border-top:1px solid #e2e8f0; margin-top:5px; padding-top:10px;"><span style="font-weight:700;">Total Paid / إجمالي المدفوع</span><span style="font-weight:700; color:#059669; font-size:16px;">${paidAmount.toFixed(2)} SAR</span></div>
+            <div class="pay-row"><span>New Booking Price / سعر الحجز الجديد</span><span style="font-weight:600;">${total.toFixed(2)} SAR</span></div>
+            ${usedCredit > 0 ? `<div class="pay-row"><span>Less: Credit Applied / اقل: الرصيد المطبق</span><span style="font-weight:600; color:#7c3aed;">- ${usedCredit.toFixed(2)} SAR</span></div>` : ''}
+            <div class="pay-row" style="border-top:1px solid #e2e8f0; margin-top:5px; padding-top:10px;"><span style="font-weight:700;">Balance Paid / المدفوع</span><span style="font-weight:700; color:#059669; font-size:16px;">${cashPaid.toFixed(2)} SAR (${paymentDisplay})</span></div>
             <div class="pay-row"><span style="font-weight:700;">Amount Due / المتبقي</span><span style="font-weight:700; color:${dueAmount > 0 ? '#ef4444' : '#059669'}; font-size:16px;">${dueAmount.toFixed(2)} SAR</span></div>
           </div>
           <div class="totals-box">
@@ -191,19 +198,17 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
 };
 
 // ==========================================
-// PREMIUM REFUND INVOICE TEMPLATE
+// PREMIUM CUSTOMER-FACING REFUND INVOICE TEMPLATE
 // ==========================================
 const getRefundHTML = (inv, s, lang = 'en') => {
   const setting = s || {};
   const invoiceNo = inv.invoice_no || 'N/A';
   const trackUrl = `https://sueud-al-taayira.vercel.app/invoice/${invoiceNo}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(trackUrl)}`;
-  const compRefund = inv.refund_company || 0;
   const custRefund = inv.refund_customer || 0;
-  const officeProfit = compRefund - custRefund;
   
   let refundMethodDisplay = inv.payment_method || 'Cash';
-  if (inv.payment_method === 'Credit') refundMethodDisplay = 'Added to Credit Balance / أضيف إلى الرصيد الائتماني';
+  if (inv.payment_method === 'Credit') refundMethodDisplay = 'Credit for New Booking / رصيد لحجز جديد';
 
   return `
   <!DOCTYPE html>
@@ -221,7 +226,7 @@ const getRefundHTML = (inv, s, lang = 'en') => {
       .company-info .logo { height: 65px; margin-bottom: 12px; border-radius: 8px; background: rgba(255,255,255,0.1); padding: 5px; }
       .company-info h2 { font-size: 22px; font-weight: 800; color: #fbbf24; }
       .company-info h1 { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 2px; margin-top: 4px; }
-      .company-info p { font-size: 11px; color: rgba(255,255,255,0.5); line-height: 1.7; margin-top: 10px; }
+      .company-info p { font-size: 11px; color: rgba(255,255,255,0.6); line-height: 1.7; margin-top: 10px; }
       .invoice-meta { text-align: right; min-width: 220px; }
       .invoice-meta h3 { font-size: 32px; font-weight: 800; color: #fbbf24; text-transform: uppercase; letter-spacing: 1px; }
       .invoice-meta .inv-no { font-size: 14px; color: rgba(255,255,255,0.8); margin-top: 8px; }
@@ -233,15 +238,11 @@ const getRefundHTML = (inv, s, lang = 'en') => {
       .info-block .row { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; }
       .info-block .row .label { color: #991b1b; font-weight: 500; }
       .info-block .row .value { color: #7f1d1d; font-weight: 600; text-align: right; }
-      .refund-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }
-      .refund-card { padding: 20px; background: #fef2f2; border-radius: 10px; text-align: center; border: 1px solid #fecaca; }
-      .refund-card h5 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #dc2626; margin-bottom: 8px; }
-      .refund-card .amount { font-size: 28px; font-weight: 800; color: #991b1b; }
-      .refund-card.profit { background: #f0fdf4; border-color: #bbf7d0; }
-      .refund-card.profit h5 { color: #059669; }
-      .refund-card.profit .amount { color: #047857; }
+      .refund-card { padding: 30px; background: #f0fdf4; border-radius: 12px; text-align: center; border: 1px solid #bbf7d0; margin-bottom: 20px; }
+      .refund-card h5 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #059669; margin-bottom: 10px; }
+      .refund-card .amount { font-size: 36px; font-weight: 800; color: #047857; }
       .payment-info { padding: 15px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; margin-top: 20px; }
-      .pay-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; }
+      .pay-row { display: flex; justify-content: space-between; font-size: 14px; padding: 4px 0; }
       .footer { padding: 25px 40px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; }
       .qr-code img { height: 80px; width: 80px; border-radius: 6px; border: 1px solid #e2e8f0; padding: 3px; background: #fff; }
       @media print { body { background: #fff; padding: 0; margin: 0; } .invoice-box { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; } }
@@ -254,7 +255,7 @@ const getRefundHTML = (inv, s, lang = 'en') => {
           ${setting.logo_url ? `<img src="${setting.logo_url}" crossorigin="anonymous" class="logo" />` : ''}
           <h2>${setting.company_name_ar || 'صعود الطائرة'}</h2>
           <h1>${setting.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
-          <p>${setting.address_ar || ''}<br/>VAT: ${setting.vat_no || 'N/A'}</p>
+          <p>${setting.address_ar || ''}<br/>VAT: ${setting.vat_no || 'N/A'} | CR: ${setting.cr_no || 'N/A'}</p>
         </div>
         <div class="invoice-meta">
           <h3>REFUND<br/><span style="font-size:16px; font-family:'Cairo';">استرجاع</span></h3>
@@ -265,32 +266,19 @@ const getRefundHTML = (inv, s, lang = 'en') => {
       </div>
       <div class="body">
         <div class="info-block">
-          <h4>Customer & Booking Info / معلومات العميل والحجز</h4>
-          <div class="row"><span class="label">Customer / العميل</span><span class="value">${inv.customers?.name || 'N/A'}</span></div>
-          <div class="row"><span class="label">Service / الخدمة</span><span class="value">${inv.service_type || 'N/A'}</span></div>
-          <div class="row"><span class="label">Ticket No / التذكرة</span><span class="value">${inv.ticket_no || 'N/A'}</span></div>
-          ${inv.refund_reason ? `<div class="row"><span class="label">Reason / السبب</span><span class="value" style="color:#dc2626;">${inv.refund_reason}</span></div>` : ''}
+          <h4>BOOKING DETAILS / تفاصيل الحجز</h4>
+          <div class="row"><span class="label">Customer Name / اسم العميل</span><span class="value">${inv.customers?.name || 'N/A'}</span></div>
+          <div class="row"><span class="label">Contact / الهاتف</span><span class="value">${inv.customers?.phone || 'N/A'}</span></div>
+          <div class="row"><span class="label">Airline / خط الطيران</span><span class="value">${inv.airline || 'N/A'}</span></div>
+          <div class="row"><span class="label">Date of Booking / تاريخ الحجز</span><span class="value">${inv.invoice_date || 'N/A'}</span></div>
+          <div class="row"><span class="label">PNR / رقم الحجز</span><span class="value">${inv.pnr || 'N/A'}</span></div>
         </div>
-        <div class="refund-grid">
-          <div class="refund-card">
-            <h5>Company Refund (Portal)<br/><span style="font-family:'Cairo';">استرجاع الشركة</span></h5>
-            <div class="amount">${compRefund.toFixed(2)} SAR</div>
-          </div>
-          <div class="refund-card">
-            <h5>Customer Refund<br/><span style="font-family:'Cairo';">استرجاع العميل</span></h5>
-            <div class="amount">${custRefund.toFixed(2)} SAR</div>
-          </div>
+        
+        <div class="refund-card">
+          <h5>REFUND AMOUNT TO CUSTOMER / المبلغ المسترجع للعميل</h5>
+          <div class="amount">${custRefund.toFixed(2)} SAR</div>
         </div>
-        <div class="refund-grid">
-          <div class="refund-card profit">
-            <h5>Office Profit from Refund<br/><span style="font-family:'Cairo';">ربح المكتب</span></h5>
-            <div class="amount">${officeProfit.toFixed(2)} SAR</div>
-          </div>
-          <div class="refund-card" style="background:#eff6ff; border-color:#bfdbfe;">
-            <h5 style="color:#2563eb;">Original Invoice Total<br/><span style="font-family:'Cairo';">إجمالي الفاتورة الأصلية</span></h5>
-            <div class="amount" style="color:#1d4ed8;">${(inv.total || 0).toFixed(2)} SAR</div>
-          </div>
-        </div>
+        
         <div class="payment-info">
           <div class="pay-row"><span>Refund Method / طريقة الاسترجاع</span><span style="font-weight:600; color:#2563eb;">${refundMethodDisplay}</span></div>
         </div>
