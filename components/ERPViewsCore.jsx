@@ -84,10 +84,10 @@ export default function ERPViewsCore(props) {
     // Automation: Fetch available credit invoices (Refunds)
     const availableCreditInvoices = data.invoices.filter(i => i.invoice_no.startsWith('REF-') && (i.refund_customer || 0) > 0);
 
-    // Automation Handler: When user selects a previous refund invoice
+    // Automation Handler: DEEP FETCH when user selects a previous refund invoice
     const handleCreditSelect = (invNo) => {
       if (!invNo) {
-        setInvForm({ ...invForm, linkedInvId: '', useCredit: 0, oldTicketNo: '', oldPnr: '', oldAirline: '', oldSector: '', oldSellPrice: 0, creditCustId: '' });
+        setInvForm({ ...invForm, linkedInvId: '', useCredit: 0, oldTicketNo: '', oldPnr: '', oldAirline: '', oldSector: '', oldSellPrice: 0, creditCustId: '', oldBookingDate: '', oldPassengers: '', oldFlightType: '', oldPaymentMethod: '', refundReason: '' });
         return;
       }
       const linkedInv = data.invoices.find(i => i.invoice_no === invNo);
@@ -99,11 +99,18 @@ export default function ERPViewsCore(props) {
           creditCustId: linkedInv.customer_id || '',
           custId: linkedInv.customer_id || invForm.custId,
           custName: linkedInv.customers?.name || invForm.custName,
+          custPhone: linkedInv.customers?.phone || invForm.custPhone,
+          // DEEP FETCH: Pulling old_ fields from Refund Invoice
           oldTicketNo: linkedInv.old_ticket_no || linkedInv.ticket_no || '',
           oldPnr: linkedInv.old_pnr || linkedInv.pnr || '',
           oldAirline: linkedInv.old_airline || linkedInv.airline || '',
           oldSector: linkedInv.old_sector || linkedInv.flight_sector || '',
-          oldSellPrice: linkedInv.old_sell_price || linkedInv.total_sell || 0
+          oldSellPrice: linkedInv.old_sell_price || linkedInv.total_sell || 0,
+          oldBookingDate: linkedInv.old_booking_date || linkedInv.invoice_date || '',
+          oldPassengers: linkedInv.old_passengers || linkedInv.passenger_names || '',
+          oldFlightType: linkedInv.old_flight_type || linkedInv.flight_type || '',
+          oldPaymentMethod: linkedInv.old_payment_method || linkedInv.payment_method || '',
+          refundReason: linkedInv.refund_reason || ''
         });
       }
     };
@@ -182,18 +189,17 @@ export default function ERPViewsCore(props) {
             </div>
           </div>
 
-          {/* SECTION 3: RE-ISSUE & CREDIT AUTOMATION (AUTO-FILL) */}
+          {/* SECTION 3: RE-ISSUE & CREDIT AUTOMATION (DEEP FETCH) */}
           <div style={{ marginBottom: '30px', background: '#F8FAFC', padding: '20px', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
             <div style={styles.sectionTitle}><span>3. Booking Type & Re-issue Automation</span><span>أتمتة إعادة الإصدار</span></div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
               <div>
                 <label style={styles.label}>{tr.bookingType} / نوع الحجز</label>
-                <select value={invForm.bookingType} onChange={e => setInvForm({...invForm, bookingType: e.target.value, linkedInvId: '', oldTicketNo: '', oldPnr: '', oldAirline: '', oldSector: '', oldSellPrice: 0, useCredit: 0})} style={styles.input}>
+                <select value={invForm.bookingType} onChange={e => setInvForm({...invForm, bookingType: e.target.value, linkedInvId: '', oldTicketNo: '', oldPnr: '', oldAirline: '', oldSector: '', oldSellPrice: 0, oldBookingDate: '', oldPassengers: '', oldFlightType: '', oldPaymentMethod: '', refundReason: '', useCredit: 0})} style={styles.input}>
                   <option>{tr.newBooking}</option><option>{tr.reissue}</option><option>{tr.extraLuggage}</option><option>{tr.previousBooking}</option>
                 </select>
               </div>
               
-              {/* AUTOMATION: If Previous Booking OR Credit Balance is selected, show Refund Invoices List */}
               {(invForm.bookingType === 'Previous Booking' || invForm.payment === 'Credit Balance') && (
                 <div>
                   <label style={styles.label}>Select Credit Invoice (Auto-Fill Previous Data) / اختر فاتورة الرصيد</label>
@@ -204,11 +210,18 @@ export default function ERPViewsCore(props) {
                     )}
                   </select>
                   
-                  {/* AUTO-FILLED DATA BOX */}
                   {invForm.linkedInvId && (
                     <div style={{ marginTop: '15px', background: '#fff', padding: '20px', borderRadius: '12px', border: '2px solid #F59E0B' }}>
                       <h4 style={{ margin: '0 0 15px', color: '#D97706', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px' }}>✅ Auto-Filled Previous Booking Details</h4>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+                        <div style={{ background: '#F8FAFC', padding: '15px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                          <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Old Invoice Date / تاريخ الحجز القديم</div>
+                          <div style={{ fontSize: '16px', color: '#0F172A', fontWeight: 700, marginTop: '5px' }}>{invForm.oldBookingDate || 'N/A'}</div>
+                        </div>
+                        <div style={{ background: '#F8FAFC', padding: '15px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                          <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Refund Reason / سبب الاسترجاع</div>
+                          <div style={{ fontSize: '16px', color: '#0F172A', fontWeight: 700, marginTop: '5px' }}>{invForm.refundReason || 'N/A'}</div>
+                        </div>
                         <div style={{ background: '#F8FAFC', padding: '15px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
                           <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Original Airline / الخطوط القديمة</div>
                           <div style={{ fontSize: '16px', color: '#0F172A', fontWeight: 700, marginTop: '5px' }}>{invForm.oldAirline || 'N/A'}</div>
@@ -220,6 +233,22 @@ export default function ERPViewsCore(props) {
                         <div style={{ background: '#F8FAFC', padding: '15px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
                           <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Original Ticket No / التذكرة القديمة</div>
                           <div style={{ fontSize: '16px', color: '#0F172A', fontWeight: 700, marginTop: '5px' }}>{invForm.oldTicketNo || 'N/A'}</div>
+                        </div>
+                        <div style={{ background: '#F8FAFC', padding: '15px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                          <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Original PNR / رقم الحجز القديم</div>
+                          <div style={{ fontSize: '16px', color: '#0F172A', fontWeight: 700, marginTop: '5px' }}>{invForm.oldPnr || 'N/A'}</div>
+                        </div>
+                        <div style={{ background: '#F8FAFC', padding: '15px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                          <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Original Flight Type / نوع الرحلة القديمة</div>
+                          <div style={{ fontSize: '16px', color: '#0F172A', fontWeight: 700, marginTop: '5px' }}>{invForm.oldFlightType || 'N/A'}</div>
+                        </div>
+                        <div style={{ background: '#F8FAFC', padding: '15px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                          <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Original Payment / طريقة الدفع القديمة</div>
+                          <div style={{ fontSize: '16px', color: '#0F172A', fontWeight: 700, marginTop: '5px' }}>{invForm.oldPaymentMethod || 'N/A'}</div>
+                        </div>
+                        <div style={{ background: '#F8FAFC', padding: '15px', borderRadius: '8px', border: '1px solid #E2E8F0', gridColumn: '1 / -1' }}>
+                          <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Original Passengers / الركاب القدامى</div>
+                          <div style={{ fontSize: '16px', color: '#0F172A', fontWeight: 700, marginTop: '5px' }}>{invForm.oldPassengers || 'N/A'}</div>
                         </div>
                         <div style={{ background: '#FEF3C7', padding: '15px', borderRadius: '8px', border: '1px solid #F59E0B' }}>
                           <div style={{ fontSize: '11px', color: '#92400E', fontWeight: 600 }}>Original Selling Price / سعر البيع الأصلي</div>
@@ -242,7 +271,7 @@ export default function ERPViewsCore(props) {
             <div style={styles.sectionTitle}><span>4. Payment & Calculation</span><span>الدفع والحساب</span></div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
               <div><label style={styles.label}>{tr.salesPerson} / موظف المبيعات</label><select value={invForm.employeeId} onChange={e => setInvForm({...invForm, employeeId: e.target.value})} style={styles.input} required><option value="">Select Sales Person</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
-              <div><label style={styles.label}>{tr.paymentMethod} / طريقة الدفع</label><select value={invForm.payment} onChange={e => setInvForm({...invForm, payment: e.target.value, useCredit: 0, creditCustId: '', linkedInvId: '', oldTicketNo: '', oldPnr: '', oldAirline: '', oldSector: '', oldSellPrice: 0 })} style={styles.input}><option>{tr.cash}</option><option>{tr.bankTransfer}</option><option>{tr.card}</option><option>{tr.credit}</option><option>{tr.creditBalance}</option><option>{tr.tabby}</option><option>{tr.tamara}</option></select></div>
+              <div><label style={styles.label}>{tr.paymentMethod} / طريقة الدفع</label><select value={invForm.payment} onChange={e => setInvForm({...invForm, payment: e.target.value, useCredit: 0, creditCustId: '', linkedInvId: '', oldTicketNo: '', oldPnr: '', oldAirline: '', oldSector: '', oldSellPrice: 0, oldBookingDate: '', oldPassengers: '', oldFlightType: '', oldPaymentMethod: '', refundReason: '' })} style={styles.input}><option>{tr.cash}</option><option>{tr.bankTransfer}</option><option>{tr.card}</option><option>{tr.credit}</option><option>{tr.creditBalance}</option><option>{tr.tabby}</option><option>{tr.tamara}</option></select></div>
               
               <div style={{ gridColumn: '1 / -1', background: '#0F172A', color: 'white', padding: '25px', borderRadius: '12px' }}>
                 <h4 style={{ margin: '0 0 20px', color: '#F59E0B', fontSize: '18px' }}>Live Calculation / الحساب المباشر</h4>
