@@ -198,7 +198,16 @@ export default function useERPActions(state) {
   // ===================== PREVIEW / SETTLE / REFUND MODALS =====================
   const openPreview = (inv) => {
     const s = data.settings;
-    const html = inv.invoice_no.startsWith('REF-') ? getRefundHTML(inv, s, lang) : getInvoiceHTML(inv, s, lang);
+    let html = inv.invoice_no.startsWith('REF-') ? getRefundHTML(inv, s, lang) : getInvoiceHTML(inv, s, lang);
+    
+    // DUAL PRINT LOGIC: If Re-issue, append the original Refund Invoice to the PDF
+    if (!inv.invoice_no.startsWith('REF-') && inv.linked_inv_id && (inv.booking_type === 'Previous Booking' || inv.booking_type === 'Reissue')) {
+      const linkedRefundInv = data.invoices.find(i => i.invoice_no === inv.linked_inv_id);
+      if (linkedRefundInv) {
+        html += `<div style="page-break-before: always; margin-top: 50px; text-align:center;"><h1 style="color:#7f1d1d;">Linked Refund Invoice / فاتورة الاسترجاع المرتبطة</h1></div>`;
+        html += getRefundHTML(linkedRefundInv, s, lang);
+      }
+    }
     setPreviewHTML(html); setModal({ type: 'preview', data: inv });
   };
 
@@ -269,8 +278,9 @@ export default function useERPActions(state) {
         invoice_no: refundNo, customer_id: origInv.customer_id, corporate_id: origInv.corporate_id,
         portal_id: refundForm.portalId || origInv.portal_id, employee_id: origInv.employee_id || null,
         invoice_date: refundForm.date, refund_date: refundForm.date,
-        service_type: origInv.service_type, sector: origInv.sector,
+        service_type: origInv.service_type, sector: origInv.sector, flight_sector: origInv.flight_sector,
         airline: origInv.airline, ticket_no: origInv.ticket_no, pnr: origInv.pnr,
+        passenger_names: origInv.passenger_names, flight_type: origInv.flight_type, flight_journey: origInv.flight_journey,
         total_cost: 0, total_sell: 0, profit: compRefund - custRefund,
         vat: 0, total: 0, paid_amount: 0, due_amount: 0,
         payment_method: refundForm.mode, refund_company: compRefund, refund_customer: custRefund,
@@ -323,7 +333,7 @@ export default function useERPActions(state) {
     downloadPDF(html, `SalarySlip_${pay.employees?.name || 'Employee'}_${pay.month}.pdf`);
   };
 
-  // ===================== EDIT INVOICE =====================
+  // ===================== EDIT INVOICE (FETCH DEEP DETAILS) =====================
   const handleEditInvoice = (inv) => {
     if (inv.invoice_no.startsWith('REF-')) {
       const cust = data.customers.find(c => c.id === inv.customer_id);
@@ -346,9 +356,11 @@ export default function useERPActions(state) {
       portalId: inv.portal_id, service: inv.service_type,
       flightType: inv.flight_type || 'Domestic', flightJourney: inv.flight_journey || 'Single',
       refundable: inv.refundable_status || 'Refundable', bookingType: inv.booking_type || 'New Booking',
-      linkedInvId: inv.linked_inv_id || '', oldTicketNo: inv.old_ticket_no || '',
-      oldPnr: inv.old_pnr || '', oldAirline: inv.old_airline || '', oldSector: inv.old_sector || '',
-      oldSellPrice: inv.old_sell_price || 0, oldBookingDate: inv.old_booking_date || '',
+      linkedInvId: inv.linked_inv_id || '', 
+      oldTicketNo: inv.old_ticket_no || '', oldPnr: inv.old_pnr || '', oldAirline: inv.old_airline || '', oldSector: inv.old_sector || '',
+      oldSellPrice: inv.old_sell_price || 0, oldBookingDate: inv.old_booking_date || '', 
+      oldPassengers: inv.old_passengers || '', oldFlightType: inv.old_flight_type || '', oldPaymentMethod: inv.old_payment_method || '',
+      refundReason: inv.refund_reason || '',
       flightSector: inv.flight_sector || '', airline: inv.airline || '', pnr: inv.pnr || '',
       ticketNo: inv.ticket_no || '', qty: inv.qty || 1,
       cost: (inv.total_cost || 0) / (inv.qty || 1),
@@ -366,7 +378,7 @@ export default function useERPActions(state) {
     state.setPage('create');
   };
 
-  // ===================== CREATE INVOICE =====================
+  // ===================== CREATE INVOICE (SAVE DEEP DETAILS) =====================
   const handleCreateInvoice = async (e) => {
     e.preventDefault();
     try {
@@ -425,6 +437,8 @@ export default function useERPActions(state) {
         old_ticket_no: invForm.oldTicketNo || null, old_pnr: invForm.oldPnr || null,
         old_airline: invForm.oldAirline || null, old_sector: invForm.oldSector || null,
         old_sell_price: parseFloat(invForm.oldSellPrice) || 0, old_booking_date: invForm.oldBookingDate || null,
+        old_passengers: invForm.oldPassengers || null, old_flight_type: invForm.oldFlightType || null, old_payment_method: invForm.oldPaymentMethod || null,
+        refund_reason: invForm.refundReason || null,
         pnr: invForm.pnr, ticket_no: invForm.ticketNo, sector: desc, qty, discount,
         passenger_names: passengerNames || null, airline: invForm.airline || null,
         flight_sector: invForm.flightSector || null, total_cost: cost, total_sell: sell,
@@ -462,7 +476,7 @@ export default function useERPActions(state) {
         setData(prev => ({ ...prev, invoices: [newInv, ...prev.invoices], portals: prev.portals.map(p => p.id === portal.id ? { ...p, current_balance: newPortalBal } : p), cashbook: newCashEntry ? [newCashEntry, ...prev.cashbook] : prev.cashbook }));
         showToast('Invoice Generated!');
       }
-      setInvForm({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: data.portals[0]?.id || '', bookingDate: today, invoiceDate: today, bookingType: 'New Booking', linkedInvId: '', oldTicketNo: '', oldPnr: '', oldAirline: '', oldSector: '', oldSellPrice: 0, oldBookingDate: '', service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '', status: 'Unpaid' });
+      setInvForm({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: data.portals[0]?.id || '', bookingDate: today, invoiceDate: today, bookingType: 'New Booking', linkedInvId: '', oldTicketNo: '', oldPnr: '', oldAirline: '', oldSector: '', oldSellPrice: 0, oldBookingDate: '', oldPassengers: '', oldFlightType: '', oldPaymentMethod: '', refundReason: '', service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '', status: 'Unpaid' });
       state.setPage('list');
     } catch (err) { showToast('Error: ' + err.message); }
   };
