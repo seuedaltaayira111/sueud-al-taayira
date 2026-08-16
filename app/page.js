@@ -8,10 +8,9 @@ import { useEffect } from 'react';
 export default function Home() {
   const erp = useERP();
 
-  // Safe translation getter (Agar tr missing ho toh fallback use karega)
   const t = (key, fallback) => erp.tr?.[key] || fallback || key;
 
-  // Keyboard Shortcuts
+  // FIX: Keyboard shortcut - stable dependency
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.altKey && e.key.toLowerCase() === 'n') { e.preventDefault(); erp.setPage('create'); }
@@ -20,57 +19,67 @@ export default function Home() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [erp.setPage]);
+  }, []); // FIX: Empty dep array - setPage is stable from useState
 
-  // Yahan userProfile null check karna zaroori hai, warna app crash ho jayega
   if (!erp.user || !erp.userProfile) {
-    return <div style={{ padding: 50, textAlign: 'center', fontFamily: 'sans-serif' }}>Loading ERP...</div>;
+    return (
+      <div style={{ 
+        display: 'flex', justifyContent: 'center', alignItems: 'center', 
+        height: '100vh', fontFamily: "'Poppins', sans-serif", 
+        background: 'linear-gradient(135deg, #0F172A, #1E293B)', color: '#F59E0B' 
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '48px', marginBottom: '20px' }}>✈️</div>
+          <h2>Loading ERP System...</h2>
+          <p style={{ color: '#94A3B8', fontSize: '14px' }}>Please wait while we fetch your data</p>
+        </div>
+      </div>
+    );
   }
 
-  const isSuperAdmin = erp.userProfile?.role === 'SuperAdmin' || 
-                       erp.user?.email === 'atallah@sueud.com' || 
-                       erp.user?.email === 'hamdan@sueud.com';
+  // FIX: Role-based SuperAdmin check (remove hardcoded emails)
+  const isSuperAdmin = erp.userProfile?.role === 'SuperAdmin';
 
   const menu = [
     { id: 'dashboard', label: t('dashboard', 'Dashboard'), show: true },
-    { id: 'ai_dashboard', label: t('ai_dashboard', 'AI Dashboard'), show: true }, 
-    { id: 'notifications', label: t('notifications', 'Notifications'), show: true }, 
+    { id: 'ai_dashboard', label: t('ai_dashboard', 'AI Dashboard'), show: true },
+    { id: 'notifications', label: t('notifications', 'Notifications'), show: true },
     { id: 'superadmin', label: t('superadmin', 'SuperAdmin'), show: isSuperAdmin },
     
     // Invoices & Sales
     { id: 'create', label: t('create', 'Create Invoice'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'list', label: t('list', 'Invoices'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'refunds', label: t('refunds', 'Refunds'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
-    { id: 'quotations', label: t('quotations', 'Quotations'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices }, 
-    { id: 'recurring_invoices', label: t('recurring_invoices', 'Recurring Invoices'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices }, 
-    { id: 'profitability', label: t('profitability', 'Profitability'), show: true }, 
-    { id: 'ai_pricing', label: '🤖 AI Pricing', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices }, 
+    { id: 'quotations', label: t('quotations', 'Quotations'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
+    { id: 'recurring_invoices', label: t('recurring_invoices', 'Recurring Invoices'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
+    { id: 'profitability', label: t('profitability', 'Profitability'), show: true },
+    { id: 'ai_pricing', label: '🤖 AI Pricing', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     
     // Customers & Vendors
     { id: 'customers', label: t('customers', 'Customers'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'corporates', label: t('corporates', 'Corporates'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'creditors', label: t('creditors', 'Creditors'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'credit', label: t('credit', 'Credit Balances'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
-    { id: 'credit_limits', label: t('credit_limits', 'Credit Limits'), show: erp.userProfile.is_admin || erp.userProfile.can_access_bank }, 
-    { id: 'customer_statement', label: t('customer_statement', 'Cust Statement'), show: erp.userProfile.is_admin || erp.userProfile.can_access_reports }, 
+    { id: 'credit_limits', label: t('credit_limits', 'Credit Limits'), show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
+    { id: 'customer_statement', label: t('customer_statement', 'Cust Statement'), show: erp.userProfile.is_admin || erp.userProfile.can_access_reports },
     { id: 'portals', label: t('portals', 'Portals'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'vendors', label: t('vendors', 'Vendors'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
-    { id: 'supplier_statement', label: t('supplier_statement', 'Supplier Statement'), show: erp.userProfile.is_admin || erp.userProfile.can_access_bank }, 
+    { id: 'supplier_statement', label: t('supplier_statement', 'Supplier Statement'), show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
     { id: 'packages', label: t('packages', 'Packages'), show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'branches', label: t('branches', 'Branches'), show: erp.userProfile.is_admin || erp.userProfile.can_access_settings },
-    { id: 'multi_branch', label: t('multi_branch', 'Multi-Branch'), show: erp.userProfile.is_admin }, 
+    { id: 'multi_branch', label: t('multi_branch', 'Multi-Branch'), show: erp.userProfile.is_admin },
     
     // Contracts & Finance
     { id: 'contract', label: 'Corporate Contract', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'offer', label: 'Corporate Offer', show: erp.userProfile.is_admin || erp.userProfile.can_access_invoices },
     { id: 'bank', label: t('bank', 'Bank & Cash'), show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
     { id: 'invest', label: t('invest', 'Investors'), show: erp.userProfile.is_admin || erp.userProfile.can_access_bank },
-    { id: 'expense_approval', label: t('expense_approval', 'Expense Approval'), show: erp.userProfile.is_admin }, 
+    { id: 'expense_approval', label: t('expense_approval', 'Expense Approval'), show: erp.userProfile.is_admin },
     
     // HR & Reports
     { id: 'hr', label: t('hr', 'Human Resources'), show: erp.userProfile.is_admin || erp.userProfile.can_access_hr },
-    { id: 'hr_advanced', label: t('hr_advanced', 'HR & Payroll'), show: erp.userProfile.is_admin || erp.userProfile.can_access_hr }, 
-    { id: 'staff_mistakes', label: t('staff_mistakes', 'Staff Mistakes'), show: erp.userProfile.is_admin || erp.userProfile.can_access_hr }, 
+    { id: 'hr_advanced', label: t('hr_advanced', 'HR & Payroll'), show: erp.userProfile.is_admin || erp.userProfile.can_access_hr },
+    { id: 'staff_mistakes', label: t('staff_mistakes', 'Staff Mistakes'), show: erp.userProfile.is_admin || erp.userProfile.can_access_hr },
     { id: 'statements', label: t('statements', 'Statements'), show: erp.userProfile.is_admin || erp.userProfile.can_access_reports },
     { id: 'refund_statement', label: t('refund_statement', 'Refund Statement'), show: erp.userProfile.is_admin || erp.userProfile.can_access_reports },
     { id: 'users', label: t('users', 'Users'), show: erp.userProfile.is_admin },
@@ -84,7 +93,19 @@ export default function Home() {
 
   return (
     <>
-      {erp.toast && <div style={{ position: 'fixed', top: '20px', right: '20px', background: '#1E3A8A', color: '#FBBF24', padding: '15px 25px', borderRadius: '12px', zIndex: 9999, boxShadow: '0 5px 15px rgba(0,0,0,0.2)', fontWeight: '600' }}>{erp.toast}</div>}
+      {/* FIX: Better toast with animation */}
+      {erp.toast && (
+        <div style={{ 
+          position: 'fixed', top: '20px', right: '20px', 
+          background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', 
+          color: '#FBBF24', padding: '15px 25px', borderRadius: '12px', 
+          zIndex: 9999, boxShadow: '0 5px 15px rgba(0,0,0,0.3)', 
+          fontWeight: '600', fontSize: '14px',
+          animation: 'slideIn 0.3s ease-out'
+        }}>
+          {erp.toast}
+        </div>
+      )}
       
       <ERPLayout 
         tr={erp.tr || {}} lang={erp.lang} setLang={erp.setLang} page={erp.page} setPage={erp.setPage} 
