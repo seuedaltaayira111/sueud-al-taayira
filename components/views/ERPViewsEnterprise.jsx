@@ -4,11 +4,13 @@ import React, { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
 const styles = { 
-  input: { width: '100%', padding: '10px', margin: '5px 0', border: '1px solid #cbd5e1', borderRadius: '6px', outline: 'none', boxSizing: 'border-box' }, 
-  btnPrimary: { padding: '10px 15px', background: '#1E3A8A', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }, 
-  btnSuccess: { padding: '8px 12px', background: '#059669', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
-  card: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px', border: '1px solid #e2e8f0' }, 
-  label: { fontSize: '14px', fontWeight: 'bold', color: '#333', marginBottom: '5px', display: 'block', marginTop: '10px' } 
+  input: { width: '100%', padding: '12px 15px', margin: '6px 0', border: '1px solid #E2E8F0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', fontSize: '14px' }, 
+  btnPrimary: { padding: '12px 15px', background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', boxShadow: '0 4px 6px rgba(37, 99, 235, 0.3)' }, 
+  btnSuccess: { padding: '8px 12px', background: '#059669', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }, 
+  card: { background: 'white', padding: '25px', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px', border: '1px solid #e2e8f0' }, 
+  label: { fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '6px', display: 'block', marginTop: '12px' },
+  tableHeader: { background: '#0F172A', color: 'white', padding: '15px', textAlign: 'start', fontSize: '13px' },
+  tableCell: { padding: '15px', borderBottom: '1px solid #F1F5F9', fontSize: '14px' }
 };
 
 export default function ERPViewsEnterprise(props) {
@@ -30,32 +32,39 @@ export default function ERPViewsEnterprise(props) {
 
     return (
       <div>
-        <h2 style={{ color: '#1E3A8A' }}>💳 Customer Credit Limits</h2>
-        <div style={styles.card}>
-          <p style={{ color: '#64748b', marginBottom: '15px' }}>Set maximum credit limit for each customer. System will warn if outstanding exceeds this limit.</p>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{padding:'12px', textAlign:'left'}}>Customer</th><th style={{padding:'12px'}}>Current Outstanding</th><th style={{padding:'12px'}}>Credit Limit</th><th style={{padding:'12px'}}>Action</th></tr></thead>
-            <tbody>
-              {data.customers.map(c => {
-                const custInvs = data.invoices.filter(i => i.customer_id === c.id && !i.invoice_no.startsWith('REF-'));
-                const outstanding = custInvs.reduce((s, i) => s + (i.due_amount || 0), 0);
-                const limit = c.credit_limit || 0;
-                const isOverLimit = outstanding > limit && limit > 0;
-                return (
-                  <tr key={c.id} style={{ borderBottom: '1px solid #e2e8f0', background: isOverLimit ? '#fef2f2' : 'white' }}>
-                    <td style={{padding:'12px', fontWeight: 'bold'}}>{c.name}</td>
-                    <td style={{padding:'12px', textAlign: 'center', color: outstanding > 0 ? '#EF4444' : '#059669'}}>{outstanding.toFixed(2)} SAR</td>
-                    <td style={{padding:'12px', textAlign: 'center'}}>
-                      {editLimitId === c.id ? <input type="number" value={limitVal} onChange={e => setLimitVal(e.target.value)} style={{...styles.input, width: '100px', margin: 0}} /> : <span>{limit.toFixed(2)} SAR</span>}
-                    </td>
-                    <td style={{padding:'12px', textAlign: 'center'}}>
-                      {editLimitId === c.id ? <button onClick={() => saveLimit(c.id)} style={styles.btnSuccess}>Save</button> : <button onClick={() => { setEditLimitId(c.id); setLimitVal(limit); }} style={{...styles.btnPrimary, padding: '5px 10px', width: 'auto'}}>Edit Limit</button>}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', padding: '30px', borderRadius: '16px', marginBottom: '20px' }}>
+          <h2 style={{ margin: 0, fontSize: '24px' }}>💳 Customer Credit Limits</h2>
+          <p style={{ margin: '5px 0 0', opacity: 0.9 }}>Set maximum credit limit for each customer. System will warn if outstanding exceeds this limit.</p>
+        </div>
+        <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
+              <thead><tr><th style={styles.tableHeader}>Customer</th><th style={styles.tableHeader}>Current Outstanding</th><th style={styles.tableHeader}>Credit Limit</th><th style={styles.tableHeader}>Action</th></tr></thead>
+              <tbody>
+                {data.customers.map(c => {
+                  const custInvs = data.invoices.filter(i => i.customer_id === c.id && !i.invoice_no.startsWith('REF-'));
+                  const outstanding = custInvs.reduce((s, i) => s + (i.due_amount || 0), 0);
+                  const limit = c.credit_limit || 0;
+                  const isOverLimit = outstanding > limit && limit > 0;
+                  return (
+                    <tr key={c.id} style={{ borderBottom: '1px solid #F1F5F9', background: isOverLimit ? '#FEF2F2' : 'white' }}>
+                      <td style={{...styles.tableCell, fontWeight: 'bold'}}>{c.name}</td>
+                      <td style={{...styles.tableCell, color: outstanding > 0 ? '#EF4444' : '#059669'}}>
+                        {outstanding.toFixed(2)} SAR 
+                        {isOverLimit && <span style={{ marginLeft: '10px', padding: '2px 8px', background: '#EF4444', color: 'white', borderRadius: '12px', fontSize: '11px' }}>OVER LIMIT</span>}
+                      </td>
+                      <td style={styles.tableCell}>
+                        {editLimitId === c.id ? <input type="number" value={limitVal} onChange={e => setLimitVal(e.target.value)} style={{...styles.input, width: '100px', margin: 0}} /> : <span>{limit.toFixed(2)} SAR</span>}
+                      </td>
+                      <td style={styles.tableCell}>
+                        {editLimitId === c.id ? <button onClick={() => saveLimit(c.id)} style={styles.btnSuccess}>Save</button> : <button onClick={() => { setEditLimitId(c.id); setLimitVal(limit); }} style={{...styles.btnPrimary, padding: '8px 12px', width: 'auto'}}>Edit Limit</button>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     );
@@ -65,16 +74,16 @@ export default function ERPViewsEnterprise(props) {
   if (page === 'supplier_statement') {
     return (
       <div>
-        <h2 style={{ color: '#1E3A8A' }}>📦 Supplier Statements</h2>
-        <div style={styles.card}>
+        <h2 style={{ color: '#0F172A', marginBottom: '20px' }}>📦 Supplier Statements</h2>
+        <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{padding:'12px', textAlign:'left'}}>Vendor Name</th><th style={{padding:'12px'}}>Phone</th><th style={{padding:'12px'}}>Balance Due</th></tr></thead>
+            <thead><tr><th style={styles.tableHeader}>Vendor Name</th><th style={styles.tableHeader}>Phone</th><th style={styles.tableHeader}>Balance Due</th></tr></thead>
             <tbody>
               {data.vendors.map(v => (
-                <tr key={v.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{padding:'12px', fontWeight: 'bold'}}>{v.name}</td>
-                  <td style={{padding:'12px', textAlign: 'center'}}>{v.phone || 'N/A'}</td>
-                  <td style={{padding:'12px', textAlign: 'center', color: '#EF4444', fontWeight: 'bold'}}>{(v.balance || 0).toFixed(2)} SAR</td>
+                <tr key={v.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                  <td style={{...styles.tableCell, fontWeight: 'bold'}}>{v.name}</td>
+                  <td style={styles.tableCell}>{v.phone || 'N/A'}</td>
+                  <td style={{...styles.tableCell, color: '#EF4444', fontWeight: 'bold'}}>{(v.balance || 0).toFixed(2)} SAR</td>
                 </tr>
               ))}
             </tbody>
@@ -88,18 +97,20 @@ export default function ERPViewsEnterprise(props) {
   if (page === 'multi_branch') {
     return (
       <div>
-        <h2 style={{ color: '#1E3A8A' }}>🏢 Multi-Branch Overview</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+        <h2 style={{ color: '#0F172A', marginBottom: '20px' }}>🏢 Multi-Branch Overview</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
           {data.branches.map(br => {
             const brInv = data.invoices.filter(i => i.branch_id === br.id);
             const sales = brInv.reduce((s, i) => s + (i.total || 0), 0);
             return (
-              <div key={br.id} style={styles.card}>
-                <h3 style={{ color: '#1E3A8A', marginTop: 0 }}>{br.name}</h3>
-                <p style={{ fontSize: '14px', color: '#555' }}>Manager: {br.manager || 'N/A'}</p>
-                <p style={{ fontSize: '14px', color: '#555' }}>Status: <span style={{ color: br.status === 'Active' ? '#059669' : '#EF4444', fontWeight: 'bold' }}>{br.status}</span></p>
-                <hr style={{ borderColor: '#e2e8f0', margin: '10px 0' }} />
-                <h4 style={{ margin: 0, color: '#059669' }}>Sales: {sales.toFixed(2)} SAR</h4>
+              <div key={br.id} style={{ background: 'white', padding: '25px', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', borderTop: '5px solid #2563EB' }}>
+                <h3 style={{ color: '#0F172A', marginTop: 0, fontSize: '20px' }}>{br.name}</h3>
+                <p style={{ fontSize: '14px', color: '#64748B', margin: '5px 0' }}>Manager: {br.manager || 'N/A'}</p>
+                <p style={{ fontSize: '14px', color: '#64748B', margin: '5px 0 15px' }}>Status: <span style={{ color: br.status === 'Active' ? '#059669' : '#EF4444', fontWeight: 'bold' }}>{br.status}</span></p>
+                <div style={{ background: '#F8FAFC', padding: '15px', borderRadius: '10px', textAlign: 'center' }}>
+                  <h4 style={{ margin: 0, color: '#64748B', fontSize: '14px' }}>Total Sales</h4>
+                  <p style={{ margin: '5px 0 0', color: '#059669', fontSize: '24px', fontWeight: 'bold' }}>{sales.toFixed(2)} SAR</p>
+                </div>
               </div>
             );
           })}
