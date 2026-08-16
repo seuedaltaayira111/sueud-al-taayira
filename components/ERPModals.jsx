@@ -15,6 +15,7 @@ export default function ERPModals({ modal, setModal, passForm, setPassForm, hand
 
   return (
     <>
+      {/* CHANGE PASSWORD MODAL */}
       {modal.type === 'password' && (
         <div style={overlay}>
           <div style={styles.card}>
@@ -29,6 +30,7 @@ export default function ERPModals({ modal, setModal, passForm, setPassForm, hand
         </div>
       )}
       
+      {/* SETTLE PAYMENT MODAL */}
       {modal.type === 'settle' && (
         <div style={overlay}>
           <div style={styles.card}>
@@ -48,6 +50,7 @@ export default function ERPModals({ modal, setModal, passForm, setPassForm, hand
         </div>
       )}
       
+      {/* PROCESS REFUND MODAL */}
       {modal.type === 'refund' && (
         <div style={overlay}>
           <div style={{ ...styles.card, width: '500px' }}>
@@ -64,9 +67,9 @@ export default function ERPModals({ modal, setModal, passForm, setPassForm, hand
               
               <label style={styles.label}>Customer Refund Method / طريقة الاسترجاع</label>
               <select value={refundForm.mode} onChange={e => setRefundForm({...refundForm, mode: e.target.value})} style={styles.input}>
-                <option value="Cash">Cash</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Credit">Credit (Store for next booking)</option>
+                <option value="Cash">Cash / نقداً</option>
+                <option value="Bank Transfer">Bank Transfer / تحويل بنكي</option>
+                <option value="Credit">Credit for New Booking / رصيد لحجز جديد</option>
               </select>
 
               {refundForm.mode === 'Credit' && (
@@ -94,6 +97,7 @@ export default function ERPModals({ modal, setModal, passForm, setPassForm, hand
         </div>
       )}
 
+      {/* PREVIEW INVOICE MODAL */}
       {modal.type === 'preview' && (
         <div style={{ ...overlay, background: 'rgba(0,0,0,0.9)' }}>
           <div style={{ background: '#1E293B', width: '900px', height: '95vh', borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', border: '1px solid #334155' }}>
