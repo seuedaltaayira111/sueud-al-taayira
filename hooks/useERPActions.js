@@ -684,6 +684,32 @@ export default function useERPActions(state) {
     try { const { error } = await supabase.from(table).delete().eq('id', id); if (error) throw error; setData(prev => ({ ...prev, [table]: prev[table].filter(item => item.id !== id) })); showToast('Deleted!'); } catch (err) { showToast('Error: ' + err.message); } 
   };
 
+  // ===================== EXPORT EXCEL =====================
+  const exportToExcel = (data, filename) => {
+    try {
+      if (!data || data.length === 0) return showToast('No data to export');
+      const headers = Object.keys(data[0]);
+      const csvContent = [
+        headers.join(','),
+        ...data.map(row => headers.map(header => {
+          let val = row[header];
+          if (typeof val === 'string' && val.includes(',')) val = `"${val}"`;
+          return val;
+        }).join(','))
+      ].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${filename}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Exported Successfully!');
+    } catch (err) { showToast('Export Error: ' + err.message); }
+  };
+
   // ===================== RECHARGE =====================
   const handleRecharge = async (e) => { 
     e.preventDefault(); 
@@ -696,154 +722,194 @@ export default function useERPActions(state) {
       const { error: pErr } = await supabase.from('portals').update({ current_balance: newBal }).eq('id', p.id); 
       if (pErr) throw pErr; 
       const cbType = mode === 'Cash' ? 'Cash-Out' : 'Bank-Out'; 
-      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: e.target.date.value, type: cbType, description: `Recharge for ${p.name}`, amount, tenant_id: userProfile.tenant_id }]).select().single(); 
-      if (cbErr) throw cbErr; 
-      setData(prev => ({ ...prev, recharges: [newRec, ...prev.recharges], portals: prev.portals.map(por => por.id === p.id ? { ...por, current_balance: newBal } : por), cashbook: [nC, ...prev.cashbook] })); showToast('Recharged!'); e.target.reset(); 
+      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ 
+        trans_date: e.target.date.value, 
+        type: cbType, 
+        description: `Portal Recharge: ${p.name}`, 
+        amount: amount, 
+        tenant_id: userProfile.tenant_id, 
+        reference_id: newRec.id 
+      }]).select().single();
+      if (cbErr) throw cbErr;
+      setData(prev => ({ ...prev, recharges: [newRec, ...(prev.recharges || [])], portals: prev.portals.map(pp => pp.id === p.id ? { ...pp, current_balance: newBal } : pp), cashbook: [nC, ...prev.cashbook] }));
+      showToast('Portal Recharged!'); 
     } catch (err) { showToast('Error: ' + err.message); } 
   };
 
-  // ===================== FUND TRANSFER =====================
-  const handleTransfer = async (e) => { 
-    e.preventDefault(); 
-    try { 
-      const amt = parseFloat(transferForm.amount); 
-      if (amt <= 0 || transferForm.from === transferForm.to) return showToast("Invalid transfer"); 
-      const entries = []; 
-      if (transferForm.from === 'Cash') entries.push({ trans_date: transferForm.date, type: 'Cash-Out', description: `Transfer to ${transferForm.to}`, amount: amt, tenant_id: userProfile.tenant_id }); 
-      if (transferForm.from === 'Bank') entries.push({ trans_date: transferForm.date, type: 'Bank-Out', description: `Transfer to ${transferForm.to}`, amount: amt, tenant_id: userProfile.tenant_id }); 
-      if (transferForm.from === 'Investor') entries.push({ trans_date: transferForm.date, type: 'Investor-Out', description: `Transfer to ${transferForm.to}`, amount: amt, tenant_id: userProfile.tenant_id }); 
-      if (transferForm.to === 'Cash') entries.push({ trans_date: transferForm.date, type: 'Cash-In', description: `Transfer from ${transferForm.from}`, amount: amt, tenant_id: userProfile.tenant_id }); 
-      if (transferForm.to === 'Bank') entries.push({ trans_date: transferForm.date, type: 'Bank-In', description: `Transfer from ${transferForm.from}`, amount: amt, tenant_id: userProfile.tenant_id }); 
-      if (transferForm.to === 'Investor') entries.push({ trans_date: transferForm.date, type: 'Investor-In', description: `Transfer from ${transferForm.from}`, amount: amt, tenant_id: userProfile.tenant_id }); 
-      const { error } = await supabase.from('cashbook').insert(entries); if (error) throw error; 
-      await fetchAll(); showToast('Fund Transferred!'); setTransferForm({ from: 'Cash', to: 'Bank', amount: '', date: today }); 
-    } catch (err) { showToast('Error: ' + err.message); } 
-  };
-
-  // ===================== USERS =====================
-  const handleAddUser = async (e) => { 
-    e.preventDefault(); 
-    try { 
-      const { data: newUser, error } = await supabase.from('app_users').insert([{ 
-        email: userForm.email, username: userForm.username, role: userForm.role, 
-        is_admin: userForm.is_admin, can_access_invoices: userForm.can_access_invoices, 
-        can_access_bank: userForm.can_access_bank, can_access_hr: userForm.can_access_hr, 
-        can_access_reports: userForm.can_access_reports, can_access_settings: userForm.can_access_settings, 
-        tenant_id: userProfile.tenant_id 
-      }]).select().single(); 
-      if (error) throw error; setData(prev => ({ ...prev, appUsers: [newUser, ...prev.appUsers] })); showToast('User Added!'); 
-      setUserForm({ email: '', username: '', role: 'Sales', is_admin: false, can_access_invoices: true, can_access_bank: false, can_access_hr: false, can_access_reports: false, can_access_settings: false }); 
-    } catch (err) { showToast('Error: ' + err.message); } 
-  };
-
-  const handleEditUser = (u) => { 
-    setEditUserId(u.id); setUserForm({ email: u.email, username: u.username, role: u.role, is_admin: u.is_admin, can_access_invoices: u.can_access_invoices, can_access_bank: u.can_access_bank, can_access_hr: u.can_access_hr, can_access_reports: u.can_access_reports, can_access_settings: u.can_access_settings }); 
-  };
-
-  const handleUpdateUser = async (e) => { 
-    e.preventDefault(); 
-    try { 
-      const { data: upUser, error } = await supabase.from('app_users').update({ email: userForm.email, username: userForm.username, role: userForm.role, is_admin: userForm.is_admin, can_access_invoices: userForm.can_access_invoices, can_access_bank: userForm.can_access_bank, can_access_hr: userForm.can_access_hr, can_access_reports: userForm.can_access_reports, can_access_settings: userForm.can_access_settings }).eq('id', editUserId).select().single(); 
-      if (error) throw error; setData(prev => ({ ...prev, appUsers: prev.appUsers.map(u => u.id === editUserId ? upUser : u) })); showToast('User Updated!'); setEditUserId(null); 
-      setUserForm({ email: '', username: '', role: 'Sales', is_admin: false, can_access_invoices: true, can_access_bank: false, can_access_hr: false, can_access_reports: false, can_access_settings: false }); 
-    } catch (err) { showToast('Error: ' + err.message); } 
+  // ===================== TRANSFER =====================
+  const handleTransfer = async (e) => {
+    e.preventDefault();
+    try {
+      const { from, to, amount, date } = transferForm;
+      const amt = parseFloat(amount);
+      if (!amt || amt <= 0) throw new Error('Invalid amount');
+      
+      const cbOut = { trans_date: date, type: `${from}-Out`, description: `Transfer to ${to}`, amount: amt, tenant_id: userProfile.tenant_id };
+      const cbIn = { trans_date: date, type: `${to}-In`, description: `Transfer from ${from}`, amount: amt, tenant_id: userProfile.tenant_id };
+      
+      const { data: outRec, error: outErr } = await supabase.from('cashbook').insert([cbOut]).select().single();
+      if (outErr) throw outErr;
+      const { data: inRec, error: inErr } = await supabase.from('cashbook').insert([cbIn]).select().single();
+      if (inErr) throw inErr;
+      
+      setData(prev => ({ ...prev, cashbook: [outRec, inRec, ...prev.cashbook] }));
+      showToast('Transfer Successful!');
+      setTransferForm({ from: 'Cash', to: 'Bank', amount: 0, date: today });
+    } catch (err) { showToast('Error: ' + err.message); }
   };
 
   // ===================== EMPLOYEE ADVANCE =====================
   const handleAddAdvance = async (e) => {
     e.preventDefault();
     try {
-      const empId = e.target.emp.value; const amount = parseFloat(e.target.amt.value); const date = e.target.date.value;
-      const emp = data.employees.find(em => em.id === empId);
-      const { data: newAdv, error: advErr } = await supabase.from('employee_advances').insert([{ employee_id: empId, amount, date, status: 'Pending', tenant_id: userProfile.tenant_id }]).select('*, employees(name)').single();
-      if (advErr) throw advErr;
-      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: date, type: 'Cash-Out', description: `Advance to ${emp?.name || 'Employee'}`, amount, tenant_id: userProfile.tenant_id }]).select().single();
-      if (cbErr) throw cbErr;
-      setData(prev => ({ ...prev, empAdvances: [newAdv, ...(prev.empAdvances || [])], cashbook: [nC, ...prev.cashbook] }));
-      showToast('Advance Given!'); e.target.reset();
+      const empId = e.target.emp.value;
+      const amount = parseFloat(e.target.amt.value);
+      const date = e.target.date.value;
+      const { data: newAdv, error } = await supabase.from('emp_advances').insert([{ 
+        employee_id: empId, amount, date, status: 'Pending', tenant_id: userProfile.tenant_id 
+      }]).select('*, employees(name)').single();
+      if (error) throw error;
+      
+      const cbType = 'Cash-Out';
+      const { data: nC } = await supabase.from('cashbook').insert([{ 
+        trans_date: date, type: cbType, description: `Advance given to ${newAdv.employees?.name || 'Employee'}`, amount, tenant_id: userProfile.tenant_id 
+      }]).select().single();
+      
+      setData(prev => ({ ...prev, empAdvances: [newAdv, ...(prev.empAdvances || [])], cashbook: nC ? [nC, ...prev.cashbook] : prev.cashbook }));
+      showToast('Advance Given!');
+      e.target.reset();
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
   const handleReturnAdvance = async (adv) => {
     try {
-      const { error } = await supabase.from('employee_advances').update({ status: 'Returned' }).eq('id', adv.id);
+      const { error } = await supabase.from('emp_advances').update({ status: 'Returned' }).eq('id', adv.id);
       if (error) throw error;
-      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ trans_date: today, type: 'Cash-In', description: `Advance Returned by ${adv.employees?.name || 'Employee'}`, amount: adv.amount, tenant_id: userProfile.tenant_id }]).select().single();
+      
+      const cbType = 'Cash-In';
+      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ 
+        trans_date: today, 
+        type: cbType, 
+        description: `Advance Returned by ${adv.employees?.name || 'Employee'}`, 
+        amount: adv.amount, 
+        tenant_id: userProfile.tenant_id 
+      }]).select().single();
       if (cbErr) throw cbErr;
-      setData(prev => ({ ...prev, empAdvances: prev.empAdvances.map(a => a.id === adv.id ? { ...a, status: 'Returned' } : a), cashbook: [nC, ...prev.cashbook] }));
-     / showToast('Advance Returned!');
+      
+      setData(prev => ({ 
+        ...prev, 
+        empAdvances: prev.empAdvances.map(a => a.id === adv.id ? { ...a, status: 'Returned' } : a), 
+        cashbook: [nC, ...prev.cashbook] 
+      }));
+      showToast('Advance Returned!');
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
   // ===================== PAY SALARY =====================
-  const handlePaySalary = async (e) => { 
-    e.preventDefault(); 
-    try { 
-      const empId = e.target.emp.value; 
-      const base = parseFloat(e.target.base.value) || 0; 
+  const handlePaySalary = async (e) => {
+    e.preventDefault();
+    try {
+      const empId = e.target.emp.value;
+      const base = parseFloat(e.target.base.value) || 0;
+      const comm = parseFloat(e.target.comm.value) || 0;
+      const advDed = parseFloat(e.target.adv_ded.value) || 0;
       const gift = parseFloat(e.target.gift.value) || 0;
-      const advDed = parseFloat(e.target.adv_ded.value) || 0; 
-      const mode = e.target.mode.value; 
       const month = e.target.month.value;
-      const emp = data.employees.find(em => em.id === empId); 
-      const { data: attData } = await supabase.from('attendance').select('overtime').eq('employee_id', empId).eq('status', 'Present').gte('date', month + '-01').lte('date', today);
-      const totalOT = attData?.reduce((s, a) => s + (parseFloat(a.overtime) || 0), 0) * 10; 
-      const { data: mistakesData } = await supabase.from('staff_mistakes').select('loss_amount').eq('employee_id', empId).eq('paid_by_employee', true).gte('date', month + '-01').lte('date', today);
-      const totalMistakes = mistakesData?.reduce((s, m) => s + (parseFloat(m.loss_amount) || 0), 0);
-      const empInv = data.invoices.filter(i => i.employee_id === empId && !i.invoice_no.startsWith('REF-') && i.status !== 'Draft' && i.invoice_date?.startsWith(month));
-      const totalSales = empInv.reduce((s, i) => s + (i.total || 0), 0);
-      const commRate = emp?.commission_rate || 0;
-      const comm = (totalSales * commRate) / 100;
-      const netPaid = base + comm + totalOT + gift - advDed - totalMistakes;
-      const { data: newPay, error: payErr } = await supabase.from('payroll').insert([{ 
-        employee_id: empId, base_salary: base, commission: comm, advance_deduction: advDed,
-        overtime: totalOT, mistakes_deduction: totalMistakes, gift: gift,
-        amount: netPaid, month, payment_mode: mode, payment_date: today, tenant_id: userProfile.tenant_id 
-      }]).select('*, employees(name, role)').single(); 
-      if (payErr) throw payErr; 
-      if (advDed > 0) {
-        let remainingDed = advDed;
-        const pendingAdv = (data.empAdvances || []).filter(a => a.employee_id === empId && a.status === 'Pending').sort((a, b) => new Date(a.date) - new Date(b.date));
-        for (const adv of pendingAdv) {
-          if (remainingDed <= 0) break;
-          const dedFromThis = Math.min(remainingDed, adv.amount);
-          await supabase.from('employee_advances').update({ status: 'Deducted' }).eq('id', adv.id);
-          remainingDed -= dedFromThis;
+      const mode = e.target.mode.value;
+      const netPay = (base + comm + gift) - advDed;
+      
+      const { data: newPay, error } = await supabase.from('payroll').insert([{ 
+        employee_id: empId, 
+        base_salary: base, 
+        commission: comm, 
+        advance_deduction: advDed, 
+        gift: gift, 
+        amount: netPay, 
+        month, 
+        payment_mode: mode, 
+        payment_date: today, 
+        tenant_id: userProfile.tenant_id 
+      }]).select('*, employees(name)').single();
+      if (error) throw error;
+      
+      const cbType = mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
+      const { data: nC } = await supabase.from('cashbook').insert([{ 
+        trans_date: today, 
+        type: cbType, 
+        description: `Salary Paid to ${newPay.employees?.name || 'Employee'} for ${month}`, 
+        amount: netPay, 
+        tenant_id: userProfile.tenant_id 
+      }]).select().single();
+      
+      // Mark pending advances as deducted/settled
+      const pendingAdvs = data.empAdvances.filter(a => a.employee_id === empId && a.status === 'Pending');
+      let deductedAmount = 0;
+      for (const adv of pendingAdvs) {
+        if (deductedAmount + adv.amount <= advDed) {
+          await supabase.from('emp_advances').update({ status: 'Deducted' }).eq('id', adv.id);
+          deductedAmount += adv.amount;
         }
       }
-      const cbType = mode === 'Cash' ? 'Cash-Out' : 'Bank-Out'; 
-      const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{ 
-        trans_date: today, type: cbType, description: `Salary to ${emp?.name || 'Employee'} (${month})`, amount: netPaid, tenant_id: userProfile.tenant_id 
-      }]).select().single(); 
-      if (cbErr) throw cbErr; 
-      setData(prev => ({ ...prev, payroll: [newPay, ...prev.payroll], cashbook: [nC, ...prev.cashbook] }));
-      fetchAll();
-      showToast(`Salary Paid! Net: ${netPaid.toFixed(2)} SAR`); 
-    } catch (err) { showToast('Error: ' + err.message); } 
+      
+      setData(prev => ({ 
+        ...prev, 
+        payroll: [newPay, ...(prev.payroll || [])], 
+        cashbook: nC ? [nC, ...prev.cashbook] : prev.cashbook,
+        empAdvances: prev.empAdvances.map(a => a.status === 'Deducted' ? { ...a, status: 'Deducted' } : a)
+      }));
+      showToast('Salary Paid!');
+      e.target.reset();
+    } catch (err) { showToast('Error: ' + err.message); }
   };
 
-  // ===================== RETURN ALL =====================
+  // ===================== USER MANAGEMENT =====================
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/create-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...userForm, tenant_id: userProfile.tenant_id })
+      });
+      const resData = await res.json();
+      if (resData.error) throw new Error(resData.error);
+      fetchAll(); 
+      showToast('User Added!');
+      setUserForm({ email: '', username: '', role: 'Sales', is_admin: false, can_access_invoices: true, can_access_bank: false, can_access_hr: false, can_access_reports: false, can_access_settings: false });
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+
+  const handleEditUser = (u) => {
+    setEditUserId(u.id);
+    setUserForm({ email: u.email, username: u.username, role: u.role, is_admin: u.is_admin, can_access_invoices: u.can_access_invoices, can_access_bank: u.can_access_bank, can_access_hr: u.can_access_hr, can_access_reports: u.can_access_reports, can_access_settings: u.can_access_settings });
+  };
+
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
+    try {
+      const { error } = await supabase.from('app_users').update({
+        username: userForm.username, role: userForm.role, is_admin: userForm.is_admin, 
+        can_access_invoices: userForm.can_access_invoices, can_access_bank: userForm.can_access_bank, 
+        can_access_hr: userForm.can_access_hr, can_access_reports: userForm.can_access_reports, 
+        can_access_settings: userForm.can_access_settings
+      }).eq('id', editUserId);
+      if (error) throw error;
+      fetchAll();
+      showToast('User Updated!');
+      setEditUserId(null);
+      setUserForm({ email: '', username: '', role: 'Sales', is_admin: false, can_access_invoices: true, can_access_bank: false, can_access_hr: false, can_access_reports: false, can_access_settings: false });
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+
   return {
-    handleLogout, handleChangePassword, handleSendMessage,
-    handleAddCustomField, handleRemoveCustomField, handleCustomFieldChange,
-    handleProfilePicUpload, handleSaveProfile, handleLogoUpload, handleSaveSettings,
-    handleAddTenant, handleToggleSubscription, handleDeleteTenant,
-    downloadPDF, handleDownloadPDF, printInvoice, shareWhatsApp, shareEmail,
-    handleGenerateContract, handleGenerateOffer,
-    openPreview, openRefundModal, openSettleModal, handleQuickSettle,
-    handleSettlePayment, handleRefund,
-    handleAddMistake, handleGenerateSlip,
-    handleEditInvoice, handleCreateInvoice, handleDeleteInvoice,
-    handleEditCust, handleEditCorp, handleEditCred, handleEditVend,
-    handleEditPkg, handleEditBrn, handleEditEmp, handleEditSrv,
-    handleAddExpItem, handleRemoveExpItem, handleExpItemChange,
-    handleEditExpense, handleDeleteExpense, handlePreviewExpense, handleAddExpense,
-    handleAddEditCust, handleAddEditCorp, handleAddEditCred,
-    handleAddEditVend, handleAddEditPkg, handleAddEditBrn,
-    handleAddEditEmp, handleAddEditSrv,
-    handleAddPortal, handleAddInvestment, handleDelete,
-    handleRecharge, handleTransfer,
-    handleAddUser, handleEditUser, handleUpdateUser,
-    handleAddAdvance, handleReturnAdvance, handlePaySalary
+    handleLogout, handleChangePassword, handleSendMessage, handleAddCustomField, handleRemoveCustomField, handleCustomFieldChange,
+    handleProfilePicUpload, handleSaveProfile, handleLogoUpload, handleSaveSettings, handleAddTenant, handleToggleSubscription, handleDeleteTenant,
+    downloadPDF, handleDownloadPDF, printInvoice, shareWhatsApp, shareEmail, handleGenerateContract, handleGenerateOffer,
+    openPreview, openRefundModal, openSettleModal, handleQuickSettle, handleSettlePayment, handleRefund, handleAddMistake, handleGenerateSlip,
+    handleEditInvoice, handleCreateInvoice, handleDeleteInvoice, handleEditCust, handleEditCorp, handleEditCred, handleEditVend, handleEditPkg, handleEditBrn, handleEditEmp, handleEditSrv,
+    handleAddExpItem, handleRemoveExpItem, handleExpItemChange, handleEditExpense, handleDeleteExpense, handlePreviewExpense, handleAddExpense,
+    handleAddEditCust, handleAddEditCorp, handleAddEditCred, handleAddEditVend, handleAddEditPkg, handleAddEditBrn, handleAddEditEmp, handleAddEditSrv,
+    handleAddPortal, handleAddInvestment, handleDelete, exportToExcel, handleRecharge, handleTransfer, handleAddAdvance, handleReturnAdvance, handlePaySalary,
+    handleAddUser, handleEditUser, handleUpdateUser
   };
 }
