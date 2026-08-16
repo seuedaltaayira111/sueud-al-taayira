@@ -20,7 +20,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
   ];
   const aiFooterMsg = aiMessages[Math.floor(Math.random() * aiMessages.length)];
   
-  const totalSell = inv.total_sell || 0; // This is New Booking Price
+  const totalSell = inv.total_sell || 0; // New Booking Price
   const discount = inv.discount || 0;
   const subTotal = totalSell + discount;
   const vatRate = inv.vat > 0 && totalSell > 0 ? Math.round((inv.vat / totalSell) * 100) : 0;
@@ -50,8 +50,8 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
       body { font-family: 'Inter', 'Cairo', sans-serif; background: #f0f4f8; margin: 0; padding: 30px; color: #1e293b; }
       .invoice-box { max-width: 900px; margin: auto; background: #fff; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.08); border-radius: 12px; }
       .header { display: flex; justify-content: space-between; align-items: flex-start; padding: 40px; background: linear-gradient(135deg, #0c1d3a 0%, #1a365d 100%); color: #fff; }
-      .company-info { flex: 1; display: flex; flex-direction: column; gap: 15px; }
-      .company-info .logo { max-height: 100px; max-width: 220px; border-radius: 8px; background: rgba(255,255,255,0.1); padding: 8px; }
+      .company-info { flex: 1; display: flex; gap: 20px; }
+      .company-info .logo { width: 100px; height: 100px; object-fit: cover; border-radius: 12px; background: rgba(255,255,255,0.1); padding: 5px; }
       .company-text h2 { font-size: 24px; font-weight: 800; color: #fbbf24; }
       .company-text h1 { font-size: 16px; font-weight: 600; color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 2px; margin-top: 4px; }
       .company-text p { font-size: 12px; color: rgba(255,255,255,0.7); line-height: 1.8; margin-top: 8px; }
@@ -74,11 +74,16 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
       .reissue-item { background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #fde68a; }
       .reissue-item .lbl { font-size: 11px; color: #92400e; font-weight: 600; }
       .reissue-item .val { font-size: 14px; color: #78350f; font-weight: 700; }
+      .reissue-credit { grid-column: 1 / -1; background: #dcfce7; border-color: #86efac; }
+      .reissue-credit .lbl { color: #059669; }
+      .reissue-credit .val { color: #047857; }
       table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
       thead th { padding: 15px; background: #0c1d3a; color: #fbbf24; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; text-align: left; }
-      thead th.ar { text-align: right; color: rgba(255,255,255,0.8); font-family: 'Cairo'; font-size: 14px; }
+      thead th.right { text-align: right; }
+      thead th.center { text-align: center; }
       tbody td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
-      tbody td.ar { text-align: right; font-family: 'Cairo'; color: #64748b; }
+      tbody td.right { text-align: right; font-weight: 600; }
+      tbody td.center { text-align: center; }
       .bottom-section { display: flex; justify-content: space-between; gap: 40px; }
       .payment-breakdown { flex: 1; padding: 20px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; }
       .pay-row { display: flex; justify-content: space-between; font-size: 14px; padding: 6px 0; }
@@ -86,7 +91,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
       .total-row { display: flex; justify-content: space-between; padding: 10px 0; font-size: 14px; color: #64748b; }
       .grand-total { display: flex; justify-content: space-between; padding: 20px; background: #0c1d3a; color: #fff; border-radius: 12px; margin-top: 10px; font-size: 20px; font-weight: 800; }
       .grand-total .val { color: #fbbf24; }
-      .footer { padding: 30px 40px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; }
+      .footer { padding: 30px 40px; background: #f8fafc; display: flex; justify-content: space-between; alignItems: center; border-top: 1px solid #e2e8f0; }
       .qr-code img { height: 100px; width: 100px; border-radius: 8px; border: 1px solid #e2e8f0; padding: 5px; background: #fff; }
       .footer-text { text-align: center; flex: 1; padding: 0 30px; }
       .ai-msg { font-size: 13px; color: #475569; font-weight: 600; margin-bottom: 5px; }
@@ -139,27 +144,28 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
           <div class="reissue-title"><span>⚠️ PREVIOUS BOOKING & REFUND DETAILS</span><span>تفاصيل الحجز السابق والاسترجاع</span></div>
           <div class="reissue-grid">
             <div class="reissue-item"><div class="lbl">Original Airline / الخطوط القديمة</div><div class="val">${inv.old_airline || 'N/A'}</div></div>
+            <div class="reissue-item"><div class="lbl">Original Sector / القطاع القديم</div><div class="val">${inv.old_sector || 'N/A'}</div></div>
             <div class="reissue-item"><div class="lbl">Original Ticket No / التذكرة القديمة</div><div class="val">${inv.old_ticket_no || 'N/A'}</div></div>
             <div class="reissue-item"><div class="lbl">Original Fare / الأجرة الأصلية</div><div class="val">${parseFloat(inv.old_sell_price || 0).toFixed(2)} SAR</div></div>
-            <div class="reissue-item" style="background:#dcfce7; border-color:#86efac;"><div class="lbl">Customer Refund (Credit) / استرجاع العميل</div><div class="val" style="color:#059669;">- ${usedCredit.toFixed(2)} SAR</div></div>
+            <div class="reissue-item reissue-credit"><div class="lbl">Refund Credit Applied / رصيد الاسترجاع المطبق</div><div class="val">- ${usedCredit.toFixed(2)} SAR</div></div>
           </div>
         </div>` : ''}
         
         <table>
           <thead>
             <tr>
-              <th>DESCRIPTION</th><th class="ar">الوصف</th>
-              <th style="text-align:center;">QTY</th><th class="ar" style="text-align:center;">الكمية</th>
-              <th style="text-align:right;">UNIT PRICE</th><th class="ar" style="text-align:right;">سعر الوحدة</th>
-              <th style="text-align:right;">TOTAL</th><th class="ar" style="text-align:right;">الإجمالي</th>
+              <th>Description / الوصف</th>
+              <th class="center">Qty / الكمية</th>
+              <th class="right">Unit Price / سعر الوحدة</th>
+              <th class="right">Total / الإجمالي</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>${inv.sector || inv.service_type || 'Service'}</td><td class="ar">${inv.sector || inv.service_type || 'خدمة'}</td>
-              <td style="text-align:center;">${inv.qty || 1}</td><td class="ar" style="text-align:center;">${inv.qty || 1}</td>
-              <td style="text-align:right;">${unitPrice.toFixed(2)}</td><td class="ar" style="text-align:right;">${unitPrice.toFixed(2)}</td>
-              <td style="text-align:right; font-weight:700;">${totalSell.toFixed(2)}</td><td class="ar" style="text-align:right; font-weight:700;">${totalSell.toFixed(2)}</td>
+              <td>${inv.sector || inv.service_type || 'Service'}</td>
+              <td class="center">${inv.qty || 1}</td>
+              <td class="right">${unitPrice.toFixed(2)}</td>
+              <td class="right">${totalSell.toFixed(2)}</td>
             </tr>
           </tbody>
         </table>
@@ -168,8 +174,8 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
           <div class="payment-breakdown">
             <div class="bilingual-title"><span>PAYMENT BREAKDOWN</span><span>تفاصيل الدفع</span></div>
             <div class="pay-row"><span>New Booking Price / سعر الحجز الجديد</span><span style="font-weight:600;">${total.toFixed(2)} SAR</span></div>
-            ${usedCredit > 0 ? `<div class="pay-row"><span>Less: Credit Applied / اقل: الرصيد المطبق</span><span style="font-weight:600; color:#7c3aed;">- ${usedCredit.toFixed(2)} SAR</span></div>` : ''}
-            <div class="pay-row" style="border-top:1px solid #e2e8f0; margin-top:5px; padding-top:10px;"><span style="font-weight:700;">Balance Paid / المدفوع</span><span style="font-weight:700; color:#059669; font-size:16px;">${cashPaid.toFixed(2)} SAR (${paymentDisplay})</span></div>
+            ${usedCredit > 0 ? `<div class="pay-row"><span>Less: Refund Credit Applied / اقل: الرصيد المطبق</span><span style="font-weight:600; color:#7c3aed;">- ${usedCredit.toFixed(2)} SAR</span></div>` : ''}
+            <div class="pay-row" style="border-top:1px solid #e2e8f0; margin-top:5px; padding-top:10px;"><span style="font-weight:700;">Balance Paid / المدفوع (${paymentDisplay})</span><span style="font-weight:700; color:#059669; font-size:16px;">${cashPaid.toFixed(2)} SAR</span></div>
             <div class="pay-row"><span style="font-weight:700;">Amount Due / المتبقي</span><span style="font-weight:700; color:${dueAmount > 0 ? '#ef4444' : '#059669'}; font-size:16px;">${dueAmount.toFixed(2)} SAR</span></div>
           </div>
           <div class="totals-box">
@@ -222,8 +228,8 @@ const getRefundHTML = (inv, s, lang = 'en') => {
       body { font-family: 'Inter', 'Cairo', sans-serif; background: #f0f4f8; margin: 0; padding: 30px; color: #1e293b; }
       .invoice-box { max-width: 850px; margin: auto; background: #fff; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.08); border-radius: 12px; }
       .header { display: flex; justify-content: space-between; align-items: flex-start; padding: 35px 40px; background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%); color: #fff; }
-      .company-info { flex: 1; }
-      .company-info .logo { height: 65px; margin-bottom: 12px; border-radius: 8px; background: rgba(255,255,255,0.1); padding: 5px; }
+      .company-info { flex: 1; display: flex; gap: 15px; }
+      .company-info .logo { width: 80px; height: 80px; object-fit: cover; border-radius: 10px; background: rgba(255,255,255,0.1); padding: 5px; }
       .company-info h2 { font-size: 22px; font-weight: 800; color: #fbbf24; }
       .company-info h1 { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 2px; margin-top: 4px; }
       .company-info p { font-size: 11px; color: rgba(255,255,255,0.6); line-height: 1.7; margin-top: 10px; }
@@ -243,7 +249,7 @@ const getRefundHTML = (inv, s, lang = 'en') => {
       .refund-card .amount { font-size: 36px; font-weight: 800; color: #047857; }
       .payment-info { padding: 15px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; margin-top: 20px; }
       .pay-row { display: flex; justify-content: space-between; font-size: 14px; padding: 4px 0; }
-      .footer { padding: 25px 40px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; }
+      .footer { padding: 25px 40px; background: #f8fafc; display: flex; justify-content: space-between; alignItems: center; border-top: 1px solid #e2e8f0; }
       .qr-code img { height: 80px; width: 80px; border-radius: 6px; border: 1px solid #e2e8f0; padding: 3px; background: #fff; }
       @media print { body { background: #fff; padding: 0; margin: 0; } .invoice-box { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; } }
     </style>
@@ -253,9 +259,11 @@ const getRefundHTML = (inv, s, lang = 'en') => {
       <div class="header">
         <div class="company-info">
           ${setting.logo_url ? `<img src="${setting.logo_url}" crossorigin="anonymous" class="logo" />` : ''}
-          <h2>${setting.company_name_ar || 'صعود الطائرة'}</h2>
-          <h1>${setting.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
-          <p>${setting.address_ar || ''}<br/>VAT: ${setting.vat_no || 'N/A'} | CR: ${setting.cr_no || 'N/A'}</p>
+          <div>
+            <h2>${setting.company_name_ar || 'صعود الطائرة'}</h2>
+            <h1>${setting.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
+            <p>${setting.address_ar || ''}<br/>VAT: ${setting.vat_no || 'N/A'} | CR: ${setting.cr_no || 'N/A'}</p>
+          </div>
         </div>
         <div class="invoice-meta">
           <h3>REFUND<br/><span style="font-size:16px; font-family:'Cairo';">استرجاع</span></h3>
