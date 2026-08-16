@@ -4,13 +4,15 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
 const styles = { 
-  input: { width: '100%', padding: '10px', margin: '5px 0', border: '1px solid #cbd5e1', borderRadius: '6px', outline: 'none', boxSizing: 'border-box' }, 
-  btnPrimary: { padding: '10px 15px', background: '#1E3A8A', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }, 
-  btnSuccess: { padding: '8px 12px', background: '#059669', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
-  btnWarning: { padding: '8px 12px', background: '#FBBF24', color: '#1E3A8A', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
-  btnInfo: { padding: '8px 12px', background: '#2563EB', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }, 
-  card: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px', border: '1px solid #e2e8f0' }, 
-  label: { fontSize: '14px', fontWeight: 'bold', color: '#333', marginBottom: '5px', display: 'block', marginTop: '10px' } 
+  input: { width: '100%', padding: '12px 15px', margin: '6px 0', border: '1px solid #E2E8F0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', fontSize: '14px' }, 
+  btnPrimary: { padding: '12px 15px', background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', boxShadow: '0 4px 6px rgba(37, 99, 235, 0.3)' }, 
+  btnSuccess: { padding: '8px 12px', background: '#059669', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }, 
+  btnWarning: { padding: '8px 12px', background: '#FBBF24', color: '#1E293B', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }, 
+  btnInfo: { padding: '8px 12px', background: '#2563EB', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }, 
+  card: { background: 'white', padding: '25px', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px', border: '1px solid #e2e8f0' }, 
+  label: { fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '6px', display: 'block', marginTop: '12px' },
+  tableHeader: { background: '#0F172A', color: 'white', padding: '15px', textAlign: 'start', fontSize: '13px' },
+  tableCell: { padding: '15px', borderBottom: '1px solid #F1F5F9', fontSize: '14px' }
 };
 
 export default function ERPViewsAdvanced(props) {
@@ -20,6 +22,9 @@ export default function ERPViewsAdvanced(props) {
   const [attForm, setAttForm] = useState({ empId: '', date: today, checkIn: '09:00', checkOut: '18:00', status: 'Present', leaveStart: today, leaveEnd: today });
   const [attendance, setAttendance] = useState([]);
   const [payForm, setPayForm] = useState({ empId: '', base: 0, comm: 0, adv_ded: 0, gift: 0, month: today.substring(0, 7), mode: 'Cash' });
+  
+  // FIX: Moved useState outside the if condition to prevent React Hooks violation
+  const [quoteForm, setQuoteForm] = useState({ customer_name: '', service_type: 'Flight Ticket', price: '', valid_until: today });
 
   // Fetch Attendance History
   useEffect(() => {
@@ -124,19 +129,19 @@ export default function ERPViewsAdvanced(props) {
 
     return (
       <div>
-        <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', padding: '30px', borderRadius: '12px', marginBottom: '20px' }}>
-          <h2 style={{ margin: 0, fontSize: '28px' }}>🤖 {tr.ai_dashboard || 'AI ERP Assistant'}</h2>
+        <div style={{ background: 'linear-gradient(135deg, #0F172A, #1E293B)', color: 'white', padding: '30px', borderRadius: '16px', marginBottom: '20px', boxShadow: '0 10px 15px rgba(0,0,0,0.1)' }}>
+          <h2 style={{ margin: 0, fontSize: '28px', color: '#F59E0B' }}>🤖 {tr.ai_dashboard || 'AI ERP Assistant'}</h2>
           <p style={{ margin: '5px 0 0', opacity: 0.9, fontSize: '16px' }}>Real-time business insights based on your data.</p>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-          <div style={{...styles.card, borderLeft: '5px solid #059669'}}><h3 style={{color: '#555'}}>Monthly Sales</h3><h2 style={{color: '#1E3A8A'}}>{tSales.toFixed(2)} SAR</h2></div>
-          <div style={{...styles.card, borderLeft: '5px solid #1E3A8A'}}><h3 style={{color: '#555'}}>Net Profit</h3><h2 style={{color: '#059669'}}>{tProfit.toFixed(2)} SAR</h2></div>
-          <div style={{...styles.card, borderLeft: '5px solid #EF4444'}}><h3 style={{color: '#555'}}>Pending Dues</h3><h2 style={{color: '#EF4444'}}>{totalDue.toFixed(2)} SAR</h2></div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '20px' }}>
+          <div style={{ background: 'linear-gradient(135deg, #047857, #059669)', color: 'white', padding: '25px', borderRadius: '16px', boxShadow: '0 4px 6px rgba(5, 150, 105, 0.2)' }}><h3 style={{ margin: '0 0 10px', opacity: 0.9 }}>Monthly Sales</h3><h2 style={{ margin: 0, fontSize: '28px' }}>{tSales.toFixed(2)} SAR</h2></div>
+          <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', padding: '25px', borderRadius: '16px', boxShadow: '0 4px 6px rgba(37, 99, 235, 0.2)' }}><h3 style={{ margin: '0 0 10px', opacity: 0.9 }}>Net Profit</h3><h2 style={{ margin: 0, fontSize: '28px' }}>{tProfit.toFixed(2)} SAR</h2></div>
+          <div style={{ background: 'linear-gradient(135deg, #B91C1C, #EF4444)', color: 'white', padding: '25px', borderRadius: '16px', boxShadow: '0 4px 6px rgba(239, 68, 68, 0.2)' }}><h3 style={{ margin: '0 0 10px', opacity: 0.9 }}>Pending Dues</h3><h2 style={{ margin: 0, fontSize: '28px' }}>{totalDue.toFixed(2)} SAR</h2></div>
         </div>
-        <div style={styles.card}>
-          <h3 style={{ color: '#1E3A8A', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px' }}>🧠 AI Insights & Action Items</h3>
-          <ul style={{ marginTop: '15px', paddingLeft: '20px' }}>
-            {aiInsights.length === 0 ? <li>No critical alerts. Business is running smoothly!</li> : aiInsights.map((ins, i) => <li key={i} style={{ marginBottom: '10px', fontSize: '15px', color: '#334155' }}>{ins}</li>)}
+        <div style={{...styles.card, borderTop: '5px solid #F59E0B'}}>
+          <h3 style={{ color: '#0F172A', borderBottom: '2px solid #E2E8F0', paddingBottom: '15px', marginTop: 0 }}>🧠 AI Insights & Action Items</h3>
+          <ul style={{ marginTop: '15px', paddingInlineStart: '20px' }}>
+            {aiInsights.length === 0 ? <li style={{fontSize: '15px'}}>No critical alerts. Business is running smoothly!</li> : aiInsights.map((ins, i) => <li key={i} style={{ marginBottom: '12px', fontSize: '15px', color: '#334155' }}>{ins}</li>)}
           </ul>
         </div>
       </div>
@@ -146,7 +151,6 @@ export default function ERPViewsAdvanced(props) {
   // 2. QUOTATIONS PANEL
   if (page === 'quotations') {
     const quotations = data.invoices.filter(i => i.status === 'Draft');
-    const [quoteForm, setQuoteForm] = useState({ customer_name: '', service_type: 'Flight Ticket', price: '', valid_until: today });
 
     const handleCreateQuote = async (e) => {
       e.preventDefault();
@@ -172,223 +176,172 @@ export default function ERPViewsAdvanced(props) {
 
     return (
       <div>
-        <h2 style={{ color: '#1E3A8A' }}>📄 Quotation Management</h2>
+        <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', padding: '30px', borderRadius: '16px', marginBottom: '20px' }}>
+          <h2 style={{ margin: 0, fontSize: '24px' }}>📄 Quotation Management</h2>
+          <p style={{ margin: '5px 0 0', opacity: 0.9 }}>Create draft quotes and convert them to invoices when confirmed.</p>
+        </div>
         <div style={styles.card}>
-          <h3>Create New Quotation</h3>
-          <form onSubmit={handleCreateQuote} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+          <h3 style={{marginTop: 0, color: '#0F172A'}}>Create New Quotation</h3>
+          <form onSubmit={handleCreateQuote} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
             <div><label style={styles.label}>Customer Name</label><input style={styles.input} value={quoteForm.customer_name} onChange={e => setQuoteForm({...quoteForm, customer_name: e.target.value})} required /></div>
             <div><label style={styles.label}>Service Type</label><select style={styles.input} value={quoteForm.service_type} onChange={e => setQuoteForm({...quoteForm, service_type: e.target.value})}><option>Flight Ticket</option><option>Tour Package</option><option>Visa</option></select></div>
             <div><label style={styles.label}>Estimated Price (SAR)</label><input type="number" style={styles.input} value={quoteForm.price} onChange={e => setQuoteForm({...quoteForm, price: e.target.value})} required /></div>
             <div><label style={styles.label}>Valid Until</label><input type="date" style={styles.input} value={quoteForm.valid_until} onChange={e => setQuoteForm({...quoteForm, valid_until: e.target.value})} required /></div>
-            <button type="submit" style={{ ...styles.btnPrimary, gridColumn: '1 / -1' }}>Generate Quotation</button>
+            <button type="submit" style={{ ...styles.btnPrimary, gridColumn: '1 / -1', padding: '15px' }}>Generate Quotation</button>
           </form>
         </div>
-        <div style={styles.card}>
-          <h3>Recent Quotations (Drafts)</h3>
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
-            <thead><tr style={{ background: '#1E3A8A', color: 'white' }}><th style={{padding:'10px', textAlign:'left'}}>Quote No</th><th style={{padding:'10px'}}>Service</th><th style={{padding:'10px'}}>Amount</th><th style={{padding:'10px'}}>Action</th></tr></thead>
-            <tbody>
-              {quotations.length === 0 ? <tr><td colSpan="4" style={{padding:'15px', textAlign:'center'}}>No quotations found.</td></tr> : quotations.map(q => (
-                <tr key={q.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{padding:'10px'}}>{q.invoice_no}</td>
-                  <td style={{padding:'10px', textAlign:'center'}}>{q.sector}</td>
-                  <td style={{padding:'10px', textAlign:'center'}}>{(q.total || 0).toFixed(2)} SAR</td>
-                  <td style={{padding:'10px', textAlign:'center'}}><button onClick={() => convertToInvoice(q)} style={styles.btnSuccess}>Convert to Invoice</button></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+          <div style={{ padding: '20px', borderBottom: '1px solid #E2E8F0' }}><h3 style={{ margin: 0, color: '#0F172A' }}>Recent Quotations (Drafts)</h3></div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+              <thead><tr><th style={styles.tableHeader}>Quote No</th><th style={styles.tableHeader}>Service</th><th style={styles.tableHeader}>Amount</th><th style={styles.tableHeader}>Action</th></tr></thead>
+              <tbody>
+                {quotations.length === 0 ? <tr><td colSpan="4" style={{padding:'30px', textAlign:'center', color:'#94A3B8'}}>No quotations found.</td></tr> : quotations.map(q => (
+                  <tr key={q.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                    <td style={styles.tableCell}>{q.invoice_no}</td>
+                    <td style={styles.tableCell}>{q.sector}</td>
+                    <td style={styles.tableCell}>{(q.total || 0).toFixed(2)} SAR</td>
+                    <td style={styles.tableCell}><button onClick={() => convertToInvoice(q)} style={styles.btnSuccess}>Convert to Invoice</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     );
   }
 
-  // 3. ADVANCED HR & ATTENDANCE (TIME-BASED WITH LEAVES & SALARY SLIP)
+  // 3. ADVANCED HR & ATTENDANCE
   if (page === 'hr_advanced') {
     return (
       <div>
-        <h2 style={{ color: '#1E3A8A' }}>🎯 Employee Targets & Performance</h2>
-        <div style={styles.card}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
-            <thead>
-              <tr style={{ background: '#1E3A8A', color: 'white' }}>
-                <th style={{ padding: '12px', textAlign: 'left' }}>Employee</th>
-                <th style={{ padding: '12px' }}>{tr.target || 'Target'} (SAR)</th>
-                <th style={{ padding: '12px' }}>{tr.achieved || 'Achieved'} (SAR)</th>
-                <th style={{ padding: '12px' }}>{tr.percentage || 'Percentage'}</th>
-                <th style={{ padding: '12px' }}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.employees.map(emp => {
-                const empInv = data.invoices.filter(i => i.employee_id === emp.id && !i.invoice_no.startsWith('REF-') && i.status !== 'Draft');
-                const achieved = empInv.reduce((s, i) => s + (i.total || 0), 0);
-                const target = emp.target || 0;
-                const perc = target > 0 ? (achieved / target) * 100 : 0;
-                return (
-                  <tr key={emp.id} style={{ borderBottom: '1px solid #E2E8F0' }}>
-                    <td style={{ padding: '12px', fontWeight: 'bold' }}>{emp.name}</td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>
-                      {editTargetId === emp.id ? (
-                        <input type="number" value={targetVal} onChange={e => setTargetVal(e.target.value)} style={{...styles.input, width: '100px', margin: 0}} />
-                      ) : (
-                        <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => { setEditTargetId(emp.id); setTargetVal(target); }}>{target.toFixed(2)}</span>
-                      )}
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'center', color: '#059669' }}>{achieved.toFixed(2)}</td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>
-                      <div style={{ background: '#e2e8f0', borderRadius: '10px', overflow: 'hidden', width: '100%', height: '20px', display: 'flex', alignItems: 'center' }}>
-                        <div style={{ width: `${Math.min(perc, 100)}%`, background: perc >= 100 ? '#059669' : '#FBBF24', height: '100%' }}></div>
-                      </div>
-                      <small style={{ fontWeight: 'bold' }}>{perc.toFixed(0)}%</small>
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>
-                      {editTargetId === emp.id ? <button onClick={() => saveTarget(emp.id)} style={styles.btnSuccess}>{tr.save || 'Save'}</button> : <button onClick={() => { setEditTargetId(emp.id); setTargetVal(target); }} style={styles.btnWarning}>{tr.edit || 'Edit'}</button>}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <h2 style={{ color: '#0F172A', marginBottom: '20px' }}>🎯 Employee Targets & Performance</h2>
+        <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
+              <thead>
+                <tr>
+                  <th style={styles.tableHeader}>Employee</th>
+                  <th style={styles.tableHeader}>{tr.target || 'Target'} (SAR)</th>
+                  <th style={styles.tableHeader}>{tr.achieved || 'Achieved'} (SAR)</th>
+                  <th style={styles.tableHeader}>{tr.percentage || 'Percentage'}</th>
+                  <th style={styles.tableHeader}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.employees.map(emp => {
+                  const empInv = data.invoices.filter(i => i.employee_id === emp.id && !i.invoice_no.startsWith('REF-') && i.status !== 'Draft');
+                  const achieved = empInv.reduce((s, i) => s + (i.total || 0), 0);
+                  const target = emp.target || 0;
+                  const perc = target > 0 ? (achieved / target) * 100 : 0;
+                  return (
+                    <tr key={emp.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                      <td style={{...styles.tableCell, fontWeight: 'bold'}}>{emp.name}</td>
+                      <td style={styles.tableCell}>
+                        {editTargetId === emp.id ? (
+                          <input type="number" value={targetVal} onChange={e => setTargetVal(e.target.value)} style={{...styles.input, width: '100px', margin: 0}} />
+                        ) : (
+                          <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => { setEditTargetId(emp.id); setTargetVal(target); }}>{target.toFixed(2)}</span>
+                        )}
+                      </td>
+                      <td style={{...styles.tableCell, color: '#059669'}}>{achieved.toFixed(2)}</td>
+                      <td style={styles.tableCell}>
+                        <div style={{ background: '#E2E8F0', borderRadius: '10px', overflow: 'hidden', width: '100%', height: '20px', display: 'flex', alignItems: 'center' }}>
+                          <div style={{ width: `${Math.min(perc, 100)}%`, background: perc >= 100 ? '#059669' : '#FBBF24', height: '100%', transition: 'width 0.5s' }}></div>
+                        </div>
+                        <small style={{ fontWeight: 'bold', color: '#475569' }}>{perc.toFixed(0)}%</small>
+                      </td>
+                      <td style={styles.tableCell}>
+                        {editTargetId === emp.id ? <button onClick={() => saveTarget(emp.id)} style={styles.btnSuccess}>{tr.save || 'Save'}</button> : <button onClick={() => { setEditTargetId(emp.id); setTargetVal(target); }} style={styles.btnWarning}>{tr.edit || 'Edit'}</button>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
         
         <div style={styles.card}>
-          <h3>📅 Daily Time-Based Attendance & Leave</h3>
+          <h3 style={{marginTop: 0, color: '#0F172A'}}>📅 Daily Time-Based Attendance & Leave</h3>
           <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '15px' }}>Mark Check-in and Check-out time. System will automatically calculate Overtime ({'>9 hrs'}) and Salary Deduction ({'<8 hrs'}).</p>
-          <form onSubmit={markAttendance} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr auto', gap: '15px', alignItems: 'flex-end' }}>
-            <div>
-              <label style={styles.label}>{tr.attendanceDate || 'Date'}</label>
-              <input type="date" style={styles.input} value={attForm.date} onChange={e => setAttForm({...attForm, date: e.target.value})} required />
-            </div>
-            <div>
-              <label style={styles.label}>{tr.selectEmployee || 'Employee'}</label>
-              <select style={styles.input} value={attForm.empId} onChange={e => setAttForm({...attForm, empId: e.target.value})} required>
-                <option value="">Select Employee</option>
-                {data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={styles.label}>{tr.status || 'Status'}</label>
-              <select style={styles.input} value={attForm.status} onChange={e => setAttForm({...attForm, status: e.target.value})}>
-                <option>{tr.present || 'Present'}</option><option>{tr.leave || 'Leave'}</option><option>{tr.absent || 'Absent'}</option>
-              </select>
-            </div>
+          <form onSubmit={markAttendance} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr)) auto', gap: '15px', alignItems: 'flex-end' }}>
+            <div><label style={styles.label}>{tr.attendanceDate || 'Date'}</label><input type="date" style={styles.input} value={attForm.date} onChange={e => setAttForm({...attForm, date: e.target.value})} required /></div>
+            <div><label style={styles.label}>{tr.selectEmployee || 'Employee'}</label><select style={styles.input} value={attForm.empId} onChange={e => setAttForm({...attForm, empId: e.target.value})} required><option value="">Select Employee</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
+            <div><label style={styles.label}>{tr.status || 'Status'}</label><select style={styles.input} value={attForm.status} onChange={e => setAttForm({...attForm, status: e.target.value})}><option>{tr.present || 'Present'}</option><option>{tr.leave || 'Leave'}</option><option>{tr.absent || 'Absent'}</option></select></div>
             {attForm.status === 'Present' ? (
               <>
-                <div>
-                  <label style={styles.label}>{tr.checkInTime || 'Check-In'}</label>
-                  <input type="time" style={styles.input} value={attForm.checkIn} onChange={e => setAttForm({...attForm, checkIn: e.target.value})} required />
-                </div>
-                <div>
-                  <label style={styles.label}>{tr.checkOutTime || 'Check-Out'}</label>
-                  <input type="time" style={styles.input} value={attForm.checkOut} onChange={e => setAttForm({...attForm, checkOut: e.target.value})} required />
-                </div>
+                <div><label style={styles.label}>{tr.checkInTime || 'Check-In'}</label><input type="time" style={styles.input} value={attForm.checkIn} onChange={e => setAttForm({...attForm, checkIn: e.target.value})} required /></div>
+                <div><label style={styles.label}>{tr.checkOutTime || 'Check-Out'}</label><input type="time" style={styles.input} value={attForm.checkOut} onChange={e => setAttForm({...attForm, checkOut: e.target.value})} required /></div>
               </>
             ) : (
               <>
-                <div>
-                  <label style={styles.label}>Leave Start</label>
-                  <input type="date" style={styles.input} value={attForm.leaveStart} onChange={e => setAttForm({...attForm, leaveStart: e.target.value})} required />
-                </div>
-                <div>
-                  <label style={styles.label}>Leave End</label>
-                  <input type="date" style={styles.input} value={attForm.leaveEnd} onChange={e => setAttForm({...attForm, leaveEnd: e.target.value})} required />
-                </div>
+                <div><label style={styles.label}>Leave Start</label><input type="date" style={styles.input} value={attForm.leaveStart} onChange={e => setAttForm({...attForm, leaveStart: e.target.value})} required /></div>
+                <div><label style={styles.label}>Leave End</label><input type="date" style={styles.input} value={attForm.leaveEnd} onChange={e => setAttForm({...attForm, leaveEnd: e.target.value})} required /></div>
               </>
             )}
             <button type="submit" style={{...styles.btnPrimary, height: '42px'}}>{tr.mark || 'Mark'}</button>
           </form>
           
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
-            <thead><tr style={{ background: '#f1f5f9' }}>
-              <th style={{padding:'10px', textAlign:'left'}}>Date</th>
-              <th style={{padding:'10px'}}>Employee</th>
-              <th style={{padding:'10px'}}>Check-In</th>
-              <th style={{padding:'10px'}}>Check-Out</th>
-              <th style={{padding:'10px'}}>{tr.overtime || 'Overtime'}</th>
-              <th style={{padding:'10px'}}>{tr.deduction || 'Deduction'}</th>
-              <th style={{padding:'10px'}}>{tr.status || 'Status'}</th>
-            </tr></thead>
-            <tbody>
-              {attendance.length === 0 ? <tr><td colSpan="7" style={{padding:'10px', textAlign:'center'}}>No attendance marked yet.</td></tr> : attendance.slice(0, 15).map(a => (
-                <tr key={a.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{padding:'10px'}}>{a.date}</td>
-                  <td style={{padding:'10px', textAlign:'center'}}>{a.employees?.name || 'N/A'}</td>
-                  <td style={{padding:'10px', textAlign:'center'}}>{a.check_in || '-'}</td>
-                  <td style={{padding:'10px', textAlign:'center'}}>{a.check_out || '-'}</td>
-                  <td style={{padding:'10px', textAlign:'center', color: '#059669', fontWeight: 'bold'}}>{a.overtime ? `${a.overtime} hrs` : '0'}</td>
-                  <td style={{padding:'10px', textAlign:'center', color: '#EF4444', fontWeight: 'bold'}}>{a.deduction ? `${a.deduction} hrs` : '0'}</td>
-                  <td style={{padding:'10px', textAlign:'center', color: a.status === 'Present' ? '#059669' : '#D97706'}}>{a.status}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div style={{ overflowX: 'auto', marginTop: '20px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
+              <thead><tr style={{ background: '#F8FAFC' }}>
+                <th style={styles.tableHeader}>Date</th><th style={styles.tableHeader}>Employee</th><th style={styles.tableHeader}>Check-In</th><th style={styles.tableHeader}>Check-Out</th><th style={styles.tableHeader}>{tr.overtime || 'Overtime'}</th><th style={styles.tableHeader}>{tr.deduction || 'Deduction'}</th><th style={styles.tableHeader}>{tr.status || 'Status'}</th>
+              </tr></thead>
+              <tbody>
+                {attendance.length === 0 ? <tr><td colSpan="7" style={{padding:'20px', textAlign:'center', color:'#94A3B8'}}>No attendance marked yet.</td></tr> : attendance.slice(0, 15).map(a => (
+                  <tr key={a.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                    <td style={styles.tableCell}>{a.date}</td>
+                    <td style={styles.tableCell}>{a.employees?.name || 'N/A'}</td>
+                    <td style={styles.tableCell}>{a.check_in || '-'}</td>
+                    <td style={styles.tableCell}>{a.check_out || '-'}</td>
+                    <td style={{...styles.tableCell, color: '#059669', fontWeight: 'bold'}}>{a.overtime ? `${a.overtime} hrs` : '0'}</td>
+                    <td style={{...styles.tableCell, color: '#EF4444', fontWeight: 'bold'}}>{a.deduction ? `${a.deduction} hrs` : '0'}</td>
+                    <td style={{...styles.tableCell, color: a.status === 'Present' ? '#059669' : '#D97706', fontWeight: 'bold'}}>{a.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        {/* PAY SALARY & GENERATE SLIP */}
         <div style={styles.card}>
-          <h3>💰 {tr.paySalary || 'Pay Salary'}</h3>
-          <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '15px' }}>Select Employee to Auto-Fill Basic Salary & Pending Advances. Commission & Overtime will auto-calculate from Sales & Attendance.</p>
-          <form onSubmit={handlePaySalary} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr 1fr 1fr 1fr auto', gap: '15px', alignItems: 'flex-end' }}>
-            <div>
-              <label style={styles.label}>{tr.selectEmployee || 'Employee'}</label>
-              <select name="emp" style={styles.input} value={payForm.empId} onChange={e => handlePayEmpChange(e.target.value)} required>
-                <option value="">Select Employee</option>
-                {data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={styles.label}>{tr.baseSalary || 'Base'}</label>
-              <input name="base" type="number" style={styles.input} value={payForm.base} onChange={e => setPayForm({...payForm, base: e.target.value})} required />
-            </div>
-            <div>
-              <label style={styles.label}>{tr.commission || 'Commission %'}</label>
-              <input name="comm" type="number" style={styles.input} value={payForm.comm} onChange={e => setPayForm({...payForm, comm: e.target.value})} required />
-            </div>
-            <div>
-              <label style={styles.label}>{tr.advDed || 'Adv. Deduct'}</label>
-              <input name="adv_ded" type="number" style={styles.input} value={payForm.adv_ded} onChange={e => setPayForm({...payForm, adv_ded: e.target.value})} required />
-            </div>
-            <div>
-              <label style={styles.label}>{tr.gift || 'Gift'}</label>
-              <input name="gift" type="number" style={styles.input} value={payForm.gift} onChange={e => setPayForm({...payForm, gift: e.target.value})} required />
-            </div>
-            <div>
-              <label style={styles.label}>{tr.month || 'Month'}</label>
-              <input name="month" type="text" style={styles.input} value={payForm.month} onChange={e => setPayForm({...payForm, month: e.target.value})} required />
-            </div>
-            <div>
-              <label style={styles.label}>{tr.mode || 'Mode'}</label>
-              <select name="mode" style={styles.input} value={payForm.mode} onChange={e => setPayForm({...payForm, mode: e.target.value})}><option>Cash</option><option>Bank Transfer</option></select>
-            </div>
+          <h3 style={{marginTop: 0, color: '#0F172A'}}>💰 {tr.paySalary || 'Pay Salary'}</h3>
+          <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '15px' }}>Select Employee to Auto-Fill Basic Salary & Pending Advances.</p>
+          <form onSubmit={handlePaySalary} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr)) auto', gap: '15px', alignItems: 'flex-end' }}>
+            <div><label style={styles.label}>{tr.selectEmployee || 'Employee'}</label><select name="emp" style={styles.input} value={payForm.empId} onChange={e => handlePayEmpChange(e.target.value)} required><option value="">Select Employee</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
+            <div><label style={styles.label}>{tr.baseSalary || 'Base'}</label><input name="base" type="number" style={styles.input} value={payForm.base} onChange={e => setPayForm({...payForm, base: e.target.value})} required /></div>
+            <div><label style={styles.label}>{tr.commission || 'Commission %'}</label><input name="comm" type="number" style={styles.input} value={payForm.comm} onChange={e => setPayForm({...payForm, comm: e.target.value})} required /></div>
+            <div><label style={styles.label}>{tr.advDed || 'Adv. Deduct'}</label><input name="adv_ded" type="number" style={styles.input} value={payForm.adv_ded} onChange={e => setPayForm({...payForm, adv_ded: e.target.value})} required /></div>
+            <div><label style={styles.label}>{tr.gift || 'Gift'}</label><input name="gift" type="number" style={styles.input} value={payForm.gift} onChange={e => setPayForm({...payForm, gift: e.target.value})} required /></div>
+            <div><label style={styles.label}>{tr.month || 'Month'}</label><input name="month" type="text" style={styles.input} value={payForm.month} onChange={e => setPayForm({...payForm, month: e.target.value})} required /></div>
+            <div><label style={styles.label}>{tr.mode || 'Mode'}</label><select name="mode" style={styles.input} value={payForm.mode} onChange={e => setPayForm({...payForm, mode: e.target.value})}><option>Cash</option><option>Bank Transfer</option></select></div>
             <button type="submit" style={{...styles.btnPrimary, height: '42px'}}>Pay</button>
           </form>
         </div>
 
-        <div style={styles.card}>
-          <h3>📋 {tr.generateSlip || 'Generate Salary Slip'}</h3>
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
-            <thead>
-              <tr style={{ background: '#1E3A8A', color: 'white' }}>
-                <th style={{ padding: '12px', textAlign: 'left' }}>Employee</th>
-                <th style={{ padding: '12px' }}>Month</th>
-                <th style={{ padding: '12px' }}>Net Paid</th>
-                <th style={{ padding: '12px' }}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.payroll.length === 0 ? <tr><td colSpan="4" style={{padding:'15px', textAlign:'center'}}>No salary paid yet.</td></tr> : data.payroll.map(p => (
-                <tr key={p.id} style={{ borderBottom: '1px solid #E2E8F0' }}>
-                  <td style={{ padding: '12px', fontWeight: 'bold' }}>{p.employees?.name || 'N/A'}</td>
-                  <td style={{ padding: '12px', textAlign: 'center' }}>{p.month}</td>
-                  <td style={{ padding: '12px', textAlign: 'center', color: '#059669', fontWeight: 'bold' }}>{(p.amount || 0).toFixed(2)} SAR</td>
-                  <td style={{ padding: '12px', textAlign: 'center' }}>
-                    <button onClick={() => handleGenerateSlip(p)} style={styles.btnInfo}>Download Slip</button>
-                  </td>
+        <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+          <div style={{ padding: '20px', borderBottom: '1px solid #E2E8F0' }}><h3 style={{ margin: 0, color: '#0F172A' }}>📋 {tr.generateSlip || 'Generate Salary Slip'}</h3></div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+              <thead>
+                <tr>
+                  <th style={styles.tableHeader}>Employee</th><th style={styles.tableHeader}>Month</th><th style={styles.tableHeader}>Net Paid</th><th style={styles.tableHeader}>Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {data.payroll.length === 0 ? <tr><td colSpan="4" style={{padding:'30px', textAlign:'center', color:'#94A3B8'}}>No salary paid yet.</td></tr> : data.payroll.map(p => (
+                  <tr key={p.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                    <td style={{...styles.tableCell, fontWeight: 'bold'}}>{p.employees?.name || 'N/A'}</td>
+                    <td style={styles.tableCell}>{p.month}</td>
+                    <td style={{...styles.tableCell, color: '#059669', fontWeight: 'bold'}}>{(p.amount || 0).toFixed(2)} SAR</td>
+                    <td style={styles.tableCell}><button onClick={() => handleGenerateSlip(p)} style={styles.btnInfo}>Download Slip</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     );
