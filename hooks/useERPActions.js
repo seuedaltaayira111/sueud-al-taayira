@@ -258,6 +258,7 @@ export default function useERPActions(state) {
       const compRefund = parseFloat(refundForm.compRefund) || 0;
       const custRefund = parseFloat(refundForm.custRefund) || 0;
       const refundNo = `REF-${Date.now()}`;
+      
       if (refundForm.mode === 'Credit' && custRefund > 0 && origInv.customer_id) {
         const cust = data.customers.find(c => c.id === origInv.customer_id);
         if (cust) {
@@ -274,6 +275,8 @@ export default function useERPActions(state) {
           setData(prev => ({ ...prev, portals: prev.portals.map(p => p.id === portal.id ? { ...p, current_balance: newBal } : p) }));
         }
       }
+      
+      // FIX: SAVING DEEP DETAILS IN REFUND INVOICE FROM ORIGINAL INVOICE
       const refundPayload = {
         invoice_no: refundNo, customer_id: origInv.customer_id, corporate_id: origInv.corporate_id,
         portal_id: refundForm.portalId || origInv.portal_id, employee_id: origInv.employee_id || null,
@@ -285,10 +288,21 @@ export default function useERPActions(state) {
         vat: 0, total: 0, paid_amount: 0, due_amount: 0,
         payment_method: refundForm.mode, refund_company: compRefund, refund_customer: custRefund,
         refund_reason: refundForm.reason, linked_inv_id: origInv.invoice_no,
+        // DEEP DETAILS ADDED HERE
+        old_airline: origInv.airline,
+        old_sector: origInv.flight_sector || origInv.sector,
+        old_pnr: origInv.pnr,
+        old_ticket_no: origInv.ticket_no,
+        old_flight_type: origInv.flight_type,
+        old_payment_method: origInv.payment_method,
+        old_passengers: origInv.passenger_names,
+        old_sell_price: origInv.total_sell || 0,
+        old_booking_date: origInv.invoice_date,
         status: 'refunded', tenant_id: userProfile.tenant_id
       };
       const { data: newRefund, error: refErr } = await supabase.from('invoices').insert([refundPayload]).select(`*, customers(name), corporates(name), employees(name)`).single();
       if (refErr) throw new Error('Refund creation failed: ' + refErr.message);
+      
       let newCashEntry = null;
       if (custRefund > 0 && refundForm.mode !== 'Credit') {
         const cbType = refundForm.mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
@@ -449,7 +463,7 @@ export default function useERPActions(state) {
         tabby_order_no: invForm.payment === 'Tabby' ? invForm.tabbyNo : null,
         tamara_order_no: invForm.payment === 'Tamara' ? invForm.tamaraNo : null,
         ticket_status: invForm.ticketStatus,
-        status: invForm.status || (due > 0 ? 'Unpaid' : 'Paid'),
+        status: invForm.status || 'Unpaid', // FIX: Status will strictly follow the dropdown selection
         tenant_id: userProfile.tenant_id
       };
       if (editInvId) {
