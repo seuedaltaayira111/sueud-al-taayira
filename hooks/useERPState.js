@@ -4,21 +4,13 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 // ==========================================
-// PREMIUM BILINGUAL INVOICE TEMPLATE (SAUDI COMPLIANT)
+// PREMIUM HIGH-TECH INVOICE TEMPLATE
 // ==========================================
 const getInvoiceHTML = (inv, s, lang = 'en') => {
   const setting = s || {};
   const invoiceNo = inv.invoice_no || 'N/A';
   const trackUrl = `https://sueud-al-taayira.vercel.app/invoice/${invoiceNo}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(trackUrl)}`;
-  
-  const aiMessages = [
-    "Thank you for choosing us! We look forward to serving you again. / شكراً لاختياركم إيانا. نتطلع لخدمتكم مرة أخرى.",
-    "Your satisfaction is our priority. Have a safe flight! / رضاكم هو أولويتنا. رحلة سعيدة!",
-    "Experience seamless travel with us. Welcome back anytime! / اختبروا السفر السلس معنا. مرحباً بكم في أي وقت.",
-    "We appreciate your business. See you on your next journey! / نحن نقدر تعاملكم معنا. نراكم في رحلتكم القادمة!"
-  ];
-  const aiFooterMsg = aiMessages[Math.floor(Math.random() * aiMessages.length)];
   
   const totalSell = inv.total_sell || 0; // New Booking Price
   const discount = inv.discount || 0;
@@ -48,94 +40,111 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
     <style>
       * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; padding: 0; }
       body { font-family: 'Inter', 'Cairo', sans-serif; background: #f0f4f8; margin: 0; padding: 30px; color: #1e293b; }
-      .invoice-box { max-width: 900px; margin: auto; background: #fff; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.08); border-radius: 12px; }
-      .header { display: flex; justify-content: space-between; align-items: flex-start; padding: 40px; background: linear-gradient(135deg, #0c1d3a 0%, #1a365d 100%); color: #fff; }
-      .company-info { flex: 1; display: flex; gap: 20px; }
-      .company-info .logo { width: 100px; height: 100px; object-fit: cover; border-radius: 12px; background: rgba(255,255,255,0.1); padding: 5px; }
+      .invoice-box { max-width: 900px; margin: auto; background: #fff; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.08); border-radius: 16px; }
+      
+      /* HEADER FIX: No overlapping, clean spacing */
+      .header { display: flex; justify-content: space-between; align-items: stretch; padding: 40px; background: linear-gradient(135deg, #0c1d3a 0%, #1a365d 100%); color: #fff; gap: 40px; }
+      .company-block { display: flex; gap: 20px; flex: 1; }
+      .logo-box { width: 100px; height: 100px; object-fit: cover; border-radius: 12px; background: rgba(255,255,255,0.1); padding: 5px; flex-shrink: 0; }
       .company-text h2 { font-size: 24px; font-weight: 800; color: #fbbf24; }
       .company-text h1 { font-size: 16px; font-weight: 600; color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 2px; margin-top: 4px; }
       .company-text p { font-size: 12px; color: rgba(255,255,255,0.7); line-height: 1.8; margin-top: 8px; }
-      .invoice-meta { text-align: right; min-width: 250px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
-      .invoice-meta h3 { font-size: 36px; font-weight: 800; color: #fbbf24; text-transform: uppercase; letter-spacing: 1px; }
-      .meta-row { display: flex; justify-content: space-between; margin-top: 10px; font-size: 14px; }
+      
+      .invoice-meta { min-width: 280px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; justify-content: center; }
+      .invoice-meta h3 { font-size: 32px; font-weight: 800; color: #fbbf24; text-transform: uppercase; letter-spacing: 1px; line-height: 1.2; }
+      .invoice-meta h3 span { font-size: 18px; font-family: 'Cairo'; display: block; margin-top: 5px; }
+      .meta-row { display: flex; justify-content: space-between; margin-top: 10px; font-size: 14px; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 5px; }
       .meta-row .lbl { color: rgba(255,255,255,0.6); }
       .meta-row .val { color: #fbbf24; font-weight: 700; }
-      .status-badge { display: inline-block; padding: 8px 20px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-top: 15px; ${dueAmount > 0 ? 'background: rgba(251,191,36,0.2); color: #fbbf24;' : 'background: rgba(52,211,153,0.2); color: #34d399;'} }
+      .status-badge { display: inline-block; padding: 8px 20px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-top: 15px; align-self: flex-start; ${dueAmount > 0 ? 'background: rgba(251,191,36,0.2); color: #fbbf24;' : 'background: rgba(52,211,153,0.2); color: #34d399;'} }
+      
       .body { padding: 40px; }
-      .bilingual-title { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+      .bilingual-title { font-size: 14px; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; display: flex; justify-content: space-between; }
+      
       .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
       .info-block { padding: 20px; background: #f8fafc; border-radius: 12px; border-left: 4px solid #1a365d; }
-      .info-row { display: flex; justify-content: space-between; font-size: 14px; padding: 4px 0; }
+      .info-row { display: flex; justify-content: space-between; font-size: 14px; padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
+      .info-row:last-child { border: none; }
       .info-row .label { color: #64748b; }
       .info-row .value { color: #0f172a; font-weight: 600; text-align: right; }
-      .reissue-block { padding: 20px; background: #fffbeb; border-radius: 12px; border-left: 4px solid #f59e0b; margin-bottom: 30px; }
-      .reissue-title { font-size: 16px; font-weight: 700; color: #d97706; margin-bottom: 15px; display: flex; justify-content: space-between; }
-      .reissue-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-      .reissue-item { background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #fde68a; }
-      .reissue-item .lbl { font-size: 11px; color: #92400e; font-weight: 600; }
-      .reissue-item .val { font-size: 14px; color: #78350f; font-weight: 700; }
-      .reissue-credit { grid-column: 1 / -1; background: #dcfce7; border-color: #86efac; }
-      .reissue-credit .lbl { color: #059669; }
-      .reissue-credit .val { color: #047857; }
-      table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-      thead th { padding: 15px; background: #0c1d3a; color: #fbbf24; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; text-align: left; }
+      
+      /* REISSUE BLOCK HIGH-TECH */
+      .reissue-block { padding: 25px; background: #fffbeb; border-radius: 12px; border: 1px solid #fde68a; margin-bottom: 30px; }
+      .reissue-title { font-size: 16px; font-weight: 700; color: #d97706; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; background: #fef3c7; padding: 10px 15px; border-radius: 8px; }
+      .reissue-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+      .reissue-item { background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #fde68a; text-align: center; }
+      .reissue-item .lbl { font-size: 11px; color: #92400e; font-weight: 600; text-transform: uppercase; }
+      .reissue-item .val { font-size: 16px; color: #78350f; font-weight: 700; margin-top: 5px; }
+      .reissue-credit { background: #dcfce7; border-color: #86efac; grid-column: span 3; display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; }
+      .reissue-credit .lbl { color: #059669; font-size: 14px; }
+      .reissue-credit .val { color: #047857; font-size: 20px; font-weight: 800; }
+      
+      table { width: 100%; border-collapse: collapse; margin-bottom: 30px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+      thead th { padding: 15px; background: #0c1d3a; color: #fbbf24; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; text-align: left; }
       thead th.right { text-align: right; }
       thead th.center { text-align: center; }
-      tbody td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+      tbody td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; background: #fff; }
       tbody td.right { text-align: right; font-weight: 600; }
       tbody td.center { text-align: center; }
-      .bottom-section { display: flex; justify-content: space-between; gap: 40px; }
-      .payment-breakdown { flex: 1; padding: 20px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; }
-      .pay-row { display: flex; justify-content: space-between; font-size: 14px; padding: 6px 0; }
-      .totals-box { width: 320px; }
-      .total-row { display: flex; justify-content: space-between; padding: 10px 0; font-size: 14px; color: #64748b; }
-      .grand-total { display: flex; justify-content: space-between; padding: 20px; background: #0c1d3a; color: #fff; border-radius: 12px; margin-top: 10px; font-size: 20px; font-weight: 800; }
+      
+      .bottom-section { display: grid; grid-template-columns: 1.5fr 1fr; gap: 40px; }
+      .payment-breakdown { padding: 25px; background: linear-gradient(135deg, #f8fafc, #f1f5f9); border-radius: 12px; border: 1px solid #e2e8f0; }
+      .pay-row { display: flex; justify-content: space-between; font-size: 14px; padding: 8px 0; border-bottom: 1px dashed #cbd5e1; }
+      .pay-row:last-child { border: none; }
+      .pay-row span { color: #334155; }
+      
+      .totals-box { background: #0c1d3a; border-radius: 16px; padding: 25px; color: #fff; align-self: flex-start; }
+      .total-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; color: rgba(255,255,255,0.8); }
+      .grand-total { display: flex; justify-content: space-between; padding: 15px 0 0; margin-top: 10px; border-top: 2px solid rgba(255,255,255,0.1); font-size: 22px; font-weight: 800; color: #fff; }
       .grand-total .val { color: #fbbf24; }
-      .footer { padding: 30px 40px; background: #f8fafc; display: flex; justify-content: space-between; alignItems: center; border-top: 1px solid #e2e8f0; }
+      
+      .footer { padding: 30px 40px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; gap: 30px; }
       .qr-code img { height: 100px; width: 100px; border-radius: 8px; border: 1px solid #e2e8f0; padding: 5px; background: #fff; }
-      .footer-text { text-align: center; flex: 1; padding: 0 30px; }
-      .ai-msg { font-size: 13px; color: #475569; font-weight: 600; margin-bottom: 5px; }
-      .ai-msg-ar { font-size: 13px; color: #64748b; font-family: 'Cairo'; }
+      .footer-text { text-align: center; flex: 1; }
+      .ai-msg { font-size: 14px; color: #475569; font-weight: 600; margin-bottom: 5px; }
+      .ai-msg-ar { font-size: 14px; color: #64748b; font-family: 'Cairo'; }
+      
       @media print { body { background: #fff; padding: 0; } .invoice-box { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; } }
     </style>
   </head>
   <body>
     <div class="invoice-box">
       <div class="header">
-        <div class="company-info">
-          ${setting.logo_url ? `<img src="${setting.logo_url}" crossorigin="anonymous" class="logo" />` : ''}
+        <div class="company-block">
+          ${setting.logo_url ? `<img src="${setting.logo_url}" crossorigin="anonymous" class="logo-box" />` : ''}
           <div class="company-text">
             <h2>${setting.company_name_ar || 'صعود الطائرة للسفر والسياحة'}</h2>
             <h1>${setting.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
             <p>
-              ${setting.address_ar || 'Address / العنوان'}<br/>
-              VAT / ضريبة: ${setting.vat_no || 'N/A'} | CR / سجل: ${setting.cr_no || 'N/A'}<br/>
-              License / ترخيص: ${setting.license_no || 'N/A'} | Tourist Lic / ترخيص سياحي: ${setting.tourist_license_no || 'N/A'}<br/>
-              Phone / هاتف: ${setting.phone || 'N/A'}
+              ${setting.address_ar || 'العنوان / Address'}<br/>
+              ضريبة / VAT: ${setting.vat_no || 'N/A'} | سجل / CR: ${setting.cr_no || 'N/A'}<br/>
+              ترخيص / Lic: ${setting.license_no || 'N/A'} | سياحي / Tourist: ${setting.tourist_license_no || 'N/A'}<br/>
+              هاتف / Phone: ${setting.phone || 'N/A'}
             </p>
           </div>
         </div>
         <div class="invoice-meta">
-          <h3>TAX INVOICE<br/><span style="font-size:16px; font-family:'Cairo';">فاتورة ضريبية</span></h3>
-          <div class="meta-row"><span class="lbl">Invoice No / رقم الفاتورة</span><span class="val">${invoiceNo}</span></div>
-          <div class="meta-row"><span class="lbl">Date / التاريخ</span><span class="val">${inv.invoice_date || ''}</span></div>
-          <div class="status-badge">${dueAmount > 0 ? 'UNPAID / غير مدفوعة' : 'PAID / مدفوعة'}</div>
+          <h3>TAX INVOICE<span>فاتورة ضريبية</span></h3>
+          <div class="meta-row"><span class="lbl">رقم / Inv No</span><span class="val">${invoiceNo}</span></div>
+          <div class="meta-row"><span class="lbl">تاريخ / Date</span><span class="val">${inv.invoice_date || ''}</span></div>
+          <div class="status-badge">${dueAmount > 0 ? 'غير مدفوعة / UNPAID' : 'مدفوعة / PAID'}</div>
         </div>
       </div>
+      
       <div class="body">
         <div class="details-grid">
           <div class="info-block">
-            <div class="bilingual-title"><span>BILL TO</span><span>فاتورة إلى</span></div>
-            <div class="info-row"><span class="label">Name / الاسم</span><span class="value">${inv.customers?.name || inv.corporates?.name || 'N/A'}</span></div>
-            <div class="info-row"><span class="label">Phone / الهاتف</span><span class="value">${inv.customers?.phone || 'N/A'}</span></div>
-            <div class="info-row"><span class="label">Sales Person / الموظف</span><span class="value">${inv.employees?.name || 'N/A'}</span></div>
+            <div class="bilingual-title"><span>BILL TO / فاتورة إلى</span></div>
+            <div class="info-row"><span class="label">الاسم / Name</span><span class="value">${inv.customers?.name || inv.corporates?.name || 'N/A'}</span></div>
+            <div class="info-row"><span class="label">الهاتف / Phone</span><span class="value">${inv.customers?.phone || 'N/A'}</span></div>
+            <div class="info-row"><span class="label">الموظف / Sales Person</span><span class="value">${inv.employees?.name || 'N/A'}</span></div>
           </div>
           <div class="info-block" style="border-left-color: #f59e0b;">
-            <div class="bilingual-title"><span>FLIGHT DETAILS</span><span>تفاصيل الرحلة</span></div>
-            <div class="info-row"><span class="label">Airline / خط الطيران</span><span class="value">${inv.airline || 'N/A'}</span></div>
-            <div class="info-row"><span class="label">Sector / القطاع</span><span class="value">${inv.flight_sector || 'N/A'}</span></div>
-            <div class="info-row"><span class="label">PNR / رقم الحجز</span><span class="value">${inv.pnr || 'N/A'}</span></div>
-            <div class="info-row"><span class="label">Ticket No / التذكرة</span><span class="value">${inv.ticket_no || 'N/A'}</span></div>
+            <div class="bilingual-title"><span>FLIGHT DETAILS / تفاصيل الرحلة</span></div>
+            <div class="info-row"><span class="label">خط الطيران / Airline</span><span class="value">${inv.airline || 'N/A'}</span></div>
+            <div class="info-row"><span class="label">القطاع / Sector</span><span class="value">${inv.flight_sector || 'N/A'}</span></div>
+            <div class="info-row"><span class="label">رقم الحجز / PNR</span><span class="value">${inv.pnr || 'N/A'}</span></div>
+            <div class="info-row"><span class="label">التذكرة / Ticket No</span><span class="value">${inv.ticket_no || 'N/A'}</span></div>
           </div>
         </div>
         
@@ -143,26 +152,36 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
         <div class="reissue-block">
           <div class="reissue-title"><span>⚠️ PREVIOUS BOOKING & REFUND DETAILS</span><span>تفاصيل الحجز السابق والاسترجاع</span></div>
           <div class="reissue-grid">
-            <div class="reissue-item"><div class="lbl">Original Airline / الخطوط القديمة</div><div class="val">${inv.old_airline || 'N/A'}</div></div>
-            <div class="reissue-item"><div class="lbl">Original Sector / القطاع القديم</div><div class="val">${inv.old_sector || 'N/A'}</div></div>
-            <div class="reissue-item"><div class="lbl">Original Ticket No / التذكرة القديمة</div><div class="val">${inv.old_ticket_no || 'N/A'}</div></div>
-            <div class="reissue-item"><div class="lbl">Original Fare / الأجرة الأصلية</div><div class="val">${parseFloat(inv.old_sell_price || 0).toFixed(2)} SAR</div></div>
-            <div class="reissue-item reissue-credit"><div class="lbl">Refund Credit Applied / رصيد الاسترجاع المطبق</div><div class="val">- ${usedCredit.toFixed(2)} SAR</div></div>
+            <div class="reissue-item"><div class="lbl">الخطوط القديمة / Original Airline</div><div class="val">${inv.old_airline || 'N/A'}</div></div>
+            <div class="reissue-item"><div class="lbl">القطاع القديم / Original Sector</div><div class="val">${inv.old_sector || 'N/A'}</div></div>
+            <div class="reissue-item"><div class="lbl">التذكرة القديمة / Original Ticket No</div><div class="val">${inv.old_ticket_no || 'N/A'}</div></div>
+            <div class="reissue-item reissue-credit">
+              <div class="lbl">سعر البيع الأصلي / Original Selling Price</div>
+              <div class="val">${parseFloat(inv.old_sell_price || 0).toFixed(2)} SAR</div>
+            </div>
+            <div class="reissue-item reissue-credit" style="background: #fee2e2; border-color: #fecaca; grid-column: span 1;">
+              <div class="lbl" style="color: #dc2626;">استرجاع العميل / Customer Refund</div>
+              <div class="val" style="color: #b91c1c;">- ${usedCredit.toFixed(2)} SAR</div>
+            </div>
+            <div class="reissue-item reissue-credit" style="background: #eff6ff; border-color: #bfdbfe; grid-column: span 1;">
+              <div class="lbl" style="color: #2563eb;">صافي الخصم / Net Credit Applied</div>
+              <div class="val" style="color: #1d4ed8;">- ${usedCredit.toFixed(2)} SAR</div>
+            </div>
           </div>
         </div>` : ''}
         
         <table>
           <thead>
             <tr>
-              <th>Description / الوصف</th>
-              <th class="center">Qty / الكمية</th>
-              <th class="right">Unit Price / سعر الوحدة</th>
-              <th class="right">Total / الإجمالي</th>
+              <th>الوصف / Description</th>
+              <th class="center">الكمية / Qty</th>
+              <th class="right">سعر الوحدة / Unit Price</th>
+              <th class="right">الإجمالي / Total</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>${inv.sector || inv.service_type || 'Service'}</td>
+              <td>${inv.sector || inv.service_type || 'Service / خدمة'}</td>
               <td class="center">${inv.qty || 1}</td>
               <td class="right">${unitPrice.toFixed(2)}</td>
               <td class="right">${totalSell.toFixed(2)}</td>
@@ -172,28 +191,30 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
         
         <div class="bottom-section">
           <div class="payment-breakdown">
-            <div class="bilingual-title"><span>PAYMENT BREAKDOWN</span><span>تفاصيل الدفع</span></div>
-            <div class="pay-row"><span>New Booking Price / سعر الحجز الجديد</span><span style="font-weight:600;">${total.toFixed(2)} SAR</span></div>
-            ${usedCredit > 0 ? `<div class="pay-row"><span>Less: Refund Credit Applied / اقل: الرصيد المطبق</span><span style="font-weight:600; color:#7c3aed;">- ${usedCredit.toFixed(2)} SAR</span></div>` : ''}
-            <div class="pay-row" style="border-top:1px solid #e2e8f0; margin-top:5px; padding-top:10px;"><span style="font-weight:700;">Balance Paid / المدفوع (${paymentDisplay})</span><span style="font-weight:700; color:#059669; font-size:16px;">${cashPaid.toFixed(2)} SAR</span></div>
-            <div class="pay-row"><span style="font-weight:700;">Amount Due / المتبقي</span><span style="font-weight:700; color:${dueAmount > 0 ? '#ef4444' : '#059669'}; font-size:16px;">${dueAmount.toFixed(2)} SAR</span></div>
+            <div class="bilingual-title"><span>PAYMENT BREAKDOWN / تفاصيل الدفع</span></div>
+            <div class="pay-row"><span>سعر الحجز الجديد / New Booking Price</span><span style="font-weight:600;">${total.toFixed(2)} SAR</span></div>
+            ${usedCredit > 0 ? `<div class="pay-row" style="color:#7c3aed;"><span>خصم الرصيد / Less: Refund Credit Applied</span><span style="font-weight:600;">- ${usedCredit.toFixed(2)} SAR</span></div>` : ''}
+            <div class="pay-row" style="border-top:2px solid #cbd5e1; margin-top:5px; padding-top:10px; font-weight:700;"><span>المدفوع / Balance Paid (${paymentDisplay})</span><span style="color:#059669;">${cashPaid.toFixed(2)} SAR</span></div>
+            <div class="pay-row" style="font-weight:700;"><span>المتبقي / Amount Due</span><span style="color:${dueAmount > 0 ? '#ef4444' : '#059669'};">${dueAmount.toFixed(2)} SAR</span></div>
           </div>
+          
           <div class="totals-box">
-            <div class="total-row"><span>Subtotal / الإجمالي قبل الخصم</span><span>${subTotal.toFixed(2)} SAR</span></div>
-            ${discount > 0 ? `<div class="total-row" style="color:#059669;"><span>Discount / الخصم</span><span>- ${discount.toFixed(2)} SAR</span></div>` : ''}
-            <div class="total-row"><span>VAT (${vatRate}%) / الضريبة</span><span>${vat.toFixed(2)} SAR</span></div>
-            <div class="grand-total"><span>GRAND TOTAL / الإجمالي</span><span class="val">${total.toFixed(2)} SAR</span></div>
+            <div class="total-row"><span>الإجمالي قبل الخصم / Subtotal</span><span>${subTotal.toFixed(2)}</span></div>
+            ${discount > 0 ? `<div class="total-row" style="color:#34d399;"><span>الخصم / Discount</span><span>- ${discount.toFixed(2)}</span></div>` : ''}
+            <div class="total-row"><span>الضريبة (${vatRate}%) / VAT</span><span>${vat.toFixed(2)}</span></div>
+            <div class="grand-total"><span>الإجمالي / GRAND TOTAL</span><span class="val">${total.toFixed(2)} SAR</span></div>
           </div>
         </div>
       </div>
+      
       <div class="footer">
         <div class="qr-code">
           <img src="${qrCodeUrl}" alt="Scan to Download" crossorigin="anonymous" />
-          <p style="font-size: 10px; text-align: center; color: #94A3B8; margin-top: 5px;">Scan / امسح</p>
+          <p style="font-size: 10px; text-align: center; color: #94A3B8; margin-top: 5px;">امسح / Scan</p>
         </div>
         <div class="footer-text">
-          <p class="ai-msg">${aiFooterMsg.split(' / ')[0]}</p>
-          <p class="ai-msg-ar">${aiFooterMsg.split(' / ')[1]}</p>
+          <p class="ai-msg">Thank you for choosing us! We look forward to serving you again.</p>
+          <p class="ai-msg-ar">شكراً لاختياركم إيانا. نتطلع لخدمتكم مرة أخرى.</p>
           <p style="font-size: 11px; color: #94a3b8; margin-top: 10px;">${setting.company_name_en || ''} | ${setting.phone || ''}</p>
         </div>
         <div style="width: 110px;"></div>
@@ -226,30 +247,32 @@ const getRefundHTML = (inv, s, lang = 'en') => {
     <style>
       * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; padding: 0; }
       body { font-family: 'Inter', 'Cairo', sans-serif; background: #f0f4f8; margin: 0; padding: 30px; color: #1e293b; }
-      .invoice-box { max-width: 850px; margin: auto; background: #fff; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.08); border-radius: 12px; }
-      .header { display: flex; justify-content: space-between; align-items: flex-start; padding: 35px 40px; background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%); color: #fff; }
-      .company-info { flex: 1; display: flex; gap: 15px; }
-      .company-info .logo { width: 80px; height: 80px; object-fit: cover; border-radius: 10px; background: rgba(255,255,255,0.1); padding: 5px; }
-      .company-info h2 { font-size: 22px; font-weight: 800; color: #fbbf24; }
-      .company-info h1 { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 2px; margin-top: 4px; }
-      .company-info p { font-size: 11px; color: rgba(255,255,255,0.6); line-height: 1.7; margin-top: 10px; }
-      .invoice-meta { text-align: right; min-width: 220px; }
+      .invoice-box { max-width: 850px; margin: auto; background: #fff; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.08); border-radius: 16px; }
+      .header { display: flex; justify-content: space-between; align-items: stretch; padding: 35px 40px; background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%); color: #fff; gap: 30px; }
+      .company-block { display: flex; gap: 15px; flex: 1; }
+      .logo-box { width: 80px; height: 80px; object-fit: cover; border-radius: 10px; background: rgba(255,255,255,0.1); padding: 5px; flex-shrink: 0; }
+      .company-text h2 { font-size: 22px; font-weight: 800; color: #fbbf24; }
+      .company-text h1 { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 2px; margin-top: 4px; }
+      .company-text p { font-size: 11px; color: rgba(255,255,255,0.6); line-height: 1.7; margin-top: 10px; }
+      .invoice-meta { min-width: 220px; text-align: right; display: flex; flex-direction: column; justify-content: center; }
       .invoice-meta h3 { font-size: 32px; font-weight: 800; color: #fbbf24; text-transform: uppercase; letter-spacing: 1px; }
-      .invoice-meta .inv-no { font-size: 14px; color: rgba(255,255,255,0.8); margin-top: 8px; }
-      .invoice-meta .inv-no span { color: #fbbf24; font-weight: 700; }
-      .status-badge { display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-top: 12px; background: rgba(251,191,36,0.2); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+      .invoice-meta h3 span { font-size: 18px; font-family: 'Cairo'; display: block; margin-top: 5px; }
+      .inv-no { font-size: 14px; color: rgba(255,255,255,0.8); margin-top: 8px; border-bottom: 1px dashed rgba(255,255,255,0.2); padding-bottom: 5px; }
+      .inv-no span { color: #fbbf24; font-weight: 700; }
+      .status-badge { display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-top: 12px; background: rgba(251,191,36,0.2); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); align-self: flex-end; }
       .body { padding: 35px 40px; }
-      .info-block { padding: 18px; background: #fff5f5; border-radius: 10px; border-left: 3px solid #dc2626; margin-bottom: 20px; }
-      .info-block h4 { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #dc2626; margin-bottom: 10px; font-weight: 700; }
-      .info-block .row { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; }
-      .info-block .row .label { color: #991b1b; font-weight: 500; }
-      .info-block .row .value { color: #7f1d1d; font-weight: 600; text-align: right; }
-      .refund-card { padding: 30px; background: #f0fdf4; border-radius: 12px; text-align: center; border: 1px solid #bbf7d0; margin-bottom: 20px; }
-      .refund-card h5 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #059669; margin-bottom: 10px; }
-      .refund-card .amount { font-size: 36px; font-weight: 800; color: #047857; }
-      .payment-info { padding: 15px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; margin-top: 20px; }
-      .pay-row { display: flex; justify-content: space-between; font-size: 14px; padding: 4px 0; }
-      .footer { padding: 25px 40px; background: #f8fafc; display: flex; justify-content: space-between; alignItems: center; border-top: 1px solid #e2e8f0; }
+      .info-block { padding: 20px; background: #fff5f5; border-radius: 12px; border-left: 4px solid #dc2626; margin-bottom: 20px; }
+      .info-block h4 { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: #dc2626; margin-bottom: 15px; font-weight: 700; }
+      .row { display: flex; justify-content: space-between; font-size: 14px; padding: 6px 0; border-bottom: 1px solid #fee2e2; }
+      .row:last-child { border: none; }
+      .row .label { color: #991b1b; font-weight: 500; }
+      .row .value { color: #7f1d1d; font-weight: 600; text-align: right; }
+      .refund-card { padding: 40px; background: linear-gradient(135deg, #f0fdf4, #dcfce7); border-radius: 16px; text-align: center; border: 1px solid #bbf7d0; margin-bottom: 20px; box-shadow: 0 10px 15px rgba(5, 150, 105, 0.1); }
+      .refund-card h5 { font-size: 16px; text-transform: uppercase; letter-spacing: 1px; color: #059669; margin-bottom: 15px; }
+      .refund-card .amount { font-size: 42px; font-weight: 800; color: #047857; }
+      .payment-info { padding: 20px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; margin-top: 20px; display: flex; justify-content: space-between; align-items: center; }
+      .pay-row { font-size: 14px; font-weight: 600; color: #334155; }
+      .footer { padding: 25px 40px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; gap: 20px; }
       .qr-code img { height: 80px; width: 80px; border-radius: 6px; border: 1px solid #e2e8f0; padding: 3px; background: #fff; }
       @media print { body { background: #fff; padding: 0; margin: 0; } .invoice-box { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; } }
     </style>
@@ -257,29 +280,29 @@ const getRefundHTML = (inv, s, lang = 'en') => {
   <body>
     <div class="invoice-box">
       <div class="header">
-        <div class="company-info">
-          ${setting.logo_url ? `<img src="${setting.logo_url}" crossorigin="anonymous" class="logo" />` : ''}
-          <div>
+        <div class="company-block">
+          ${setting.logo_url ? `<img src="${setting.logo_url}" crossorigin="anonymous" class="logo-box" />` : ''}
+          <div class="company-text">
             <h2>${setting.company_name_ar || 'صعود الطائرة'}</h2>
             <h1>${setting.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
-            <p>${setting.address_ar || ''}<br/>VAT: ${setting.vat_no || 'N/A'} | CR: ${setting.cr_no || 'N/A'}</p>
+            <p>${setting.address_ar || ''}<br/>ضريبة / VAT: ${setting.vat_no || 'N/A'} | سجل / CR: ${setting.cr_no || 'N/A'}</p>
           </div>
         </div>
         <div class="invoice-meta">
-          <h3>REFUND<br/><span style="font-size:16px; font-family:'Cairo';">استرجاع</span></h3>
-          <div class="inv-no">Refund No / رقم الاسترجاع: <span>${invoiceNo}</span></div>
-          <div class="inv-no">Date / التاريخ: <span>${inv.refund_date || inv.invoice_date || ''}</span></div>
-          <div class="status-badge">REFUND PROCESSED / تم الاسترجاع</div>
+          <h3>REFUND<span>استرجاع</span></h3>
+          <div class="inv-no">رقم / Refund No: <span>${invoiceNo}</span></div>
+          <div class="inv-no">تاريخ / Date: <span>${inv.refund_date || inv.invoice_date || ''}</span></div>
+          <div class="status-badge">تم الاسترجاع / PROCESSED</div>
         </div>
       </div>
       <div class="body">
         <div class="info-block">
           <h4>BOOKING DETAILS / تفاصيل الحجز</h4>
-          <div class="row"><span class="label">Customer Name / اسم العميل</span><span class="value">${inv.customers?.name || 'N/A'}</span></div>
-          <div class="row"><span class="label">Contact / الهاتف</span><span class="value">${inv.customers?.phone || 'N/A'}</span></div>
-          <div class="row"><span class="label">Airline / خط الطيران</span><span class="value">${inv.airline || 'N/A'}</span></div>
-          <div class="row"><span class="label">Date of Booking / تاريخ الحجز</span><span class="value">${inv.invoice_date || 'N/A'}</span></div>
-          <div class="row"><span class="label">PNR / رقم الحجز</span><span class="value">${inv.pnr || 'N/A'}</span></div>
+          <div class="row"><span class="label">اسم العميل / Customer Name</span><span class="value">${inv.customers?.name || 'N/A'}</span></div>
+          <div class="row"><span class="label">الهاتف / Contact</span><span class="value">${inv.customers?.phone || 'N/A'}</span></div>
+          <div class="row"><span class="label">خط الطيران / Airline</span><span class="value">${inv.airline || 'N/A'}</span></div>
+          <div class="row"><span class="label">تاريخ الحجز / Date of Booking</span><span class="value">${inv.invoice_date || 'N/A'}</span></div>
+          <div class="row"><span class="label">رقم الحجز / PNR</span><span class="value">${inv.pnr || 'N/A'}</span></div>
         </div>
         
         <div class="refund-card">
@@ -288,7 +311,8 @@ const getRefundHTML = (inv, s, lang = 'en') => {
         </div>
         
         <div class="payment-info">
-          <div class="pay-row"><span>Refund Method / طريقة الاسترجاع</span><span style="font-weight:600; color:#2563eb;">${refundMethodDisplay}</span></div>
+          <span class="pay-row">طريقة الاسترجاع / Refund Method</span>
+          <span style="font-weight:600; color:#2563eb;">${refundMethodDisplay}</span>
         </div>
       </div>
       <div class="footer">
@@ -305,7 +329,7 @@ const getRefundHTML = (inv, s, lang = 'en') => {
 };
 
 // ==========================================
-// MAIN STATE HOOK
+// MAIN STATE HOOK (Unchanged Core Logic)
 // ==========================================
 export default function useERPState() {
   const router = useRouter();
@@ -382,9 +406,7 @@ export default function useERPState() {
 
   const logAction = async (action) => {
     if (!user) return;
-    try {
-      await supabase.from('audits').insert([{ user_email: user.email, action, tenant_id: userProfile?.tenant_id }]);
-    } catch (err) { console.error('Audit log error:', err.message); }
+    try { await supabase.from('audits').insert([{ user_email: user.email, action, tenant_id: userProfile?.tenant_id }]); } catch (err) { console.error('Audit log error:', err.message); }
   };
 
   const fetchAll = useCallback(async () => {
@@ -415,14 +437,10 @@ export default function useERPState() {
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push('/login'); return; }
-      setUser(session.user);
-      fetchAll();
+      setUser(session.user); fetchAll();
     };
     getSession();
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-      if (!session) router.push('/login');
-    });
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => { setUser(session?.user || null); if (!session) router.push('/login'); });
     return () => authListener.subscription.unsubscribe();
   }, []);
 
