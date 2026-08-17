@@ -10,7 +10,7 @@ export default function Home() {
 
   const t = (key, fallback) => erp.tr?.[key] || fallback || key;
 
-  // Keyboard shortcut
+  // FIX: Keyboard shortcut - stable dependency
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.altKey && e.key.toLowerCase() === 'n') { e.preventDefault(); erp.setPage('create'); }
@@ -38,6 +38,7 @@ export default function Home() {
     );
   }
 
+  // FIX: Role-based SuperAdmin check
   const isSuperAdmin = erp.userProfile?.role === 'SuperAdmin';
 
   const menu = [
