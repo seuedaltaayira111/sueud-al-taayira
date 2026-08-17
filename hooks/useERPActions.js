@@ -138,7 +138,7 @@ export default function useERPActions(state) {
     try { await supabase.from('tenants').delete().eq('id', id); showToast('Agency Deleted!'); fetchAll(); } catch (err) { showToast('Error: ' + err.message); }
   };
 
-  // ===================== PDF & PRINT =====================
+  // ===================== PDF & PRINT (QR FIX) =====================
   const downloadPDF = async (htmlContent, filename = 'document.pdf') => {
     try {
       const html2canvas = (await import('html2canvas')).default;
@@ -148,7 +148,8 @@ export default function useERPActions(state) {
       div.innerHTML = htmlContent; document.body.appendChild(div);
       const images = div.querySelectorAll('img');
       await Promise.all(Array.from(images).map(img => img.complete ? Promise.resolve() : new Promise(res => { img.onload = img.onerror = res; })));
-      const canvas = await html2canvas(div, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      // FIX: Added allowTaint: true to force QR code rendering in PDF
+      const canvas = await html2canvas(div, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' });
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       const imgWidth = 210; const pageHeight = 297;
@@ -195,17 +196,18 @@ export default function useERPActions(state) {
     setPreviewHTML(html); setModal({ type: 'preview', data: null });
   };
 
-  // ===================== PREVIEW / SETTLE / REFUND MODALS =====================
+  // ===================== PREVIEW (NO PAGE BREAK) =====================
   const openPreview = (inv) => {
     const s = data.settings;
     let html = inv.invoice_no.startsWith('REF-') ? getRefundHTML(inv, s, lang) : getInvoiceHTML(inv, s, lang);
     
-    // DUAL PRINT LOGIC: If Re-issue, append the original Refund Invoice to the PDF
+    // FIX: Removed 'page-break-before: always' so both invoices fit on ONE page
     if (!inv.invoice_no.startsWith('REF-') && inv.linked_inv_id && (inv.booking_type === 'Previous Booking' || inv.booking_type === 'Reissue')) {
       const linkedRefundInv = data.invoices.find(i => i.invoice_no === inv.linked_inv_id);
       if (linkedRefundInv) {
-        html += `<div style="page-break-before: always; margin-top: 50px; text-align:center;"><h1 style="color:#7f1d1d;">Linked Refund Invoice / فاتورة الاسترجاع المرتبطة</h1></div>`;
+        html += `<div style="margin-top: 30px; border-top: 2px dashed #cbd5e1; padding-top: 20px;"><h1 style="color:#7f1d1d; text-align:center; font-size: 18px; margin-bottom: 15px;">Linked Refund Invoice / فاتورة الاسترجاع المرتبطة</h1>`;
         html += getRefundHTML(linkedRefundInv, s, lang);
+        html += `</div>`;
       }
     }
     setPreviewHTML(html); setModal({ type: 'preview', data: inv });
@@ -279,7 +281,6 @@ export default function useERPActions(state) {
       // FIX: SAVING DEEP DETAILS IN REFUND INVOICE FROM ORIGINAL INVOICE
       const refundPayload = {
         invoice_no: refundNo, customer_id: origInv.customer_id, corporate_id: origInv.corporate_id,
-        // YEH 2 LINES ADD KIYE HAIN CUSTOMER DETAILS KELIYE
         old_customer_name: origInv.customers?.name || 'N/A',
         old_customer_phone: origInv.customers?.phone || 'N/A',
         portal_id: refundForm.portalId || origInv.portal_id, employee_id: origInv.employee_id || null,
@@ -291,7 +292,6 @@ export default function useERPActions(state) {
         vat: 0, total: 0, paid_amount: 0, due_amount: 0,
         payment_method: refundForm.mode, refund_company: compRefund, refund_customer: custRefund,
         refund_reason: refundForm.reason, linked_inv_id: origInv.invoice_no,
-        // DEEP DETAILS ADDED HERE
         old_airline: origInv.airline,
         old_sector: origInv.flight_sector || origInv.sector,
         old_pnr: origInv.pnr,
