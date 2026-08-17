@@ -42,57 +42,57 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
     <style>
       * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; padding: 0; }
       body { font-family: 'Inter', 'Cairo', sans-serif; background: #f0f4f8; margin: 0; padding: 20px; color: #1e293b; }
-      .invoice-box { max-width: 800px; margin: auto; background: #fff; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border-radius: 12px; }
-      .header { display: flex; justify-content: space-between; align-items: stretch; padding: 25px; background: linear-gradient(135deg, #0c1d3a 0%, #1a365d 100%); color: #fff; gap: 20px; }
+      .invoice-box { max-width: 800px; margin: auto; background: #fff; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border-radius: 12px; page-break-inside: avoid; }
+      .header { display: flex; justify-content: space-between; align-items: stretch; padding: 20px; background: linear-gradient(135deg, #0c1d3a 0%, #1a365d 100%); color: #fff; gap: 20px; }
       .company-block { display: flex; gap: 15px; flex: 1; }
-      .logo-box { width: 80px; height: 80px; object-fit: cover; border-radius: 10px; background: rgba(255,255,255,0.1); padding: 3px; flex-shrink: 0; }
-      .company-text h2 { font-size: 20px; font-weight: 800; color: #fbbf24; }
-      .company-text h1 { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
-      .company-text p { font-size: 11px; color: rgba(255,255,255,0.7); line-height: 1.6; margin-top: 5px; }
-      .invoice-meta { min-width: 240px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; justify-content: center; }
-      .invoice-meta h3 { font-size: 28px; font-weight: 800; color: #fbbf24; text-transform: uppercase; line-height: 1.1; }
-      .invoice-meta h3 span { font-size: 14px; font-family: 'Cairo'; display: block; margin-top: 2px; }
-      .meta-row { display: flex; justify-content: space-between; margin-top: 5px; font-size: 13px; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 3px; }
+      .logo-box { width: 70px; height: 70px; object-fit: cover; border-radius: 10px; background: rgba(255,255,255,0.1); padding: 3px; flex-shrink: 0; }
+      .company-text h2 { font-size: 18px; font-weight: 800; color: #fbbf24; }
+      .company-text h1 { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+      .company-text p { font-size: 11px; color: rgba(255,255,255,0.7); line-height: 1.5; margin-top: 5px; }
+      .invoice-meta { min-width: 220px; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; justify-content: center; }
+      .invoice-meta h3 { font-size: 24px; font-weight: 800; color: #fbbf24; text-transform: uppercase; line-height: 1.1; }
+      .invoice-meta h3 span { font-size: 13px; font-family: 'Cairo'; display: block; margin-top: 2px; }
+      .meta-row { display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 2px; }
       .meta-row .lbl { color: rgba(255,255,255,0.6); }
       .meta-row .val { color: #fbbf24; font-weight: 700; }
-      .status-badge { display: inline-block; padding: 6px 15px; border-radius: 15px; font-size: 11px; font-weight: 700; margin-top: 10px; align-self: flex-start; ${invStatus === 'Unpaid' ? 'background: rgba(251,191,36,0.2); color: #fbbf24;' : 'background: rgba(52,211,153,0.2); color: #34d399;'} }
-      .body { padding: 25px; }
-      .bilingual-title { font-size: 13px; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 10px; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; display: flex; justify-content: space-between; }
-      .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-      .info-block { padding: 15px; background: #f8fafc; border-radius: 10px; border-left: 3px solid #1a365d; }
-      .info-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; border-bottom: 1px solid #f1f5f9; }
+      .status-badge { display: inline-block; padding: 5px 12px; border-radius: 15px; font-size: 11px; font-weight: 700; margin-top: 8px; align-self: flex-start; ${invStatus === 'Unpaid' ? 'background: rgba(251,191,36,0.2); color: #fbbf24;' : 'background: rgba(52,211,153,0.2); color: #34d399;'} }
+      .body { padding: 20px; }
+      .bilingual-title { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; display: flex; justify-content: space-between; }
+      .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+      .info-block { padding: 12px; background: #f8fafc; border-radius: 8px; border-left: 3px solid #1a365d; }
+      .info-row { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; border-bottom: 1px solid #f1f5f9; }
       .info-row:last-child { border: none; }
       .info-row .label { color: #64748b; }
       .info-row .value { color: #0f172a; font-weight: 600; text-align: right; }
-      .reissue-block { padding: 15px; background: #fffbeb; border-radius: 10px; border: 1px solid #fde68a; margin-bottom: 20px; page-break-inside: avoid; }
-      .reissue-title { font-size: 14px; font-weight: 700; color: #d97706; margin-bottom: 10px; display: flex; justify-content: space-between; background: #fef3c7; padding: 8px 12px; border-radius: 6px; }
-      .reissue-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-      .reissue-item { background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #fde68a; }
+      .reissue-block { padding: 12px; background: #fffbeb; border-radius: 8px; border: 1px solid #fde68a; margin-bottom: 15px; page-break-inside: avoid; }
+      .reissue-title { font-size: 13px; font-weight: 700; color: #d97706; margin-bottom: 8px; display: flex; justify-content: space-between; background: #fef3c7; padding: 6px 10px; border-radius: 6px; }
+      .reissue-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .reissue-item { background: #fff; padding: 8px; border-radius: 6px; border: 1px solid #fde68a; }
       .reissue-item .lbl { font-size: 10px; color: #92400e; font-weight: 600; text-transform: uppercase; }
-      .reissue-item .val { font-size: 13px; color: #78350f; font-weight: 700; margin-top: 3px; }
-      .reissue-fare { background: #dcfce7; border-color: #86efac; grid-column: span 3; display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; }
-      .reissue-fare .lbl { color: #059669; font-size: 13px; }
-      .reissue-fare .val { color: #047857; font-size: 16px; font-weight: 800; }
-      table { width: 100%; border-collapse: collapse; margin-bottom: 20px; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-      thead th { padding: 10px; background: #0c1d3a; color: #fbbf24; font-size: 12px; text-transform: uppercase; text-align: left; }
+      .reissue-item .val { font-size: 12px; color: #78350f; font-weight: 700; margin-top: 2px; }
+      .reissue-fare { background: #dcfce7; border-color: #86efac; grid-column: span 3; display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; }
+      .reissue-fare .lbl { color: #059669; font-size: 12px; }
+      .reissue-fare .val { color: #047857; font-size: 14px; font-weight: 800; }
+      table { width: 100%; border-collapse: collapse; margin-bottom: 15px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+      thead th { padding: 8px; background: #0c1d3a; color: #fbbf24; font-size: 11px; text-transform: uppercase; text-align: left; }
       thead th.right { text-align: right; }
       thead th.center { text-align: center; }
-      tbody td { padding: 10px; border-bottom: 1px solid #f1f5f9; font-size: 13px; background: #fff; }
+      tbody td { padding: 8px; border-bottom: 1px solid #f1f5f9; font-size: 12px; background: #fff; }
       tbody td.right { text-align: right; font-weight: 600; }
       tbody td.center { text-align: center; }
-      .bottom-section { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
-      .payment-breakdown { padding: 15px; background: linear-gradient(135deg, #f8fafc, #f1f5f9); border-radius: 10px; border: 1px solid #e2e8f0; }
-      .pay-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; border-bottom: 1px dashed #cbd5e1; }
+      .bottom-section { display: grid; grid-template-columns: 1.5fr 1fr; gap: 15px; }
+      .payment-breakdown { padding: 12px; background: linear-gradient(135deg, #f8fafc, #f1f5f9); border-radius: 8px; border: 1px solid #e2e8f0; }
+      .pay-row { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; border-bottom: 1px dashed #cbd5e1; }
       .pay-row:last-child { border: none; }
-      .totals-box { background: #0c1d3a; border-radius: 10px; padding: 15px; color: #fff; align-self: flex-start; }
-      .total-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; color: rgba(255,255,255,0.8); }
-      .grand-total { display: flex; justify-content: space-between; padding: 10px 0 0; margin-top: 5px; border-top: 2px solid rgba(255,255,255,0.1); font-size: 18px; font-weight: 800; color: #fff; }
+      .totals-box { background: #0c1d3a; border-radius: 8px; padding: 12px; color: #fff; align-self: flex-start; }
+      .total-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px; color: rgba(255,255,255,0.8); }
+      .grand-total { display: flex; justify-content: space-between; padding: 8px 0 0; margin-top: 4px; border-top: 2px solid rgba(255,255,255,0.1); font-size: 16px; font-weight: 800; color: #fff; }
       .grand-total .val { color: #fbbf24; }
-      .footer { padding: 15px 25px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; gap: 20px; }
-      .qr-code img { height: 70px; width: 70px; border-radius: 6px; border: 1px solid #e2e8f0; padding: 3px; background: #fff; }
+      .footer { padding: 12px 20px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; gap: 15px; }
+      .qr-code img { height: 60px; width: 60px; border-radius: 6px; border: 1px solid #e2e8f0; padding: 2px; background: #fff; }
       .footer-text { text-align: center; flex: 1; }
-      .ai-msg { font-size: 12px; color: #475569; font-weight: 600; margin-bottom: 2px; }
-      .ai-msg-ar { font-size: 12px; color: #64748b; font-family: 'Cairo'; }
+      .ai-msg { font-size: 11px; color: #475569; font-weight: 600; margin-bottom: 2px; }
+      .ai-msg-ar { font-size: 11px; color: #64748b; font-family: 'Cairo'; }
       @media print { body { background: #fff; padding: 0; margin: 0; } .invoice-box { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; } }
     </style>
   </head>
@@ -178,7 +178,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
             <div class="bilingual-title"><span>PAYMENT BREAKDOWN / تفاصيل الدفع</span></div>
             <div class="pay-row"><span>New Booking Price / سعر الحجز الجديد</span><span style="font-weight:600;">${total.toFixed(2)} SAR</span></div>
             ${usedCredit > 0 ? `<div class="pay-row" style="color:#7c3aed;"><span>Less: Refund Credit / خصم الرصيد</span><span style="font-weight:600;">- ${usedCredit.toFixed(2)} SAR</span></div>` : ''}
-            <div class="pay-row" style="border-top:2px solid #cbd5e1; margin-top:5px; padding-top:5px; font-weight:700;"><span>Balance Paid / المدفوع (${paymentDisplay})</span><span style="color:#059669;">${cashPaid.toFixed(2)} SAR</span></div>
+            <div class="pay-row" style="border-top:2px solid #cbd5e1; margin-top:4px; padding-top:4px; font-weight:700;"><span>Balance Paid / المدفوع (${paymentDisplay})</span><span style="color:#059669;">${cashPaid.toFixed(2)} SAR</span></div>
             <div class="pay-row" style="font-weight:700;"><span>Amount Due / المتبقي</span><span style="color:${dueAmount > 0 ? '#ef4444' : '#059669'};">${dueAmount.toFixed(2)} SAR</span></div>
           </div>
           
@@ -200,7 +200,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
           <p class="ai-msg">Thank you for choosing us! Have a safe flight.</p>
           <p class="ai-msg-ar">شكراً لاختياركم إيانا. رحلة سعيدة!</p>
         </div>
-        <div style="width: 80px;"></div>
+        <div style="width: 70px;"></div>
       </div>
     </div>
   </body>
@@ -208,14 +208,19 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
 };
 
 // ==========================================
-// PREMIUM REFUND INVOICE TEMPLATE (FIXED N/A)
+// PREMIUM REFUND INVOICE TEMPLATE (FIXED N/A & ONE PAGE)
 // ==========================================
 const getRefundHTML = (inv, s, lang = 'en') => {
   const setting = s || {};
   const invoiceNo = inv.invoice_no || 'N/A';
   const trackUrl = `https://sueud-al-taayira.vercel.app/invoice/${invoiceNo}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(trackUrl)}`;
-  const custRefund = inv.refund_customer || 0;
+  
+  // Refund Breakdown Logic
+  const originalFare = inv.old_sell_price || inv.total_sell || 0;
+  const customerRefund = inv.refund_customer || 0;
+  const airlineRefund = inv.refund_company || 0; // Amount company received
+  const airlineCancellationFee = originalFare - airlineRefund; // 500 - 300 = 200
   
   const custName = inv.customers?.name || inv.old_customer_name || 'N/A';
   const custPhone = inv.customers?.phone || inv.old_customer_phone || 'N/A';
@@ -233,33 +238,37 @@ const getRefundHTML = (inv, s, lang = 'en') => {
     <style>
       * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; padding: 0; }
       body { font-family: 'Inter', 'Cairo', sans-serif; background: #f0f4f8; margin: 0; padding: 20px; color: #1e293b; }
-      .invoice-box { max-width: 800px; margin: auto; background: #fff; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border-radius: 12px; }
-      .header { display: flex; justify-content: space-between; align-items: stretch; padding: 25px; background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%); color: #fff; gap: 20px; }
+      .invoice-box { max-width: 800px; margin: auto; background: #fff; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border-radius: 12px; page-break-inside: avoid; }
+      .header { display: flex; justify-content: space-between; align-items: stretch; padding: 20px; background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%); color: #fff; gap: 20px; }
       .company-block { display: flex; gap: 15px; flex: 1; }
-      .logo-box { width: 80px; height: 80px; object-fit: cover; border-radius: 10px; background: rgba(255,255,255,0.1); padding: 3px; flex-shrink: 0; }
-      .company-text h2 { font-size: 20px; font-weight: 800; color: #fbbf24; }
-      .company-text h1 { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
-      .company-text p { font-size: 11px; color: rgba(255,255,255,0.6); line-height: 1.6; margin-top: 5px; }
-      .invoice-meta { min-width: 220px; text-align: right; display: flex; flex-direction: column; justify-content: center; }
-      .invoice-meta h3 { font-size: 28px; font-weight: 800; color: #fbbf24; text-transform: uppercase; line-height: 1.1; }
-      .invoice-meta h3 span { font-size: 14px; font-family: 'Cairo'; display: block; margin-top: 2px; }
-      .inv-no { font-size: 13px; color: rgba(255,255,255,0.8); margin-top: 5px; border-bottom: 1px dashed rgba(255,255,255,0.2); padding-bottom: 3px; }
+      .logo-box { width: 70px; height: 70px; object-fit: cover; border-radius: 10px; background: rgba(255,255,255,0.1); padding: 3px; flex-shrink: 0; }
+      .company-text h2 { font-size: 18px; font-weight: 800; color: #fbbf24; }
+      .company-text h1 { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+      .company-text p { font-size: 11px; color: rgba(255,255,255,0.6); line-height: 1.5; margin-top: 5px; }
+      .invoice-meta { min-width: 200px; text-align: right; display: flex; flex-direction: column; justify-content: center; }
+      .invoice-meta h3 { font-size: 24px; font-weight: 800; color: #fbbf24; text-transform: uppercase; line-height: 1.1; }
+      .invoice-meta h3 span { font-size: 13px; font-family: 'Cairo'; display: block; margin-top: 2px; }
+      .inv-no { font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 5px; border-bottom: 1px dashed rgba(255,255,255,0.2); padding-bottom: 3px; }
       .inv-no span { color: #fbbf24; font-weight: 700; }
-      .status-badge { display: inline-block; padding: 6px 15px; border-radius: 15px; font-size: 11px; font-weight: 700; margin-top: 10px; background: rgba(251,191,36,0.2); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); align-self: flex-end; }
-      .body { padding: 25px; }
-      .info-block { padding: 15px; background: #fff5f5; border-radius: 10px; border-left: 3px solid #dc2626; margin-bottom: 15px; }
-      .info-block h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #dc2626; margin-bottom: 10px; font-weight: 700; }
-      .row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; border-bottom: 1px solid #fee2e2; }
+      .status-badge { display: inline-block; padding: 5px 12px; border-radius: 15px; font-size: 11px; font-weight: 700; margin-top: 8px; background: rgba(251,191,36,0.2); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); align-self: flex-end; }
+      .body { padding: 20px; }
+      .info-block { padding: 12px; background: #fff5f5; border-radius: 8px; border-left: 3px solid #dc2626; margin-bottom: 12px; }
+      .info-block h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #dc2626; margin-bottom: 8px; font-weight: 700; }
+      .row { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; border-bottom: 1px solid #fee2e2; }
       .row:last-child { border: none; }
       .row .label { color: #991b1b; font-weight: 500; }
       .row .value { color: #7f1d1d; font-weight: 600; text-align: right; }
-      .refund-card { padding: 25px; background: linear-gradient(135deg, #f0fdf4, #dcfce7); border-radius: 12px; text-align: center; border: 1px solid #bbf7d0; margin-bottom: 15px; box-shadow: 0 5px 10px rgba(5, 150, 105, 0.1); }
-      .refund-card h5 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #059669; margin-bottom: 10px; }
-      .refund-card .amount { font-size: 36px; font-weight: 800; color: #047857; }
-      .payment-info { padding: 15px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; margin-top: 15px; display: flex; justify-content: space-between; align-items: center; }
-      .pay-row { font-size: 13px; font-weight: 600; color: #334155; }
-      .footer { padding: 15px 25px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; gap: 20px; }
-      .qr-code img { height: 70px; width: 70px; border-radius: 6px; border: 1px solid #e2e8f0; padding: 3px; background: #fff; }
+      
+      .breakdown-block { background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 12px; }
+      .breakdown-title { font-size: 11px; text-transform: uppercase; color: #dc2626; margin-bottom: 8px; border-bottom: 1px solid #fee2e2; padding-bottom: 5px; font-weight: 700; }
+      .calc-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; color: #334155; }
+      .calc-row.deduct { color: #ef4444; }
+      .calc-row.total { padding-top: 8px; margin-top: 5px; border-top: 1px solid #e2e8f0; font-size: 16px; font-weight: 800; color: #059669; }
+      
+      .payment-info { padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+      .pay-row { font-size: 12px; font-weight: 600; color: #334155; }
+      .footer { padding: 12px 20px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; gap: 15px; }
+      .qr-code img { height: 60px; width: 60px; border-radius: 6px; border: 1px solid #e2e8f0; padding: 2px; background: #fff; }
       @media print { body { background: #fff; padding: 0; margin: 0; } .invoice-box { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; } }
     </style>
   </head>
@@ -287,14 +296,15 @@ const getRefundHTML = (inv, s, lang = 'en') => {
           <div class="row"><span class="label">Customer Name / اسم العميل</span><span class="value">${custName}</span></div>
           <div class="row"><span class="label">Contact / الهاتف</span><span class="value">${custPhone}</span></div>
           <div class="row"><span class="label">Airline / خط الطيران</span><span class="value">${inv.airline || inv.old_airline || 'N/A'}</span></div>
-          <div class="row"><span class="label">Date of Booking / تاريخ الحجز</span><span class="value">${inv.invoice_date || inv.old_booking_date || 'N/A'}</span></div>
           <div class="row"><span class="label">PNR / رقم الحجز</span><span class="value">${inv.pnr || inv.old_pnr || 'N/A'}</span></div>
           <div class="row"><span class="label">Reason / سبب الاسترجاع</span><span class="value">${inv.refund_reason || 'N/A'}</span></div>
         </div>
         
-        <div class="refund-card">
-          <h5>REFUND AMOUNT TO CUSTOMER / المبلغ المسترجع للعميل</h5>
-          <div class="amount">${custRefund.toFixed(2)} SAR</div>
+        <div class="breakdown-block">
+          <div class="breakdown-title">REFUND CALCULATION / تفاصيل حساب الاسترجاع</div>
+          <div class="calc-row"><span>Original Ticket Fare / أجرة التذكرة الأصلية</span><span style="font-weight:600;">${originalFare.toFixed(2)} SAR</span></div>
+          <div class="calc-row deduct"><span>Less: Airline Cancellation Fees / رسوم إلغاء الخطوط</span><span style="font-weight:600;">- ${airlineCancellationFee.toFixed(2)} SAR</span></div>
+          <div class="calc-row total"><span>Refund Amount to Customer / المبلغ المسترجع للعميل</span><span>${customerRefund.toFixed(2)} SAR</span></div>
         </div>
         
         <div class="payment-info">
@@ -306,9 +316,9 @@ const getRefundHTML = (inv, s, lang = 'en') => {
         <div class="qr-code"><img src="${qrCodeUrl}" alt="QR Code" crossorigin="anonymous"></div>
         <div style="text-align: center; flex: 1;">
           <strong>${setting.company_name_en || ''}</strong>
-          <p style="font-size: 11px; color: #94a3b8;">Thank you! / شكراً!</p>
+          <p style="font-size: 10px; color: #94a3b8;">Thank you! / شكراً!</p>
         </div>
-        <div style="width: 80px;"></div>
+        <div style="width: 70px;"></div>
       </div>
     </div>
   </body>
