@@ -17,7 +17,6 @@ export default function ERPLayout({ children, tr, lang, setLang, page, setPage, 
         handleRefund={handleRefund} previewHTML={previewHTML} downloadPDF={downloadPDF}
       />
 
-      {/* Premium Sidebar */}
       <div style={{ width: '270px', background: 'linear-gradient(180deg, #0F172A 0%, #1E293B 100%)', color: 'white', padding: '25px 15px', display: 'flex', flexDirection: 'column', boxShadow: isAr ? '-5px 0 15px rgba(0,0,0,0.1)' : '5px 0 15px rgba(0,0,0,0.1)' }}>
         <div style={{ marginBottom: '30px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '20px' }}>
           <h1 style={{ margin: 0, fontSize: '20px', fontWeight: '800', color: '#F59E0B', letterSpacing: '1px' }}>SUEUD AL TAAYIRA</h1>
@@ -70,11 +69,9 @@ export default function ERPLayout({ children, tr, lang, setLang, page, setPage, 
         </div>
       </div>
 
-      {/* Main Content Area */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '30px', position: 'relative', background: '#F8FAFC' }}>
         {children}
         
-        {/* AI Chatbot */}
         <div style={{ position: 'fixed', bottom: '20px', right: isAr ? 'auto' : '20px', left: isAr ? '20px' : 'auto', zIndex: 999 }}>
           {chatOpen && (
             <div style={{ width: '350px', height: '450px', background: 'white', borderRadius: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', marginBottom: '10px', overflow: 'hidden', border: '1px solid #E2E8F0' }}>
