@@ -404,7 +404,7 @@ export default function ERPViewsAdmin(props) {
         </div>
       </div>
     );
-  );
+  }
 
   return null;
 }
