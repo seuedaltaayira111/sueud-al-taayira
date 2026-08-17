@@ -279,6 +279,9 @@ export default function useERPActions(state) {
       // FIX: SAVING DEEP DETAILS IN REFUND INVOICE FROM ORIGINAL INVOICE
       const refundPayload = {
         invoice_no: refundNo, customer_id: origInv.customer_id, corporate_id: origInv.corporate_id,
+        // YEH 2 LINES ADD KIYE HAIN CUSTOMER DETAILS KELIYE
+        old_customer_name: origInv.customers?.name || 'N/A',
+        old_customer_phone: origInv.customers?.phone || 'N/A',
         portal_id: refundForm.portalId || origInv.portal_id, employee_id: origInv.employee_id || null,
         invoice_date: refundForm.date, refund_date: refundForm.date,
         service_type: origInv.service_type, sector: origInv.sector, flight_sector: origInv.flight_sector,
@@ -463,7 +466,7 @@ export default function useERPActions(state) {
         tabby_order_no: invForm.payment === 'Tabby' ? invForm.tabbyNo : null,
         tamara_order_no: invForm.payment === 'Tamara' ? invForm.tamaraNo : null,
         ticket_status: invForm.ticketStatus,
-        status: invForm.status || 'Unpaid', // FIX: Status will strictly follow the dropdown selection
+        status: invForm.status || 'Unpaid', // FIX: Status strictly follows dropdown selection
         tenant_id: userProfile.tenant_id
       };
       if (editInvId) {
