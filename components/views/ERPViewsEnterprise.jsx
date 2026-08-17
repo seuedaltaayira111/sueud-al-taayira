@@ -9,7 +9,7 @@ const styles = {
   btnSuccess: { padding: '8px 12px', background: '#059669', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }, 
   card: { background: 'white', padding: '25px', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px', border: '1px solid #e2e8f0' }, 
   label: { fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '6px', display: 'block', marginTop: '12px' },
-  tableHeader: { background: '#0F172A', color: 'white', padding: '15px', textAlign: 'start', fontSize: '13px' },
+  tableHeader: { background: '#1E293B', color: 'white', padding: '15px', textAlign: 'start', fontSize: '13px' },
   tableCell: { padding: '15px', borderBottom: '1px solid #F1F5F9', fontSize: '14px' }
 };
 
@@ -18,7 +18,7 @@ export default function ERPViewsEnterprise(props) {
   const [editLimitId, setEditLimitId] = useState(null);
   const [limitVal, setLimitVal] = useState(0);
 
-  // 1. CUSTOMER CREDIT LIMITS
+  // 1. CUSTOMER CREDIT LIMITS (Advanced Alert Feature)
   if (page === 'credit_limits') {
     const saveLimit = async (custId) => {
       try {
@@ -32,7 +32,7 @@ export default function ERPViewsEnterprise(props) {
 
     return (
       <div>
-        <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', padding: '30px', borderRadius: '16px', marginBottom: '20px' }}>
+        <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', padding: '30px', borderRadius: '16px', marginBottom: '20px', boxShadow: '0 10px 15px rgba(37, 99, 235, 0.2)' }}>
           <h2 style={{ margin: 0, fontSize: '24px' }}>💳 Customer Credit Limits</h2>
           <p style={{ margin: '5px 0 0', opacity: 0.9 }}>Set maximum credit limit for each customer. System will warn if outstanding exceeds this limit.</p>
         </div>
@@ -93,7 +93,7 @@ export default function ERPViewsEnterprise(props) {
     );
   }
 
-  // 3. MULTI-BRANCH SUPPORT
+  // 3. MULTI-BRANCH SUPPORT (Advanced Dashboard UI)
   if (page === 'multi_branch') {
     return (
       <div>
