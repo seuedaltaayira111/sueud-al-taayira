@@ -138,18 +138,43 @@ export default function useERPActions(state) {
     try { await supabase.from('tenants').delete().eq('id', id); showToast('Agency Deleted!'); fetchAll(); } catch (err) { showToast('Error: ' + err.message); }
   };
 
-  // ===================== PDF & PRINT (QR FIX) =====================
+  // ===================== PDF & PRINT (QR CODE BASE64 FIX) =====================
   const downloadPDF = async (htmlContent, filename = 'document.pdf') => {
     try {
       const html2canvas = (await import('html2canvas')).default;
       const { jsPDF } = await import('jspdf');
+      
+      // 1. Create a temporary div
       const div = document.createElement('div');
       div.style.position = 'absolute'; div.style.left = '-9999px'; div.style.top = '0';
-      div.innerHTML = htmlContent; document.body.appendChild(div);
+      
+      // 2. Convert QR Code Images to Base64 before rendering to prevent CORS/Taint issues in PDF
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlContent, 'text/html');
+      const qrImages = doc.querySelectorAll('img[src*="api.qrserver.com"]');
+      
+      await Promise.all(Array.from(qrImages).map(async (img) => {
+        try {
+          const response = await fetch(img.src);
+          const blob = await response.blob();
+          const reader = new FileReader();
+          const base64 = await new Promise((resolve) => {
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+          });
+          img.src = base64; // Replace external URL with Base64 data
+        } catch (e) { console.error("QR Fetch Error:", e); }
+      }));
+
+      div.innerHTML = doc.body.innerHTML;
+      document.body.appendChild(div);
+
+      // 3. Wait for all images (including base64) to load
       const images = div.querySelectorAll('img');
       await Promise.all(Array.from(images).map(img => img.complete ? Promise.resolve() : new Promise(res => { img.onload = img.onerror = res; })));
-      // FIX: Added allowTaint: true to force QR code rendering in PDF
-      const canvas = await html2canvas(div, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' });
+
+      // 4. Generate Canvas & PDF
+      const canvas = await html2canvas(div, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       const imgWidth = 210; const pageHeight = 297;
@@ -196,12 +221,12 @@ export default function useERPActions(state) {
     setPreviewHTML(html); setModal({ type: 'preview', data: null });
   };
 
-  // ===================== PREVIEW (NO PAGE BREAK) =====================
+  // ===================== PREVIEW (NO PAGE BREAK - ONE PAGE FIX) =====================
   const openPreview = (inv) => {
     const s = data.settings;
     let html = inv.invoice_no.startsWith('REF-') ? getRefundHTML(inv, s, lang) : getInvoiceHTML(inv, s, lang);
     
-    // FIX: Removed 'page-break-before: always' so both invoices fit on ONE page
+    // If Re-issue, append the original Refund Invoice directly below to fit on ONE page
     if (!inv.invoice_no.startsWith('REF-') && inv.linked_inv_id && (inv.booking_type === 'Previous Booking' || inv.booking_type === 'Reissue')) {
       const linkedRefundInv = data.invoices.find(i => i.invoice_no === inv.linked_inv_id);
       if (linkedRefundInv) {
@@ -278,7 +303,7 @@ export default function useERPActions(state) {
         }
       }
       
-      // FIX: SAVING DEEP DETAILS IN REFUND INVOICE FROM ORIGINAL INVOICE
+      // SAVING DEEP DETAILS IN REFUND INVOICE FROM ORIGINAL INVOICE
       const refundPayload = {
         invoice_no: refundNo, customer_id: origInv.customer_id, corporate_id: origInv.corporate_id,
         old_customer_name: origInv.customers?.name || 'N/A',
