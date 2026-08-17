@@ -1,3 +1,8 @@
+'use client';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
+
 // ==========================================
 // PREMIUM ONE-PAGE BILINGUAL INVOICE TEMPLATE
 // ==========================================
@@ -19,7 +24,6 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
   const dueAmount = inv.due_amount || 0;
   const unitPrice = (inv.qty || 1) > 0 ? totalSell / inv.qty : totalSell;
   
-  // FIX: Status will strictly follow the saved DB status
   const invStatus = inv.status || (dueAmount > 0 ? 'Unpaid' : 'Paid');
 
   let paymentDisplay = inv.payment_method || 'Cash';
@@ -39,8 +43,6 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
       * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; padding: 0; }
       body { font-family: 'Inter', 'Cairo', sans-serif; background: #f0f4f8; margin: 0; padding: 20px; color: #1e293b; }
       .invoice-box { max-width: 800px; margin: auto; background: #fff; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border-radius: 12px; }
-      
-      /* COMPACT HEADER */
       .header { display: flex; justify-content: space-between; align-items: stretch; padding: 25px; background: linear-gradient(135deg, #0c1d3a 0%, #1a365d 100%); color: #fff; gap: 20px; }
       .company-block { display: flex; gap: 15px; flex: 1; }
       .logo-box { width: 80px; height: 80px; object-fit: cover; border-radius: 10px; background: rgba(255,255,255,0.1); padding: 3px; flex-shrink: 0; }
@@ -54,8 +56,6 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
       .meta-row .lbl { color: rgba(255,255,255,0.6); }
       .meta-row .val { color: #fbbf24; font-weight: 700; }
       .status-badge { display: inline-block; padding: 6px 15px; border-radius: 15px; font-size: 11px; font-weight: 700; margin-top: 10px; align-self: flex-start; ${invStatus === 'Unpaid' ? 'background: rgba(251,191,36,0.2); color: #fbbf24;' : 'background: rgba(52,211,153,0.2); color: #34d399;'} }
-      
-      /* COMPACT BODY */
       .body { padding: 25px; }
       .bilingual-title { font-size: 13px; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 10px; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; display: flex; justify-content: space-between; }
       .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
@@ -64,8 +64,6 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
       .info-row:last-child { border: none; }
       .info-row .label { color: #64748b; }
       .info-row .value { color: #0f172a; font-weight: 600; text-align: right; }
-      
-      /* REISSUE BLOCK */
       .reissue-block { padding: 15px; background: #fffbeb; border-radius: 10px; border: 1px solid #fde68a; margin-bottom: 20px; page-break-inside: avoid; }
       .reissue-title { font-size: 14px; font-weight: 700; color: #d97706; margin-bottom: 10px; display: flex; justify-content: space-between; background: #fef3c7; padding: 8px 12px; border-radius: 6px; }
       .reissue-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
@@ -75,7 +73,6 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
       .reissue-fare { background: #dcfce7; border-color: #86efac; grid-column: span 3; display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; }
       .reissue-fare .lbl { color: #059669; font-size: 13px; }
       .reissue-fare .val { color: #047857; font-size: 16px; font-weight: 800; }
-      
       table { width: 100%; border-collapse: collapse; margin-bottom: 20px; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
       thead th { padding: 10px; background: #0c1d3a; color: #fbbf24; font-size: 12px; text-transform: uppercase; text-align: left; }
       thead th.right { text-align: right; }
@@ -83,7 +80,6 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
       tbody td { padding: 10px; border-bottom: 1px solid #f1f5f9; font-size: 13px; background: #fff; }
       tbody td.right { text-align: right; font-weight: 600; }
       tbody td.center { text-align: center; }
-      
       .bottom-section { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
       .payment-breakdown { padding: 15px; background: linear-gradient(135deg, #f8fafc, #f1f5f9); border-radius: 10px; border: 1px solid #e2e8f0; }
       .pay-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; border-bottom: 1px dashed #cbd5e1; }
@@ -92,13 +88,11 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
       .total-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; color: rgba(255,255,255,0.8); }
       .grand-total { display: flex; justify-content: space-between; padding: 10px 0 0; margin-top: 5px; border-top: 2px solid rgba(255,255,255,0.1); font-size: 18px; font-weight: 800; color: #fff; }
       .grand-total .val { color: #fbbf24; }
-      
       .footer { padding: 15px 25px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; gap: 20px; }
       .qr-code img { height: 70px; width: 70px; border-radius: 6px; border: 1px solid #e2e8f0; padding: 3px; background: #fff; }
       .footer-text { text-align: center; flex: 1; }
       .ai-msg { font-size: 12px; color: #475569; font-weight: 600; margin-bottom: 2px; }
       .ai-msg-ar { font-size: 12px; color: #64748b; font-family: 'Cairo'; }
-      
       @media print { body { background: #fff; padding: 0; margin: 0; } .invoice-box { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; } }
     </style>
   </head>
@@ -223,7 +217,6 @@ const getRefundHTML = (inv, s, lang = 'en') => {
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(trackUrl)}`;
   const custRefund = inv.refund_customer || 0;
   
-  // FIX: Fallback to old_customer_name if customers object is missing
   const custName = inv.customers?.name || inv.old_customer_name || 'N/A';
   const custPhone = inv.customers?.phone || inv.old_customer_phone || 'N/A';
   
@@ -321,3 +314,137 @@ const getRefundHTML = (inv, s, lang = 'en') => {
   </body>
   </html>`;
 };
+
+// ==========================================
+// MAIN STATE HOOK
+// ==========================================
+export default function useERPState() {
+  const router = useRouter();
+  const today = new Date().toISOString().split('T')[0];
+
+  const [user, setUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
+  const [data, setData] = useState({ invoices: [], customers: [], corporates: [], creditors: [], vendors: [], packages: [], branches: [], portals: [], employees: [], services: [], expenses: [], investments: [], cashbook: [], payroll: [], empAdvances: [], staffMistakes: [], appUsers: [], tenants: [], audits: [], settings: {} });
+  
+  const [lang, setLang] = useState('en');
+  const [page, setPage] = useState('dashboard');
+  const [modal, setModal] = useState({ type: null, data: null });
+  const [toast, showToast] = useState('');
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([{ sender: 'bot', text: 'Hello! How can I assist you today?' }]);
+  const [chatInput, setChatInput] = useState('');
+
+  const [search, setSearch] = useState('');
+  const [tblPage, setTblPage] = useState(1);
+  const [payFilter, setPayFilter] = useState('All');
+  const [previewHTML, setPreviewHTML] = useState('');
+
+  const [invForm, setInvForm] = useState({ custType: 'Individual', custId: 'new', custName: '', custPhone: '', corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '', passengers: [''], employeeId: '', portalId: '', bookingDate: today, invoiceDate: today, bookingType: 'New Booking', linkedInvId: '', oldTicketNo: '', oldPnr: '', oldAirline: '', oldSector: '', oldSellPrice: 0, oldBookingDate: '', oldPassengers: '', oldFlightType: '', oldPaymentMethod: '', refundReason: '', service: 'Flight Ticket', flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable', flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed', useCredit: 0, creditCustId: '', status: 'Unpaid' });
+  const [editInvId, setEditInvId] = useState(null);
+  
+  const [expForm, setExpForm] = useState({ vendor_name: '', vendor_vat: '', expense_date: today, expense_type: 'Office Supplies', payment_mode: 'Cash', items: [{ name: '', qty: 1, price: 0 }], taxRate: '15', desc: '' });
+  const [editExpId, setEditExpId] = useState(null);
+
+  const [custForm, setCustForm] = useState({ name: '', phone: '', store_credit: 0 });
+  const [editCustId, setEditCustId] = useState(null);
+  const [corpForm, setCorpForm] = useState({ name: '', vat_no: '', phone: '', address: '' });
+  const [editCorpId, setEditCorpId] = useState(null);
+  const [creditorForm, setCreditorForm] = useState({ name: '', phone: '', address: '' });
+  const [editCredId, setEditCredId] = useState(null);
+  const [vendorForm, setVendorForm] = useState({ name: '', phone: '', balance: 0 });
+  const [editVendId, setEditVendId] = useState(null);
+  const [pkgForm, setPkgForm] = useState({ name: '', price: '', desc: '', duration: '', inclusions: '' });
+  const [editPkgId, setEditPkgId] = useState(null);
+  const [brnForm, setBrnForm] = useState({ name: '', location: '', phone: '', manager: '', email: '', timing: '', status: 'Active' });
+  const [editBrnId, setEditBrnId] = useState(null);
+  const [empForm, setEmpForm] = useState({ name: '', role: 'Sales', salary: 0, phone: '', commission_rate: 0, iqama_no: '', iqama_expiry: '' });
+  const [editEmpId, setEditEmpId] = useState(null);
+  const [srvForm, setSrvForm] = useState({ name: '' });
+  const [editSrvId, setEditSrvId] = useState(null);
+  
+  const [portalForm, setPortalForm] = useState({ name: '', balance: 0 });
+  const [investForm, setInvestForm] = useState({ name: '', amount: '', date: today, desc: '', mode: 'Cash', reason: 'Other', otherReason: '' });
+  const [transferForm, setTransferForm] = useState({ from: 'Cash', to: 'Bank', amount: 0, date: today });
+  
+  const [setForm, setSetForm] = useState({ company_name_en: '', company_name_ar: '', vat_no: '', cr_no: '', phone: '', address_ar: '', license_no: '', tourist_license_no: '', invoice_footer: '', logo_url: '', custom_fields: [] });
+  const [userForm, setUserForm] = useState({ email: '', username: '', role: 'Sales', is_admin: false, can_access_invoices: true, can_access_bank: false, can_access_hr: false, can_access_reports: false, can_access_settings: false });
+  const [editUserId, setEditUserId] = useState(null);
+  const [tenantForm, setTenantForm] = useState({ agency_name: '', owner_email: '', subscription_end_date: '', company_name_ar: '', vat_no: '', cr_no: '', phone: '', address_ar: '' });
+  const [profileForm, setProfileForm] = useState({ username: '', avatar_url: '', phone: '', address: '' });
+  
+  const [passForm, setPassForm] = useState({ newPass: '' });
+  const [settleForm, setSettleForm] = useState({ id: '', date: today, mode: 'Cash' });
+  const [refundForm, setRefundForm] = useState({ id: '', date: today, compRefund: 0, custRefund: 0, mode: 'Cash', reason: '', portalId: '', creditBalance: 0 });
+  
+  const [repDate, setRepDate] = useState({ from: today, to: today });
+  const [reportTab, setReportTab] = useState('sales');
+  const [statementTab, setStatementTab] = useState('sales');
+  const [ledgerCustId, setLedgerCustId] = useState('');
+  const [ledgerEmpId, setLedgerEmpId] = useState('');
+  
+  const [contractCorpName, setContractCorpName] = useState('');
+  const [contractType, setContractType] = useState('Flight Tickets');
+  const [contractMarkup, setContractMarkup] = useState(0);
+  const [contractTerms, setContractTerms] = useState('');
+
+  const tr = {
+    dashboard: lang === 'ar' ? 'لوحة التحكم' : 'Dashboard', create: lang === 'ar' ? 'إنشاء فاتورة' : 'Create Invoice', list: lang === 'ar' ? 'الفواتير' : 'Invoices', refunds: lang === 'ar' ? 'الاسترجاعات' : 'Refunds', customers: lang === 'ar' ? 'العملاء' : 'Customers', corporates: lang === 'ar' ? 'الشركات' : 'Corporates', creditors: lang === 'ar' ? 'الدائنون' : 'Creditors', credit: lang === 'ar' ? 'أرصدة الائتمان' : 'Credit Balances', vendors: lang === 'ar' ? 'الموردون' : 'Vendors', packages: lang === 'ar' ? 'الباقات' : 'Packages', branches: lang === 'ar' ? 'الفروع' : 'Branches', portals: lang === 'ar' ? 'البوابات' : 'Portals', bank: lang === 'ar' ? 'البنك والصندوق' : 'Bank & Cash', invest: lang === 'ar' ? 'المستثمرون' : 'Investors', hr: lang === 'ar' ? 'الموارد البشرية' : 'Human Resources', users: lang === 'ar' ? 'المستخدمون' : 'Users', settings: lang === 'ar' ? 'الإعدادات' : 'Settings', reports: lang === 'ar' ? 'التقارير' : 'Reports', audit: lang === 'ar' ? 'سجل التدقيق' : 'Audit Logs', statements: lang === 'ar' ? 'الكشوف' : 'Statements', contract: lang === 'ar' ? 'العقود' : 'Contracts', offer: lang === 'ar' ? 'العروض' : 'Offers', superadmin: lang === 'ar' ? 'المدير العام' : 'SuperAdmin', profile: lang === 'ar' ? 'الملف الشخصي' : 'Profile', profitability: lang === 'ar' ? 'الربحية' : 'Profitability', search: lang === 'ar' ? 'بحث...' : 'Search...', download_excel: lang === 'ar' ? 'تصدير إكسل' : 'Export Excel', logout: lang === 'ar' ? 'تسجيل الخروج' : 'Logout', changePass: lang === 'ar' ? 'تغيير كلمة المرور' : 'Change Password', changePassword: lang === 'ar' ? 'تغيير كلمة المرور' : 'Change Password', newPassword: lang === 'ar' ? 'كلمة المرور الجديدة' : 'New Password', settlePayment: lang === 'ar' ? 'تسوية الدفعة' : 'Settle Payment', processRefund: lang === 'ar' ? 'معالجة الاسترجاع' : 'Process Refund', close: lang === 'ar' ? 'إغلاق' : 'Close', cancel: lang === 'ar' ? 'إلغاء' : 'Cancel', save: lang === 'ar' ? 'حفظ' : 'Save', edit: lang === 'ar' ? 'تعديل' : 'Edit', delete: lang === 'ar' ? 'حذف' : 'Delete', preview: lang === 'ar' ? 'معاينة' : 'Preview', print: lang === 'ar' ? 'طباعة' : 'Print', refund: lang === 'ar' ? 'استرجاع' : 'Refund', quickSettle: lang === 'ar' ? 'تسوية سريعة' : 'Quick Settle', actions: lang === 'ar' ? 'إجراءات' : 'Actions', method: lang === 'ar' ? 'الطريقة' : 'Method', due: lang === 'ar' ? 'المتبقي' : 'Due', total: lang === 'ar' ? 'الإجمالي' : 'Total', invNo: lang === 'ar' ? 'رقم الفاتورة' : 'Inv No', generateInvoice: lang === 'ar' ? 'إنشاء الفاتورة' : 'Generate Invoice', updateInvoice: lang === 'ar' ? 'تحديث الفاتورة' : 'Update Invoice', editInvoice: lang === 'ar' ? 'تعديل الفاتورة' : 'Edit Invoice', custType: lang === 'ar' ? 'نوع العميل' : 'Customer Type', individual: lang === 'ar' ? 'فرد' : 'Individual', corporate: lang === 'ar' ? 'شركة' : 'Corporate', selectCustomer: lang === 'ar' ? 'اختر العميل' : 'Select Customer', newCustomer: lang === 'ar' ? 'عميل جديد' : 'New Customer', customerName: lang === 'ar' ? 'اسم العميل' : 'Customer Name', customerPhone: lang === 'ar' ? 'هاتف العميل' : 'Customer Phone', passengers: lang === 'ar' ? 'الركاب' : 'Passengers', addPassenger: lang === 'ar' ? '+ إضافة راكب' : '+ Add Passenger', portal: lang === 'ar' ? 'البوابة' : 'Portal', service: lang === 'ar' ? 'الخدمة' : 'Service', flightTicket: lang === 'ar' ? 'تذكرة طيران' : 'Flight Ticket', hotel: lang === 'ar' ? 'فندق' : 'Hotel', tourPackage: lang === 'ar' ? 'باقة سياحية' : 'Tour Package', visitVisa: lang === 'ar' ? 'تأشيرة زيارة' : 'Visit Visa', umrahVisa: lang === 'ar' ? 'تأشيرة عمرة' : 'Umrah Visa', newService: lang === 'ar' ? 'خدمة جديدة' : 'New Service', flightType: lang === 'ar' ? 'نوع الرحلة' : 'Flight Type', domestic: lang === 'ar' ? 'داخلية' : 'Domestic', international: lang === 'ar' ? 'دولية' : 'International', airline: lang === 'ar' ? 'خط الطيران' : 'Airline', sector: lang === 'ar' ? 'القطاع' : 'Sector', pnr: lang === 'ar' ? 'رقم الحجز' : 'PNR', ticketNo: lang === 'ar' ? 'رقم التذكرة' : 'Ticket No', qty: lang === 'ar' ? 'الكمية' : 'Qty', cost: lang === 'ar' ? 'التكلفة' : 'Cost', sell: lang === 'ar' ? 'البيع' : 'Sell', discount: lang === 'ar' ? 'الخصم' : 'Discount', vatRate: lang === 'ar' ? 'نسبة الضريبة' : 'VAT Rate', invoiceDate: lang === 'ar' ? 'تاريخ الفاتورة' : 'Invoice Date', journeyType: lang === 'ar' ? 'نوع الرحلة' : 'Journey Type', single: lang === 'ar' ? 'ذهاب' : 'Single', roundTrip: lang === 'ar' ? 'ذهاب وعودة' : 'Round Trip', multiCity: lang === 'ar' ? 'مدن متعددة' : 'Multi-city', fareType: lang === 'ar' ? 'نوع الأجرة' : 'Fare Type', refundable: lang === 'ar' ? 'قابلة للاسترداد' : 'Refundable', nonRefundable: lang === 'ar' ? 'غير قابلة للاسترداد' : 'Non-Refundable', bookingType: lang === 'ar' ? 'نوع الحجز' : 'Booking Type', newBooking: lang === 'ar' ? 'حجز جديد' : 'New Booking', reissue: lang === 'ar' ? 'إعادة إصدار' : 'Reissue', extraLuggage: lang === 'ar' ? 'أمتعة إضافية' : 'Extra Luggage', previousBooking: lang === 'ar' ? 'حجز سابق' : 'Previous Booking', salesPerson: lang === 'ar' ? 'موظف المبيعات' : 'Sales Person', paymentMethod: lang === 'ar' ? 'طريقة الدفع' : 'Payment Method', cash: lang === 'ar' ? 'نقداً' : 'Cash', bankTransfer: lang === 'ar' ? 'تحويل بنكي' : 'Bank Transfer', card: lang === 'ar' ? 'بطاقة / شبكة' : 'Card / Network', credit: lang === 'ar' ? 'آجل' : 'Credit', creditBalance: lang === 'ar' ? 'رصيد ائتماني' : 'Credit Balance', tabby: lang === 'ar' ? 'تابي' : 'Tabby', tamara: lang === 'ar' ? 'تمارا' : 'Tamara', paidAmount: lang === 'ar' ? 'المبلغ المدفوع' : 'Paid Amount', useCreditAmount: lang === 'ar' ? 'استخدام مبلغ الرصيد' : 'Use Credit Amount', notifications: lang === 'ar' ? 'الإشعارات' : 'Notifications', ai_dashboard: lang === 'ar' ? 'لوحة الذكاء الاصطناعي' : 'AI Dashboard', hr_advanced: lang === 'ar' ? 'الموارد البشرية والرواتب' : 'HR & Payroll', staff_mistakes: lang === 'ar' ? 'أخطاء الموظفين' : 'Staff Mistakes', customer_statement: lang === 'ar' ? 'كشف العميل' : 'Cust Statement', recurring_invoices: lang === 'ar' ? 'الفواتير المتكررة' : 'Recurring Invoices', expense_approval: lang === 'ar' ? 'موافقة المصروفات' : 'Expense Approval', refund_statement: lang === 'ar' ? 'كشف الاسترجاعات' : 'Refund Statement', credit_limits: lang === 'ar' ? 'حدود الائتمان' : 'Credit Limits', supplier_statement: lang === 'ar' ? 'كشف الموردين' : 'Supplier Statement', multi_branch: lang === 'ar' ? 'متعدد الفروع' : 'Multi-Branch', target: lang === 'ar' ? 'الهدف' : 'Target', achieved: lang === 'ar' ? 'المحقق' : 'Achieved', percentage: lang === 'ar' ? 'النسبة' : 'Percentage', checkInTime: lang === 'ar' ? 'الحضور' : 'Check-In', checkOutTime: lang === 'ar' ? 'الانصراف' : 'Check-Out', overtime: lang === 'ar' ? 'العمل الإضافي' : 'Overtime', deduction: lang === 'ar' ? 'الخصم' : 'Deduction', status: lang === 'ar' ? 'الحالة' : 'Status', present: lang === 'ar' ? 'حاضر' : 'Present', leave: lang === 'ar' ? 'إجازة' : 'Leave', absent: lang === 'ar' ? 'غائب' : 'Absent', paySalary: lang === 'ar' ? 'صرف الراتب' : 'Pay Salary', generateSlip: lang === 'ar' ? 'إنشاء قسيمة راتب' : 'Generate Salary Slip', attendanceDate: lang === 'ar' ? 'التاريخ' : 'Date', baseSalary: lang === 'ar' ? 'الراتب الأساسي' : 'Base Salary', commission: lang === 'ar' ? 'العمولة' : 'Commission', advDed: lang === 'ar' ? 'خصم السلفة' : 'Adv. Deduct', gift: lang === 'ar' ? 'مكافأة' : 'Gift', month: lang === 'ar' ? 'الشهر' : 'Month', mode: lang === 'ar' ? 'الطريقة' : 'Mode', mark: lang === 'ar' ? 'تسجيل' : 'Mark', logLoss: lang === 'ar' ? 'تسجيل خسارة' : 'Log Loss', quotations: lang === 'ar' ? 'عروض الأسعار' : 'Quotations'
+  };
+
+  const logAction = async (action) => {
+    if (!user) return;
+    try { await supabase.from('audits').insert([{ user_email: user.email, action, tenant_id: userProfile?.tenant_id }]); } catch (err) { console.error('Audit log error:', err.message); }
+  };
+
+  const fetchAll = useCallback(async () => {
+    if (!user) return;
+    try {
+      const { data: profile } = await supabase.from('app_users').select('*').eq('id', user.id).single();
+      setUserProfile(profile);
+      if (profile) {
+        const tenantId = profile.tenant_id;
+        const tables = ['invoices', 'customers', 'corporates', 'creditors', 'vendors', 'packages', 'branches', 'portals', 'employees', 'services', 'expenses', 'investments', 'cashbook', 'payroll', 'emp_advances', 'staff_mistakes', 'app_users', 'audits'];
+        const queries = tables.map(t => supabase.from(t).select('*').eq('tenant_id', tenantId));
+        const results = await Promise.all(queries);
+        const newData = { ...data };
+        tables.forEach((t, i) => newData[t] = results[i].data || []);
+        
+        const { data: tenantsData } = profile.role === 'SuperAdmin' ? await supabase.from('tenants').select('*') : { data: [] };
+        newData.tenants = tenantsData || [];
+        
+        const { data: settingsData } = await supabase.from('settings').select('*').eq('tenant_id', tenantId).maybeSingle();
+        newData.settings = settingsData || {};
+        
+        setData(newData);
+      }
+    } catch (err) { console.error('Fetch error:', err.message); }
+  }, [user]);
+
+  useEffect(() => {
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { router.push('/login'); return; }
+      setUser(session.user); fetchAll();
+    };
+    getSession();
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => { setUser(session?.user || null); if (!session) router.push('/login'); });
+    return () => authListener.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => { if (user) fetchAll(); }, [user]);
+
+  return {
+    user, userProfile, data, setData, lang, setLang, page, setPage, modal, setModal, toast, showToast, fetchAll, logAction, today, router, tr,
+    chatOpen, setChatOpen, chatMessages, setChatMessages, chatInput, setChatInput,
+    search, setSearch, tblPage, setTblPage, payFilter, setPayFilter, previewHTML, setPreviewHTML,
+    invForm, setInvForm, editInvId, setEditInvId, expForm, setExpForm, editExpId, setEditExpId,
+    custForm, setCustForm, editCustId, setEditCustId, corpForm, setCorpForm, editCorpId, setEditCorpId, creditorForm, setCreditorForm, editCredId, setEditCredId,
+    vendorForm, setVendorForm, editVendId, setEditVendId, pkgForm, setPkgForm, editPkgId, setEditPkgId, brnForm, setBrnForm, editBrnId, setEditBrnId,
+    empForm, setEmpForm, editEmpId, setEditEmpId, srvForm, setSrvForm, editSrvId, setEditSrvId,
+    portalForm, setPortalForm, investForm, setInvestForm, transferForm, setTransferForm, setForm, setSetForm, userForm, setUserForm, editUserId, setEditUserId,
+    tenantForm, setTenantForm, profileForm, setProfileForm, passForm, setPassForm, settleForm, setSettleForm, refundForm, setRefundForm,
+    repDate, setRepDate, reportTab, setReportTab, statementTab, setStatementTab, ledgerCustId, setLedgerCustId, ledgerEmpId, setLedgerEmpId,
+    contractCorpName, setContractCorpName, contractType, setContractType, contractMarkup, setContractMarkup, contractTerms, setContractTerms,
+    getInvoiceHTML, getRefundHTML
+  };
+}
