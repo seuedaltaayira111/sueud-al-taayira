@@ -10,7 +10,7 @@ const styles = {
   btnWarning: { padding: '8px 12px', background: '#FBBF24', color: '#1E293B', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }, 
   card: { background: 'white', padding: '25px', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px', border: '1px solid #e2e8f0' }, 
   label: { fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '6px', display: 'block', marginTop: '12px' },
-  tableHeader: { background: '#0F172A', color: 'white', padding: '15px', textAlign: 'start', fontSize: '13px' },
+  tableHeader: { background: '#1E293B', color: 'white', padding: '15px', textAlign: 'start', fontSize: '13px' },
   tableCell: { padding: '15px', borderBottom: '1px solid #F1F5F9', fontSize: '14px' },
   tabBtn: { padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', background: '#E2E8F0', color: '#475569', transition: 'all 0.2s' },
   tabBtnActive: { background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', boxShadow: '0 4px 6px rgba(37, 99, 235, 0.3)' }
@@ -21,7 +21,7 @@ export default function ERPViewsSystem(props) {
   
   const [statementType, setStatementType] = useState('sales');
 
-  // 1. PROFITABILITY ANALYZER
+  // 1. PROFITABILITY ANALYZER (Advanced UI with Progress Bars)
   if (page === 'profitability') {
     const activeInvoices = data.invoices.filter(i => !i.invoice_no.startsWith('REF-'));
     const airlineProfits = {};
@@ -34,6 +34,7 @@ export default function ERPViewsSystem(props) {
       airlineProfits[key].count += 1;
     });
     const sortedAirlines = Object.keys(airlineProfits).map(k => ({ name: k, ...airlineProfits[k] })).sort((a, b) => b.profit - a.profit);
+    const maxProfit = sortedAirlines.length > 0 ? sortedAirlines[0].profit : 0;
 
     return (
       <div>
@@ -63,7 +64,14 @@ export default function ERPViewsSystem(props) {
                       <td style={styles.tableCell}>{a.count}</td>
                       <td style={{...styles.tableCell, color: '#059669'}}>{a.revenue.toFixed(2)}</td>
                       <td style={{...styles.tableCell, color: '#EF4444'}}>{a.cost.toFixed(2)}</td>
-                      <td style={{...styles.tableCell, fontWeight: 'bold', color: a.profit > 0 ? '#059669' : '#EF4444'}}>{a.profit.toFixed(2)}</td>
+                      <td style={styles.tableCell}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ flex: 1, background: '#F1F5F9', borderRadius: '6px', overflow: 'hidden', height: '10px' }}>
+                            <div style={{ width: `${(a.profit / maxProfit) * 100}%`, background: a.profit > 0 ? '#059669' : '#EF4444', height: '100%' }}></div>
+                          </div>
+                          <span style={{ fontWeight: 'bold', color: a.profit > 0 ? '#059669' : '#EF4444' }}>{a.profit.toFixed(2)}</span>
+                        </div>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -118,11 +126,14 @@ export default function ERPViewsSystem(props) {
     </div>
   );
 
-  // 3. SUPERADMIN PANEL
+  // 3. SUPERADMIN PANEL (Advanced Cards UI)
   if (page === 'superadmin') {
     return (
       <div>
-        <h2 style={{ color: '#0F172A', marginBottom: '20px' }}>SuperAdmin Panel - Manage Agencies</h2>
+        <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', padding: '30px', borderRadius: '16px', marginBottom: '20px', boxShadow: '0 10px 15px rgba(37, 99, 235, 0.2)' }}>
+          <h2 style={{ margin: 0, fontSize: '24px' }}>SuperAdmin Panel - Manage Agencies</h2>
+          <p style={{ margin: '5px 0 0', opacity: 0.9 }}>Create new travel agencies and manage their subscriptions.</p>
+        </div>
         <div style={styles.card}>
           <h3 style={{marginTop: 0, color: '#0F172A'}}>Add New Travel Agency</h3>
           <form onSubmit={handleAddTenant} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
@@ -137,28 +148,30 @@ export default function ERPViewsSystem(props) {
             <button type="submit" style={{ ...styles.btnPrimary, gridColumn: '1 / -1', marginTop: '10px' }}>Create Agency & Generate Password</button>
           </form>
         </div>
-        <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
-              <thead><tr><th style={styles.tableHeader}>Agency Name</th><th style={styles.tableHeader}>Owner Email</th><th style={styles.tableHeader}>Sub. End Date</th><th style={styles.tableHeader}>Status</th><th style={styles.tableHeader}>Actions</th></tr></thead>
-              <tbody>
-                {data.tenants && data.tenants.map(t => (
-                  <tr key={t.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                    <td style={styles.tableCell}>{t.agency_name}</td>
-                    <td style={styles.tableCell}>{t.owner_email}</td>
-                    <td style={styles.tableCell}>{t.subscription_end_date}</td>
-                    <td style={styles.tableCell}>
-                      <span style={{ padding: '5px 10px', borderRadius: '12px', background: t.is_paid ? '#059669' : '#EF4444', color: 'white', fontSize: '12px' }}>{t.is_paid ? 'Active' : 'Suspended'}</span>
-                    </td>
-                    <td style={styles.tableCell}>
-                      <button onClick={() => handleToggleSubscription(t)} style={styles.btnWarning}>{t.is_paid ? 'Suspend' : 'Activate'}</button>
-                      <button onClick={() => handleDeleteTenant(t.id)} style={{...styles.btnDanger, marginInlineStart: '5px'}}>Delete</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+          {data.tenants && data.tenants.map(t => (
+            <div key={t.id} style={{ background: 'white', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+              <div style={{ padding: '20px', background: t.is_paid ? '#f0fdf4' : '#fef2f2', borderBottom: '1px solid #e2e8f0' }}>
+                <h3 style={{ margin: '0 0 5px', color: '#0F172A' }}>{t.agency_name}</h3>
+                <p style={{ margin: 0, fontSize: '14px', color: '#64748B' }}>{t.owner_email}</p>
+              </div>
+              <div style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '10px' }}>
+                  <span style={{ color: '#64748B' }}>Sub. End Date:</span>
+                  <span style={{ fontWeight: '600' }}>{t.subscription_end_date}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', marginBottom: '15px' }}>
+                  <span style={{ color: '#64748B' }}>Status:</span>
+                  <span style={{ padding: '4px 10px', borderRadius: '12px', background: t.is_paid ? '#059669' : '#EF4444', color: 'white', fontSize: '11px', fontWeight: '700' }}>{t.is_paid ? 'Active' : 'Suspended'}</span>
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button onClick={() => handleToggleSubscription(t)} style={{...styles.btnWarning, flex: 1}}>{t.is_paid ? 'Suspend' : 'Activate'}</button>
+                  <button onClick={() => handleDeleteTenant(t.id)} style={{...styles.btnDanger, flex: 1}}>Delete</button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -216,7 +229,7 @@ export default function ERPViewsSystem(props) {
             {setForm.custom_fields && setForm.custom_fields.map((cf, i) => (
               <div key={i} style={{ display: 'flex', gap: '15px', marginBottom: '15px' }}>
                 <input placeholder="Label (e.g. IATA No)" value={cf.key} onChange={e => handleCustomFieldChange(i, 'key', e.target.value)} style={styles.input} />
-                <input placeholder="Value" value={cf.value} onChange={e => handleCustomFieldChange(i, 'value', e.target.value)} style={styles.input} />
+                <input placeholder="Value" value={cf.value} onChange={e => handleCustomFieldChange(i, 'value', e.target.value}) style={styles.input} />
                 <button type="button" onClick={() => handleRemoveCustomField(i)} style={{...styles.btnDanger, width: 'auto'}}>X</button>
               </div>
             ))}
@@ -265,7 +278,7 @@ export default function ERPViewsSystem(props) {
     );
   }
 
-  // 7. REPORTS PAGE
+  // 7. REPORTS PAGE (Advanced P&L Card)
   if (page === 'reports') {
     const filteredInvoices = filterData(data.invoices.filter(i => !i.invoice_no.startsWith('REF-')), 'invoice_date');
     const filteredExpenses = filterData(data.expenses, 'expense_date');
