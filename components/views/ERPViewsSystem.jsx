@@ -229,7 +229,7 @@ export default function ERPViewsSystem(props) {
             {setForm.custom_fields && setForm.custom_fields.map((cf, i) => (
               <div key={i} style={{ display: 'flex', gap: '15px', marginBottom: '15px' }}>
                 <input placeholder="Label (e.g. IATA No)" value={cf.key} onChange={e => handleCustomFieldChange(i, 'key', e.target.value)} style={styles.input} />
-                <input placeholder="Value" value={cf.value} onChange={e => handleCustomFieldChange(i, 'value', e.target.value}) style={styles.input} />
+                <input placeholder="Value" value={cf.value} onChange={e => handleCustomFieldChange(i, 'value', e.target.value)} style={styles.input} />
                 <button type="button" onClick={() => handleRemoveCustomField(i)} style={{...styles.btnDanger, width: 'auto'}}>X</button>
               </div>
             ))}
