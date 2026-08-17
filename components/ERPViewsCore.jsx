@@ -251,7 +251,7 @@ export default function ERPViewsCore(props) {
                           <div style={{ fontSize: '16px', color: '#0F172A', fontWeight: 700, marginTop: '5px' }}>{invForm.oldPassengers || 'N/A'}</div>
                         </div>
                         <div style={{ background: '#FEF3C7', padding: '15px', borderRadius: '8px', border: '1px solid #F59E0B' }}>
-                          <div style={{ fontSize: '11px', color: '#92400E', fontWeight: 600 }}>Original Selling Price / سعر البيع الأصلي</div>
+                          <div style={{ fontSize: '11px', color: '#92400E', fontWeight: 600 }}>Original Ticket Fare / أجرة التذكرة الأصلية</div>
                           <div style={{ fontSize: '18px', color: '#78350F', fontWeight: 800, marginTop: '5px' }}>{parseFloat(invForm.oldSellPrice || 0).toFixed(2)} SAR</div>
                         </div>
                         <div style={{ background: '#DCFCE7', padding: '15px', borderRadius: '8px', border: '1px solid #86EFAC', gridColumn: '1 / -1' }}>
@@ -366,7 +366,7 @@ export default function ERPViewsCore(props) {
     );
   }
 
-  // ================= CUSTOMERS, CORPORATES, CREDITORS =================
+  // ================= CUSTOMERS =================
   if (page === 'customers') return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -390,6 +390,7 @@ export default function ERPViewsCore(props) {
     </div>
   );
   
+  // ================= CORPORATES =================
   if (page === 'corporates') return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -414,6 +415,7 @@ export default function ERPViewsCore(props) {
     </div>
   );
 
+  // ================= CREDITORS =================
   if (page === 'creditors') return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
