@@ -6,12 +6,23 @@ const styles = {
   btnPrimary: { padding: '12px 15px', background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#0F172A', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', width: '100%', boxShadow: '0 4px 6px rgba(245, 158, 11, 0.3)' }, 
   btnSuccess: { padding: '10px 15px', background: '#059669', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '500' }, 
   btnDanger: { padding: '10px 15px', background: '#EF4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '500' }, 
+  btnInfo: { padding: '10px 15px', background: '#2563EB', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '500' },
   card: { background: '#1E293B', padding: '30px', borderRadius: '16px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', marginBottom: '20px', border: '1px solid #334155', color: '#fff', width: '400px' },
   label: { fontSize: '13px', fontWeight: '600', color: '#94A3B8', marginBottom: '0', display: 'block', marginTop: '15px' }
 };
 
 export default function ERPModals({ modal, setModal, passForm, setPassForm, handleChangePassword, settleForm, setSettleForm, handleSettlePayment, refundForm, setRefundForm, handleRefund, previewHTML, downloadPDF }) {
   const overlay = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' };
+
+  const handlePrintPreview = () => {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(previewHTML);
+    printWindow.document.close();
+    setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+    }, 500);
+  };
 
   return (
     <>
@@ -104,6 +115,7 @@ export default function ERPModals({ modal, setModal, passForm, setPassForm, hand
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 30px', borderBottom: '1px solid #334155' }}>
               <h3 style={{ margin: 0, color: '#F59E0B' }}>📄 Document Preview</h3>
               <div style={{ display: 'flex', gap: '15px' }}>
+                <button onClick={handlePrintPreview} style={styles.btnInfo}>🖨️ Print</button>
                 <button onClick={() => downloadPDF(previewHTML, 'document.pdf')} style={styles.btnSuccess}>⬇️ Download PDF</button>
                 <button onClick={() => setModal({ type: null, data: null })} style={styles.btnDanger}>✖ Close</button>
               </div>
