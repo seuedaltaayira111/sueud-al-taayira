@@ -11,19 +11,19 @@ const styles = {
   btnInfo: { padding: '8px 12px', background: '#2563EB', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }, 
   card: { background: 'white', padding: '25px', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px', border: '1px solid #e2e8f0' }, 
   label: { fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '6px', display: 'block', marginTop: '12px' },
-  tableHeader: { background: '#0F172A', color: 'white', padding: '15px', textAlign: 'start', fontSize: '13px' },
+  tableHeader: { background: '#1E293B', color: 'white', padding: '15px', textAlign: 'start', fontSize: '13px' },
   tableCell: { padding: '15px', borderBottom: '1px solid #F1F5F9', fontSize: '14px' }
 };
 
 export default function ERPViewsAdvanced(props) {
   const { page, data, tr, today, userProfile, showToast, setData, handlePaySalary, handleGenerateSlip } = props;
+  
+  // FIX: Moved all useState hooks to the top level to prevent React Hooks violation
   const [editTargetId, setEditTargetId] = useState(null);
   const [targetVal, setTargetVal] = useState(0);
   const [attForm, setAttForm] = useState({ empId: '', date: today, checkIn: '09:00', checkOut: '18:00', status: 'Present', leaveStart: today, leaveEnd: today });
   const [attendance, setAttendance] = useState([]);
   const [payForm, setPayForm] = useState({ empId: '', base: 0, comm: 0, adv_ded: 0, gift: 0, month: today.substring(0, 7), mode: 'Cash' });
-  
-  // FIX: Moved useState outside the if condition to prevent React Hooks violation
   const [quoteForm, setQuoteForm] = useState({ customer_name: '', service_type: 'Flight Ticket', price: '', valid_until: today });
 
   // Fetch Attendance History
@@ -267,18 +267,44 @@ export default function ERPViewsAdvanced(props) {
           <h3 style={{marginTop: 0, color: '#0F172A'}}>📅 Daily Time-Based Attendance & Leave</h3>
           <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '15px' }}>Mark Check-in and Check-out time. System will automatically calculate Overtime ({'>9 hrs'}) and Salary Deduction ({'<8 hrs'}).</p>
           <form onSubmit={markAttendance} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr)) auto', gap: '15px', alignItems: 'flex-end' }}>
-            <div><label style={styles.label}>{tr.attendanceDate || 'Date'}</label><input type="date" style={styles.input} value={attForm.date} onChange={e => setAttForm({...attForm, date: e.target.value})} required /></div>
-            <div><label style={styles.label}>{tr.selectEmployee || 'Employee'}</label><select style={styles.input} value={attForm.empId} onChange={e => setAttForm({...attForm, empId: e.target.value})} required><option value="">Select Employee</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
-            <div><label style={styles.label}>{tr.status || 'Status'}</label><select style={styles.input} value={attForm.status} onChange={e => setAttForm({...attForm, status: e.target.value})}><option>{tr.present || 'Present'}</option><option>{tr.leave || 'Leave'}</option><option>{tr.absent || 'Absent'}</option></select></div>
+            <div>
+              <label style={styles.label}>{tr.attendanceDate || 'Date'}</label>
+              <input type="date" style={styles.input} value={attForm.date} onChange={e => setAttForm({...attForm, date: e.target.value})} required />
+            </div>
+            <div>
+              <label style={styles.label}>{tr.selectEmployee || 'Employee'}</label>
+              <select style={styles.input} value={attForm.empId} onChange={e => setAttForm({...attForm, empId: e.target.value})} required>
+                <option value="">Select Employee</option>
+                {data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>{tr.status || 'Status'}</label>
+              <select style={styles.input} value={attForm.status} onChange={e => setAttForm({...attForm, status: e.target.value})}>
+                <option>{tr.present || 'Present'}</option><option>{tr.leave || 'Leave'}</option><option>{tr.absent || 'Absent'}</option>
+              </select>
+            </div>
             {attForm.status === 'Present' ? (
               <>
-                <div><label style={styles.label}>{tr.checkInTime || 'Check-In'}</label><input type="time" style={styles.input} value={attForm.checkIn} onChange={e => setAttForm({...attForm, checkIn: e.target.value})} required /></div>
-                <div><label style={styles.label}>{tr.checkOutTime || 'Check-Out'}</label><input type="time" style={styles.input} value={attForm.checkOut} onChange={e => setAttForm({...attForm, checkOut: e.target.value})} required /></div>
+                <div>
+                  <label style={styles.label}>{tr.checkInTime || 'Check-In'}</label>
+                  <input type="time" style={styles.input} value={attForm.checkIn} onChange={e => setAttForm({...attForm, checkIn: e.target.value})} required />
+                </div>
+                <div>
+                  <label style={styles.label}>{tr.checkOutTime || 'Check-Out'}</label>
+                  <input type="time" style={styles.input} value={attForm.checkOut} onChange={e => setAttForm({...attForm, checkOut: e.target.value})} required />
+                </div>
               </>
             ) : (
               <>
-                <div><label style={styles.label}>Leave Start</label><input type="date" style={styles.input} value={attForm.leaveStart} onChange={e => setAttForm({...attForm, leaveStart: e.target.value})} required /></div>
-                <div><label style={styles.label}>Leave End</label><input type="date" style={styles.input} value={attForm.leaveEnd} onChange={e => setAttForm({...attForm, leaveEnd: e.target.value})} required /></div>
+                <div>
+                  <label style={styles.label}>Leave Start</label>
+                  <input type="date" style={styles.input} value={attForm.leaveStart} onChange={e => setAttForm({...attForm, leaveStart: e.target.value})} required />
+                </div>
+                <div>
+                  <label style={styles.label}>Leave End</label>
+                  <input type="date" style={styles.input} value={attForm.leaveEnd} onChange={e => setAttForm({...attForm, leaveEnd: e.target.value})} required />
+                </div>
               </>
             )}
             <button type="submit" style={{...styles.btnPrimary, height: '42px'}}>{tr.mark || 'Mark'}</button>
@@ -287,7 +313,13 @@ export default function ERPViewsAdvanced(props) {
           <div style={{ overflowX: 'auto', marginTop: '20px' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
               <thead><tr style={{ background: '#F8FAFC' }}>
-                <th style={styles.tableHeader}>Date</th><th style={styles.tableHeader}>Employee</th><th style={styles.tableHeader}>Check-In</th><th style={styles.tableHeader}>Check-Out</th><th style={styles.tableHeader}>{tr.overtime || 'Overtime'}</th><th style={styles.tableHeader}>{tr.deduction || 'Deduction'}</th><th style={styles.tableHeader}>{tr.status || 'Status'}</th>
+                <th style={styles.tableHeader}>Date</th>
+                <th style={styles.tableHeader}>Employee</th>
+                <th style={styles.tableHeader}>Check-In</th>
+                <th style={styles.tableHeader}>Check-Out</th>
+                <th style={styles.tableHeader}>{tr.overtime || 'Overtime'}</th>
+                <th style={styles.tableHeader}>{tr.deduction || 'Deduction'}</th>
+                <th style={styles.tableHeader}>{tr.status || 'Status'}</th>
               </tr></thead>
               <tbody>
                 {attendance.length === 0 ? <tr><td colSpan="7" style={{padding:'20px', textAlign:'center', color:'#94A3B8'}}>No attendance marked yet.</td></tr> : attendance.slice(0, 15).map(a => (
@@ -306,17 +338,42 @@ export default function ERPViewsAdvanced(props) {
           </div>
         </div>
 
+        {/* PAY SALARY & GENERATE SLIP */}
         <div style={styles.card}>
           <h3 style={{marginTop: 0, color: '#0F172A'}}>💰 {tr.paySalary || 'Pay Salary'}</h3>
-          <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '15px' }}>Select Employee to Auto-Fill Basic Salary & Pending Advances.</p>
-          <form onSubmit={handlePaySalary} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr)) auto', gap: '15px', alignItems: 'flex-end' }}>
-            <div><label style={styles.label}>{tr.selectEmployee || 'Employee'}</label><select name="emp" style={styles.input} value={payForm.empId} onChange={e => handlePayEmpChange(e.target.value)} required><option value="">Select Employee</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
-            <div><label style={styles.label}>{tr.baseSalary || 'Base'}</label><input name="base" type="number" style={styles.input} value={payForm.base} onChange={e => setPayForm({...payForm, base: e.target.value})} required /></div>
-            <div><label style={styles.label}>{tr.commission || 'Commission %'}</label><input name="comm" type="number" style={styles.input} value={payForm.comm} onChange={e => setPayForm({...payForm, comm: e.target.value})} required /></div>
-            <div><label style={styles.label}>{tr.advDed || 'Adv. Deduct'}</label><input name="adv_ded" type="number" style={styles.input} value={payForm.adv_ded} onChange={e => setPayForm({...payForm, adv_ded: e.target.value})} required /></div>
-            <div><label style={styles.label}>{tr.gift || 'Gift'}</label><input name="gift" type="number" style={styles.input} value={payForm.gift} onChange={e => setPayForm({...payForm, gift: e.target.value})} required /></div>
-            <div><label style={styles.label}>{tr.month || 'Month'}</label><input name="month" type="text" style={styles.input} value={payForm.month} onChange={e => setPayForm({...payForm, month: e.target.value})} required /></div>
-            <div><label style={styles.label}>{tr.mode || 'Mode'}</label><select name="mode" style={styles.input} value={payForm.mode} onChange={e => setPayForm({...payForm, mode: e.target.value})}><option>Cash</option><option>Bank Transfer</option></select></div>
+          <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '15px' }}>Select Employee to Auto-Fill Basic Salary & Pending Advances. Commission & Overtime will auto-calculate from Sales & Attendance.</p>
+          <form onSubmit={handlePaySalary} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr 1fr 1fr 1fr auto', gap: '15px', alignItems: 'flex-end' }}>
+            <div>
+              <label style={styles.label}>{tr.selectEmployee || 'Employee'}</label>
+              <select name="emp" style={styles.input} value={payForm.empId} onChange={e => handlePayEmpChange(e.target.value)} required>
+                <option value="">Select Employee</option>
+                {data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>{tr.baseSalary || 'Base'}</label>
+              <input name="base" type="number" style={styles.input} value={payForm.base} onChange={e => setPayForm({...payForm, base: e.target.value})} required />
+            </div>
+            <div>
+              <label style={styles.label}>{tr.commission || 'Commission %'}</label>
+              <input name="comm" type="number" style={styles.input} value={payForm.comm} onChange={e => setPayForm({...payForm, comm: e.target.value})} required />
+            </div>
+            <div>
+              <label style={styles.label}>{tr.advDed || 'Adv. Deduct'}</label>
+              <input name="adv_ded" type="number" style={styles.input} value={payForm.adv_ded} onChange={e => setPayForm({...payForm, adv_ded: e.target.value})} required />
+            </div>
+            <div>
+              <label style={styles.label}>{tr.gift || 'Gift'}</label>
+              <input name="gift" type="number" style={styles.input} value={payForm.gift} onChange={e => setPayForm({...payForm, gift: e.target.value})} required />
+            </div>
+            <div>
+              <label style={styles.label}>{tr.month || 'Month'}</label>
+              <input name="month" type="text" style={styles.input} value={payForm.month} onChange={e => setPayForm({...payForm, month: e.target.value})} required />
+            </div>
+            <div>
+              <label style={styles.label}>{tr.mode || 'Mode'}</label>
+              <select name="mode" style={styles.input} value={payForm.mode} onChange={e => setPayForm({...payForm, mode: e.target.value})}><option>Cash</option><option>Bank Transfer</option></select>
+            </div>
             <button type="submit" style={{...styles.btnPrimary, height: '42px'}}>Pay</button>
           </form>
         </div>
@@ -327,7 +384,10 @@ export default function ERPViewsAdvanced(props) {
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
               <thead>
                 <tr>
-                  <th style={styles.tableHeader}>Employee</th><th style={styles.tableHeader}>Month</th><th style={styles.tableHeader}>Net Paid</th><th style={styles.tableHeader}>Action</th>
+                  <th style={styles.tableHeader}>Employee</th>
+                  <th style={styles.tableHeader}>Month</th>
+                  <th style={styles.tableHeader}>Net Paid</th>
+                  <th style={styles.tableHeader}>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -336,7 +396,9 @@ export default function ERPViewsAdvanced(props) {
                     <td style={{...styles.tableCell, fontWeight: 'bold'}}>{p.employees?.name || 'N/A'}</td>
                     <td style={styles.tableCell}>{p.month}</td>
                     <td style={{...styles.tableCell, color: '#059669', fontWeight: 'bold'}}>{(p.amount || 0).toFixed(2)} SAR</td>
-                    <td style={styles.tableCell}><button onClick={() => handleGenerateSlip(p)} style={styles.btnInfo}>Download Slip</button></td>
+                    <td style={styles.tableCell}>
+                      <button onClick={() => handleGenerateSlip(p)} style={styles.btnInfo}>Download Slip</button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
