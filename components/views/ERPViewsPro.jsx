@@ -10,7 +10,7 @@ const styles = {
   btnDanger: { padding: '8px 12px', background: '#EF4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }, 
   card: { background: 'white', padding: '25px', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px', border: '1px solid #e2e8f0' }, 
   label: { fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '6px', display: 'block', marginTop: '12px' },
-  tableHeader: { background: '#0F172A', color: 'white', padding: '15px', textAlign: 'start', fontSize: '13px' },
+  tableHeader: { background: '#1E293B', color: 'white', padding: '15px', textAlign: 'start', fontSize: '13px' },
   tableCell: { padding: '15px', borderBottom: '1px solid #F1F5F9', fontSize: '14px' }
 };
 
@@ -207,7 +207,7 @@ export default function ERPViewsPro(props) {
     );
   }
 
-  // 4. EXPENSE APPROVAL SYSTEM
+  // 4. EXPENSE APPROVAL SYSTEM (Advanced Feature)
   if (page === 'expense_approval') {
     const pendingExpenses = data.expenses.filter(e => e.approval_status === 'Pending');
     const updateApproval = async (expId, status) => {
