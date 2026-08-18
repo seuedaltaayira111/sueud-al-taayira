@@ -21,12 +21,6 @@ export default function ERPViewsSystem(props) {
   
   const [statementType, setStatementType] = useState('sales');
 
-  // Helper function to export any data
-  const handleExport = (exportData, filename) => {
-    if (!exportData || exportData.length === 0) return;
-    exportToExcel(exportData, filename);
-  };
-
   // 1. PROFITABILITY ANALYZER
   if (page === 'profitability') {
     const activeInvoices = data.invoices.filter(i => !i.invoice_no.startsWith('REF-'));
@@ -49,10 +43,6 @@ export default function ERPViewsSystem(props) {
           <p style={{ margin: '5px 0 0', opacity: 0.9 }}>Analyze which airlines or services are generating the most profit.</p>
         </div>
         <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid #E2E8F0' }}>
-            <h3 style={{ margin: 0, color: '#0F172A' }}>Airline-wise Profit Analysis</h3>
-            <button onClick={() => handleExport(sortedAirlines.map(a => ({ Airline: a.name, Tickets: a.count, Revenue: a.revenue, Cost: a.cost, Profit: a.profit })), 'ProfitabilityReport')} style={styles.btnSuccess}>Export Excel</button>
-          </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
               <thead>
@@ -159,10 +149,6 @@ export default function ERPViewsSystem(props) {
           </form>
         </div>
         
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
-          <button onClick={() => handleExport(data.tenants?.map(t => ({ AgencyName: t.agency_name, Email: t.owner_email, EndDate: t.subscription_end_date, Status: t.is_paid ? 'Active' : 'Suspended' })), 'Agencies')} style={styles.btnSuccess}>Export Agencies Excel</button>
-        </div>
-        
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
           {data.tenants && data.tenants.map(t => (
             <div key={t.id} style={{ background: 'white', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
@@ -208,9 +194,6 @@ export default function ERPViewsSystem(props) {
           <div><label style={styles.label}>Access Settings</label><select value={userForm.can_access_settings} onChange={e => setUserForm({...userForm, can_access_settings: e.target.value === 'true'})} style={styles.input}><option value="true">Yes</option><option value="false">No</option></select></div>
           <button type="submit" style={{ ...styles.btnPrimary, gridColumn: '1 / -1' }}>{editUserId ? 'Update User' : 'Add User'}</button>
         </form>
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
-        <button onClick={() => handleExport(data.appUsers?.map(u => ({ Email: u.email, Username: u.username, Role: u.role, IsAdmin: u.is_admin ? 'Yes' : 'No' })), 'Users')} style={styles.btnSuccess}>Export Users Excel</button>
       </div>
       <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
         <div style={{ overflowX: 'auto' }}>
@@ -259,9 +242,27 @@ export default function ERPViewsSystem(props) {
     </div>
   );
 
-  // 6. CONTRACT & OFFER PAGE
+  // 6. CONTRACT & OFFER PAGE (AI TERMS CHECKBOXES ADDED)
   if (page === 'contract' || page === 'offer') {
     const isContract = page === 'contract';
+    
+    const aiStandardTerms = [
+      "Payment Terms: 100% advance payment required to confirm the booking.",
+      "Validity: This document is valid for 30 days from the date of issue.",
+      "Refund Policy: All cancellations are subject to airline/hotel cancellation policies.",
+      "Prices are subject to change based on availability at the time of final booking.",
+      "Passenger names must match exactly as per passport/ID."
+    ];
+
+    const handleTermToggle = (term) => {
+      const currentTerms = contractTerms ? contractTerms.split('\n').filter(t => t.trim()) : [];
+      if (currentTerms.includes(term)) {
+        setContractTerms(currentTerms.filter(t => t !== term).join('\n'));
+      } else {
+        setContractTerms([...currentTerms, term].join('\n'));
+      }
+    };
+
     return (
       <div>
         <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', padding: '30px', borderRadius: '16px', marginBottom: '20px', boxShadow: '0 10px 15px rgba(37, 99, 235, 0.2)' }}>
@@ -284,9 +285,31 @@ export default function ERPViewsSystem(props) {
               <label style={styles.label}>Service Fee / Markup (SAR)</label>
               <input type="number" value={contractMarkup} onChange={e => setContractMarkup(e.target.value)} style={{...styles.input, padding: '15px'}} required />
             </div>
+            
+            <div style={{ gridColumn: '1 / -1', marginTop: '10px' }}>
+              <label style={styles.label}>AI Generated Terms (Click to add/remove)</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '15px' }}>
+                {aiStandardTerms.map((term, idx) => (
+                  <button 
+                    key={idx} 
+                    type="button" 
+                    onClick={() => handleTermToggle(term)}
+                    style={{
+                      padding: '8px 15px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', transition: 'all 0.2s',
+                      background: contractTerms.includes(term) ? '#1E3A8A' : '#F1F5F9',
+                      color: contractTerms.includes(term) ? 'white' : '#475569',
+                      border: contractTerms.includes(term) ? '1px solid #1E3A8A' : '1px solid #CBD5E1'
+                    }}
+                  >
+                    {contractTerms.includes(term) ? '✓ ' : '+ '}{term.substring(0, 30)}...
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div style={{ gridColumn: '1 / -1' }}>
               <label style={styles.label}>Custom Terms & Conditions (One per line)</label>
-              <textarea rows="4" value={contractTerms} onChange={e => setContractTerms(e.target.value)} style={{...styles.input, resize: 'vertical'}}></textarea>
+              <textarea rows="6" value={contractTerms} onChange={e => setContractTerms(e.target.value)} style={{...styles.input, resize: 'vertical', fontFamily: 'sans-serif'}}></textarea>
             </div>
             <button type="submit" style={{ ...styles.btnPrimary, gridColumn: '1 / -1', padding: '15px', fontSize: '16px' }}>Generate {isContract ? 'Contract' : 'Offer'} PDF</button>
           </form>
@@ -312,18 +335,18 @@ export default function ERPViewsSystem(props) {
         </div>
         
         <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
-          <button onClick={() => setReportTab('sales')} style={{...styles.tabBtn, ...(reportTab === 'sales' && styles.tabBtnActive)}}>Sales</button>
-          <button onClick={() => setReportTab('expenses')} style={{...styles.tabBtn, ...(reportTab === 'expenses' && styles.tabBtnActive)}}>Expenses</button>
-          <button onClick={() => setReportTab('profit')} style={{...styles.tabBtn, ...(reportTab === 'profit' && styles.tabBtnActive)}}>Profit & Loss</button>
-          <button onClick={() => setReportTab('portals')} style={{...styles.tabBtn, ...(reportTab === 'portals' && styles.tabBtnActive)}}>Portals</button>
-          <button onClick={() => setReportTab('outstanding')} style={{...styles.tabBtn, ...(reportTab === 'outstanding' && styles.tabBtnActive)}}>Outstanding</button>
+          <button onClick={() => setReportTab('sales')} style={{...styles.tabBtn, ...(reportTab === 'sales' && styles.tabBtnActive)}} width="auto">Sales</button>
+          <button onClick={() => setReportTab('expenses')} style={{...styles.tabBtn, ...(reportTab === 'expenses' && styles.tabBtnActive)}} width="auto">Expenses</button>
+          <button onClick={() => setReportTab('profit')} style={{...styles.tabBtn, ...(reportTab === 'profit' && styles.tabBtnActive)}} width="auto">Profit & Loss</button>
+          <button onClick={() => setReportTab('portals')} style={{...styles.tabBtn, ...(reportTab === 'portals' && styles.tabBtnActive)}} width="auto">Portals</button>
+          <button onClick={() => setReportTab('outstanding')} style={{...styles.tabBtn, ...(reportTab === 'outstanding' && styles.tabBtnActive)}} width="auto">Outstanding</button>
         </div>
         
         {reportTab === 'sales' && (
           <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid #E2E8F0' }}>
               <h3 style={{ color: '#0F172A', margin: 0 }}>Total Sales: {salesTotal.toFixed(2)} SAR</h3>
-              <button onClick={() => handleExport(filteredInvoices.map(i => ({ Date: i.invoice_date, Inv: i.invoice_no, Customer: i.customers?.name, Total: i.total, Due: i.due_amount })), 'SalesReport')} style={styles.btnSuccess}>Export Excel</button>
+              <button onClick={() => exportToExcel(filteredInvoices.map(i => ({ Date: i.invoice_date, Inv: i.invoice_no, Customer: i.customers?.name, Total: i.total, Due: i.due_amount })), 'SalesReport')} style={styles.btnSuccess}>Export Excel</button>
             </div>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
@@ -337,7 +360,7 @@ export default function ERPViewsSystem(props) {
           <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid #E2E8F0' }}>
               <h3 style={{ color: '#0F172A', margin: 0 }}>Total Expenses: {expTotal.toFixed(2)} SAR</h3>
-              <button onClick={() => handleExport(filteredExpenses.map(e => ({ Date: e.expense_date, Vendor: e.vendor_name, Type: e.expense_type, Total: e.amount })), 'ExpenseReport')} style={styles.btnSuccess}>Export Excel</button>
+              <button onClick={() => exportToExcel(filteredExpenses.map(e => ({ Date: e.expense_date, Vendor: e.vendor_name, Type: e.expense_type, Total: e.amount })), 'ExpenseReport')} style={styles.btnSuccess}>Export Excel</button>
             </div>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
@@ -361,7 +384,7 @@ export default function ERPViewsSystem(props) {
           <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid #E2E8F0' }}>
               <h3 style={{ color: '#0F172A', margin: 0 }}>Portal Balances Report</h3>
-              <button onClick={() => handleExport(data.portals.map(p => ({ Name: p.name, Balance: p.current_balance })), 'PortalReport')} style={styles.btnSuccess}>Export Excel</button>
+              <button onClick={() => exportToExcel(data.portals.map(p => ({ Name: p.name, Balance: p.current_balance })), 'PortalReport')} style={styles.btnSuccess}>Export</button>
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><th style={styles.tableHeader}>Portal</th><th style={styles.tableHeader}>Balance (SAR)</th></tr></thead>
@@ -375,7 +398,7 @@ export default function ERPViewsSystem(props) {
               <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid #E2E8F0' }}>
                 <h3 style={{ color: '#0F172A', margin: 0 }}>Total Outstanding: <span style={{color: '#EF4444'}}>{totalDue.toFixed(2)} SAR</span></h3>
-                <button onClick={() => handleExport(outInvs.map(i => ({ Inv: i.invoice_no, Customer: i.customers?.name, Due: i.due_amount })), 'OutstandingReport')} style={styles.btnSuccess}>Export Excel</button>
+                <button onClick={() => exportToExcel(outInvs.map(i => ({ Inv: i.invoice_no, Customer: i.customers?.name, Due: i.due_amount })), 'OutstandingReport')} style={styles.btnSuccess}>Export</button>
               </div>
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
@@ -394,10 +417,7 @@ export default function ERPViewsSystem(props) {
   // 8. AUDIT LOGS PAGE
   if (page === 'audit') return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2 style={{ color: '#0F172A', margin: 0 }}>{tr.audit}</h2>
-        <button onClick={() => handleExport(data.audits?.map(a => ({ Date: a.created_at?.split('T')[0], User: a.user_email, Action: a.action })), 'AuditLogs')} style={styles.btnSuccess}>Export Excel</button>
-      </div>
+      <h2 style={{ color: '#0F172A', marginBottom: '20px' }}>{tr.audit}</h2>
       <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
@@ -409,7 +429,7 @@ export default function ERPViewsSystem(props) {
     </div>
   );
 
-  // 9. STATEMENTS PAGE (ALL 12 TYPES WITH EXCEL EXPORT)
+  // 9. STATEMENTS PAGE
   if (page === 'statements') {
     const tabs = ['sales', 'portals', 'vendors', 'salary', 'expenses', 'customers', 'creditors', 'credit', 'branches', 'cash', 'bank', 'investor'];
     
@@ -449,7 +469,7 @@ export default function ERPViewsSystem(props) {
         <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid #E2E8F0' }}>
             <h3 style={{ margin: 0, color: '#0F172A', textTransform: 'capitalize' }}>{statementType} Statement</h3>
-            <button onClick={() => handleExport(getExportData(statementType), `${statementType}Statement`)} style={styles.btnSuccess}>Export Excel</button>
+            <button onClick={() => exportToExcel(getExportData(statementType), `${statementType}Statement`)} style={styles.btnSuccess}>Export Excel</button>
           </div>
           <div style={{ overflowX: 'auto' }}>
             {statementType === 'sales' && (
