@@ -4,7 +4,6 @@ import { supabase } from '@/lib/supabase';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
-// Same Premium One-Page Bilingual Invoice Template for Public View
 const getInvoiceHTML = (inv, s) => {
   const setting = s || {};
   const invoiceNo = inv.invoice_no || 'N/A';
@@ -29,6 +28,7 @@ const getInvoiceHTML = (inv, s) => {
   if (inv.payment_method === 'Credit' && inv.credit_due_date) paymentDisplay = `Credit (Due: ${inv.credit_due_date})`;
 
   const isReissue = inv.booking_type === 'Reissue' || inv.booking_type === 'Previous Booking';
+  const passengersList = inv.passenger_names ? inv.passenger_names.replace(/\n/g, ', ') : 'N/A';
 
   return `
   <!DOCTYPE html>
@@ -125,6 +125,7 @@ const getInvoiceHTML = (inv, s) => {
             <div class="info-row"><span class="label">Name / الاسم</span><span class="value">${inv.customers?.name || inv.corporates?.name || 'N/A'}</span></div>
             <div class="info-row"><span class="label">Phone / الهاتف</span><span class="value">${inv.customers?.phone || 'N/A'}</span></div>
             <div class="info-row"><span class="label">Sales Person / الموظف</span><span class="value">${inv.employees?.name || 'N/A'}</span></div>
+            <div class="info-row"><span class="label">Passengers / الركاب</span><span class="value" style="max-width:150px; font-size:11px;">${passengersList}</span></div>
           </div>
           <div class="info-block" style="border-left-color: #f59e0b;">
             <div class="bilingual-title"><span>FLIGHT DETAILS / تفاصيل الرحلة</span></div>
