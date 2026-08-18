@@ -8,6 +8,7 @@ const styles = {
   btnSuccess: { padding: '8px 12px', background: '#059669', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }, 
   btnDanger: { padding: '8px 12px', background: '#EF4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }, 
   btnWarning: { padding: '8px 12px', background: '#FBBF24', color: '#1E293B', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }, 
+  btnInfo: { padding: '8px 12px', background: '#2563EB', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' },
   card: { background: 'white', padding: '25px', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px', border: '1px solid #e2e8f0' }, 
   label: { fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '6px', display: 'block', marginTop: '12px' },
   tableHeader: { background: '#1E293B', color: 'white', padding: '15px', textAlign: 'start', fontSize: '13px' },
@@ -15,7 +16,7 @@ const styles = {
 };
 
 export default function ERPViewsAdmin(props) {
-  const { page, data, tr, today, expForm, setExpForm, editExpId, setEditExpId, handleAddExpItem, handleRemoveExpItem, handleExpItemChange, handleAddExpense, handleEditExpense, handleDeleteExpense, handlePreviewExpense, handleAddEditVend, vendorForm, setVendorForm, editVendId, handleEditVend, handleAddEditPkg, pkgForm, setPkgForm, editPkgId, handleEditPkg, handleAddEditBrn, brnForm, setBrnForm, editBrnId, handleEditBrn, handleAddEditEmp, empForm, setEmpForm, editEmpId, handleEditEmp, handleAddEditSrv, srvForm, setSrvForm, editSrvId, handleEditSrv, handlePaySalary, handleAddPortal, portalForm, setPortalForm, handleRecharge, handleAddInvestment, investForm, setInvestForm, handleTransfer, transferForm, setTransferForm, handleDelete, exportToExcel, handleAddAdvance, handleReturnAdvance, ledgerEmpId, setLedgerEmpId } = props;
+  const { page, data, tr, today, expForm, setExpForm, editExpId, setEditExpId, handleAddExpItem, handleRemoveExpItem, handleExpItemChange, handleAddExpense, handleEditExpense, handleDeleteExpense, handlePreviewExpense, handleAddEditVend, vendorForm, setVendorForm, editVendId, handleEditVend, handleAddEditPkg, pkgForm, setPkgForm, editPkgId, handleEditPkg, handleAddEditBrn, brnForm, setBrnForm, editBrnId, handleEditBrn, handleAddEditEmp, empForm, setEmpForm, editEmpId, handleEditEmp, handleAddEditSrv, srvForm, setSrvForm, editSrvId, handleEditSrv, handlePaySalary, handleAddPortal, portalForm, setPortalForm, handleRecharge, handleAddInvestment, investForm, setInvestForm, handleTransfer, transferForm, setTransferForm, handleDelete, exportToExcel, handleAddAdvance, handleReturnAdvance, ledgerEmpId, setLedgerEmpId, handleGenerateSlip } = props;
 
   const expSubTotal = expForm?.items?.reduce((sum, item) => sum + ((parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0)), 0) || 0;
   const expVat = expSubTotal * ((parseFloat(expForm?.taxRate) || 0) / 100);
@@ -138,15 +139,12 @@ export default function ERPViewsAdmin(props) {
     </div>
   );
 
-  // BANK & CASH (Advanced Toggle Feature)
+  // BANK & CASH
   if (page === 'bank') {
     const filteredCashbook = cashbookFilter === 'All' ? data.cashbook : data.cashbook.filter(c => c.type.toLowerCase().includes(cashbookFilter.toLowerCase()));
-    
     return (
       <div>
         <h2 style={{ color: '#0F172A', marginBottom: '20px' }}>{tr.bank}</h2>
-        
-        {/* Quick Balance Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
           <div style={{ background: 'linear-gradient(135deg, #D97706, #F59E0B)', color: 'white', padding: '20px', borderRadius: '12px' }}>
             <h3 style={{ margin: '0 0 5px', fontSize: '14px', opacity: 0.9 }}>Cash in Hand</h3>
@@ -157,7 +155,6 @@ export default function ERPViewsAdmin(props) {
             <h2 style={{ margin: 0, fontSize: '24px' }}>{data.cashbook.filter(c => c.type === 'Bank-In').reduce((s,c) => s + (c.amount || 0), 0) - data.cashbook.filter(c => c.type === 'Bank-Out').reduce((s,c) => s + (c.amount || 0), 0)} SAR</h2>
           </div>
         </div>
-
         <div style={styles.card}>
           <h3 style={{marginTop: 0, color: '#0F172A'}}>Fund Transfer</h3>
           <form onSubmit={handleTransfer} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr)) auto', gap: '15px', alignItems: 'flex-end' }}>
@@ -168,7 +165,6 @@ export default function ERPViewsAdmin(props) {
             <button type="submit" style={{...styles.btnPrimary, height: '42px'}}>Transfer</button>
           </form>
         </div>
-        
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div style={{ display: 'flex', gap: '10px' }}>
             <button onClick={() => setCashbookFilter('All')} style={{ padding: '8px 15px', background: cashbookFilter === 'All' ? '#0F172A' : '#E2E8F0', color: cashbookFilter === 'All' ? 'white' : '#475569', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>All</button>
@@ -177,7 +173,6 @@ export default function ERPViewsAdmin(props) {
           </div>
           <button onClick={() => exportToExcel(data.cashbook, 'Cashbook')} style={styles.btnSuccess}>{tr.download_excel}</button>
         </div>
-        
         <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
@@ -218,7 +213,7 @@ export default function ERPViewsAdmin(props) {
     </div>
   );
 
-  // HR & EMPLOYEES (Advanced Insights Added)
+  // HR & EMPLOYEES (Advanced Insights & Attendance Report Added)
   if (page === 'hr') {
     const currentMonth = new Date().toISOString().substring(0, 7);
     const totalSalaryThisMonth = data.payroll.filter(p => p.month === currentMonth).reduce((s, p) => s + (p.amount || 0), 0);
@@ -231,7 +226,6 @@ export default function ERPViewsAdmin(props) {
           <button onClick={() => exportToExcel(data.payroll.map(p => ({ Employee: p.employees?.name, Amount: p.amount })), 'Payroll')} style={styles.btnSuccess}>{tr.download_excel}</button>
         </div>
         
-        {/* HR INSIGHTS CARDS */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
           <div style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', color: 'white', padding: '20px', borderRadius: '12px' }}>
             <h3 style={{ margin: '0 0 5px', fontSize: '14px', opacity: 0.9 }}>Total Salary Paid ({currentMonth})</h3>
@@ -260,7 +254,7 @@ export default function ERPViewsAdmin(props) {
         </div>
         
         <div style={styles.card}>
-          <h3 style={{marginTop: 0, color: '#0F172A'}}>Employees List & Iqama Expiry</h3>
+          <h3 style={{marginTop: 0, color: '#0F172A'}}>Employees List & Complete Data</h3>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
               <thead><tr>
@@ -329,7 +323,7 @@ export default function ERPViewsAdmin(props) {
         </div>
 
         <div style={styles.card}>
-          <h3 style={{marginTop: 0, color: '#0F172A'}}>Employee Individual Ledger</h3>
+          <h3 style={{marginTop: 0, color: '#0F172A'}}>Employee Individual Ledger & Attendance Report</h3>
           <select value={ledgerEmpId} onChange={e => setLedgerEmpId(e.target.value)} style={{...styles.input, maxWidth: '300px', marginBottom: '15px'}}>
             <option value="">Select Employee to View Ledger</option>
             {data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
@@ -337,7 +331,7 @@ export default function ERPViewsAdmin(props) {
           {ledgerEmpId && (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
-                <thead><tr><th style={styles.tableHeader}>Date</th><th style={styles.tableHeader}>Type</th><th style={styles.tableHeader}>Amount</th></tr></thead>
+                <thead><tr><th style={styles.tableHeader}>Date</th><th style={styles.tableHeader}>Type</th><th style={styles.tableHeader}>Amount/Hours</th></tr></thead>
                 <tbody>
                   {data.payroll.filter(p => p.employee_id === ledgerEmpId).map(p => (
                     <tr key={p.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
@@ -352,6 +346,14 @@ export default function ERPViewsAdmin(props) {
                       <td style={{...styles.tableCell, color: '#EF4444'}}>Advance ({a.status})</td>
                       <td style={styles.tableCell}>{(a.amount||0).toFixed(2)}</td>
                     </tr>
+                  ))}
+                  {/* Attendance Data (Requires Attendance table fetch in useERPState if not already there) */}
+                  {data.attendance && data.attendance.filter(a => a.employee_id === ledgerEmpId).map(a => (
+                     <tr key={a.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                       <td style={styles.tableCell}>{a.date}</td>
+                       <td style={{...styles.tableCell, color: a.status === 'Present' ? '#059669' : '#D97706'}}>{a.status}</td>
+                       <td style={styles.tableCell}>OT: {a.overtime || 0} | Ded: {a.deduction || 0}</td>
+                     </tr>
                   ))}
                 </tbody>
               </table>
