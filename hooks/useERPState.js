@@ -30,6 +30,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
   if (inv.payment_method === 'Credit' && inv.credit_due_date) paymentDisplay = `Credit (Due: ${inv.credit_due_date})`;
 
   const isReissue = inv.booking_type === 'Reissue' || inv.booking_type === 'Previous Booking';
+  const passengersList = inv.passenger_names ? inv.passenger_names.replace(/\n/g, ', ') : 'N/A';
 
   return `
   <!DOCTYPE html>
@@ -88,7 +89,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
       .total-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px; color: rgba(255,255,255,0.8); }
       .grand-total { display: flex; justify-content: space-between; padding: 8px 0 0; margin-top: 4px; border-top: 2px solid rgba(255,255,255,0.1); font-size: 16px; font-weight: 800; color: #fff; }
       .grand-total .val { color: #fbbf24; }
-      .footer { padding: 12px 20px; background: #f8fafc; display: flex; justify-content: space-between; alignItems: center; border-top: 1px solid #e2e8f0; gap: 15px; }
+      .footer { padding: 12px 20px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; gap: 15px; }
       .qr-code img { height: 60px; width: 60px; border-radius: 6px; border: 1px solid #e2e8f0; padding: 2px; background: #fff; }
       .footer-text { text-align: center; flex: 1; }
       .ai-msg { font-size: 11px; color: #475569; font-weight: 600; margin-bottom: 2px; }
@@ -126,6 +127,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
             <div class="info-row"><span class="label">Name / الاسم</span><span class="value">${inv.customers?.name || inv.corporates?.name || 'N/A'}</span></div>
             <div class="info-row"><span class="label">Phone / الهاتف</span><span class="value">${inv.customers?.phone || 'N/A'}</span></div>
             <div class="info-row"><span class="label">Sales Person / الموظف</span><span class="value">${inv.employees?.name || 'N/A'}</span></div>
+            <div class="info-row"><span class="label">Passengers / الركاب</span><span class="value" style="max-width:150px; font-size:11px;">${passengersList}</span></div>
           </div>
           <div class="info-block" style="border-left-color: #f59e0b;">
             <div class="bilingual-title"><span>FLIGHT DETAILS / تفاصيل الرحلة</span></div>
@@ -208,7 +210,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
 };
 
 // ==========================================
-// PREMIUM REFUND INVOICE TEMPLATE (FIXED N/A & ONE PAGE)
+// PREMIUM REFUND INVOICE TEMPLATE
 // ==========================================
 const getRefundHTML = (inv, s, lang = 'en') => {
   const setting = s || {};
@@ -216,14 +218,14 @@ const getRefundHTML = (inv, s, lang = 'en') => {
   const trackUrl = `https://sueud-al-taayira.vercel.app/invoice/${invoiceNo}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(trackUrl)}`;
   
-  // Refund Breakdown Logic
   const originalFare = inv.old_sell_price || inv.total_sell || 0;
   const customerRefund = inv.refund_customer || 0;
-  const airlineRefund = inv.refund_company || 0; // Amount company received
-  const airlineCancellationFee = originalFare - airlineRefund; // 500 - 300 = 200
+  const airlineRefund = inv.refund_company || 0; 
+  const airlineCancellationFee = originalFare - airlineRefund; 
   
   const custName = inv.customers?.name || inv.old_customer_name || 'N/A';
   const custPhone = inv.customers?.phone || inv.old_customer_phone || 'N/A';
+  const passengersList = inv.passenger_names ? inv.passenger_names.replace(/\n/g, ', ') : (inv.old_passengers || 'N/A');
   
   let refundMethodDisplay = inv.payment_method || 'Cash';
   if (inv.payment_method === 'Credit') refundMethodDisplay = 'Credit for New Booking / رصيد لحجز جديد';
@@ -295,6 +297,7 @@ const getRefundHTML = (inv, s, lang = 'en') => {
           <h4>BOOKING DETAILS / تفاصيل الحجز</h4>
           <div class="row"><span class="label">Customer Name / اسم العميل</span><span class="value">${custName}</span></div>
           <div class="row"><span class="label">Contact / الهاتف</span><span class="value">${custPhone}</span></div>
+          <div class="row"><span class="label">Passengers / الركاب</span><span class="value" style="max-width:150px; font-size:11px;">${passengersList}</span></div>
           <div class="row"><span class="label">Airline / خط الطيران</span><span class="value">${inv.airline || inv.old_airline || 'N/A'}</span></div>
           <div class="row"><span class="label">Date of Booking / تاريخ الحجز</span><span class="value">${inv.invoice_date || inv.old_booking_date || 'N/A'}</span></div>
           <div class="row"><span class="label">PNR / رقم الحجز</span><span class="value">${inv.pnr || inv.old_pnr || 'N/A'}</span></div>
@@ -422,7 +425,7 @@ const getExpenseHTML = (exp, s, lang = 'en') => {
 };
 
 // ==========================================
-// SALARY SLIP TEMPLATE
+// SALARY SLIP TEMPLATE (PREMIUM FIXED)
 // ==========================================
 const getSalarySlipHTML = (pay, s, lang = 'en') => {
   const setting = s || {};
@@ -518,7 +521,7 @@ const getSalarySlipHTML = (pay, s, lang = 'en') => {
 };
 
 // ==========================================
-// CONTRACT / OFFER TEMPLATE
+// CONTRACT / OFFER TEMPLATE (PREMIUM FIXED)
 // ==========================================
 const getContractHTML = (s, name, date, isOffer, type, markup, terms) => {
   const setting = s || {};
