@@ -20,7 +20,8 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
   const total = inv.total || 0;
   const paidAmount = inv.paid_amount || 0;
   const usedCredit = inv.used_credit || 0; 
-  const cashPaid = paidAmount - usedCredit;
+  const cashReturn = inv.cash_return || 0;
+  const cashPaid = paidAmount - usedCredit - cashReturn; // Actual cash kept by agency
   const dueAmount = inv.due_amount || 0;
   const unitPrice = (inv.qty || 1) > 0 ? totalSell / inv.qty : totalSell;
   
@@ -180,6 +181,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
             <div class="bilingual-title"><span>PAYMENT BREAKDOWN / تفاصيل الدفع</span></div>
             <div class="pay-row"><span>New Booking Price / سعر الحجز الجديد</span><span style="font-weight:600;">${total.toFixed(2)} SAR</span></div>
             ${usedCredit > 0 ? `<div class="pay-row" style="color:#7c3aed;"><span>Less: Refund Credit / خصم الرصيد</span><span style="font-weight:600;">- ${usedCredit.toFixed(2)} SAR</span></div>` : ''}
+            ${cashReturn > 0 ? `<div class="pay-row" style="color:#ef4444;"><span>Cash Returned to Customer / مبلغ مرتجع</span><span style="font-weight:600;">- ${cashReturn.toFixed(2)} SAR</span></div>` : ''}
             <div class="pay-row" style="border-top:2px solid #cbd5e1; margin-top:4px; padding-top:4px; font-weight:700;"><span>Balance Paid / المدفوع (${paymentDisplay})</span><span style="color:#059669;">${cashPaid.toFixed(2)} SAR</span></div>
             <div class="pay-row" style="font-weight:700;"><span>Amount Due / المتبقي</span><span style="color:${dueAmount > 0 ? '#ef4444' : '#059669'};">${dueAmount.toFixed(2)} SAR</span></div>
           </div>
@@ -210,7 +212,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
 };
 
 // ==========================================
-// PREMIUM REFUND INVOICE TEMPLATE
+// PREMIUM REFUND INVOICE TEMPLATE (FIXED N/A & ONE PAGE)
 // ==========================================
 const getRefundHTML = (inv, s, lang = 'en') => {
   const setting = s || {};
@@ -521,7 +523,81 @@ const getSalarySlipHTML = (pay, s, lang = 'en') => {
 };
 
 // ==========================================
-// CONTRACT / OFFER TEMPLATE (PREMIUM FIXED)
+// STAFF MISTAKE VOUCHER TEMPLATE
+// ==========================================
+const getMistakeHTML = (m, s, lang = 'en') => {
+  const setting = s || {};
+  const vNo = `MST-${m.id?.substring(0,8) || 'N/A'}`;
+  return `
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Mistake Voucher ${vNo}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; padding: 0; }
+      body { font-family: 'Inter', 'Cairo', sans-serif; background: #f0f4f8; margin: 0; padding: 30px; color: #1e293b; }
+      .voucher { max-width: 800px; margin: auto; background: #fff; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.08); border-radius: 12px; border-top: 10px solid #B91C1C; }
+      .header { background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); color: #fff; padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; }
+      .header h1 { font-size: 22px; font-weight: 800; color: #FBBF24; }
+      .header h2 { font-size: 15px; color: #c7d2fe; margin-top: 4px; }
+      .header .v-info { text-align: right; }
+      .header .v-info h3 { color: #FBBF24; font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+      .header .v-info p { font-size: 13px; color: #c7d2fe; margin-top: 4px; }
+      .body { padding: 35px 40px; }
+      .emp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: #F8FAFC; padding: 20px; border-radius: 10px; border: 1px solid #E2E8F0; margin-bottom: 25px; }
+      .emp-grid p { font-size: 14px; margin: 5px 0; }
+      .emp-grid .label { color: #64748b; font-weight: 500; }
+      .loss-box { background: linear-gradient(135deg, #EF4444, #B91C1C); color: #fff; padding: 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-top: 15px; box-shadow: 0 10px 15px rgba(239, 68, 68, 0.2); }
+      .loss-box h3 { font-size: 16px; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+      .loss-box .amount { font-size: 28px; font-weight: 800; }
+      .footer { text-align: center; padding: 20px 40px; background: #F8FAFC; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
+      @media print { body { background: #fff; padding: 0; margin: 0; } .voucher { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; border: none; } }
+    </style>
+  </head>
+  <body>
+    <div class="voucher">
+      <div class="header">
+        <div>
+          <h1>${setting.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
+          <h2>${setting.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
+        </div>
+        <div class="v-info">
+          <h3>Loss Voucher</h3>
+          <p>Voucher No: ${vNo} | Date: ${m.date}</p>
+        </div>
+      </div>
+      <div class="body">
+        <div class="emp-grid">
+          <div>
+            <p><span class="label">Employee Name:</span> <strong>${m.employees?.name || 'N/A'}</strong></p>
+            <p><span class="label">Designation:</span> ${m.employees?.role || 'N/A'}</p>
+          </div>
+          <div style="text-align: right;">
+            <p><span class="label">Old Ticket No:</span> ${m.old_ticket_no || 'N/A'}</p>
+            <p><span class="label">New Ticket No:</span> ${m.new_ticket_no || 'N/A'}</p>
+          </div>
+        </div>
+        <div class="loss-box">
+          <h3>Total Loss Amount</h3>
+          <div class="amount">${(m.loss_amount || 0).toFixed(2)} SAR</div>
+        </div>
+        <p style="margin-top: 15px; font-size: 14px; color: #334155;">
+          <strong>Deduction Status:</strong> ${m.paid_by_employee ? 'Amount will be deducted from employee salary.' : 'Amount absorbed by company.'}
+        </p>
+      </div>
+      <div class="footer">
+        <p>This is a computer-generated voucher and does not require a physical signature.</p>
+        <p>© ${new Date().getFullYear()} ${setting.company_name_en || 'SUEUD AL TAAYIRA'}</p>
+      </div>
+    </div>
+  </body>
+  </html>`;
+};
+
+// ==========================================
+// CONTRACT / OFFER TEMPLATE (PREMIUM FIXED WITH AI TERMS)
 // ==========================================
 const getContractHTML = (s, name, date, isOffer, type, markup, terms) => {
   const setting = s || {};
@@ -758,6 +834,6 @@ export default function useERPState() {
     repDate, setRepDate, reportTab, setReportTab, statementTab, setStatementTab, ledgerCustId, setLedgerCustId, ledgerEmpId, setLedgerEmpId,
     contractCorpName, setContractCorpName, contractType, setContractType, contractMarkup, setContractMarkup, contractTerms, setContractTerms,
     filterData,
-    getInvoiceHTML, getRefundHTML, getExpenseHTML, getSalarySlipHTML, getContractHTML
+    getInvoiceHTML, getRefundHTML, getExpenseHTML, getSalarySlipHTML, getMistakeHTML, getContractHTML
   };
 }
