@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { supabase } from '@/lib/supabase';
 
 const styles = { 
   input: { width: '100%', padding: '12px 15px', margin: '6px 0', border: '1px solid #E2E8F0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', transition: 'border 0.2s', fontSize: '14px' }, 
@@ -17,7 +18,7 @@ const styles = {
 };
 
 export default function ERPViewsCore(props) {
-  const { page, data, tr, today, invForm, setInvForm, handleCreateInvoice, handleDownloadPDF, printInvoice, exportToExcel, search, setSearch, payFilter, setPayFilter, handleEditInvoice, handleDeleteInvoice, openRefundModal, editInvId, openPreview, openSettleModal, handleQuickSettle, handleAddEditCust, custForm, setCustForm, editCustId, handleAddEditCorp, corpForm, setCorpForm, editCorpId, handleAddEditCred, creditorForm, setCreditorForm, editCredId, handleEditCust, handleEditCorp, handleEditCred, handleDelete, shareWhatsApp, shareEmail } = props;
+  const { page, data, tr, today, userProfile, showToast, invForm, setInvForm, handleCreateInvoice, handleDownloadPDF, printInvoice, exportToExcel, search, setSearch, payFilter, setPayFilter, handleEditInvoice, handleDeleteInvoice, openRefundModal, editInvId, openPreview, openSettleModal, handleQuickSettle, handleAddEditCust, custForm, setCustForm, editCustId, handleAddEditCorp, corpForm, setCorpForm, editCorpId, handleAddEditCred, creditorForm, setCreditorForm, editCredId, handleEditCust, handleEditCorp, handleEditCred, handleDelete, shareWhatsApp, shareEmail } = props;
 
   // ================= DASHBOARD =================
   if (page === 'dashboard') {
@@ -68,9 +69,38 @@ export default function ERPViewsCore(props) {
     );
   }
 
+  // ================= MY ATTENDANCE (Self-Service High Tech) =================
+  if (page === 'my_attendance') {
+    const handleMarkMyAttendance = async (e) => {
+      e.preventDefault();
+      try {
+        const emp = data.employees.find(em => em.phone === userProfile.phone);
+        if (!emp) return showToast('Your profile is not linked to an Employee record. Contact HR.');
+        
+        const payload = {
+          employee_id: emp.id, date: today, status: 'Present',
+          check_in: new Date().toTimeString().split(' ')[0],
+          tenant_id: userProfile.tenant_id
+        };
+        const { data: newAtt, error } = await supabase.from('attendance').insert([payload]).select('*, employees(name)').single();
+        if (error) throw error;
+        showToast('Attendance Marked Successfully!');
+      } catch (err) { showToast('Error: ' + err.message); }
+    };
+
+    return (
+      <div style={styles.card}>
+        <h2 style={{ color: '#0F172A', marginBottom: '20px' }}>📅 My Daily Attendance</h2>
+        <p style={{ color: '#64748b', marginBottom: '20px' }}>Click the button below to mark your attendance for today ({today}).</p>
+        <button onClick={handleMarkMyAttendance} style={{ ...styles.btnPrimary, width: 'auto', padding: '15px 30px', fontSize: '16px' }}>
+          ✅ Mark Present for Today
+        </button>
+      </div>
+    );
+  }
+
   // ================= CREATE INVOICE (HIGH-TECH AUTOMATED FORM) =================
   if (page === 'create') {
-    // Live Calculation Logic
     const qty = parseInt(invForm.qty) || 1;
     const baseSell = (parseFloat(invForm.sell) || 0) * qty;
     const discount = parseFloat(invForm.discount) || 0;
@@ -81,10 +111,8 @@ export default function ERPViewsCore(props) {
     const creditUsed = parseFloat(invForm.useCredit) || 0;
     const balanceToPay = totalNewBooking - creditUsed;
 
-    // Automation: Fetch available credit invoices (Refunds)
     const availableCreditInvoices = data.invoices.filter(i => i.invoice_no.startsWith('REF-') && (i.refund_customer || 0) > 0);
 
-    // Automation Handler: DEEP FETCH when user selects a previous refund invoice
     const handleCreditSelect = (invNo) => {
       if (!invNo) {
         setInvForm({ ...invForm, linkedInvId: '', useCredit: 0, oldTicketNo: '', oldPnr: '', oldAirline: '', oldSector: '', oldSellPrice: 0, creditCustId: '', oldBookingDate: '', oldPassengers: '', oldFlightType: '', oldPaymentMethod: '', refundReason: '' });
@@ -100,7 +128,6 @@ export default function ERPViewsCore(props) {
           custId: linkedInv.customer_id || invForm.custId,
           custName: linkedInv.customers?.name || invForm.custName,
           custPhone: linkedInv.customers?.phone || invForm.custPhone,
-          // DEEP FETCH: Pulling old_ fields from Refund Invoice
           oldTicketNo: linkedInv.old_ticket_no || linkedInv.ticket_no || '',
           oldPnr: linkedInv.old_pnr || linkedInv.pnr || '',
           oldAirline: linkedInv.old_airline || linkedInv.airline || '',
