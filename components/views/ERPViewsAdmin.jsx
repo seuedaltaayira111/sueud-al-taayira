@@ -16,7 +16,7 @@ const styles = {
 };
 
 export default function ERPViewsAdmin(props) {
-  const { page, data, tr, today, expForm, setExpForm, editExpId, setEditExpId, handleAddExpItem, handleRemoveExpItem, handleExpItemChange, handleAddExpense, handleEditExpense, handleDeleteExpense, handlePreviewExpense, handleAddEditVend, vendorForm, setVendorForm, editVendId, handleEditVend, handleAddEditPkg, pkgForm, setPkgForm, editPkgId, handleEditPkg, handleAddEditBrn, brnForm, setBrnForm, editBrnId, handleEditBrn, handleAddEditEmp, empForm, setEmpForm, editEmpId, handleEditEmp, handleAddEditSrv, srvForm, setSrvForm, editSrvId, handleEditSrv, handlePaySalary, handleAddPortal, portalForm, setPortalForm, handleRecharge, handleAddInvestment, investForm, setInvestForm, handleTransfer, transferForm, setTransferForm, handleDelete, exportToExcel, handleAddAdvance, handleReturnAdvance, ledgerEmpId, setLedgerEmpId, handleGenerateSlip } = props;
+  const { page, data, tr, today, expForm, setExpForm, editExpId, setEditExpId, handleAddExpItem, handleRemoveExpItem, handleExpItemChange, handleAddExpense, handleEditExpense, handleDeleteExpense, handlePreviewExpense, handleAddEditVend, vendorForm, setVendorForm, editVendId, handleEditVend, handleAddEditPkg, pkgForm, setPkgForm, editPkgId, handleEditPkg, handleAddEditBrn, brnForm, setBrnForm, editBrnId, handleEditBrn, handleAddEditEmp, empForm, setEmpForm, editEmpId, handleEditEmp, handleAddEditSrv, srvForm, setSrvForm, editSrvId, handleEditSrv, handlePaySalary, handleAddPortal, portalForm, setPortalForm, handleRecharge, handleAddInvestment, investForm, setInvestForm, handleTransfer, transferForm, setTransferForm, handleDelete, exportToExcel, handleAddAdvance, handleReturnAdvance, ledgerEmpId, setLedgerEmpId, handleGenerateSlip, handleDeletePayroll, handleAddMistake, handlePreviewMistake, handleDeleteMistake } = props;
 
   const expSubTotal = expForm?.items?.reduce((sum, item) => sum + ((parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0)), 0) || 0;
   const expVat = expSubTotal * ((parseFloat(expForm?.taxRate) || 0) / 100);
@@ -213,7 +213,7 @@ export default function ERPViewsAdmin(props) {
     </div>
   );
 
-  // HR & EMPLOYEES (Advanced Insights & Attendance Report Added)
+  // HR & EMPLOYEES (Advanced Insights & Voucher Actions Added)
   if (page === 'hr') {
     const currentMonth = new Date().toISOString().substring(0, 7);
     const totalSalaryThisMonth = data.payroll.filter(p => p.month === currentMonth).reduce((s, p) => s + (p.amount || 0), 0);
@@ -322,91 +322,77 @@ export default function ERPViewsAdmin(props) {
           </form>
         </div>
 
-        <div style={styles.card}>
-          <h3 style={{marginTop: 0, color: '#0F172A'}}>Employee Individual Ledger & Attendance Report</h3>
-          <select value={ledgerEmpId} onChange={e => setLedgerEmpId(e.target.value)} style={{...styles.input, maxWidth: '300px', marginBottom: '15px'}}>
-            <option value="">Select Employee to View Ledger</option>
-            {data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-          </select>
-          {ledgerEmpId && (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
-                <thead><tr><th style={styles.tableHeader}>Date</th><th style={styles.tableHeader}>Type</th><th style={styles.tableHeader}>Amount/Hours</th></tr></thead>
-                <tbody>
-                  {data.payroll.filter(p => p.employee_id === ledgerEmpId).map(p => (
-                    <tr key={p.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                      <td style={styles.tableCell}>{p.month} (Salary)</td>
-                      <td style={{...styles.tableCell, color: '#059669'}}>Paid</td>
-                      <td style={styles.tableCell}>{(p.amount||0).toFixed(2)} ({p.payment_mode})</td>
-                    </tr>
-                  ))}
-                  {data.empAdvances.filter(a => a.employee_id === ledgerEmpId).map(a => (
-                    <tr key={a.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                      <td style={styles.tableCell}>{a.date}</td>
-                      <td style={{...styles.tableCell, color: '#EF4444'}}>Advance ({a.status})</td>
-                      <td style={styles.tableCell}>{(a.amount||0).toFixed(2)}</td>
-                    </tr>
-                  ))}
-                  {/* Attendance Data (Requires Attendance table fetch in useERPState if not already there) */}
-                  {data.attendance && data.attendance.filter(a => a.employee_id === ledgerEmpId).map(a => (
-                     <tr key={a.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                       <td style={styles.tableCell}>{a.date}</td>
-                       <td style={{...styles.tableCell, color: a.status === 'Present' ? '#059669' : '#D97706'}}>{a.status}</td>
-                       <td style={styles.tableCell}>OT: {a.overtime || 0} | Ded: {a.deduction || 0}</td>
-                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+        {/* SALARY SLIP LIST WITH PREVIEW & DELETE */}
+        <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px' }}>
+          <div style={{ padding: '20px', borderBottom: '1px solid #E2E8F0' }}><h3 style={{ margin: 0, color: '#0F172A' }}>📋 Generate Salary Slip</h3></div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+              <thead>
+                <tr>
+                  <th style={styles.tableHeader}>Employee</th>
+                  <th style={styles.tableHeader}>Month</th>
+                  <th style={styles.tableHeader}>Net Paid</th>
+                  <th style={styles.tableHeader}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.payroll.length === 0 ? <tr><td colSpan="4" style={{padding:'30px', textAlign:'center', color:'#94A3B8'}}>No salary paid yet.</td></tr> : data.payroll.map(p => (
+                  <tr key={p.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                    <td style={{...styles.tableCell, fontWeight: 'bold'}}>{p.employees?.name || 'N/A'}</td>
+                    <td style={styles.tableCell}>{p.month}</td>
+                    <td style={{...styles.tableCell, color: '#059669', fontWeight: 'bold'}}>{(p.amount || 0).toFixed(2)} SAR</td>
+                    <td style={styles.tableCell}>
+                      <button onClick={() => handleGenerateSlip(p)} style={styles.btnInfo}>Preview Slip</button>
+                      <button onClick={() => handleDeletePayroll(p)} style={{...styles.btnDanger, marginInlineStart: '5px'}}>Delete</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <div style={styles.card}>
-          <h3 style={{marginTop: 0, color: '#0F172A'}}>{editExpId ? 'Edit Office Expense' : 'Add Office Expense / Purchase Invoice'}</h3>
-          <form onSubmit={handleAddExpense} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
-            <div><label style={styles.label}>Vendor Name</label><input value={expForm.vendor_name} onChange={e => setExpForm({...expForm, vendor_name: e.target.value})} style={styles.input} required /></div>
-            <div><label style={styles.label}>Vendor VAT</label><input value={expForm.vendor_vat} onChange={e => setExpForm({...expForm, vendor_vat: e.target.value})} style={styles.input} /></div>
-            <div><label style={styles.label}>Date</label><input type="date" value={expForm.expense_date} onChange={e => setExpForm({...expForm, expense_date: e.target.value})} style={styles.input} required /></div>
-            <div><label style={styles.label}>Type</label><select value={expForm.expense_type} onChange={e => setExpForm({...expForm, expense_type: e.target.value})} style={styles.input}><option>Office Supplies</option><option>Utility</option><option>Rent</option><option>Software</option><option>Other</option></select></div>
-            
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={styles.label}>Items</label>
-              {expForm.items.map((item, idx) => (
-                <div key={idx} style={{ display: 'flex', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
-                  <input value={item.name} onChange={e => handleExpItemChange(idx, 'name', e.target.value)} placeholder="Item Name" style={{...styles.input, flex: 2}} required />
-                  <input type="number" value={item.qty} onChange={e => handleExpItemChange(idx, 'qty', e.target.value)} placeholder="Qty" style={{...styles.input, flex: 1, maxWidth: '100px'}} required />
-                  <input type="number" step="0.01" value={item.price} onChange={e => handleExpItemChange(idx, 'price', e.target.value)} placeholder="Unit Price" style={{...styles.input, flex: 1}} required />
-                  <span style={{ padding: '12px 15px', background: '#F8FAFC', borderRadius: '8px', fontWeight: 'bold', color: '#475569' }}>Total: {((parseFloat(item.qty)||0)*(parseFloat(item.price)||0)).toFixed(2)}</span>
-                  {expForm.items.length > 1 && <button type="button" onClick={() => handleRemoveExpItem(idx)} style={styles.btnDanger}>X</button>}
-                </div>
-              ))}
-              <button type="button" onClick={handleAddExpItem} style={{ ...styles.btnWarning, width: 'auto', padding: '10px 15px' }}>+ Add Item</button>
-            </div>
-
-            <div><label style={styles.label}>Tax Rate</label><select value={expForm.taxRate} onChange={e => setExpForm({...expForm, taxRate: e.target.value})} style={styles.input}><option value="15">With 15% VAT</option><option value="0">Without VAT (0%)</option></select></div>
-            <div><label style={styles.label}>Payment Mode</label><select value={expForm.payment_mode} onChange={e => setExpForm({...expForm, payment_mode: e.target.value})} style={styles.input}><option>Cash</option><option>Bank Transfer</option><option>Investor</option></select></div>
-            <div><label style={styles.label}>Description</label><input value={expForm.desc} onChange={e => setExpForm({...expForm, desc: e.target.value})} style={styles.input} /></div>
-            
-            <div style={{ gridColumn: '1 / -1', background: '#F8FAFC', padding: '15px', borderRadius: '8px', textAlign: 'end' }}>
-              <p style={{margin:0, fontSize: '14px', color: '#475569'}}>Subtotal: {expSubTotal.toFixed(2)} | VAT: {expVat.toFixed(2)} | <b style={{fontSize: '16px', color: '#0F172A'}}>Grand Total: {expGrandTotal.toFixed(2)}</b></p>
-            </div>
-
-            <button type="submit" style={{ ...styles.btnPrimary, gridColumn: '1 / -1', padding: '15px' }}>{editExpId ? 'Update Expense' : 'Add Expense & Generate Invoice'}</button>
-            {editExpId && <button type="button" onClick={() => { setEditExpId(null); setExpForm({ vendor_name: '', vendor_vat: '', expense_date: today, expense_type: 'Office Supplies', payment_mode: 'Cash', items: [{ name: '', qty: 1, price: 0 }], taxRate: '15', desc: '' }); }} style={{ gridColumn: '1 / -1', padding: '12px', background: '#64748b', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Cancel Edit</button>}
-          </form>
-        </div>
-
+        {/* STAFF MISTAKES WITH VOUCHER PREVIEW & DELETE */}
         <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+          <div style={{ padding: '20px', borderBottom: '1px solid #E2E8F0' }}><h3 style={{ margin: 0, color: '#0F172A' }}>⚠️ Staff Mistakes & Loss Tracking</h3></div>
+          <div style={{ padding: '20px' }}>
+            <form onSubmit={handleAddMistake} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr)) auto', gap: '15px', alignItems: 'flex-end' }}>
+              <div><label style={styles.label}>Employee</label><select name="emp" style={styles.input} required><option value="">Select Employee</option>{data.employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select></div>
+              <div><label style={styles.label}>Old Ticket No</label><input name="old_tkt" style={styles.input} placeholder="Old Ticket No" required /></div>
+              <div><label style={styles.label}>New Ticket No</label><input name="new_tkt" style={styles.input} placeholder="New Ticket No" required /></div>
+              <div><label style={styles.label}>Loss Amount (SAR)</label><input name="loss_amt" type="number" step="0.01" style={styles.input} placeholder="Loss Amount" required /></div>
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', marginBottom: '10px' }}>
+                  <input type="checkbox" name="paid_by_emp" /> Deduct from Salary
+                </label>
+                <button type="submit" style={{...styles.btnPrimary, height: '42px'}}>Log Loss</button>
+              </div>
+            </form>
+          </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
-              <thead><tr><th style={styles.tableHeader}>Date</th><th style={styles.tableHeader}>Inv No</th><th style={styles.tableHeader}>Vendor</th><th style={styles.tableHeader}>Type</th><th style={styles.tableHeader}>Total</th><th style={styles.tableHeader}>Mode</th><th style={styles.tableHeader}>Actions</th></tr></thead>
-              <tbody>{data.expenses.map(e => <tr key={e.id} style={{ borderBottom: '1px solid #F1F5F9' }}><td style={styles.tableCell}>{e.expense_date}</td><td style={styles.tableCell}>{e.invoice_no}</td><td style={styles.tableCell}>{e.vendor_name}</td><td style={styles.tableCell}>{e.expense_type}</td><td style={styles.tableCell}>{(e.amount || 0).toFixed(2)}</td><td style={styles.tableCell}>{e.payment_mode}</td><td style={styles.tableCell}><button onClick={() => handlePreviewExpense(e)} style={{ ...styles.btnPrimary, padding: '6px 10px', width: 'auto', fontSize: '12px' }}>Preview</button><button onClick={() => handleEditExpense(e)} style={{ marginInlineStart: '5px', ...styles.btnWarning, padding: '6px 10px', fontSize: '12px' }}>Edit</button><button onClick={() => handleDeleteExpense(e)} style={{ marginInlineStart: '5px', ...styles.btnDanger, padding: '6px 10px', fontSize: '12px' }}>Delete</button></td></tr>)}</tbody>
+              <thead><tr><th style={styles.tableHeader}>Date</th><th style={styles.tableHeader}>Employee</th><th style={styles.tableHeader}>Old Ticket</th><th style={styles.tableHeader}>New Ticket</th><th style={styles.tableHeader}>Loss Amount</th><th style={styles.tableHeader}>Actions</th></tr></thead>
+              <tbody>
+                {data.staffMistakes.length === 0 ? <tr><td colSpan="6" style={{padding:'30px', textAlign:'center', color:'#94A3B8'}}>No mistakes logged yet.</td></tr> : data.staffMistakes.map(m => (
+                  <tr key={m.id} style={{ borderBottom: '1px solid #F1F5F9', background: '#FFFBEB' }}>
+                    <td style={styles.tableCell}>{m.date}</td>
+                    <td style={styles.tableCell}>{m.employees?.name || 'N/A'}</td>
+                    <td style={styles.tableCell}>{m.old_ticket_no}</td>
+                    <td style={styles.tableCell}>{m.new_ticket_no}</td>
+                    <td style={{...styles.tableCell, fontWeight: 'bold', color: '#EF4444'}}>{(m.loss_amount || 0).toFixed(2)} SAR</td>
+                    <td style={styles.tableCell}>
+                      <button onClick={() => handlePreviewMistake(m)} style={styles.btnInfo}>Preview Voucher</button>
+                      <button onClick={() => handleDeleteMistake(m)} style={{...styles.btnDanger, marginInlineStart: '5px'}}>Delete</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
           </div>
         </div>
       </div>
     );
-  }
+  );
 
   return null;
 }
