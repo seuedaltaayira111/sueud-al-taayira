@@ -21,7 +21,13 @@ export default function ERPViewsSystem(props) {
   
   const [statementType, setStatementType] = useState('sales');
 
-  // 1. PROFITABILITY ANALYZER (Advanced UI with Progress Bars)
+  // Helper function to export any data
+  const handleExport = (exportData, filename) => {
+    if (!exportData || exportData.length === 0) return;
+    exportToExcel(exportData, filename);
+  };
+
+  // 1. PROFITABILITY ANALYZER
   if (page === 'profitability') {
     const activeInvoices = data.invoices.filter(i => !i.invoice_no.startsWith('REF-'));
     const airlineProfits = {};
@@ -43,6 +49,10 @@ export default function ERPViewsSystem(props) {
           <p style={{ margin: '5px 0 0', opacity: 0.9 }}>Analyze which airlines or services are generating the most profit.</p>
         </div>
         <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid #E2E8F0' }}>
+            <h3 style={{ margin: 0, color: '#0F172A' }}>Airline-wise Profit Analysis</h3>
+            <button onClick={() => handleExport(sortedAirlines.map(a => ({ Airline: a.name, Tickets: a.count, Revenue: a.revenue, Cost: a.cost, Profit: a.profit })), 'ProfitabilityReport')} style={styles.btnSuccess}>Export Excel</button>
+          </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
               <thead>
@@ -126,7 +136,7 @@ export default function ERPViewsSystem(props) {
     </div>
   );
 
-  // 3. SUPERADMIN PANEL (Advanced Cards UI)
+  // 3. SUPERADMIN PANEL
   if (page === 'superadmin') {
     return (
       <div>
@@ -147,6 +157,10 @@ export default function ERPViewsSystem(props) {
             <div><label style={styles.label}>Address</label><input value={tenantForm.address_ar} onChange={e => setTenantForm({...tenantForm, address_ar: e.target.value})} style={styles.input} /></div>
             <button type="submit" style={{ ...styles.btnPrimary, gridColumn: '1 / -1', marginTop: '10px' }}>Create Agency & Generate Password</button>
           </form>
+        </div>
+        
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
+          <button onClick={() => handleExport(data.tenants?.map(t => ({ AgencyName: t.agency_name, Email: t.owner_email, EndDate: t.subscription_end_date, Status: t.is_paid ? 'Active' : 'Suspended' })), 'Agencies')} style={styles.btnSuccess}>Export Agencies Excel</button>
         </div>
         
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
@@ -194,6 +208,9 @@ export default function ERPViewsSystem(props) {
           <div><label style={styles.label}>Access Settings</label><select value={userForm.can_access_settings} onChange={e => setUserForm({...userForm, can_access_settings: e.target.value === 'true'})} style={styles.input}><option value="true">Yes</option><option value="false">No</option></select></div>
           <button type="submit" style={{ ...styles.btnPrimary, gridColumn: '1 / -1' }}>{editUserId ? 'Update User' : 'Add User'}</button>
         </form>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
+        <button onClick={() => handleExport(data.appUsers?.map(u => ({ Email: u.email, Username: u.username, Role: u.role, IsAdmin: u.is_admin ? 'Yes' : 'No' })), 'Users')} style={styles.btnSuccess}>Export Users Excel</button>
       </div>
       <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
         <div style={{ overflowX: 'auto' }}>
@@ -278,7 +295,7 @@ export default function ERPViewsSystem(props) {
     );
   }
 
-  // 7. REPORTS PAGE (Advanced P&L Card)
+  // 7. REPORTS PAGE
   if (page === 'reports') {
     const filteredInvoices = filterData(data.invoices.filter(i => !i.invoice_no.startsWith('REF-')), 'invoice_date');
     const filteredExpenses = filterData(data.expenses, 'expense_date');
@@ -295,18 +312,18 @@ export default function ERPViewsSystem(props) {
         </div>
         
         <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
-          <button onClick={() => setReportTab('sales')} style={{...styles.tabBtn, ...(reportTab === 'sales' && styles.tabBtnActive)}} width="auto">Sales</button>
-          <button onClick={() => setReportTab('expenses')} style={{...styles.tabBtn, ...(reportTab === 'expenses' && styles.tabBtnActive)}} width="auto">Expenses</button>
-          <button onClick={() => setReportTab('profit')} style={{...styles.tabBtn, ...(reportTab === 'profit' && styles.tabBtnActive)}} width="auto">Profit & Loss</button>
-          <button onClick={() => setReportTab('portals')} style={{...styles.tabBtn, ...(reportTab === 'portals' && styles.tabBtnActive)}} width="auto">Portals</button>
-          <button onClick={() => setReportTab('outstanding')} style={{...styles.tabBtn, ...(reportTab === 'outstanding' && styles.tabBtnActive)}} width="auto">Outstanding</button>
+          <button onClick={() => setReportTab('sales')} style={{...styles.tabBtn, ...(reportTab === 'sales' && styles.tabBtnActive)}}>Sales</button>
+          <button onClick={() => setReportTab('expenses')} style={{...styles.tabBtn, ...(reportTab === 'expenses' && styles.tabBtnActive)}}>Expenses</button>
+          <button onClick={() => setReportTab('profit')} style={{...styles.tabBtn, ...(reportTab === 'profit' && styles.tabBtnActive)}}>Profit & Loss</button>
+          <button onClick={() => setReportTab('portals')} style={{...styles.tabBtn, ...(reportTab === 'portals' && styles.tabBtnActive)}}>Portals</button>
+          <button onClick={() => setReportTab('outstanding')} style={{...styles.tabBtn, ...(reportTab === 'outstanding' && styles.tabBtnActive)}}>Outstanding</button>
         </div>
         
         {reportTab === 'sales' && (
           <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid #E2E8F0' }}>
               <h3 style={{ color: '#0F172A', margin: 0 }}>Total Sales: {salesTotal.toFixed(2)} SAR</h3>
-              <button onClick={() => exportToExcel(filteredInvoices.map(i => ({ Date: i.invoice_date, Inv: i.invoice_no, Customer: i.customers?.name, Total: i.total, Due: i.due_amount })), 'SalesReport')} style={styles.btnSuccess}>Export Excel</button>
+              <button onClick={() => handleExport(filteredInvoices.map(i => ({ Date: i.invoice_date, Inv: i.invoice_no, Customer: i.customers?.name, Total: i.total, Due: i.due_amount })), 'SalesReport')} style={styles.btnSuccess}>Export Excel</button>
             </div>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
@@ -320,7 +337,7 @@ export default function ERPViewsSystem(props) {
           <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid #E2E8F0' }}>
               <h3 style={{ color: '#0F172A', margin: 0 }}>Total Expenses: {expTotal.toFixed(2)} SAR</h3>
-              <button onClick={() => exportToExcel(filteredExpenses.map(e => ({ Date: e.expense_date, Vendor: e.vendor_name, Type: e.expense_type, Total: e.amount })), 'ExpenseReport')} style={styles.btnSuccess}>Export Excel</button>
+              <button onClick={() => handleExport(filteredExpenses.map(e => ({ Date: e.expense_date, Vendor: e.vendor_name, Type: e.expense_type, Total: e.amount })), 'ExpenseReport')} style={styles.btnSuccess}>Export Excel</button>
             </div>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
@@ -344,7 +361,7 @@ export default function ERPViewsSystem(props) {
           <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid #E2E8F0' }}>
               <h3 style={{ color: '#0F172A', margin: 0 }}>Portal Balances Report</h3>
-              <button onClick={() => exportToExcel(data.portals.map(p => ({ Name: p.name, Balance: p.current_balance })), 'PortalReport')} style={styles.btnSuccess}>Export</button>
+              <button onClick={() => handleExport(data.portals.map(p => ({ Name: p.name, Balance: p.current_balance })), 'PortalReport')} style={styles.btnSuccess}>Export Excel</button>
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr><th style={styles.tableHeader}>Portal</th><th style={styles.tableHeader}>Balance (SAR)</th></tr></thead>
@@ -358,7 +375,7 @@ export default function ERPViewsSystem(props) {
               <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid #E2E8F0' }}>
                 <h3 style={{ color: '#0F172A', margin: 0 }}>Total Outstanding: <span style={{color: '#EF4444'}}>{totalDue.toFixed(2)} SAR</span></h3>
-                <button onClick={() => exportToExcel(outInvs.map(i => ({ Inv: i.invoice_no, Customer: i.customers?.name, Due: i.due_amount })), 'OutstandingReport')} style={styles.btnSuccess}>Export</button>
+                <button onClick={() => handleExport(outInvs.map(i => ({ Inv: i.invoice_no, Customer: i.customers?.name, Due: i.due_amount })), 'OutstandingReport')} style={styles.btnSuccess}>Export Excel</button>
               </div>
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
@@ -377,7 +394,10 @@ export default function ERPViewsSystem(props) {
   // 8. AUDIT LOGS PAGE
   if (page === 'audit') return (
     <div>
-      <h2 style={{ color: '#0F172A', marginBottom: '20px' }}>{tr.audit}</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <h2 style={{ color: '#0F172A', margin: 0 }}>{tr.audit}</h2>
+        <button onClick={() => handleExport(data.audits?.map(a => ({ Date: a.created_at?.split('T')[0], User: a.user_email, Action: a.action })), 'AuditLogs')} style={styles.btnSuccess}>Export Excel</button>
+      </div>
       <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
@@ -389,9 +409,28 @@ export default function ERPViewsSystem(props) {
     </div>
   );
 
-  // 9. STATEMENTS PAGE
+  // 9. STATEMENTS PAGE (ALL 12 TYPES WITH EXCEL EXPORT)
   if (page === 'statements') {
     const tabs = ['sales', 'portals', 'vendors', 'salary', 'expenses', 'customers', 'creditors', 'credit', 'branches', 'cash', 'bank', 'investor'];
+    
+    const getExportData = (type) => {
+      switch(type) {
+        case 'sales': return filterData(data.invoices.filter(i => !i.invoice_no.startsWith('REF-')), 'invoice_date').map(i => ({ Date: i.invoice_date, InvNo: i.invoice_no, Customer: i.customers?.name || i.corporates?.name, Total: i.total, Due: i.due_amount }));
+        case 'portals': return data.portals.map(p => ({ Portal: p.name, Balance: p.current_balance }));
+        case 'vendors': return data.vendors.map(v => ({ Vendor: v.name, Phone: v.phone, Balance: v.balance }));
+        case 'salary': return filterData(data.payroll, 'month').map(p => ({ Employee: p.employees?.name, Month: p.month, Amount: p.amount, Mode: p.payment_mode }));
+        case 'expenses': return filterData(data.expenses, 'expense_date').map(e => ({ Date: e.expense_date, Vendor: e.vendor_name, Type: e.expense_type, Amount: e.amount }));
+        case 'customers': return data.customers.map(c => ({ Name: c.name, Phone: c.phone, Credit: c.store_credit }));
+        case 'creditors': return data.creditors.map(c => ({ Name: c.name, Phone: c.phone }));
+        case 'credit': return data.customers.filter(c => (c.store_credit || 0) > 0).map(c => ({ Name: c.name, Credit: c.store_credit }));
+        case 'branches': return data.branches.map(b => ({ Name: b.name, Location: b.location, Manager: b.manager, Status: b.status }));
+        case 'cash': return filterData(data.cashbook.filter(c => c.type.includes('Cash')), 'trans_date').map(c => ({ Date: c.trans_date, Desc: c.description, Amount: c.amount }));
+        case 'bank': return filterData(data.cashbook.filter(c => c.type.includes('Bank')), 'trans_date').map(c => ({ Date: c.trans_date, Desc: c.description, Amount: c.amount }));
+        case 'investor': return filterData(data.investments, 'invest_date').map(i => ({ Date: i.invest_date, Investor: i.investor_name, Amount: i.amount, Reason: i.reason }));
+        default: return [];
+      }
+    };
+
     return (
       <div>
         <h2 style={{ color: '#0F172A', marginBottom: '20px' }}>{tr.statements}</h2>
@@ -408,6 +447,10 @@ export default function ERPViewsSystem(props) {
         </div>
 
         <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid #E2E8F0' }}>
+            <h3 style={{ margin: 0, color: '#0F172A', textTransform: 'capitalize' }}>{statementType} Statement</h3>
+            <button onClick={() => handleExport(getExportData(statementType), `${statementType}Statement`)} style={styles.btnSuccess}>Export Excel</button>
+          </div>
           <div style={{ overflowX: 'auto' }}>
             {statementType === 'sales' && (
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
