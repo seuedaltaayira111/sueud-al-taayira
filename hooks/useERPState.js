@@ -58,7 +58,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
       .status-badge { display: inline-block; padding: 5px 12px; border-radius: 15px; font-size: 11px; font-weight: 700; margin-top: 8px; align-self: flex-start; ${invStatus === 'Unpaid' ? 'background: rgba(251,191,36,0.2); color: #fbbf24;' : 'background: rgba(52,211,153,0.2); color: #34d399;'} }
       .body { padding: 20px; }
       .bilingual-title { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; display: flex; justify-content: space-between; }
-      .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+      .details-grid { display: grid; gridTemplateColumns: '1fr 1fr'; gap: 15px; margin-bottom: 15px; }
       .info-block { padding: 12px; background: #f8fafc; border-radius: 8px; border-left: 3px solid #1a365d; }
       .info-row { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; border-bottom: 1px solid #f1f5f9; }
       .info-row:last-child { border: none; }
@@ -296,6 +296,7 @@ const getRefundHTML = (inv, s, lang = 'en') => {
           <div class="row"><span class="label">Customer Name / اسم العميل</span><span class="value">${custName}</span></div>
           <div class="row"><span class="label">Contact / الهاتف</span><span class="value">${custPhone}</span></div>
           <div class="row"><span class="label">Airline / خط الطيران</span><span class="value">${inv.airline || inv.old_airline || 'N/A'}</span></div>
+          <div class="row"><span class="label">Date of Booking / تاريخ الحجز</span><span class="value">${inv.invoice_date || inv.old_booking_date || 'N/A'}</span></div>
           <div class="row"><span class="label">PNR / رقم الحجز</span><span class="value">${inv.pnr || inv.old_pnr || 'N/A'}</span></div>
           <div class="row"><span class="label">Reason / سبب الاسترجاع</span><span class="value">${inv.refund_reason || 'N/A'}</span></div>
         </div>
@@ -319,6 +320,239 @@ const getRefundHTML = (inv, s, lang = 'en') => {
           <p style="font-size: 10px; color: #94a3b8;">Thank you! / شكراً!</p>
         </div>
         <div style="width: 70px;"></div>
+      </div>
+    </div>
+  </body>
+  </html>`;
+};
+
+// ==========================================
+// PREMIUM EXPENSE VOUCHER TEMPLATE
+// ==========================================
+const getExpenseHTML = (exp, s, lang = 'en') => {
+  const setting = s || {};
+  const expNo = exp.invoice_no || `EXP-${exp.id?.substring(0,8) || 'N/A'}`;
+  const trackUrl = `https://sueud-al-taayira.vercel.app`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(trackUrl)}`;
+  const items = exp.items && exp.items.length > 0 ? exp.items : [{ name: exp.item_name || 'Item', qty: 1, price: exp.amount || 0 }];
+  const subTotal = items.reduce((sum, it) => sum + ((parseFloat(it.qty) || 0) * (parseFloat(it.price) || 0)), 0);
+  const vat = (exp.amount || 0) - subTotal;
+  const vatRate = vat > 0 && subTotal > 0 ? Math.round((vat / subTotal) * 100) : 0;
+
+  return `
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Expense ${expNo}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; padding: 0; }
+      body { font-family: 'Inter', 'Cairo', sans-serif; background: #f0f4f8; margin: 0; padding: 30px; color: #1e293b; }
+      .invoice-box { max-width: 850px; margin: auto; background: #fff; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.08); border-radius: 12px; }
+      .header { display: flex; justify-content: space-between; align-items: flex-start; padding: 35px 40px; background: linear-gradient(135deg, #7c2d12 0%, #9a3412 100%); color: #fff; }
+      .company-info h2 { font-size: 22px; font-weight: 800; color: #fbbf24; }
+      .company-info h1 { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 2px; margin-top: 4px; }
+      .invoice-meta { text-align: right; }
+      .invoice-meta h3 { font-size: 28px; font-weight: 800; color: #fbbf24; text-transform: uppercase; }
+      .invoice-meta p { font-size: 13px; color: rgba(255,255,255,0.8); margin-top: 5px; }
+      .invoice-meta p span { color: #fbbf24; font-weight: 700; }
+      .body { padding: 35px 40px; }
+      .info-block { padding: 18px; background: #fff7ed; border-radius: 10px; border-left: 3px solid #ea580c; margin-bottom: 25px; }
+      .info-block h4 { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #ea580c; margin-bottom: 10px; font-weight: 700; }
+      .info-block .row { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; }
+      .info-block .row .label { color: #9a3412; font-weight: 500; }
+      .info-block .row .value { color: #7c2d12; font-weight: 600; }
+      table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
+      thead th { text-align: left; padding: 12px; background: #7c2d12; color: #fbbf24; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+      thead th.right { text-align: right; }
+      tbody td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+      tbody td.right { text-align: right; font-weight: 600; }
+      .totals { text-align: right; margin-top: 15px; }
+      .totals p { font-size: 13px; margin: 5px 0; color: #64748b; }
+      .totals h3 { font-size: 22px; color: #ea580c; font-weight: 800; margin-top: 10px; }
+      .footer { padding: 25px 40px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; }
+      .footer-text { text-align: center; flex: 1; }
+      .footer-text p { font-size: 11px; color: #94a3b8; }
+      .qr-code img { height: 80px; width: 80px; border-radius: 6px; border: 1px solid #e2e8f0; padding: 3px; background: #fff; }
+      @media print { body { background: #fff; padding: 0; margin: 0; } .invoice-box { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; } }
+    </style>
+  </head>
+  <body>
+    <div class="invoice-box">
+      <div class="header">
+        <div class="company-info">
+          <h2>${setting.company_name_ar || 'صعود الطائرة'}</h2>
+          <h1>${setting.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
+        </div>
+        <div class="invoice-meta">
+          <h3>EXPENSE VOUCHER</h3>
+          <p>No: <span>${expNo}</span></p>
+          <p>Date: <span>${exp.expense_date || ''}</span></p>
+        </div>
+      </div>
+      <div class="body">
+        <div class="info-block">
+          <h4>VENDOR & EXPENSE DETAILS</h4>
+          <div class="row"><span class="label">Vendor</span><span class="value">${exp.vendor_name || 'N/A'}</span></div>
+          ${exp.vendor_vat ? `<div class="row"><span class="label">Vendor VAT</span><span class="value">${exp.vendor_vat}</span></div>` : ''}
+          <div class="row"><span class="label">Type</span><span class="value">${exp.expense_type || 'N/A'}</span></div>
+          <div class="row"><span class="label">Payment Mode</span><span class="value">${exp.payment_mode || 'Cash'}</span></div>
+        </div>
+        <table>
+          <thead><tr><th>Item</th><th class="right">Qty</th><th class="right">Price</th><th class="right">Total</th></tr></thead>
+          <tbody>
+            ${items.map(it => `<tr><td>${it.name || 'Item'}</td><td class="right">${it.qty || 1}</td><td class="right">${parseFloat(it.price || 0).toFixed(2)}</td><td class="right">${((parseFloat(it.qty)||0)*(parseFloat(it.price)||0)).toFixed(2)}</td></tr>`).join('')}
+          </tbody>
+        </table>
+        <div class="totals">
+          <p>Subtotal: <strong>${subTotal.toFixed(2)} SAR</strong></p>
+          ${vat > 0 ? `<p>VAT (${vatRate}%): <strong>${vat.toFixed(2)} SAR</strong></p>` : ''}
+          <h3>Grand Total: ${(exp.amount || 0).toFixed(2)} SAR</h3>
+        </div>
+      </div>
+      <div class="footer">
+        <div class="qr-code"><img src="${qrCodeUrl}" alt="QR Code" crossorigin="anonymous"></div>
+        <div class="footer-text"><strong>${setting.company_name_en || ''}</strong><p>${setting.invoice_footer || ''}</p></div>
+        <div style="width: 86px;"></div>
+      </div>
+    </div>
+  </body>
+  </html>`;
+};
+
+// ==========================================
+// SALARY SLIP TEMPLATE
+// ==========================================
+const getSalarySlipHTML = (pay, s, lang = 'en') => {
+  const setting = s || {};
+  const slipNo = `SLIP-${pay.id?.substring(0,8) || 'N/A'}`;
+
+  return `
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Salary Slip ${slipNo}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; padding: 0; }
+      body { font-family: 'Inter', 'Cairo', sans-serif; background: #f0f4f8; margin: 0; padding: 30px; color: #1e293b; }
+      .slip { max-width: 800px; margin: auto; background: #fff; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.08); border-radius: 0; }
+      .header { background: linear-gradient(135deg, #312e81 0%, #4338ca 100%); color: #fff; padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; }
+      .header h1 { font-size: 22px; font-weight: 800; }
+      .header h2 { font-size: 15px; color: #c7d2fe; margin-top: 4px; }
+      .header .slip-info { text-align: right; }
+      .header .slip-info h1 { color: #fbbf24; }
+      .header .slip-info p { font-size: 13px; color: #c7d2fe; margin-top: 4px; }
+      .body { padding: 35px 40px; }
+      .emp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: #f5f3ff; padding: 20px; border-radius: 10px; margin-bottom: 25px; }
+      .emp-grid p { font-size: 13px; margin: 3px 0; }
+      .emp-grid .label { color: #64748b; font-weight: 500; }
+      table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
+      th, td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+      th { text-align: left; background: #312e81; color: #fbbf24; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+      th.right, td.right { text-align: right; }
+      .net-pay { background: #312e81; color: #fbbf24; padding: 18px; border-radius: 10px; text-align: center; margin-top: 15px; font-size: 22px; font-weight: 800; }
+      .footer { text-align: center; padding: 20px 40px; background: #f8fafc; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
+      @media print { body { background: #fff; padding: 0; margin: 0; } .slip { box-shadow: none; margin: 0; max-width: 100%; } }
+    </style>
+  </head>
+  <body>
+    <div class="slip">
+      <div class="header">
+        <div>
+          <h1>${setting.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
+          <h2>${setting.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
+        </div>
+        <div class="slip-info">
+          <h1>SALARY SLIP</h1>
+          <p>No: ${slipNo} | Month: ${pay.month}</p>
+        </div>
+      </div>
+      <div class="body">
+        <div class="emp-grid">
+          <div>
+            <p><span class="label">Employee:</span> <strong>${pay.employees?.name || 'N/A'}</strong></p>
+            <p><span class="label">Role:</span> ${pay.employees?.role || 'N/A'}</p>
+          </div>
+          <div style="text-align: right;">
+            <p><span class="label">Payment Date:</span> ${pay.payment_date || 'N/A'}</p>
+            <p><span class="label">Mode:</span> ${pay.payment_mode}</p>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th>Description</th><th class="right">Amount (SAR)</th></tr></thead>
+          <tbody>
+            <tr><td>Basic Salary</td><td class="right">${(pay.base_salary || 0).toFixed(2)}</td></tr>
+            <tr><td>Commission</td><td class="right" style="color:#059669;">+ ${(pay.commission || 0).toFixed(2)}</td></tr>
+            <tr><td>Overtime</td><td class="right" style="color:#059669;">+ ${(pay.overtime || 0).toFixed(2)}</td></tr>
+            <tr><td>Gift/Bonus</td><td class="right" style="color:#059669;">+ ${(pay.gift || 0).toFixed(2)}</td></tr>
+            <tr><td>Advance Deduction</td><td class="right" style="color:#ef4444;">- ${(pay.advance_deduction || 0).toFixed(2)}</td></tr>
+            <tr><td>Mistakes Deduction</td><td class="right" style="color:#ef4444;">- ${(pay.mistakes_deduction || 0).toFixed(2)}</td></tr>
+          </tbody>
+        </table>
+        <div class="net-pay">NET PAY: ${(pay.amount || 0).toFixed(2)} SAR</div>
+      </div>
+      <div class="footer">
+        <p>System generated salary slip — ${setting.company_name_en || ''}</p>
+      </div>
+    </div>
+  </body>
+  </html>`;
+};
+
+// ==========================================
+// CONTRACT / OFFER TEMPLATE
+// ==========================================
+const getContractHTML = (s, name, date, isOffer, type, markup, terms) => {
+  const setting = s || {};
+  const docType = isOffer ? 'OFFER' : 'CONTRACT';
+  const title = isOffer ? `Corporate Offer - ${name}` : `Corporate Contract - ${name}`;
+  const termsList = terms ? terms.split('\n').filter(t => t.trim()).map(t => `<li style="margin-bottom:8px; font-size:14px;">${t.trim()}</li>`).join('') : '<li>Standard terms and conditions apply.</li>';
+  
+  return `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8">
+    <title>${title}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: 'Inter', sans-serif; background: #f0f4f8; padding: 30px; color: #1e293b; }
+      .doc { max-width: 800px; margin: auto; background: #fff; box-shadow: 0 20px 60px rgba(0,0,0,0.08); padding: 50px; border-radius: 12px; }
+      .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; }
+      .header h1 { font-size: 28px; font-weight: 800; color: #0c1d3a; text-transform: uppercase; }
+      .header p { font-size: 14px; color: #64748b; margin-top: 5px; }
+      .section { margin-bottom: 30px; }
+      .section h2 { font-size: 18px; font-weight: 700; color: #1e3a8a; margin-bottom: 10px; }
+      .section p { font-size: 14px; line-height: 1.6; color: #334155; }
+      .details-box { background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #1e3a8a; margin-bottom: 30px; }
+      .details-box p { font-size: 14px; margin: 5px 0; }
+      .terms-box ul { padding-left: 20px; }
+      .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+      @media print { body { background: #fff; padding: 0; } .doc { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; } }
+    </style>
+  </head>
+  <body>
+    <div class="doc">
+      <div class="header">
+        <h1>${docType}: ${name}</h1>
+        <p>Date: ${date}</p>
+      </div>
+      <div class="details-box">
+        <p><strong>Service Type:</strong> ${type}</p>
+        <p><strong>Service Fee / Markup:</strong> ${parseFloat(markup || 0).toFixed(2)} SAR</p>
+      </div>
+      <div class="section">
+        <h2>Terms & Conditions</h2>
+        <div class="terms-box">
+          <ul>${termsList}</ul>
+        </div>
+      </div>
+      <div class="footer">
+        <p>${setting.company_name_en || 'SUEUD AL TAAYIRA'} | ${setting.phone || ''}</p>
       </div>
     </div>
   </body>
@@ -430,6 +664,11 @@ export default function useERPState() {
     } catch (err) { console.error('Fetch error:', err.message); }
   }, [user]);
 
+  const filterData = (arr, dateKey) => {
+    if (!repDate || !repDate.from || !repDate.to) return arr;
+    return arr.filter(item => item[dateKey] >= repDate.from && item[dateKey] <= repDate.to);
+  };
+
   useEffect(() => {
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -455,6 +694,7 @@ export default function useERPState() {
     tenantForm, setTenantForm, profileForm, setProfileForm, passForm, setPassForm, settleForm, setSettleForm, refundForm, setRefundForm,
     repDate, setRepDate, reportTab, setReportTab, statementTab, setStatementTab, ledgerCustId, setLedgerCustId, ledgerEmpId, setLedgerEmpId,
     contractCorpName, setContractCorpName, contractType, setContractType, contractMarkup, setContractMarkup, contractTerms, setContractTerms,
-    getInvoiceHTML, getRefundHTML
+    filterData,
+    getInvoiceHTML, getRefundHTML, getExpenseHTML, getSalarySlipHTML, getContractHTML
   };
 }
