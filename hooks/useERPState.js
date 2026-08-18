@@ -58,7 +58,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
       .status-badge { display: inline-block; padding: 5px 12px; border-radius: 15px; font-size: 11px; font-weight: 700; margin-top: 8px; align-self: flex-start; ${invStatus === 'Unpaid' ? 'background: rgba(251,191,36,0.2); color: #fbbf24;' : 'background: rgba(52,211,153,0.2); color: #34d399;'} }
       .body { padding: 20px; }
       .bilingual-title { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; display: flex; justify-content: space-between; }
-      .details-grid { display: grid; gridTemplateColumns: '1fr 1fr'; gap: 15px; margin-bottom: 15px; }
+      .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
       .info-block { padding: 12px; background: #f8fafc; border-radius: 8px; border-left: 3px solid #1a365d; }
       .info-row { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; border-bottom: 1px solid #f1f5f9; }
       .info-row:last-child { border: none; }
@@ -208,7 +208,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
 };
 
 // ==========================================
-// PREMIUM REFUND INVOICE TEMPLATE (FIXED N/A & ONE PAGE)
+// PREMIUM REFUND INVOICE TEMPLATE
 // ==========================================
 const getRefundHTML = (inv, s, lang = 'en') => {
   const setting = s || {};
@@ -216,11 +216,10 @@ const getRefundHTML = (inv, s, lang = 'en') => {
   const trackUrl = `https://sueud-al-taayira.vercel.app/invoice/${invoiceNo}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(trackUrl)}`;
   
-  // Refund Breakdown Logic
   const originalFare = inv.old_sell_price || inv.total_sell || 0;
   const customerRefund = inv.refund_customer || 0;
-  const airlineRefund = inv.refund_company || 0; // Amount company received
-  const airlineCancellationFee = originalFare - airlineRefund; // 500 - 300 = 200
+  const airlineRefund = inv.refund_company || 0; 
+  const airlineCancellationFee = originalFare - airlineRefund; 
   
   const custName = inv.customers?.name || inv.old_customer_name || 'N/A';
   const custPhone = inv.customers?.phone || inv.old_customer_phone || 'N/A';
@@ -670,15 +669,20 @@ export default function useERPState() {
   };
 
   useEffect(() => {
+    let authListener;
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push('/login'); return; }
-      setUser(session.user); fetchAll();
+      setUser(session.user);
+      const { data: listener } = supabase.auth.onAuthStateChange((_event, sess) => {
+        setUser(sess?.user || null);
+        if (!sess) router.push('/login');
+      });
+      authListener = listener;
     };
     getSession();
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => { setUser(session?.user || null); if (!session) router.push('/login'); });
-    return () => authListener.subscription.unsubscribe();
-  }, []);
+    return () => { if (authListener) authListener.subscription.unsubscribe(); };
+  }, [router]);
 
   useEffect(() => { if (user) fetchAll(); }, [user]);
 
