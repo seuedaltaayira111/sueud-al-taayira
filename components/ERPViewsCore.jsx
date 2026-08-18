@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { supabase } from '@/lib/supabase';
 
 const styles = { 
   input: { width: '100%', padding: '12px 15px', margin: '6px 0', border: '1px solid #E2E8F0', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', transition: 'border 0.2s', fontSize: '14px' }, 
@@ -18,7 +17,7 @@ const styles = {
 };
 
 export default function ERPViewsCore(props) {
-  const { page, data, tr, today, userProfile, showToast, invForm, setInvForm, handleCreateInvoice, handleDownloadPDF, printInvoice, exportToExcel, search, setSearch, payFilter, setPayFilter, handleEditInvoice, handleDeleteInvoice, openRefundModal, editInvId, openPreview, openSettleModal, handleQuickSettle, handleAddEditCust, custForm, setCustForm, editCustId, handleAddEditCorp, corpForm, setCorpForm, editCorpId, handleAddEditCred, creditorForm, setCreditorForm, editCredId, handleEditCust, handleEditCorp, handleEditCred, handleDelete, shareWhatsApp, shareEmail } = props;
+  const { page, data, tr, today, invForm, setInvForm, handleCreateInvoice, handleDownloadPDF, printInvoice, exportToExcel, search, setSearch, payFilter, setPayFilter, handleEditInvoice, handleDeleteInvoice, openRefundModal, editInvId, openPreview, openSettleModal, handleQuickSettle, handleAddEditCust, custForm, setCustForm, editCustId, handleAddEditCorp, corpForm, setCorpForm, editCorpId, handleAddEditCred, creditorForm, setCreditorForm, editCredId, handleEditCust, handleEditCorp, handleEditCred, handleDelete, shareWhatsApp, shareEmail } = props;
 
   // ================= DASHBOARD =================
   if (page === 'dashboard') {
@@ -65,36 +64,6 @@ export default function ERPViewsCore(props) {
             <tbody>{creditCustomers.length === 0 ? <tr><td colSpan="3" style={{padding: '30px', textAlign:'center', color:'#94A3B8'}}>No credit balances available.</td></tr> : creditCustomers.map(c => <tr key={c.id} style={{ borderBottom: '1px solid #F1F5F9' }}><td style={styles.tableCell}>{c.name}</td><td style={styles.tableCell}>{c.phone}</td><td style={{...styles.tableCell, color: '#059669', fontWeight: 'bold'}}>{(c.store_credit || 0).toFixed(2)}</td></tr>)}</tbody>
           </table>
         </div>
-      </div>
-    );
-  }
-
-  // ================= MY ATTENDANCE (Self-Service High Tech) =================
-  if (page === 'my_attendance') {
-    const handleMarkMyAttendance = async (e) => {
-      e.preventDefault();
-      try {
-        const emp = data.employees.find(em => em.phone === userProfile.phone);
-        if (!emp) return showToast('Your profile is not linked to an Employee record. Contact HR.');
-        
-        const payload = {
-          employee_id: emp.id, date: today, status: 'Present',
-          check_in: new Date().toTimeString().split(' ')[0],
-          tenant_id: userProfile.tenant_id
-        };
-        const { data: newAtt, error } = await supabase.from('attendance').insert([payload]).select('*, employees(name)').single();
-        if (error) throw error;
-        showToast('Attendance Marked Successfully!');
-      } catch (err) { showToast('Error: ' + err.message); }
-    };
-
-    return (
-      <div style={styles.card}>
-        <h2 style={{ color: '#0F172A', marginBottom: '20px' }}>📅 My Daily Attendance</h2>
-        <p style={{ color: '#64748b', marginBottom: '20px' }}>Click the button below to mark your attendance for today ({today}).</p>
-        <button onClick={handleMarkMyAttendance} style={{ ...styles.btnPrimary, width: 'auto', padding: '15px 30px', fontSize: '16px' }}>
-          ✅ Mark Present for Today
-        </button>
       </div>
     );
   }
@@ -333,14 +302,14 @@ export default function ERPViewsCore(props) {
     );
   }
 
-  // ================= LIST INVOICES & REFUNDS =================
+  // ================= LIST INVOICES & REFUNDS (FIXED EMPTY SPACE) =================
   if (page === 'list' || page === 'refunds') {
     const isInvoices = page === 'list';
     const allData = isInvoices ? data.invoices.filter(i => !i.invoice_no.startsWith('REF-') && i.status !== 'Draft' && i.status !== 'Recurring') : data.invoices.filter(i => i.invoice_no.startsWith('REF-'));
     const filteredData = allData.filter(inv => (payFilter === 'All' || inv.payment_method === payFilter) && (inv.invoice_no.toLowerCase().includes(search.toLowerCase()) || inv.customers?.name.toLowerCase().includes(search.toLowerCase()) || inv.corporates?.name.toLowerCase().includes(search.toLowerCase())));
     
     return (
-      <div>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h2 style={{ color: '#0F172A', margin: 0 }}>{isInvoices ? tr.list : tr.refunds}</h2>
           <button onClick={() => exportToExcel(filteredData.map(i => ({ Inv: i.invoice_no, Customer: i.customers?.name || i.corporates?.name, Date: i.invoice_date, Total: i.total, Due: i.due_amount, Method: i.payment_method })), isInvoices ? 'Invoices' : 'Refunds')} style={styles.btnSuccess}>{tr.download_excel}</button>
@@ -351,43 +320,54 @@ export default function ERPViewsCore(props) {
             <option>All</option><option>Cash</option><option>Bank Transfer</option><option>Card / Network</option><option>Credit</option><option>Credit Balance</option><option>Tabby</option><option>Tamara</option>
           </select>
         </div>
-        <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#0F172A' }}>
-                <th style={styles.tableHeader}>{tr.invNo}</th>
-                <th style={styles.tableHeader}>Customer</th>
-                <th style={styles.tableHeader}>{tr.total}</th>
-                <th style={styles.tableHeader}>{tr.due}</th>
-                <th style={styles.tableHeader}>{tr.method}</th>
-                <th style={styles.tableHeader}>{tr.actions}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredData.slice(0, 15).map(inv => (
-                <tr key={inv.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                  <td style={styles.tableCell}>{inv.invoice_no}</td>
-                  <td style={styles.tableCell}>{inv.customers?.name || inv.corporates?.name}</td>
-                  <td style={styles.tableCell}>{(inv.total || 0).toFixed(2)}</td>
-                  <td style={{...styles.tableCell, color: (inv.due_amount || 0) > 0 ? '#EF4444' : '#059669', fontWeight: 'bold'}}>{(inv.due_amount || 0).toFixed(2)}</td>
-                  <td style={styles.tableCell}>{inv.payment_method}</td>
-                  <td style={styles.tableCell}>
-                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                      <button onClick={() => openPreview(inv)} style={{ ...styles.btnPrimary, padding: '6px 10px', width: 'auto', fontSize: '12px' }}>{tr.preview}</button>
-                      <button onClick={() => handleDownloadPDF(inv)} style={{ ...styles.btnInfo, padding: '6px 10px', fontSize: '12px' }}>PDF</button>
-                      <button onClick={() => printInvoice(inv)} style={{ ...styles.btnWarning, padding: '6px 10px', fontSize: '12px' }}>{tr.print}</button>
-                      {isInvoices && <button onClick={() => shareWhatsApp(inv)} style={{ ...styles.btnSuccess, padding: '6px 10px', fontSize: '12px' }}>🟢 WhatsApp</button>}
-                      {isInvoices && <button onClick={() => shareEmail(inv)} style={{ ...styles.btnInfo, padding: '6px 10px', fontSize: '12px' }}>✉️ Email</button>}
-                      <button onClick={() => handleEditInvoice(inv)} style={{ ...styles.btnWarning, padding: '6px 10px', fontSize: '12px' }}>{tr.edit}</button>
-                      <button onClick={() => handleDeleteInvoice(inv)} style={{ ...styles.btnDanger, padding: '6px 10px', fontSize: '12px' }}>{tr.delete}</button>
-                      {isInvoices && (inv.due_amount > 0) && <button onClick={() => handleQuickSettle(inv)} style={{ ...styles.btnSuccess, padding: '6px 10px', fontSize: '12px' }}>{tr.quickSettle}</button>}
-                      {isInvoices && inv.status !== 'refunded' && <button onClick={() => openRefundModal(inv)} style={{ ...styles.btnDanger, padding: '6px 10px', fontSize: '12px' }}>{tr.refund}</button>}
-                    </div>
-                  </td>
+        
+        <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ overflowX: 'auto', flex: 1 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', height: '100%' }}>
+              <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+                <tr style={{ background: '#0F172A' }}>
+                  <th style={styles.tableHeader}>{tr.invNo}</th>
+                  <th style={styles.tableHeader}>Customer</th>
+                  <th style={styles.tableHeader}>{tr.total}</th>
+                  <th style={styles.tableHeader}>{tr.due}</th>
+                  <th style={styles.tableHeader}>{tr.method}</th>
+                  <th style={styles.tableHeader}>{tr.actions}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredData.length === 0 ? (
+                  <tr style={{ height: '100%' }}>
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '50px', color: '#94A3B8', fontSize: '16px', borderBottom: 'none' }}>
+                      No {isInvoices ? 'Invoices' : 'Refunds'} Found. Create one to get started!
+                    </td>
+                  </tr>
+                ) : (
+                  filteredData.map(inv => (
+                    <tr key={inv.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                      <td style={styles.tableCell}>{inv.invoice_no}</td>
+                      <td style={styles.tableCell}>{inv.customers?.name || inv.corporates?.name}</td>
+                      <td style={styles.tableCell}>{(inv.total || 0).toFixed(2)}</td>
+                      <td style={{...styles.tableCell, color: (inv.due_amount || 0) > 0 ? '#EF4444' : '#059669', fontWeight: 'bold'}}>{(inv.due_amount || 0).toFixed(2)}</td>
+                      <td style={styles.tableCell}>{inv.payment_method}</td>
+                      <td style={styles.tableCell}>
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          <button onClick={() => openPreview(inv)} style={{ ...styles.btnPrimary, padding: '6px 10px', width: 'auto', fontSize: '12px' }}>{tr.preview}</button>
+                          <button onClick={() => handleDownloadPDF(inv)} style={{ ...styles.btnInfo, padding: '6px 10px', fontSize: '12px' }}>PDF</button>
+                          <button onClick={() => printInvoice(inv)} style={{ ...styles.btnWarning, padding: '6px 10px', fontSize: '12px' }}>{tr.print}</button>
+                          {isInvoices && <button onClick={() => shareWhatsApp(inv)} style={{ ...styles.btnSuccess, padding: '6px 10px', fontSize: '12px' }}>🟢 WhatsApp</button>}
+                          {isInvoices && <button onClick={() => shareEmail(inv)} style={{ ...styles.btnInfo, padding: '6px 10px', fontSize: '12px' }}>✉️ Email</button>}
+                          <button onClick={() => handleEditInvoice(inv)} style={{ ...styles.btnWarning, padding: '6px 10px', fontSize: '12px' }}>{tr.edit}</button>
+                          <button onClick={() => handleDeleteInvoice(inv)} style={{ ...styles.btnDanger, padding: '6px 10px', fontSize: '12px' }}>{tr.delete}</button>
+                          {isInvoices && (inv.due_amount > 0) && <button onClick={() => handleQuickSettle(inv)} style={{ ...styles.btnSuccess, padding: '6px 10px', fontSize: '12px' }}>{tr.quickSettle}</button>}
+                          {isInvoices && inv.status !== 'refunded' && <button onClick={() => openRefundModal(inv)} style={{ ...styles.btnDanger, padding: '6px 10px', fontSize: '12px' }}>{tr.refund}</button>}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     );
