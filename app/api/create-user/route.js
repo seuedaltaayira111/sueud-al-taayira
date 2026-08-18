@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export async function POST(req) {
   try {
@@ -9,7 +9,7 @@ export async function POST(req) {
     const tempPass = Math.random().toString(36).slice(-8) + 'A1!';
 
     // 1. Create Auth User
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: email,
       password: tempPass,
       email_confirm: true
@@ -18,7 +18,7 @@ export async function POST(req) {
     if (authError) throw new Error(authError.message);
 
     // 2. Create App User Profile
-    const { error: profileError } = await supabase
+    const { error: profileError } = await supabaseAdmin
       .from('app_users')
       .insert([{
         id: authData.user.id,
@@ -40,4 +40,4 @@ export async function POST(req) {
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
-}
+}VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
