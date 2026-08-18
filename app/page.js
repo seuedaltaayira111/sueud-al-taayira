@@ -3,10 +3,11 @@
 import useERP from '@/hooks/useERP';
 import ERPLayout from '@/components/ERPLayout';
 import ERPViews from '@/components/ERPViews';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function Home() {
   const erp = useERP();
+  const [isOnline, setIsOnline] = useState(true);
 
   const t = (key, fallback) => erp.tr?.[key] || fallback || key;
 
@@ -21,7 +22,31 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [erp.setPage]); 
 
-  // Loading State
+  // Advanced Feature 1: Dynamic Document Title
+  useEffect(() => {
+    const pageTitle = erp.menu?.find(m => m.id === erp.page)?.label || 'Dashboard';
+    document.title = `${pageTitle} | SUEUD AL TAAYIRA ERP`;
+  }, [erp.page, erp.menu]);
+
+  // Advanced Feature 2: Network Status Alert
+  useEffect(() => {
+    const updateOnlineStatus = () => {
+      setIsOnline(navigator.onLine);
+      if (!navigator.onLine) {
+        erp.showToast('⚠️ You are offline. Changes will sync when reconnected.');
+      } else {
+        erp.showToast('✅ Back online!');
+      }
+    };
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    return () => {
+      window.removeEventListener('online', updateOnlineStatus);
+      window.removeEventListener('offline', updateOnlineStatus);
+    };
+  }, [erp.showToast]);
+
+  // Premium Loading State
   if (!erp.user || !erp.userProfile) {
     return (
       <div style={{ 
@@ -30,9 +55,10 @@ export default function Home() {
         background: 'linear-gradient(135deg, #0F172A, #1E293B)', color: '#F59E0B' 
       }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '48px', marginBottom: '20px' }}>✈️</div>
-          <h2>Loading ERP System...</h2>
-          <p style={{ color: '#94A3B8', fontSize: '14px' }}>Please wait while we fetch your data</p>
+          <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+          <div style={{ fontSize: '60px', marginBottom: '20px', animation: 'spin 2s linear infinite' }}>✈️</div>
+          <h2 style={{ margin: 0, fontSize: '24px' }}>Loading ERP System...</h2>
+          <p style={{ color: '#94A3B8', fontSize: '14px', marginTop: '5px' }}>Fetching your travel agency data</p>
         </div>
       </div>
     );
@@ -95,6 +121,14 @@ export default function Home() {
   return (
     // FIX: Added dynamic direction (RTL/LTR) for complete Arabic/English language support
     <div dir={erp.lang === 'ar' ? 'rtl' : 'ltr'}>
+      
+      {/* Network Offline Alert */}
+      {!isOnline && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, background: '#EF4444', color: 'white', textAlign: 'center', padding: '10px', zIndex: 10000, fontWeight: 'bold' }}>
+          ⚠️ You are offline. Please check your internet connection.
+        </div>
+      )}
+
       {erp.toast && (
         <div style={{ 
           position: 'fixed', top: '20px', right: '20px', 
