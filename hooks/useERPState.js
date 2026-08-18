@@ -88,7 +88,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
       .total-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px; color: rgba(255,255,255,0.8); }
       .grand-total { display: flex; justify-content: space-between; padding: 8px 0 0; margin-top: 4px; border-top: 2px solid rgba(255,255,255,0.1); font-size: 16px; font-weight: 800; color: #fff; }
       .grand-total .val { color: #fbbf24; }
-      .footer { padding: 12px 20px; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; gap: 15px; }
+      .footer { padding: 12px 20px; background: #f8fafc; display: flex; justify-content: space-between; alignItems: center; border-top: 1px solid #e2e8f0; gap: 15px; }
       .qr-code img { height: 60px; width: 60px; border-radius: 6px; border: 1px solid #e2e8f0; padding: 2px; background: #fff; }
       .footer-text { text-align: center; flex: 1; }
       .ai-msg { font-size: 11px; color: #475569; font-weight: 600; margin-bottom: 2px; }
@@ -208,7 +208,7 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
 };
 
 // ==========================================
-// PREMIUM REFUND INVOICE TEMPLATE
+// PREMIUM REFUND INVOICE TEMPLATE (FIXED N/A & ONE PAGE)
 // ==========================================
 const getRefundHTML = (inv, s, lang = 'en') => {
   const setting = s || {};
@@ -216,10 +216,11 @@ const getRefundHTML = (inv, s, lang = 'en') => {
   const trackUrl = `https://sueud-al-taayira.vercel.app/invoice/${invoiceNo}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(trackUrl)}`;
   
+  // Refund Breakdown Logic
   const originalFare = inv.old_sell_price || inv.total_sell || 0;
   const customerRefund = inv.refund_customer || 0;
-  const airlineRefund = inv.refund_company || 0; 
-  const airlineCancellationFee = originalFare - airlineRefund; 
+  const airlineRefund = inv.refund_company || 0; // Amount company received
+  const airlineCancellationFee = originalFare - airlineRefund; // 500 - 300 = 200
   
   const custName = inv.customers?.name || inv.old_customer_name || 'N/A';
   const custPhone = inv.customers?.phone || inv.old_customer_phone || 'N/A';
@@ -426,6 +427,8 @@ const getExpenseHTML = (exp, s, lang = 'en') => {
 const getSalarySlipHTML = (pay, s, lang = 'en') => {
   const setting = s || {};
   const slipNo = `SLIP-${pay.id?.substring(0,8) || 'N/A'}`;
+  const grossPay = (pay.base_salary || 0) + (pay.commission || 0) + (pay.overtime || 0) + (pay.gift || 0);
+  const totalDeductions = (pay.advance_deduction || 0) + (pay.mistakes_deduction || 0);
 
   return `
   <!DOCTYPE html>
@@ -437,24 +440,26 @@ const getSalarySlipHTML = (pay, s, lang = 'en') => {
     <style>
       * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; padding: 0; }
       body { font-family: 'Inter', 'Cairo', sans-serif; background: #f0f4f8; margin: 0; padding: 30px; color: #1e293b; }
-      .slip { max-width: 800px; margin: auto; background: #fff; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.08); border-radius: 0; }
-      .header { background: linear-gradient(135deg, #312e81 0%, #4338ca 100%); color: #fff; padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; }
-      .header h1 { font-size: 22px; font-weight: 800; }
+      .slip { max-width: 800px; margin: auto; background: #fff; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.08); border-radius: 12px; }
+      .header { background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 100%); color: #fff; padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; }
+      .header h1 { font-size: 22px; font-weight: 800; color: #FBBF24; }
       .header h2 { font-size: 15px; color: #c7d2fe; margin-top: 4px; }
       .header .slip-info { text-align: right; }
-      .header .slip-info h1 { color: #fbbf24; }
+      .header .slip-info h3 { color: #FBBF24; font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
       .header .slip-info p { font-size: 13px; color: #c7d2fe; margin-top: 4px; }
       .body { padding: 35px 40px; }
-      .emp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: #f5f3ff; padding: 20px; border-radius: 10px; margin-bottom: 25px; }
-      .emp-grid p { font-size: 13px; margin: 3px 0; }
+      .emp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: #F8FAFC; padding: 20px; border-radius: 10px; border: 1px solid #E2E8F0; margin-bottom: 25px; }
+      .emp-grid p { font-size: 14px; margin: 5px 0; }
       .emp-grid .label { color: #64748b; font-weight: 500; }
-      table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
-      th, td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
-      th { text-align: left; background: #312e81; color: #fbbf24; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
-      th.right, td.right { text-align: right; }
-      .net-pay { background: #312e81; color: #fbbf24; padding: 18px; border-radius: 10px; text-align: center; margin-top: 15px; font-size: 22px; font-weight: 800; }
-      .footer { text-align: center; padding: 20px 40px; background: #f8fafc; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
-      @media print { body { background: #fff; padding: 0; margin: 0; } .slip { box-shadow: none; margin: 0; max-width: 100%; } }
+      table { width: 100%; border-collapse: collapse; margin-bottom: 25px; border-radius: 8px; overflow: hidden; }
+      th, td { padding: 14px 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+      th { text-align: left; background: #1E3A8A; color: #fff; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+      th.right, td.right { text-align: right; font-weight: 600; }
+      .net-pay-box { background: linear-gradient(135deg, #059669, #047857); color: #fff; padding: 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-top: 15px; box-shadow: 0 10px 15px rgba(5, 150, 105, 0.2); }
+      .net-pay-box h3 { font-size: 16px; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+      .net-pay-box .amount { font-size: 28px; font-weight: 800; }
+      .footer { text-align: center; padding: 20px 40px; background: #F8FAFC; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
+      @media print { body { background: #fff; padding: 0; margin: 0; } .slip { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; } }
     </style>
   </head>
   <body>
@@ -465,36 +470,47 @@ const getSalarySlipHTML = (pay, s, lang = 'en') => {
           <h2>${setting.company_name_ar || 'صعود الطائرة للسفر السياحة'}</h2>
         </div>
         <div class="slip-info">
-          <h1>SALARY SLIP</h1>
-          <p>No: ${slipNo} | Month: ${pay.month}</p>
+          <h3>Salary Slip</h3>
+          <p>Slip No: ${slipNo} | Month: ${pay.month}</p>
         </div>
       </div>
       <div class="body">
         <div class="emp-grid">
           <div>
-            <p><span class="label">Employee:</span> <strong>${pay.employees?.name || 'N/A'}</strong></p>
-            <p><span class="label">Role:</span> ${pay.employees?.role || 'N/A'}</p>
+            <p><span class="label">Employee Name:</span> <strong>${pay.employees?.name || 'N/A'}</strong></p>
+            <p><span class="label">Designation:</span> ${pay.employees?.role || 'N/A'}</p>
           </div>
           <div style="text-align: right;">
             <p><span class="label">Payment Date:</span> ${pay.payment_date || 'N/A'}</p>
-            <p><span class="label">Mode:</span> ${pay.payment_mode}</p>
+            <p><span class="label">Payment Mode:</span> ${pay.payment_mode}</p>
           </div>
         </div>
         <table>
-          <thead><tr><th>Description</th><th class="right">Amount (SAR)</th></tr></thead>
+          <thead><tr><th>Earnings</th><th class="right">Amount (SAR)</th></tr></thead>
           <tbody>
             <tr><td>Basic Salary</td><td class="right">${(pay.base_salary || 0).toFixed(2)}</td></tr>
             <tr><td>Commission</td><td class="right" style="color:#059669;">+ ${(pay.commission || 0).toFixed(2)}</td></tr>
             <tr><td>Overtime</td><td class="right" style="color:#059669;">+ ${(pay.overtime || 0).toFixed(2)}</td></tr>
             <tr><td>Gift/Bonus</td><td class="right" style="color:#059669;">+ ${(pay.gift || 0).toFixed(2)}</td></tr>
-            <tr><td>Advance Deduction</td><td class="right" style="color:#ef4444;">- ${(pay.advance_deduction || 0).toFixed(2)}</td></tr>
-            <tr><td>Mistakes Deduction</td><td class="right" style="color:#ef4444;">- ${(pay.mistakes_deduction || 0).toFixed(2)}</td></tr>
+            <tr style="background:#F8FAFC;"><td><strong>Gross Pay</strong></td><td class="right"><strong>${grossPay.toFixed(2)}</strong></td></tr>
           </tbody>
         </table>
-        <div class="net-pay">NET PAY: ${(pay.amount || 0).toFixed(2)} SAR</div>
+        <table>
+          <thead><tr><th>Deductions</th><th class="right">Amount (SAR)</th></tr></thead>
+          <tbody>
+            <tr><td>Advance Deduction</td><td class="right" style="color:#EF4444;">- ${(pay.advance_deduction || 0).toFixed(2)}</td></tr>
+            <tr><td>Mistakes Deduction</td><td class="right" style="color:#EF4444;">- ${(pay.mistakes_deduction || 0).toFixed(2)}</td></tr>
+            <tr style="background:#F8FAFC;"><td><strong>Total Deductions</strong></td><td class="right"><strong>${totalDeductions.toFixed(2)}</strong></td></tr>
+          </tbody>
+        </table>
+        <div class="net-pay-box">
+          <h3>Net Pay</h3>
+          <div class="amount">${(pay.amount || 0).toFixed(2)} SAR</div>
+        </div>
       </div>
       <div class="footer">
-        <p>System generated salary slip — ${setting.company_name_en || ''}</p>
+        <p>This is a computer-generated salary slip and does not require a physical signature.</p>
+        <p>© ${new Date().getFullYear()} ${setting.company_name_en || 'SUEUD AL TAAYIRA'}</p>
       </div>
     </div>
   </body>
@@ -508,7 +524,7 @@ const getContractHTML = (s, name, date, isOffer, type, markup, terms) => {
   const setting = s || {};
   const docType = isOffer ? 'OFFER' : 'CONTRACT';
   const title = isOffer ? `Corporate Offer - ${name}` : `Corporate Contract - ${name}`;
-  const termsList = terms ? terms.split('\n').filter(t => t.trim()).map(t => `<li style="margin-bottom:8px; font-size:14px;">${t.trim()}</li>`).join('') : '<li>Standard terms and conditions apply.</li>';
+  const termsList = terms ? terms.split('\n').filter(t => t.trim()).map(t => `<li style="margin-bottom:10px; font-size:15px; color:#334155;">${t.trim()}</li>`).join('') : '<li style="margin-bottom:10px; font-size:15px; color:#334155;">Standard terms and conditions apply.</li>';
   
   return `
   <!DOCTYPE html>
@@ -520,29 +536,57 @@ const getContractHTML = (s, name, date, isOffer, type, markup, terms) => {
     <style>
       * { box-sizing: border-box; margin: 0; padding: 0; }
       body { font-family: 'Inter', sans-serif; background: #f0f4f8; padding: 30px; color: #1e293b; }
-      .doc { max-width: 800px; margin: auto; background: #fff; box-shadow: 0 20px 60px rgba(0,0,0,0.08); padding: 50px; border-radius: 12px; }
-      .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; }
-      .header h1 { font-size: 28px; font-weight: 800; color: #0c1d3a; text-transform: uppercase; }
-      .header p { font-size: 14px; color: #64748b; margin-top: 5px; }
-      .section { margin-bottom: 30px; }
-      .section h2 { font-size: 18px; font-weight: 700; color: #1e3a8a; margin-bottom: 10px; }
-      .section p { font-size: 14px; line-height: 1.6; color: #334155; }
-      .details-box { background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #1e3a8a; margin-bottom: 30px; }
-      .details-box p { font-size: 14px; margin: 5px 0; }
-      .terms-box ul { padding-left: 20px; }
+      .doc { max-width: 850px; margin: auto; background: #fff; box-shadow: 0 20px 60px rgba(0,0,0,0.1); padding: 60px; border-radius: 16px; border-top: 10px solid #1E3A8A; }
+      .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; }
+      .header h1 { font-size: 32px; font-weight: 800; color: #0F172A; text-transform: uppercase; letter-spacing: 1px; }
+      .header .logo-box { text-align: right; }
+      .header .logo-box h2 { font-size: 20px; font-weight: 800; color: #1E3A8A; }
+      .header .logo-box p { font-size: 12px; color: #64748b; margin-top: 5px; }
+      .meta-box { background: #F8FAFC; padding: 20px; border-radius: 12px; border-left: 5px solid #FBBF24; margin-bottom: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+      .meta-item p { font-size: 14px; margin: 5px 0; }
+      .meta-item .label { color: #64748b; font-weight: 500; display: block; font-size: 12px; text-transform: uppercase; }
+      .meta-item .value { color: #0F172A; font-weight: 700; font-size: 16px; }
+      .section { margin-bottom: 40px; }
+      .section h2 { font-size: 22px; font-weight: 700; color: #1E3A8A; margin-bottom: 15px; border-left: 4px solid #1E3A8A; padding-left: 10px; }
+      .terms-box ul { padding-left: 25px; list-style-type: square; }
+      .sign-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 60px; }
+      .sign-box { text-align: center; }
+      .sign-line { border-top: 2px solid #0F172A; margin-bottom: 10px; width: 80%; margin-left: auto; margin-right: auto; }
+      .sign-box p { font-size: 14px; color: #64748b; font-weight: 600; }
       .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 20px; }
-      @media print { body { background: #fff; padding: 0; } .doc { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; } }
+      @media print { body { background: #fff; padding: 0; } .doc { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; border: none; } }
     </style>
   </head>
   <body>
     <div class="doc">
       <div class="header">
-        <h1>${docType}: ${name}</h1>
-        <p>Date: ${date}</p>
+        <div>
+          <h1>${docType}</h1>
+          <p style="font-size: 14px; color: #64748b; margin-top: 5px;">Date: ${date}</p>
+        </div>
+        <div class="logo-box">
+          <h2>${setting.company_name_en || 'SUEUD AL TAAYIRA'}</h2>
+          <p>${setting.company_name_ar || 'صعود الطائرة'}</p>
+          <p>${setting.phone || ''}</p>
+        </div>
       </div>
-      <div class="details-box">
-        <p><strong>Service Type:</strong> ${type}</p>
-        <p><strong>Service Fee / Markup:</strong> ${parseFloat(markup || 0).toFixed(2)} SAR</p>
+      <div class="meta-box">
+        <div class="meta-item">
+          <span class="label">Client / Corporate Name</span>
+          <span class="value">${name}</span>
+        </div>
+        <div class="meta-item">
+          <span class="label">Service Type</span>
+          <span class="value">${type}</span>
+        </div>
+        <div class="meta-item">
+          <span class="label">Service Fee / Markup</span>
+          <span class="value">${parseFloat(markup || 0).toFixed(2)} SAR</span>
+        </div>
+        <div class="meta-item">
+          <span class="label">Document Validity</span>
+          <span class="value">30 Days from Issue Date</span>
+        </div>
       </div>
       <div class="section">
         <h2>Terms & Conditions</h2>
@@ -550,8 +594,20 @@ const getContractHTML = (s, name, date, isOffer, type, markup, terms) => {
           <ul>${termsList}</ul>
         </div>
       </div>
+      <div class="sign-grid">
+        <div class="sign-box">
+          <div class="sign-line"></div>
+          <p>Authorized Signatory</p>
+          <p style="font-size: 12px; color: #94a3b8;">${setting.company_name_en || 'SUEUD AL TAAYIRA'}</p>
+        </div>
+        <div class="sign-box">
+          <div class="sign-line"></div>
+          <p>Client Acceptance</p>
+          <p style="font-size: 12px; color: #94a3b8;">${name}</p>
+        </div>
+      </div>
       <div class="footer">
-        <p>${setting.company_name_en || 'SUEUD AL TAAYIRA'} | ${setting.phone || ''}</p>
+        <p>© ${new Date().getFullYear()} ${setting.company_name_en || 'SUEUD AL TAAYIRA'}. All rights reserved.</p>
       </div>
     </div>
   </body>
@@ -567,7 +623,7 @@ export default function useERPState() {
 
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
-  const [data, setData] = useState({ invoices: [], customers: [], corporates: [], creditors: [], vendors: [], packages: [], branches: [], portals: [], employees: [], services: [], expenses: [], investments: [], cashbook: [], payroll: [], empAdvances: [], staffMistakes: [], appUsers: [], tenants: [], audits: [], settings: {} });
+  const [data, setData] = useState({ invoices: [], customers: [], corporates: [], creditors: [], vendors: [], packages: [], branches: [], portals: [], employees: [], services: [], expenses: [], investments: [], cashbook: [], payroll: [], empAdvances: [], staffMistakes: [], attendance: [], appUsers: [], tenants: [], audits: [], settings: {} });
   
   const [lang, setLang] = useState('en');
   const [page, setPage] = useState('dashboard');
@@ -646,7 +702,7 @@ export default function useERPState() {
       setUserProfile(profile);
       if (profile) {
         const tenantId = profile.tenant_id;
-        const tables = ['invoices', 'customers', 'corporates', 'creditors', 'vendors', 'packages', 'branches', 'portals', 'employees', 'services', 'expenses', 'investments', 'cashbook', 'payroll', 'emp_advances', 'staff_mistakes', 'app_users', 'audits'];
+        const tables = ['invoices', 'customers', 'corporates', 'creditors', 'vendors', 'packages', 'branches', 'portals', 'employees', 'services', 'expenses', 'investments', 'cashbook', 'payroll', 'emp_advances', 'staff_mistakes', 'attendance', 'app_users', 'audits'];
         const queries = tables.map(t => supabase.from(t).select('*').eq('tenant_id', tenantId));
         const results = await Promise.all(queries);
         const newData = { ...data };
