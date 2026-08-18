@@ -19,7 +19,13 @@ export default function ERPViewsPro(props) {
   const [stmtCustId, setStmtCustId] = useState('');
   const [recForm, setRecForm] = useState({ customer_id: '', amount: '', interval: 'Monthly' });
 
-  // 1. REFUND STATEMENT & PROFIT PANEL
+  // Helper function
+  const handleExport = (exportData, filename) => {
+    if (!exportData || exportData.length === 0) return showToast('No data to export');
+    exportToExcel(exportData, filename);
+  };
+
+  // 1. REFUND STATEMENT & PROFIT PANEL (WITH EXCEL EXPORT)
   if (page === 'refund_statement') {
     const refunds = data.invoices.filter(i => i.invoice_no.startsWith('REF-'));
     const totalCompRefund = refunds.reduce((s, r) => s + (r.refund_company || 0), 0);
@@ -33,6 +39,13 @@ export default function ERPViewsPro(props) {
       portalRefunds[portalName].comp += (r.refund_company || 0);
       portalRefunds[portalName].cust += (r.refund_customer || 0);
     });
+
+    const refundExportData = refunds.map(r => ({
+      RefundNo: r.invoice_no, Customer: r.customers?.name || r.old_customer_name || 'N/A',
+      Date: r.refund_date || r.invoice_date, CompanyRefund: r.refund_company,
+      CustomerRefund: r.refund_customer, OfficeProfit: (r.refund_company || 0) - (r.refund_customer || 0),
+      Reason: r.refund_reason, Method: r.payment_method
+    }));
 
     return (
       <div>
@@ -57,7 +70,10 @@ export default function ERPViewsPro(props) {
         </div>
 
         <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-          <div style={{ padding: '20px', borderBottom: '1px solid #E2E8F0' }}><h3 style={{ margin: 0, color: '#0F172A' }}>Portal-wise Refund Breakdown</h3></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid #E2E8F0' }}>
+            <h3 style={{ margin: 0, color: '#0F172A' }}>Portal-wise Refund Breakdown</h3>
+            <button onClick={() => handleExport(refundExportData, 'RefundStatement')} style={styles.btnSuccess}>Export Excel</button>
+          </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
               <thead><tr>
@@ -86,7 +102,7 @@ export default function ERPViewsPro(props) {
     );
   }
 
-  // 2. CUSTOMER STATEMENT
+  // 2. CUSTOMER STATEMENT (WITH EXCEL EXPORT)
   if (page === 'customer_statement') {
     const custInvs = data.invoices.filter(i => i.customer_id === stmtCustId && !i.invoice_no.startsWith('REF-'));
     let runningBalance = 0;
@@ -99,7 +115,7 @@ export default function ERPViewsPro(props) {
         bal += (inv.total || 0) - (inv.paid_amount || 0);
         return { Date: inv.invoice_date, InvoiceNo: inv.invoice_no, Debit: inv.total, Credit: inv.paid_amount, Balance: bal.toFixed(2) };
       });
-      exportToExcel(csvData, `Statement_${cust?.name || stmtCustId}`);
+      handleExport(csvData, `Statement_${cust?.name || stmtCustId}`);
     };
 
     return (
@@ -207,7 +223,7 @@ export default function ERPViewsPro(props) {
     );
   }
 
-  // 4. EXPENSE APPROVAL SYSTEM (Advanced Feature)
+  // 4. EXPENSE APPROVAL SYSTEM
   if (page === 'expense_approval') {
     const pendingExpenses = data.expenses.filter(e => e.approval_status === 'Pending');
     const updateApproval = async (expId, status) => {
@@ -279,6 +295,11 @@ export default function ERPViewsPro(props) {
 
   // 6. STAFF MISTAKES & LOSS PANEL
   if (page === 'staff_mistakes') {
+    const mistakesExportData = data.staffMistakes.map(m => ({
+      Date: m.date, Employee: m.employees?.name, OldTicket: m.old_ticket_no,
+      NewTicket: m.new_ticket_no, LossAmount: m.loss_amount, SalaryDeducted: m.paid_by_employee ? 'Yes' : 'No'
+    }));
+
     return (
       <div>
         <div style={{ background: 'linear-gradient(135deg, #B91C1C, #EF4444)', color: 'white', padding: '30px', borderRadius: '16px', marginBottom: '20px' }}>
@@ -303,6 +324,10 @@ export default function ERPViewsPro(props) {
         </div>
 
         <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid #E2E8F0' }}>
+            <h3 style={{ margin: 0, color: '#0F172A' }}>Mistake History</h3>
+            <button onClick={() => handleExport(mistakesExportData, 'StaffMistakes')} style={styles.btnSuccess}>Export Excel</button>
+          </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
               <thead><tr><th style={styles.tableHeader}>Date</th><th style={styles.tableHeader}>Employee</th><th style={styles.tableHeader}>Old Ticket</th><th style={styles.tableHeader}>New Ticket</th><th style={styles.tableHeader}>Loss Amount</th><th style={styles.tableHeader}>Salary Deducted</th></tr></thead>
