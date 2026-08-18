@@ -1,47 +1,38 @@
-import { createClient } from '@supabase/supabase-js';
+import { NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
 
 export async function POST(req) {
   try {
-    const body = await req.json();
-    
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
+    const { agency_name, owner_email, temp_password, subscription_end_date, company_name_ar, vat_no, cr_no, phone, address_ar } = await req.json();
 
-    // 1. Create Auth User
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: body.owner_email,
-      password: body.temp_password,
-      email_confirm: true,
+    // 1. Create Auth User in Supabase
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: owner_email,
+      password: temp_password,
+      email_confirm: true
     });
 
     if (authError) throw new Error(authError.message);
-    const userId = authData.user.id;
 
-    // 2. Create Tenant
-    const { data: tenantData, error: tenantError } = await supabaseAdmin
+    // 2. Create Tenant Record
+    const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
-      .insert([{ 
-        agency_name: body.agency_name, 
-        owner_email: body.owner_email, 
-        is_paid: true, 
-        subscription_end_date: body.subscription_end_date 
-      }])
-      .select().single();
+      .insert([{ agency_name, owner_email, subscription_end_date, is_paid: true }])
+      .select()
+      .single();
 
     if (tenantError) throw new Error(tenantError.message);
 
-    // 3. Create App User Link
-    const { error: appUserError } = await supabaseAdmin
+    // 3. Create App User Profile linked to Tenant
+    const { error: profileError } = await supabase
       .from('app_users')
       .insert([{
-        id: userId,
-        email: body.owner_email,
-        username: body.agency_name,
-        tenant_id: tenantData.id,
-        role: 'AgencyAdmin',
+        id: authData.user.id,
+        email: owner_email,
+        username: agency_name,
+        role: 'Admin',
         is_admin: true,
+        tenant_id: tenant.id,
         can_access_invoices: true,
         can_access_bank: true,
         can_access_hr: true,
@@ -49,26 +40,23 @@ export async function POST(req) {
         can_access_settings: true
       }]);
 
-    if (appUserError) throw new Error(appUserError.message);
+    if (profileError) throw new Error(profileError.message);
 
-    // 4. Create Settings for this Agency (FIX FOR TENANT ID MISSING & PRE-FILL)
-    const { error: settingsError } = await supabaseAdmin
+    // 4. Create Default Settings for the new Agency
+    await supabase
       .from('settings')
       .insert([{ 
-        tenant_id: tenantData.id,
-        company_name_en: body.agency_name,
-        company_name_ar: body.company_name_ar || body.agency_name,
-        vat_no: body.vat_no || '',
-        cr_no: body.cr_no || '',
-        phone: body.phone || '',
-        address_ar: body.address_ar || '',
-        invoice_footer: 'Thank you for choosing us!'
+        tenant_id: tenant.id, 
+        company_name_en: agency_name, 
+        company_name_ar: company_name_ar || agency_name,
+        vat_no: vat_no,
+        cr_no: cr_no,
+        phone: phone,
+        address_ar: address_ar
       }]);
 
-    if (settingsError) throw new Error(settingsError.message);
-
-    return new Response(JSON.stringify({ success: true }), { status: 200 });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    return NextResponse.json({ success: true, tenant_id: tenant.id });
+  } catch (err) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
