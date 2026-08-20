@@ -34,7 +34,7 @@ export default function useERPActions(state) {
     setPassForm({ newPass: '' });
   };
 
-  // ===================== CHAT =====================
+  // ===================== CHAT (Enhanced AI) =====================
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
     setChatMessages(prev => [...prev, { sender: 'user', text: chatInput }]);
@@ -42,15 +42,78 @@ export default function useERPActions(state) {
     setChatInput('');
     setTimeout(() => {
       let reply = lang === 'ar' ? 'يمكنني المساعدة في الفواتير والعملاء. جرب السؤال عنهم!' : "I can help with Invoices, Customers, Reports. Try asking about them!";
-      if (input.includes('invoice') || input.includes('فاتورة')) reply = lang === 'ar' ? '📄 اذهب إلى "إنشاء فاتورة" أو "الفواتير" لعرضها.' : "📄 Go to 'Create Invoice' to make one, or 'Invoices' to view all.";
-      else if (input.includes('customer') || input.includes('عميل')) reply = lang === 'ar' ? '👤 إدارة العملاء من صفحة العملاء.' : "👤 Manage customers from the Customers page.";
-      else if (input.includes('refund') || input.includes('استرجاع')) reply = lang === 'ar' ? '🔄 اضغط على زر الاسترجاع على أي فاتورة.' : "🔄 Click Refund button on any invoice.";
-      else if (input.includes('report') || input.includes('تقرير')) reply = lang === 'ar' ? '📊 انتقل إلى التقارير للتحليل.' : "📊 Visit Reports for sales, expenses, P&L analysis.";
-      else if (input.includes('profit') || input.includes('ربح')) reply = lang === 'ar' ? '💰 انتقل إلى صفحة الربحية.' : "💰 Check Profitability page for airline-wise profit.";
-      else if (input.includes('expense') || input.includes('مصروف')) reply = lang === 'ar' ? '💸 المصروفات في قسم المالي والحسابات.' : "💸 Expenses are in Finance & Accounts section.";
-      else if (input.includes('salary') || input.includes('راتب')) reply = lang === 'ar' ? '💰 الموارد البشرية > الرواتب.' : "💰 Go to HR & Payroll to pay salary.";
-      else if (input.includes('portal') || input.includes('بوابة')) reply = lang === 'ar' ? '🛫 إدارة البوابات من صفحة البوابات.' : "🛫 Manage portals from the Portals page.";
-      else if (input.includes('help') || input.includes('مساعدة')) reply = lang === 'ar' ? 'أنا هنا لمساعدتك! اسأل عن الفواتير، العملاء، التقارير، المصروفات، الرواتب، أو أي شيء آخر.' : "I'm here to help! Ask about invoices, customers, reports, expenses, salary, or anything else.";
+
+      // Smart contextual responses
+      const totalInv = data.invoices?.length || 0;
+      const totalRev = data.invoices?.reduce((s, i) => s + (i.total || 0), 0) || 0;
+      const unpaidCount = data.invoices?.filter(i => i.status === 'Unpaid').length || 0;
+      const totalCustomers = data.customers?.length || 0;
+      const totalExpenses = data.expenses?.reduce((s, e) => s + (e.total_amount || 0), 0) || 0;
+
+      if (input.includes('invoice') || input.includes('فاتورة')) {
+        reply = lang === 'ar'
+          ? `📄 لديك ${totalInv} فاتورة بإجمالي ${totalRev.toFixed(2)} ريال. ${unpaidCount} فاتورة غير مدفوعة. اذهب إلى "إنشاء فاتورة" لإنشاء واحدة جديدة.`
+          : `📄 You have ${totalInv} invoices totaling ${totalRev.toFixed(2)} SAR. ${unpaidCount} unpaid. Go to 'Create Invoice' to make a new one.`;
+      }
+      else if (input.includes('customer') || input.includes('عميل')) {
+        reply = lang === 'ar'
+          ? `👤 لديك ${totalCustomers} عميل مسجل. انتقل إلى صفحة العملاء للإدارة.`
+          : `👤 You have ${totalCustomers} registered customers. Go to Customers page to manage them.`;
+      }
+      else if (input.includes('refund') || input.includes('استرجاع')) {
+        const refundCount = data.invoices?.filter(i => i.invoice_no?.startsWith('REF-')).length || 0;
+        reply = lang === 'ar'
+          ? `🔄 لديك ${refundCount} عملية استرجاع. اضغط على زر الاسترجاع على أي فاتورة لإنشاء واحدة جديدة.`
+          : `🔄 You have ${refundCount} refunds. Click Refund button on any invoice to create a new one.`;
+      }
+      else if (input.includes('report') || input.includes('تقرير')) {
+        reply = lang === 'ar'
+          ? `📊 الإيرادات: ${totalRev.toFixed(2)} ريال | المصروفات: ${totalExpenses.toFixed(2)} ريال | صافي الربح: ${(totalRev - totalExpenses).toFixed(2)} ريال. انتقل إلى التقارير للتحليل التفصيلي.`
+          : `📊 Revenue: ${totalRev.toFixed(2)} SAR | Expenses: ${totalExpenses.toFixed(2)} SAR | Net: ${(totalRev - totalExpenses).toFixed(2)} SAR. Visit Reports for detailed analysis.`;
+      }
+      else if (input.includes('profit') || input.includes('ربح')) {
+        const totalProfit = data.invoices?.reduce((s, i) => s + (i.profit || 0), 0) || 0;
+        reply = lang === 'ar'
+          ? `💰 إجمالي الربح من الفواتير: ${totalProfit.toFixed(2)} ريال. انتقل إلى صفحة الربحية للتحليل حسب الخطوط الجوية.`
+          : `💰 Total invoice profit: ${totalProfit.toFixed(2)} SAR. Check Profitability page for airline-wise breakdown.`;
+      }
+      else if (input.includes('expense') || input.includes('مصروف')) {
+        reply = lang === 'ar'
+          ? `💸 إجمالي المصروفات: ${totalExpenses.toFixed(2)} ريال. المصروفات في قسم المالي والحسابات.`
+          : `💸 Total expenses: ${totalExpenses.toFixed(2)} SAR. Expenses are in Finance & Accounts section.`;
+      }
+      else if (input.includes('salary') || input.includes('راتب')) {
+        reply = lang === 'ar'
+          ? `💰 الموارد البشرية > الرواتب. لديك ${data.employees?.length || 0} موظف مسجل.`
+          : `💰 Go to HR & Payroll. You have ${data.employees?.length || 0} registered employees.`;
+      }
+      else if (input.includes('portal') || input.includes('بوابة')) {
+        const totalBal = data.portals?.reduce((s, p) => s + (p.current_balance || 0), 0) || 0;
+        reply = lang === 'ar'
+          ? `🛫 لديك ${data.portals?.length || 0} بوابة بإجمالي رصيد ${totalBal.toFixed(2)} ريال.`
+          : `🛫 You have ${data.portals?.length || 0} portals with total balance ${totalBal.toFixed(2)} SAR.`;
+      }
+      else if (input.includes('unpaid') || input.includes('غير مدفوعة') || input.includes('due')) {
+        const totalDue = data.invoices?.filter(i => i.status === 'Unpaid').reduce((s, i) => s + (i.due_amount || 0), 0) || 0;
+        reply = lang === 'ar'
+          ? `⚠️ لديك ${unpaidCount} فاتورة غير مدفوعة بإجمالي ${totalDue.toFixed(2)} ريال مستحقة.`
+          : `⚠️ You have ${unpaidCount} unpaid invoices totaling ${totalDue.toFixed(2)} SAR due.`;
+      }
+      else if (input.includes('summary') || input.includes('ملخص') || input.includes('overview') || input.includes('status')) {
+        reply = lang === 'ar'
+          ? `📋 ملخص: ${totalInv} فاتورة | ${totalCustomers} عميل | إيرادات ${totalRev.toFixed(2)} ريال | مصروفات ${totalExpenses.toFixed(2)} ريال | ${unpaidCount} غير مدفوعة`
+          : `📋 Summary: ${totalInv} invoices | ${totalCustomers} customers | Revenue ${totalRev.toFixed(2)} SAR | Expenses ${totalExpenses.toFixed(2)} SAR | ${unpaidCount} unpaid`;
+      }
+      else if (input.includes('help') || input.includes('مساعدة')) {
+        reply = lang === 'ar'
+          ? '🤖 أنا مساعد ERP الذكي! اسألني عن:\n• فواتير / invoices\n• عملاء / customers\n• استرجاع / refunds\n• تقارير / reports\n• ربح / profit\n• مصروفات / expenses\n• رواتب / salary\n• بوابات / portals\n• غير مدفوعة / unpaid\n• ملخص / summary'
+          : '🤖 I\'m your AI ERP Assistant! Ask me about:\n• invoices\n• customers\n• refunds\n• reports\n• profit\n• expenses\n• salary\n• portals\n• unpaid\n• summary';
+      }
+      else if (input.includes('hello') || input.includes('hi') || input.includes('مرحبا') || input.includes('السلام')) {
+        reply = lang === 'ar'
+          ? `👋 مرحباً! أنا مساعد ERP. كيف يمكنني مساعدتك اليوم؟ اكتب "مساعدة" لمعرفة ما يمكنني فعله.`
+          : `👋 Hello! I'm your ERP assistant. How can I help you today? Type "help" to see what I can do.`;
+      }
       setChatMessages(prev => [...prev, { sender: 'bot', text: reply }]);
     }, 400);
   };
@@ -81,7 +144,7 @@ export default function useERPActions(state) {
         phone: profileForm.phone, address: profileForm.address
       }).eq('id', userProfile.id);
       if (error) throw error;
-      setUserProfile(prev => ({ ...prev, ...profileForm }));
+      setData(prev => ({ ...prev, userProfile: { ...prev.userProfile, ...profileForm } }));
       showToast('Profile Updated!');
     } catch (err) { showToast('Error: ' + err.message); }
   };
@@ -154,7 +217,6 @@ export default function useERPActions(state) {
       const { jsPDF } = await import('jspdf');
       const div = document.createElement('div');
       div.style.cssText = 'position:absolute;left:-9999px;top:0';
-      // Convert QR Code Images to Base64
       const parser = new DOMParser();
       const doc = parser.parseFromString(htmlContent, 'text/html');
       const imgs = doc.querySelectorAll('img[src*="api.qrserver.com"]');
@@ -290,7 +352,6 @@ export default function useERPActions(state) {
       const compRef = parseFloat(refundForm.compRefund) || 0;
       const custRef = parseFloat(refundForm.custRefund) || 0;
       const refundNo = `REF-${Date.now()}`;
-      // Credit balance refund
       if (refundForm.mode === 'Credit' && custRef > 0 && origInv.customer_id) {
         const cust = data.customers.find(c => c.id === origInv.customer_id);
         if (cust) {
@@ -299,7 +360,6 @@ export default function useERPActions(state) {
           setData(prev => ({ ...prev, customers: prev.customers.map(c => c.id === cust.id ? { ...c, store_credit: nc } : c) }));
         }
       }
-      // Portal balance refund
       if (compRef > 0 && refundForm.portalId) {
         const portal = data.portals.find(p => p.id === refundForm.portalId);
         if (portal) {
@@ -308,7 +368,6 @@ export default function useERPActions(state) {
           setData(prev => ({ ...prev, portals: prev.portals.map(p => p.id === portal.id ? { ...p, current_balance: nb } : p) }));
         }
       }
-      // Create refund invoice
       const payload = {
         invoice_no: refundNo, customer_id: origInv.customer_id, corporate_id: origInv.corporate_id,
         old_customer_name: origInv.customers?.name || 'N/A', old_customer_phone: origInv.customers?.phone || 'N/A',
@@ -329,7 +388,6 @@ export default function useERPActions(state) {
       };
       const { data: newRef, error: refErr } = await supabase.from('invoices').insert([payload]).select('*, customers(name), corporates(name), employees(name)').single();
       if (refErr) throw new Error('Refund failed: ' + refErr.message);
-      // Cashbook for customer refund
       let newCb = null;
       if (custRef > 0 && refundForm.mode !== 'Credit') {
         const cbType = refundForm.mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
@@ -340,7 +398,6 @@ export default function useERPActions(state) {
         }]).select().single();
         newCb = nC;
       }
-      // Mark original as refunded
       await supabase.from('invoices').update({ status: 'refunded' }).eq('id', origInv.id);
       setData(prev => ({
         ...prev,
@@ -393,7 +450,6 @@ export default function useERPActions(state) {
   const handleDeletePayroll = async (pay) => {
     if (!confirm('Delete this salary slip permanently?')) return;
     try {
-      // Reverse cashbook entry
       const cbs = data.cashbook.filter(c => c.reference_id === pay.id);
       for (const cb of cbs) await supabase.from('cashbook').delete().eq('id', cb.id);
       await supabase.from('payroll').delete().eq('id', pay.id);
@@ -451,11 +507,10 @@ export default function useERPActions(state) {
     state.setPage('create');
   };
 
-  // ===================== CREATE INVOICE (TYPO FIX + OVERPAYMENT FIX) =====================
+  // ===================== CREATE INVOICE =====================
   const handleCreateInvoice = async (e) => {
     e.preventDefault();
     try {
-      // Duplicate customer check
       if (invForm.custType === 'Individual' && invForm.custId === 'new' && invForm.custName) {
         const exists = data.customers.find(c => c.name.toLowerCase() === invForm.custName.toLowerCase() && c.phone === invForm.custPhone);
         if (exists) throw new Error('Customer already exists! Select from dropdown.');
@@ -468,26 +523,19 @@ export default function useERPActions(state) {
       const taxRate = parseFloat(invForm.taxRate) || 0;
       const vat = sell * (taxRate / 100);
       const total = sell + vat;
-
-      // OVERPAYMENT FIX: Correct logic for due amount
       let cashPaid = parseFloat(invForm.paid) || 0;
       let cashReturn = 0;
       let actualCashPaid = cashPaid;
-
       if (cashPaid > total && (invForm.payment === 'Card / Network' || invForm.payment === 'Bank Transfer')) {
         cashReturn = cashPaid - total;
-        actualCashPaid = total; // Only record what's owed
+        actualCashPaid = total;
       }
-
       const usedCredit = parseFloat(invForm.useCredit) || 0;
       const totalPaid = actualCashPaid + usedCredit;
       const invoiceDue = Math.max(0, total - totalPaid);
       const invoiceStatus = invoiceDue <= 0 ? 'Paid' : 'Unpaid';
       const profit = sell - cost;
-
       let cid = null, corpId = null;
-
-      // Customer/Corporate creation
       if (invForm.custType === 'Individual') {
         if (invForm.custId === 'new') {
           const { data: nC, error: cErr } = await supabase.from('customers').insert([{
@@ -506,8 +554,6 @@ export default function useERPActions(state) {
           corpId = nCorp.id;
         } else { corpId = invForm.corpId; }
       }
-
-      // Credit balance deduction
       if (invForm.payment === 'Credit Balance' && cid && usedCredit > 0) {
         const cust = data.customers.find(c => c.id === cid);
         if (cust) {
@@ -517,20 +563,17 @@ export default function useERPActions(state) {
           setData(prev => ({ ...prev, customers: prev.customers.map(c => c.id === cust.id ? { ...c, store_credit: nc } : c) }));
         }
       }
-
-      // Portal balance check
       const portal = data.portals.find(p => p.id === invForm.portalId);
       if (!portal) throw new Error('Select a Portal');
       if ((portal.current_balance || 0) < cost) {
         showToast(`⚠️ Low portal balance: ${(portal.current_balance || 0).toFixed(2)} SAR (Need: ${cost.toFixed(2)} SAR)`);
       }
-
       const passengerNames = invForm.passengers.filter(p => p).join('\n');
       const payload = {
         customer_id: cid, corporate_id: corpId, portal_id: portal.id,
         employee_id: invForm.employeeId || null, booking_date: invForm.bookingDate,
         invoice_date: invForm.invoiceDate, service_type: invForm.service,
-        flight_type: invForm.flightType, flight_journey: invForm.flightJourney, // TYPO FIX: was inv.flightJourney
+        flight_type: invForm.flightType, flight_journey: invForm.flightJourney,
         refundable_status: invForm.refundable, booking_type: invForm.bookingType,
         linked_inv_id: invForm.linkedInvId || null,
         old_ticket_no: invForm.oldTicketNo || null, old_pnr: invForm.oldPnr || null,
@@ -551,7 +594,6 @@ export default function useERPActions(state) {
         tamara_order_no: invForm.payment === 'Tamara' ? invForm.tamaraNo : null,
         ticket_status: invForm.ticketStatus, status: invoiceStatus, tenant_id: userProfile.tenant_id
       };
-
       if (editInvId) {
         const { data: upInv, error: upErr } = await supabase.from('invoices').update(payload).eq('id', editInvId)
           .select('*, customers(name), corporates(name), employees(name)').single();
@@ -563,14 +605,10 @@ export default function useERPActions(state) {
         const { data: newInv, error: invErr } = await supabase.from('invoices').insert([{ invoice_no: invNo, ...payload }])
           .select('*, customers(name), corporates(name), employees(name)').single();
         if (invErr) throw new Error('Creation failed: ' + invErr.message);
-        // Deduct from portal
         const newBal = (portal.current_balance || 0) - cost;
         await supabase.from('portals').update({ current_balance: newBal }).eq('id', portal.id);
         await logAction(`Created Invoice ${invNo} | Amount: ${total.toFixed(2)} SAR | Profit: ${profit.toFixed(2)} SAR`);
-
-        // Cashbook entries
         let newCbEntries = [];
-        // 1. Payment received
         if (cashPaid > 0 && invForm.payment !== 'Credit' && invForm.payment !== 'Credit Balance') {
           const cbType = invForm.payment === 'Cash' ? 'Cash-In' : 'Bank-In';
           const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{
@@ -581,7 +619,6 @@ export default function useERPActions(state) {
           if (cbErr) console.error('Cashbook:', cbErr.message);
           if (nC) newCbEntries.push(nC);
         }
-        // 2. Cash return (overpayment)
         if (cashReturn > 0) {
           const { data: nCO, error: cbErrO } = await supabase.from('cashbook').insert([{
             trans_date: invForm.invoiceDate, type: 'Cash-Out',
@@ -592,7 +629,6 @@ export default function useERPActions(state) {
           if (nCO) newCbEntries.push(nCO);
           showToast(`Overpayment: ${cashReturn.toFixed(2)} SAR returned in cash!`);
         }
-        // 3. Credit balance used
         if (usedCredit > 0) {
           const { data: nCU, error: cbErrU } = await supabase.from('cashbook').insert([{
             trans_date: invForm.invoiceDate, type: 'Cash-Out',
@@ -601,7 +637,6 @@ export default function useERPActions(state) {
           }]).select().single();
           if (nCU) newCbEntries.push(nCU);
         }
-
         setData(prev => ({
           ...prev,
           invoices: [newInv, ...prev.invoices],
@@ -610,8 +645,6 @@ export default function useERPActions(state) {
         }));
         showToast('Invoice Generated!');
       }
-
-      // Reset form
       setInvForm({
         custType: 'Individual', custId: 'new', custName: '', custPhone: '',
         corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '',
@@ -637,7 +670,6 @@ export default function useERPActions(state) {
     if (!confirm('Delete permanently? All entries will be reversed.')) return;
     try {
       if (inv.invoice_no?.startsWith('REF-')) {
-        // Reverse credit refund
         if (inv.payment_method === 'Credit' && inv.refund_customer > 0 && inv.customer_id) {
           const cust = data.customers.find(c => c.id === inv.customer_id);
           if (cust) {
@@ -645,7 +677,6 @@ export default function useERPActions(state) {
             await supabase.from('customers').update({ store_credit: nc }).eq('id', cust.id);
           }
         }
-        // Reverse portal refund
         if (inv.portal_id && inv.refund_company > 0) {
           const portal = data.portals.find(p => p.id === inv.portal_id);
           if (portal) {
@@ -653,12 +684,10 @@ export default function useERPActions(state) {
             await supabase.from('portals').update({ current_balance: nb }).eq('id', inv.portal_id);
           }
         }
-        // Restore original invoice
         if (inv.linked_inv_id) {
           const { data: origInv } = await supabase.from('invoices').select('id,due_amount').eq('invoice_no', inv.linked_inv_id).single();
           if (origInv) await supabase.from('invoices').update({ status: origInv.due_amount > 0 ? 'Unpaid' : 'Paid' }).eq('id', origInv.id);
         }
-        // Delete cashbook entries
         const cbs = data.cashbook.filter(c => c.reference_id === inv.id || c.description?.includes(inv.invoice_no));
         for (const cb of cbs) await supabase.from('cashbook').delete().eq('id', cb.id);
         await supabase.from('invoices').delete().eq('id', inv.id);
@@ -671,22 +700,20 @@ export default function useERPActions(state) {
         }));
         showToast('Refund Deleted & Original Restored!'); return;
       }
-      // Normal invoice delete
-      // Reverse credit usage
       if (inv.used_credit > 0 && inv.customer_id) {
         const cust = data.customers.find(c => c.id === inv.customer_id);
         if (cust) {
           const nc = (cust.store_credit || 0) + (inv.used_credit || 0);
           await supabase.from('customers').update({ store_credit: nc }).eq('id', cust.id);
+          setData(prev => ({ ...prev, customers: prev.customers.map(c => c.id === cust.id ? { ...c, store_credit: nc } : c) }));
         }
       }
-      // Restore portal balance
       const portal = data.portals.find(p => p.id === inv.portal_id);
+      let nb = 0;
       if (portal) {
-        const nb = (portal.current_balance || 0) + (inv.total_cost || 0);
+        nb = (portal.current_balance || 0) + (inv.total_cost || 0);
         await supabase.from('portals').update({ current_balance: nb }).eq('id', portal.id);
       }
-      // Delete cashbook entries
       const cbs = data.cashbook.filter(c =>
         c.reference_id === inv.id ||
         c.description?.includes('Payment for ' + inv.invoice_no) ||
@@ -698,9 +725,8 @@ export default function useERPActions(state) {
       setData(prev => ({
         ...prev,
         invoices: prev.invoices.filter(i => i.id !== inv.id),
-        portals: prev.portals.map(p => p.id === portal.id ? { ...p, current_balance: nb } : p),
-        cashbook: prev.cashbook.filter(c => !cbs.find(x => x.id === c.id)),
-        customers: prev.customers.map(c => c.id === inv.customer_id ? { ...c, store_credit: nc } : c)
+        portals: prev.portals.map(p => p.id === portal?.id ? { ...p, current_balance: nb } : p),
+        cashbook: prev.cashbook.filter(c => !cbs.find(x => x.id === c.id))
       }));
       showToast('Invoice Deleted & Balances Reversed!');
     } catch (err) { showToast('Error: ' + err.message); }
@@ -889,27 +915,88 @@ export default function useERPActions(state) {
   };
 
   // ===================== EXPENSES (Connected System) =====================
-  const handleAddExpItem = () => setExpForm(prev => ({ ...prev, items: [...prev.items, { name: '', qty: 1, price: 0 }] }));
+  const handleAddExpItem = () => setExpForm(prev => ({ ...prev, items: [...prev.items, { name: '', amount: 0, category: 'General' }] }));
   const handleRemoveExpItem = (i) => setExpForm(prev => ({ ...prev, items: prev.items.filter((_, idx) => idx !== i) }));
-  const handleExpItemChange = (i, field, val) => {
-    setExpForm(prev => { const items = [...prev.items]; items[i] = { ...items[i], [field]: val }; return { ...prev, items }; });
-  };
+  const handleExpItemChange = (i, field, val) => setExpForm(prev => {
+    const items = [...prev.items];
+    items[i] = { ...items[i], [field]: field === 'amount' ? parseFloat(val) || 0 : val };
+    return { ...prev, items };
+  });
 
-  const handleEditExpense = (exp) => {
+  const handleEditExp = (exp) => {
     setEditExpId(exp.id);
     setExpForm({
-      vendor_name: exp.vendor_name, vendor_vat: exp.vendor_vat || '', expense_date: exp.expense_date,
-      expense_type: exp.expense_type, payment_mode: exp.payment_mode,
-      items: exp.items?.length > 0 ? exp.items : [{ name: exp.item_name || 'Item', qty: 1, price: exp.amount || 0 }],
-      taxRate: exp.vat > 0 ? '15' : '0', desc: exp.description || ''
+      date: exp.expense_date || today,
+      category: exp.category || 'General',
+      description: exp.description || '',
+      payment_mode: exp.payment_mode || 'Cash',
+      portal_id: exp.portal_id || '',
+      items: exp.items || [{ name: '', amount: 0, category: 'General' }]
     });
   };
 
-  const handleDeleteExpense = async (exp) => {
-    if (!confirm('Delete this expense?')) return;
+  const handleAddEditExpense = async (e) => {
+    e.preventDefault();
     try {
-      // Reverse cashbook if admin approved
-      const cbs = data.cashbook.filter(c => c.reference_id === exp.id || c.description?.includes(exp.invoice_no));
+      const totalAmount = expForm.items.reduce((s, item) => s + (parseFloat(item.amount) || 0), 0);
+      if (totalAmount <= 0) throw new Error('Add at least one expense item with amount!');
+
+      const payload = {
+        expense_date: expForm.date,
+        category: expForm.category,
+        description: expForm.description,
+        payment_mode: expForm.payment_mode,
+        portal_id: expForm.portal_id || null,
+        total_amount: totalAmount,
+        items: expForm.items,
+        tenant_id: userProfile.tenant_id
+      };
+
+      if (editExpId) {
+        const { data: up, error } = await supabase.from('expenses').update(payload).eq('id', editExpId).select().single();
+        if (error) throw error;
+        setData(prev => ({ ...prev, expenses: prev.expenses.map(ex => ex.id === editExpId ? up : ex) }));
+        showToast('Expense Updated!');
+        setEditExpId(null);
+      } else {
+        const { data: nExp, error } = await supabase.from('expenses').insert([payload]).select().single();
+        if (error) throw error;
+
+        // Cashbook entry
+        const cbType = expForm.payment_mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
+        const { data: nCb } = await supabase.from('cashbook').insert([{
+          trans_date: expForm.date,
+          type: cbType,
+          description: `Expense: ${expForm.description || expForm.category}`,
+          amount: totalAmount,
+          tenant_id: userProfile.tenant_id,
+          reference_id: nExp.id
+        }]).select().single();
+
+        setData(prev => ({
+          ...prev,
+          expenses: [nExp, ...prev.expenses],
+          cashbook: nCb ? [nCb, ...prev.cashbook] : prev.cashbook
+        }));
+        await logAction(`Expense ${totalAmount.toFixed(2)} SAR - ${expForm.description || expForm.category}`);
+        showToast('Expense Added!');
+      }
+
+      setExpForm({
+        date: today,
+        category: 'General',
+        description: '',
+        payment_mode: 'Cash',
+        portal_id: '',
+        items: [{ name: '', amount: 0, category: 'General' }]
+      });
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+
+  const handleDeleteExpense = async (exp) => {
+    if (!confirm('Delete this expense? Cashbook entry will also be removed.')) return;
+    try {
+      const cbs = data.cashbook.filter(c => c.reference_id === exp.id);
       for (const cb of cbs) await supabase.from('cashbook').delete().eq('id', cb.id);
       await supabase.from('expenses').delete().eq('id', exp.id);
       setData(prev => ({
@@ -921,353 +1008,449 @@ export default function useERPActions(state) {
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
-  const handlePreviewExpense = (exp) => {
-    setPreviewHTML(getExpenseHTML(exp, data.settings, lang));
-    setModal({ type: 'preview', data: exp });
+  // ===================== CRUD: PORTALS =====================
+  const handleEditPortal = (p) => {
+    setPortalForm({
+      name: p.name,
+      portal_type: p.portal_type || 'GDS',
+      current_balance: p.current_balance || 0,
+      initial_balance: p.initial_balance || 0,
+      phone: p.phone || '',
+      contact_person: p.contact_person || '',
+      credit_limit: p.credit_limit || 0
+    });
+    setModal({ type: 'editPortal', data: p });
   };
 
-  const handleAddExpense = async (e) => {
+  const handleAddEditPortal = async (e) => {
     e.preventDefault();
     try {
-      const subTotal = expForm.items.reduce((s, it) => s + ((parseFloat(it.qty) || 0) * (parseFloat(it.price) || 0)), 0);
-      const vat = subTotal * ((parseFloat(expForm.taxRate) || 0) / 100);
-      const total = subTotal + vat;
-
-      if (editExpId) {
-        // Reverse old cashbook entries
-        const oldExp = data.expenses.find(ex => ex.id === editExpId);
-        const oldCbs = data.cashbook.filter(c => c.reference_id === editExpId || c.description?.includes(oldExp?.invoice_no));
-        for (const cb of oldCbs) await supabase.from('cashbook').delete().eq('id', cb.id);
-        // Update expense
-        const { data: upExp, error: expErr } = await supabase.from('expenses').update({
-          vendor_name: expForm.vendor_name, vendor_vat: expForm.vendor_vat,
-          expense_date: expForm.expense_date, expense_type: expForm.expense_type,
-          item_name: expForm.items.map(i => i.name).join(', '), items: expForm.items,
-          amount: total, description: expForm.desc, payment_mode: expForm.payment_mode
-        }).eq('id', editExpId).select().single();
-        if (expErr) throw expErr;
-        // New cashbook entry
-        const cbType = expForm.payment_mode === 'Cash' ? 'Cash-Out' : (expForm.payment_mode === 'Bank Transfer' || expForm.payment_mode === 'Card / Network' ? 'Bank-Out' : 'Investor-Out');
-        const { data: nC } = await supabase.from('cashbook').insert([{
-          trans_date: expForm.expense_date || today, type: cbType,
-          description: `Expense: ${expForm.vendor_name} (${oldExp?.invoice_no || 'N/A'})`,
-          amount: total, tenant_id: userProfile.tenant_id, reference_id: editExpId
-        }]).select().single();
-        setData(prev => ({
-          ...prev,
-          expenses: prev.expenses.map(ex => ex.id === editExpId ? upExp : ex),
-          cashbook: nC ? [nC, ...prev.cashbook.filter(c => !oldCbs.find(x => x.id === c.id))] : prev.cashbook
-        }));
-        showToast('Expense Updated!'); setEditExpId(null);
-      } else {
-        const expNo = `EXP-${Date.now()}`;
-        const { data: newExp, error: expErr } = await supabase.from('expenses').insert([{
-          invoice_no: expNo, vendor_name: expForm.vendor_name, vendor_vat: expForm.vendor_vat,
-          expense_date: expForm.expense_date, expense_type: expForm.expense_type,
-          item_name: expForm.items.map(i => i.name).join(', '), items: expForm.items,
-          amount: total, description: expForm.desc, payment_mode: expForm.payment_mode,
-          approval_status: userProfile.is_admin ? 'Approved' : 'Pending',
-          tenant_id: userProfile.tenant_id
-        }]).select().single();
-        if (expErr) throw expErr;
-        // Only create cashbook if admin
-        if (userProfile.is_admin) {
-          const cbType = expForm.payment_mode === 'Cash' ? 'Cash-Out' : (expForm.payment_mode === 'Bank Transfer' || expForm.payment_mode === 'Card / Network' ? 'Bank-Out' : 'Investor-Out');
-          const { data: nC, error: cbErr } = await supabase.from('cashbook').insert([{
-            trans_date: expForm.expense_date || today, type: cbType,
-            description: `Expense: ${expForm.vendor_name} (${expNo})`, amount: total,
-            tenant_id: userProfile.tenant_id, reference_id: newExp.id
-          }]).select().single();
-          if (cbErr) throw cbErr;
-          setData(prev => ({ ...prev, expenses: [newExp, ...prev.expenses], cashbook: nC ? [nC, ...prev.cashbook] : prev.cashbook }));
-        } else {
-          setData(prev => ({ ...prev, expenses: [newExp, ...prev.expenses] }));
-        }
-        showToast(userProfile.is_admin ? 'Expense Added!' : 'Expense Submitted for Approval!');
-      }
-      setExpForm({ vendor_name: '', vendor_vat: '', expense_date: today, expense_type: 'Office Supplies', payment_mode: 'Cash', items: [{ name: '', qty: 1, price: 0 }], taxRate: '15', desc: '' });
-    } catch (err) { showToast('Error: ' + err.message); }
-  };
-
-  // ===================== PORTAL =====================
-  const handleAddPortal = async (e) => {
-    e.preventDefault();
-    try {
-      const { data, error } = await supabase.from('portals').insert([{
-        name: portalForm.name, current_balance: parseFloat(portalForm.balance) || 0,
+      const pl = {
+        name: portalForm.name,
+        portal_type: portalForm.portal_type || 'GDS',
+        current_balance: parseFloat(portalForm.current_balance) || 0,
+        initial_balance: parseFloat(portalForm.initial_balance) || 0,
+        phone: portalForm.phone || '',
+        contact_person: portalForm.contact_person || '',
+        credit_limit: parseFloat(portalForm.credit_limit) || 0,
         tenant_id: userProfile.tenant_id
-      }]).select().single();
-      if (error) throw error;
-      setData(prev => ({ ...prev, portals: [...prev.portals, data] }));
-      showToast('Portal Added!');
-      setPortalForm({ name: '', balance: 0 });
+      };
+
+      if (modal.data?.id) {
+        const { data: up, error } = await supabase.from('portals').update(pl).eq('id', modal.data.id).select().single();
+        if (error) throw error;
+        setData(prev => ({ ...prev, portals: prev.portals.map(p => p.id === modal.data.id ? up : p) }));
+        showToast('Portal Updated!');
+      } else {
+        const { data: nP, error } = await supabase.from('portals').insert([pl]).select().single();
+        if (error) throw error;
+        setData(prev => ({ ...prev, portals: [...prev.portals, nP] }));
+        showToast('Portal Added!');
+      }
+      setModal({ type: null, data: null });
+      setPortalForm({ name: '', portal_type: 'GDS', current_balance: 0, initial_balance: 0, phone: '', contact_person: '', credit_limit: 0 });
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
-  const handleRecharge = async (e) => {
-    e.preventDefault();
-    const fd = e.target;
+  const handleTopUpPortal = async (portalId, amount, mode) => {
     try {
-      const portalId = fd.portal.value;
-      const amount = parseFloat(fd.amt.value) || 0;
-      const date = fd.date.value || today;
-      const desc = fd.desc.value || '';
-      const mode = fd.mode.value;
+      const amt = parseFloat(amount) || 0;
+      if (amt <= 0) throw new Error('Enter a valid amount!');
       const portal = data.portals.find(p => p.id === portalId);
-      if (!portal) throw new Error('Select a portal');
-      const newBal = (portal.current_balance || 0) + amount;
-      const { data: upP, error } = await supabase.from('portals').update({ current_balance: newBal }).eq('id', portalId).select().single();
+      if (!portal) throw new Error('Portal not found');
+      const newBal = (portal.current_balance || 0) + amt;
+      const { error } = await supabase.from('portals').update({ current_balance: newBal }).eq('id', portalId);
       if (error) throw error;
       const cbType = mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
-      const { data: nC } = await supabase.from('cashbook').insert([{
-        trans_date: date, type: cbType,
-        description: desc || `Recharge: ${portal.name}`, amount,
-        tenant_id: userProfile.tenant_id
-      }]).select().single();
+      await supabase.from('cashbook').insert([{
+        trans_date: today, type: cbType,
+        description: `Portal Top-up: ${portal.name}`,
+        amount: amt, tenant_id: userProfile.tenant_id, reference_id: portalId
+      }]);
       setData(prev => ({
         ...prev,
-        portals: prev.portals.map(p => p.id === portalId ? upP : p),
-        cashbook: nC ? [nC, ...prev.cashbook] : prev.cashbook
+        portals: prev.portals.map(p => p.id === portalId ? { ...p, current_balance: newBal } : p)
       }));
-      showToast(`Recharged ${amount.toFixed(2)} SAR to ${portal.name}`);
+      await logAction(`Portal top-up ${amt.toFixed(2)} SAR for ${portal.name}`);
+      showToast(`Top-up ${amt.toFixed(2)} SAR to ${portal.name}!`);
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
-  // ===================== INVESTMENTS =====================
-  const handleAddInvestment = async (e) => {
-    e.preventDefault();
-    try {
-      const reason = investForm.reason === 'Other' ? investForm.otherReason : investForm.reason;
-      const cbType = investForm.mode === 'Cash' ? 'Cash-In' : 'Bank-In';
-      const { data: nInv, error } = await supabase.from('investments').insert([{
-        investor_name: investForm.name, amount: parseFloat(investForm.amount) || 0,
-        invest_date: investForm.date || today, reason,
-        description: investForm.desc, tenant_id: userProfile.tenant_id
-      }]).select().single();
-      if (error) throw error;
-      const { data: nC } = await supabase.from('cashbook').insert([{
-        trans_date: investForm.date || today, type: cbType,
-        description: `Investment from ${investForm.name} (${reason})`,
-        amount: parseFloat(investForm.amount) || 0,
-        tenant_id: userProfile.tenant_id
-      }]).select().single();
-      setData(prev => ({
-        ...prev,
-        investments: [nInv, ...prev.investments],
-        cashbook: nC ? [nC, ...prev.cashbook] : prev.cashbook
-      }));
-      showToast('Investment Added!');
-      setInvestForm({ name: '', amount: '', date: today, mode: 'Cash', reason: 'Other', otherReason: '', desc: '' });
-    } catch (err) { showToast('Error: ' + err.message); }
-  };
-
-  // ===================== FUND TRANSFER =====================
+  // ===================== TRANSFERS (Bank ↔ Cash) =====================
   const handleTransfer = async (e) => {
     e.preventDefault();
     try {
-      const { from, to, amount, date } = transferForm;
-      const amt = parseFloat(amount) || 0;
-      if (amt <= 0) throw new Error('Enter a valid amount');
-      if (from === to) throw new Error('From and To cannot be same');
-      const fromType = from === 'Cash' ? 'Cash-Out' : from === 'Bank' ? 'Bank-Out' : 'Investor-Out';
-      const toType = to === 'Cash' ? 'Cash-In' : to === 'Bank' ? 'Bank-In' : 'Investor-In';
-      const { data: outC } = await supabase.from('cashbook').insert([{
-        trans_date: date || today, type: fromType,
-        description: `Transfer from ${from} to ${to}`, amount: amt, tenant_id: userProfile.tenant_id
+      const amt = parseFloat(transferForm.amount) || 0;
+      if (amt <= 0) throw new Error('Enter a valid amount!');
+      const fromType = transferForm.from === 'Cash' ? 'Cash-Out' : 'Bank-Out';
+      const toType = transferForm.to === 'Cash' ? 'Cash-In' : 'Bank-In';
+      const { data: cbFrom } = await supabase.from('cashbook').insert([{
+        trans_date: transferForm.date || today, type: fromType,
+        description: `Transfer to ${transferForm.to}: ${transferForm.description || ''}`,
+        amount: amt, tenant_id: userProfile.tenant_id
       }]).select().single();
-      const { data: inC } = await supabase.from('cashbook').insert([{
-        trans_date: date || today, type: toType,
-        description: `Transfer from ${from} to ${to}`, amount: amt, tenant_id: userProfile.tenant_id
+      const { data: cbTo } = await supabase.from('cashbook').insert([{
+        trans_date: transferForm.date || today, type: toType,
+        description: `Transfer from ${transferForm.from}: ${transferForm.description || ''}`,
+        amount: amt, tenant_id: userProfile.tenant_id
       }]).select().single();
-      setData(prev => ({ ...prev, cashbook: [outC, inC, ...prev.cashbook] }));
-      showToast(`Transferred ${amt.toFixed(2)} SAR: ${from} → ${to}`);
-      setTransferForm({ from: 'Cash', to: 'Bank', amount: '', date: today });
-    } catch (err) { showToast('Error: ' + err.message); }
-  };
-
-  // ===================== SALARY (Smart - Auto Calculates Commission, OT, Mistakes) =====================
-  const handlePaySalary = async (e) => {
-    e.preventDefault();
-    try {
-      const fd = e.target;
-      const empId = fd.emp?.value || payForm.empId;
-      const base = parseFloat(fd.base?.value || payForm.base) || 0;
-      const commPct = parseFloat(fd.comm?.value || payForm.comm) || 0;
-      const advDed = parseFloat(fd.adv_ded?.value || payForm.adv_ded) || 0;
-      const gift = parseFloat(fd.gift?.value || payForm.gift) || 0;
-      const month = fd.month?.value || payForm.month;
-      const mode = fd.mode?.value || payForm.mode;
-
-      const emp = data.employees.find(em => em.id === empId);
-      if (!emp) return showToast('Select an employee!');
-
-      // SMART: Auto-calculate commission from actual sales
-      const empInvoices = data.invoices.filter(i => i.employee_id === empId && !i.invoice_no?.startsWith('REF-') && i.status !== 'Draft');
-      const empSales = empInvoices.reduce((s, i) => s + (i.profit || 0), 0);
-      const commissionAmt = commPct > 0 ? (empSales * commPct / 100) : 0;
-
-      // SMART: Auto-calculate overtime from attendance records
-      const empAtt = data.attendance.filter(a => a.employee_id === empId && a.date?.startsWith(month));
-      const totalOT = empAtt.reduce((s, a) => s + (a.overtime || 0), 0);
-      const hourlyRate = base / 30 / 8;
-      const overtimeAmt = totalOT * hourlyRate;
-
-      // SMART: Auto-calculate mistakes deduction from staff_mistakes table
-      const empMistakes = data.staffMististakes.filter(m => m.employee_id === empId && m.paid_by_employee);
-      const mistakesDed = empMistakes.reduce((s, m) => s + (m.loss_amount || 0), 0);
-
-      const gross = base + commissionAmt + overtimeAmt + gift;
-      const totalDed = advDed + mistakesDed;
-      const netPay = gross - totalDed;
-
-      // Create payroll record
-      const { data: newPay, error } = await supabase from('payroll').insert([{
-        employee_id: empId, month, base_salary: base, commission: commissionAmt,
-        overtime: overtimeAmt, gift, advance_deduction: advDed,
-        mistakes_deduction: mistakesDed, amount: netPay, payment_mode: mode,
-        tenant_id: userProfile.tenant_id
-      }]).select('*, employees(name,role)').single();
-      if (error) throw error;
-
-      // SMART: Auto-mark advances as Returned when salary is paid
-      if (advDed > 0) {
-        const pendingAdvs = data.empAdvances.filter(a => a.employee_id === empId && a.status === 'Pending');
-        let remaining = advDed;
-        for (const adv of pendingAdvs) {
-          if (remaining <= 0) break;
-          const dedAmt = Math.min(adv.amount, remaining);
-          await supabase.from('emp_advances').update({ status: 'Returned', amount_deducted: dedAmt }).eq('id', adv.id);
-          remaining -= dedAmt;
-        }
-      }
-
-      // Cashbook entry
-      const cbType = mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
-      const { data: nC } = await supabase.from('cashbook').insert([{
-        trans_date: today, type: cbType,
-        description: `Salary paid to ${emp.name} for ${month} (Base:${base} + Comm:${commissionAmt.toFixed(2)} + OT:${overtimeAmt.toFixed(2)}${mistakesDed > 0 ? ` - Mistakes:${mistakesDed.toFixed(2)}` : ''})`,
-        amount: netPay, tenant_id: userProfile.tenant_id, reference_id: newPay.id
-      }]).select().single();
-
       setData(prev => ({
         ...prev,
-        payroll: [newPay, ...prev.payroll],
-        cashbook: nC ? [nC, ...prev.cashbook] : prev.cashbook,
-        empAdvances: prev.empAdvances.map(a => a.employee_id === empId ? { ...a, status: remaining <= 0 ? 'Returned' : a.status } : a)
+        cashbook: [cbFrom, cbTo, ...prev.cashbook]
       }));
-
-      await logAction(`Salary ${netPay.toFixed(2)} SAR to ${emp.name} for ${month}`);
-      showToast(`Salary ${netPay.toFixed(2)} SAR → ${emp.name}!`);
+      await logAction(`Transfer ${amt.toFixed(2)} SAR: ${transferForm.from} → ${transferForm.to}`);
+      showToast(`Transferred ${amt.toFixed(2)} SAR from ${transferForm.from} to ${transferForm.to}!`);
+      setTransferForm({ from: 'Cash', to: 'Bank', amount: 0, date: today, description: '' });
+      setModal({ type: null, data: null });
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
-  // ===================== ADVANCES =====================
-  const handleAddAdvance = async (e) => {
+  // ===================== INVESTORS =====================
+  const handleAddEditInvestor = async (e) => {
     e.preventDefault();
-    const fd = e.target;
     try {
-      const { data: nAdv, error } = await supabase.from('emp_advances').insert([{
-        employee_id: fd.emp.value, amount: parseFloat(fd.amt.value) || 0,
-        date: fd.date.value || today, status: 'Pending', tenant_id: userProfile.tenant_id
-      }]).select('*, employees(name)').single();
-      if (error) throw error;
-      setData(prev => ({ ...prev, empAdvances: [nAdv, ...prev.empAdvances] }));
-      showToast('Advance Given!');
-      fd.reset();
+      const pl = {
+        name: investForm.name,
+        phone: investForm.phone || '',
+        email: investForm.email || '',
+        invested_amount: parseFloat(investForm.invested_amount) || 0,
+        profit_share_percent: parseFloat(investForm.profit_share_percent) || 0,
+        tenant_id: userProfile.tenant_id
+      };
+      if (investForm.editId) {
+        const { data: up, error } = await supabase.from('investors').update(pl).eq('id', investForm.editId).select().single();
+        if (error) throw error;
+        setData(prev => ({ ...prev, investors: prev.investors.map(inv => inv.id === investForm.editId ? up : inv) }));
+        showToast('Investor Updated!');
+      } else {
+        const { data: nInv, error } = await supabase.from('investors').insert([pl]).select().single();
+        if (error) throw error;
+        setData(prev => ({ ...prev, investors: [...prev.investors, nInv] }));
+        showToast('Investor Added!');
+      }
+      setInvestForm({ name: '', phone: '', email: '', invested_amount: 0, profit_share_percent: 0, editId: null });
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
-  const handleReturnAdvance = async (adv) => {
+  const handleDeleteInvestor = async (inv) => {
+    if (!confirm('Delete this investor?')) return;
     try {
-      const { error } = await supabase.from('emp_advances').update({ status: 'Returned' }).eq('id', adv.id);
-      if (error) throw error;
-      setData(prev => ({ ...prev, empAdvances: prev.empAdvances.map(a => a.id === adv.id ? { ...a, status: 'Returned' } : a) }));
-      showToast('Advance Marked as Returned!');
+      await supabase.from('investors').delete().eq('id', inv.id);
+      setData(prev => ({ ...prev, investors: prev.investors.filter(i => i.id !== inv.id) }));
+      showToast('Investor Deleted!');
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
   // ===================== USER MANAGEMENT =====================
-  const handleAddUser = async (e) => {
+  const handleAddEditUser = async (e) => {
     e.preventDefault();
     try {
-      const { data, error } = await supabase.from('app_users').insert([{
-        email: userForm.email, username: userForm.username, role: userForm.role,
-        is_admin: userForm.is_admin, can_access_invoices: userForm.can_access_invoices,
-        can_access_bank: userForm.can_access_bank, can_access_hr: userForm.can_access_hr,
-        can_access_reports: userForm.can_access_reports, can_access_settings: userForm.can_access_settings,
+      const pl = {
+        username: userForm.username,
+        email: userForm.email,
+        is_admin: userForm.is_admin || false,
+        can_access_hr: userForm.can_access_hr || false,
+        can_access_bank: userForm.can_access_bank || false,
+        can_access_invoices: userForm.can_access_invoices !== false,
+        can_access_reports: userForm.can_access_reports || false,
+        can_access_settings: userForm.can_access_settings || false,
         tenant_id: userProfile.tenant_id
-      }]).select().single();
-      if (error) throw error;
-      setData(prev => ({ ...prev, appUsers: [data, ...prev.appUsers] }));
-      showToast('User Added! Tell them to set password via login.');
-      setUserForm({ email: '', username: '', role: 'Sales', is_admin: false, can_access_invoices: true, can_access_bank: true, can_access_hr: true, can_access_reports: true, can_access_settings: false });
+      };
+      if (editUserId) {
+        const { data: up, error } = await supabase.from('app_users').update(pl).eq('id', editUserId).select().single();
+        if (error) throw error;
+        setData(prev => ({ ...prev, appUsers: prev.appUsers?.map(u => u.id === editUserId ? up : u) || [] }));
+        showToast('User Updated!');
+        setEditUserId(null);
+      } else {
+        const tempPass = Math.random().toString(36).slice(-8) + 'A1!';
+        const res = await fetch('/api/create-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...pl, temp_password: tempPass })
+        });
+        const resData = await res.json();
+        if (resData.error) throw new Error(resData.error);
+        showToast(`User Created! Email: ${userForm.email} | Pass: ${tempPass}`);
+        fetchAll();
+      }
+      setUserForm({ username: '', email: '', is_admin: false, can_access_hr: false, can_access_bank: false, can_access_invoices: true, can_access_reports: false, can_access_settings: false });
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
   const handleEditUser = (u) => {
     setEditUserId(u.id);
     setUserForm({
-      email: u.email, username: u.username, role: u.role, is_admin: u.is_admin,
-      can_access_invoices: u.can_access_invoices, can_access_bank: u.can_access_bank,
-      can_access_hr: u.can_access_hr, can_access_reports: u.can_access_reports,
-      can_access_settings: u.can_access_settings
+      username: u.username || '', email: u.email || '',
+      is_admin: u.is_admin || false, can_access_hr: u.can_access_hr || false,
+      can_access_bank: u.can_access_bank || false, can_access_invoices: u.can_access_invoices !== false,
+      can_access_reports: u.can_access_reports || false, can_access_settings: u.can_access_settings || false
     });
   };
 
-  const handleUpdateUser = async (e) => {
-    e.preventDefault();
+  const handleDeleteUser = async (u) => {
+    if (!confirm('Delete this user?')) return;
     try {
-      const { data, error } = await supabase.from('app_users').update(userForm).eq('id', editUserId).select().single();
-      if (error) throw error;
-      setData(prev => ({ ...prev, appUsers: prev.appUsers.map(u => u.id === editUserId ? data : u) }));
-      showToast('User Updated!');
-      setEditUserId(null);
-      setUserForm({ email: '', username: '', role: 'Sales', is_admin: false, can_access_invoices: true, can_access_bank: true, can_access_hr: true, can_access_reports: true, can_access_settings: false });
+      await supabase.from('app_users').delete().eq('id', u.id);
+      setData(prev => ({ ...prev, appUsers: prev.appUsers?.filter(au => au.id !== u.id) || [] }));
+      showToast('User Deleted!');
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
+  // ===================== PAYROLL PROCESSING (FIXED - dot added) =====================
+  const handleProcessPayroll = async (e) => {
+    e.preventDefault();
+    try {
+      const empId = payForm.employee_id;
+      if (!empId) throw new Error('Select an employee!');
+      const emp = data.employees.find(em => em.id === empId);
+      if (!emp) throw new Error('Employee not found!');
+
+      const month = payForm.month || today.slice(0, 7);
+      const base = parseFloat(emp.salary) || 0;
+
+      // Calculate commission from paid invoices this month
+      const monthInvoices = data.invoices?.filter(i =>
+        i.employee_id === empId &&
+        i.invoice_date?.startsWith(month) &&
+        i.status !== 'refunded'
+      ) || [];
+      const commissionBase = monthInvoices.reduce((s, i) => s + (i.total_sell || 0), 0);
+      const commissionRate = parseFloat(emp.commission_rate) || 0;
+      const commissionAmt = commissionBase * (commissionRate / 100);
+
+      const overtime = parseFloat(payForm.overtime) || 0;
+      const gift = parseFloat(payForm.gift) || 0;
+      const advance = parseFloat(payForm.advance) || 0;
+      const mistakesDed = parseFloat(payForm.mistakes_deduction) || 0;
+      const otherDed = parseFloat(payForm.other_deduction) || 0;
+      const totalDed = advance + mistakesDed + otherDed;
+      const gross = base + commissionAmt + overtime + gift;
+      const netPay = gross - totalDed;
+
+      // ✅ FIX: Added the missing dot here - supabase.from instead of supabase from
+      const { data: newPay, error } = await supabase.from('payroll').insert([{
+        employee_id: empId, month, base_salary: base, commission: commissionAmt,
+        overtime: overtimeAmt, gift, advance_deduction: advance,
+        mistakes_deduction: mistakesDed, other_deduction: otherDed,
+        gross_salary: gross, total_deductions: totalDed, amount: netPay,
+        payment_mode: payForm.payment_mode || 'Cash', payment_date: payForm.payment_date || today,
+        notes: payForm.notes || '', tenant_id: userProfile.tenant_id
+      }]).select('*, employees(name, role)').single();
+
+      if (error) throw new Error('Payroll failed: ' + error.message);
+
+      // Cashbook entry
+      const cbType = payForm.payment_mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
+      const { data: nCb } = await supabase.from('cashbook').insert([{
+        trans_date: payForm.payment_date || today, type: cbType,
+        description: `Salary - ${emp.name} (${month})`,
+        amount: netPay, tenant_id: userProfile.tenant_id, reference_id: newPay.id
+      }]).select().single();
+
+      setData(prev => ({
+        ...prev,
+        payroll: [newPay, ...(prev.payroll || [])],
+        cashbook: nCb ? [nCb, ...prev.cashbook] : prev.cashbook
+      }));
+
+      await logAction(`Payroll: ${emp.name} - ${netPay.toFixed(2)} SAR (${month})`);
+      showToast(`Salary Processed: ${emp.name} - ${netPay.toFixed(2)} SAR`);
+
+      setPayForm({
+        employee_id: '', month: today.slice(0, 7),
+        overtime: 0, gift: 0, advance: 0,
+        mistakes_deduction: 0, other_deduction: 0,
+        payment_mode: 'Cash', payment_date: today, notes: ''
+      });
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+
+  // ===================== BULK ACTIONS (Advanced Feature) =====================
+  const handleBulkDeleteInvoices = async (ids) => {
+    if (!confirm(`Delete ${ids.length} invoices permanently?`)) return;
+    try {
+      for (const id of ids) {
+        const inv = data.invoices.find(i => i.id === id);
+        if (inv) {
+          // Restore portal balance
+          if (inv.portal_id) {
+            const portal = data.portals.find(p => p.id === inv.portal_id);
+            if (portal) {
+              const nb = (portal.current_balance || 0) + (inv.total_cost || 0);
+              await supabase.from('portals').update({ current_balance: nb }).eq('id', inv.portal_id);
+            }
+          }
+          // Delete cashbook entries
+          const cbs = data.cashbook.filter(c => c.reference_id === inv.id);
+          for (const cb of cbs) await supabase.from('cashbook').delete().eq('id', cb.id);
+          await supabase.from('invoices').delete().eq('id', id);
+        }
+      }
+      await fetchAll();
+      showToast(`${ids.length} invoices deleted!`);
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+
+  const handleBulkSettle = async (ids) => {
+    if (!confirm(`Settle ${ids.length} invoices?`)) return;
+    try {
+      for (const id of ids) {
+        const inv = data.invoices.find(i => i.id === id);
+        if (inv && inv.due_amount > 0) {
+          await supabase.from('invoices').update({
+            paid_amount: inv.total, due_amount: 0, status: 'Paid'
+          }).eq('id', id);
+          await supabase.from('cashbook').insert([{
+            trans_date: today, type: 'Cash-In',
+            description: `Bulk settlement for ${inv.invoice_no}`,
+            amount: inv.due_amount, tenant_id: userProfile.tenant_id, reference_id: id
+          }]);
+        }
+      }
+      await fetchAll();
+      showToast(`${ids.length} invoices settled!`);
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+
+  // ===================== EXPORT DATA (Advanced Feature) =====================
+  const handleExportCSV = (dataType) => {
+    try {
+      let csvContent = '';
+      let filename = '';
+
+      switch (dataType) {
+        case 'invoices':
+          csvContent = 'Invoice No,Date,Customer,Airline,Total,Status,Payment\n';
+          data.invoices?.forEach(inv => {
+            csvContent += `${inv.invoice_no},${inv.invoice_date},${inv.customers?.name || inv.old_customer_name || ''},${inv.airline || ''},${inv.total || 0},${inv.status},${inv.payment_method}\n`;
+          });
+          filename = 'invoices.csv';
+          break;
+        case 'customers':
+          csvContent = 'Name,Phone,Credit Balance\n';
+          data.customers?.forEach(c => {
+            csvContent += `${c.name},${c.phone || ''},${c.store_credit || 0}\n`;
+          });
+          filename = 'customers.csv';
+          break;
+        case 'expenses':
+          csvContent = 'Date,Category,Description,Amount,Payment Mode\n';
+          data.expenses?.forEach(ex => {
+            csvContent += `${ex.expense_date},${ex.category},${ex.description || ''},${ex.total_amount || 0},${ex.payment_mode}\n`;
+          });
+          filename = 'expenses.csv';
+          break;
+        case 'cashbook':
+          csvContent = 'Date,Type,Description,Amount\n';
+          data.cashbook?.forEach(cb => {
+            csvContent += `${cb.trans_date},${cb.type},${cb.description || ''},${cb.amount || 0}\n`;
+          });
+          filename = 'cashbook.csv';
+          break;
+        default:
+          return showToast('Invalid export type!');
+      }
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      showToast(`${filename} exported!`);
+    } catch (err) { showToast('Export Error: ' + err.message); }
+  };
+
+  // ===================== CLONE INVOICE (Advanced Feature) =====================
+  const handleCloneInvoice = (inv) => {
+    if (inv.invoice_no?.startsWith('REF-')) return showToast('Cannot clone refund invoices!');
+    setEditInvId(null);
+    const custObj = inv.customer_id ? data.customers.find(c => c.id === inv.customer_id) : null;
+    setInvForm({
+      custType: inv.customer_id ? 'Individual' : 'Corporate',
+      custId: inv.customer_id || 'new', custName: custObj?.name || '', custPhone: custObj?.phone || '',
+      corpId: inv.corporate_id || 'new', corpName: inv.corporates?.name || '', corpVat: '', corpPhone: '', corpAddress: '',
+      portalId: inv.portal_id, service: inv.service_type,
+      flightType: inv.flight_type || 'Domestic', flightJourney: inv.flight_journey || 'Single',
+      refundable: inv.refundable_status || 'Refundable', bookingType: 'New Booking',
+      linkedInvId: '', oldTicketNo: '', oldPnr: '', oldAirline: '', oldSector: '',
+      oldSellPrice: 0, oldBookingDate: '', oldPassengers: '', oldFlightType: '',
+      oldPaymentMethod: '', refundReason: '',
+      flightSector: inv.flight_sector || '', airline: inv.airline || '', pnr: '',
+      ticketNo: '', qty: inv.qty || 1,
+      cost: (inv.total_cost || 0) / (inv.qty || 1),
+      sell: ((inv.total_sell || 0) + (inv.discount || 0)) / (inv.qty || 1),
+      discount: 0, taxRate: inv.vat > 0 ? '15' : '0',
+      payment: 'Cash', paid: '', creditDueDate: '', creditorId: '',
+      tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed',
+      useCredit: 0, creditCustId: '', status: 'Unpaid',
+      passengers: inv.passenger_names?.split('\n') || [''],
+      bookingDate: today, invoiceDate: today, destination: '', hotelName: '',
+      checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: ''
+    });
+    state.setPage('create');
+    showToast('Invoice cloned! Modify and save.');
+  };
+
+  // ===================== QUICK STATS (Advanced Feature) =====================
+  const getQuickStats = () => {
+    const todayStr = today;
+    const thisMonth = today.slice(0, 7);
+    const invoices = data.invoices || [];
+
+    const todayInv = invoices.filter(i => i.invoice_date === todayStr && !i.invoice_no?.startsWith('REF-'));
+    const monthInv = invoices.filter(i => i.invoice_date?.startsWith(thisMonth) && !i.invoice_no?.startsWith('REF-'));
+    const unpaidInv = invoices.filter(i => i.status === 'Unpaid' && !i.invoice_no?.startsWith('REF-'));
+
+    return {
+      todayRevenue: todayInv.reduce((s, i) => s + (i.total || 0), 0),
+      todayProfit: todayInv.reduce((s, i) => s + (i.profit || 0), 0),
+      todayCount: todayInv.length,
+      monthRevenue: monthInv.reduce((s, i) => s + (i.total || 0), 0),
+      monthProfit: monthInv.reduce((s, i) => s + (i.profit || 0), 0),
+      monthCount: monthInv.length,
+      totalUnpaid: unpaidInv.reduce((s, i) => s + (i.due_amount || 0), 0),
+      unpaidCount: unpaidInv.length,
+      totalExpenses: (data.expenses || []).reduce((s, e) => s + (e.total_amount || 0), 0),
+      netProfit: monthInv.reduce((s, i) => s + (i.profit || 0), 0) - (data.expenses || []).filter(e => e.expense_date?.startsWith(thisMonth)).reduce((s, e) => s + (e.total_amount || 0), 0),
+      portalBalances: (data.portals || []).reduce((s, p) => s + (p.current_balance || 0), 0)
+    };
+  };
+
+  // ===================== RETURN ALL ACTIONS =====================
   return {
-    // Auth
     handleLogout, handleChangePassword,
-    // Chat
     handleSendMessage,
-    // Custom fields
     handleAddCustomField, handleRemoveCustomField, handleCustomFieldChange,
-    // Profile
     handleProfilePicUpload, handleSaveProfile,
-    // Settings
     handleLogoUpload, handleSaveSettings,
-    // Tenant
     handleAddTenant, handleToggleSubscription, handleDeleteTenant,
-    // PDF & Print
     downloadPDF, handleDownloadPDF, printInvoice,
-    // Share
     shareWhatsApp, shareEmail,
-    // Contract/Offer
     handleGenerateContract, handleGenerateOffer,
-    // Preview & Modals
     openPreview, openRefundModal, openSettleModal, handleQuickSettle,
-    // Settle & Refund
     handleSettlePayment, handleRefund,
-    // Mistakes
     handleAddMistake, handlePreviewMistake, handleDeleteMistake,
-    // Salary Slip
     handleGenerateSlip, handleDeletePayroll,
-    // Invoices
     handleEditInvoice, handleCreateInvoice, handleDeleteInvoice,
-    // Generic delete
     handleDelete,
-    // CRUD
-    handleAddEditCust, handleEditCust, handleAddEditCorp, handleEditCorp, handleAddEditCred, handleEditCred,
-    handleAddEditVend, handleEditVend, handleAddEditPkg, handleEditPkg, handleAddEditBrn, handleEditBrn,
-    handleAddEditEmp, handleEditEmp, handleAddEditSrv, handleEditSrv,
-    // Expenses
-    handleAddExpItem, handleRemoveExpItem, handleExpItemChange, handleEditExpense, handleDeleteExpense, handlePreviewExpense, handleAddExpense,
-    // Finance
-    handleAddPortal, handleRecharge, handleAddInvestment, handleTransfer,
-    // HR
-    handlePaySalary, handleAddAdvance, handleReturnAdvance,
-    // Users
-    handleAddUser, handleEditUser, handleUpdateUser
+    handleEditCust, handleAddEditCust,
+    handleEditCorp, handleAddEditCorp,
+    handleEditCred, handleAddEditCred,
+    handleEditVend, handleAddEditVend,
+    handleEditPkg, handleAddEditPkg,
+    handleEditBrn, handleAddEditBrn,
+    handleEditEmp, handleAddEditEmp,
+    handleEditSrv, handleAddEditSrv,
+    handleAddExpItem, handleRemoveExpItem, handleExpItemChange,
+    handleEditExp, handleAddEditExpense, handleDeleteExpense,
+    handleEditPortal, handleAddEditPortal, handleTopUpPortal,
+    handleTransfer,
+    handleAddEditInvestor, handleDeleteInvestor,
+    handleAddEditUser, handleEditUser, handleDeleteUser,
+    handleProcessPayroll,
+    handleBulkDeleteInvoices, handleBulkSettle,
+    handleExportCSV, handleCloneInvoice, getQuickStats
   };
 }
