@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
@@ -59,7 +59,7 @@ const getSalarySlipHTML = (pay, s) => {
 const getMistakeHTML = (m, s) => {
   const st = s || {};
   const vno = `MST-${m.id?.substring(0,8)||'N/A'}`;
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Mistake ${vno}</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',sans-serif;background:#fff;color:#1e293b}.v{max-width:210mm;margin:auto;border:1px solid #e2e8f0;border-top:10px solid #B91C1C;min-height:1120px;display:flex;flex-direction:column}.hdr{background:linear-gradient(135deg,#0F172A,#1E3A8B);color:#fff;padding:30px;display:flex;justify-content:space-between;align-items:center}.hdr h1{font-size:20px;font-weight:800;color:#FBBF24;margin:0}.vi{text-align:right}.vi h3{color:#FBBF24;font-size:20px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin:0}.vi p{font-size:12px;color:#c7d2fe;margin:3px 0 0}.body{padding:30px;flex:1}.eg{display:grid;grid-template-columns:1fr 1fr;gap:18px;background:#F8FAFC;padding:20px;border-radius:10px;border:1px solid #E2E8F0;margin-bottom:24px}.eg p{font-size:13px;margin:5px 0}.eg .l{color:#64748b;font-weight:500}.loss{background:linear-gradient(135deg,#EF4444,#B91C1C);color:#fff;padding:20px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;margin-top:18px}.loss h3{margin:0;text-transform:uppercase;font-size:15px}.loss .amt{font-size:28px;font-weight:800;margin:0}.note{margin-top:18px;font-size:13px;color:#334155;padding:18px;background:#FEF2F2;border-radius:8px;border:1px solid #FECACA}.ft{text-align:center;padding:20px;background:#F8FAFC;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;margin-top:auto}@media print{body{background:#fff;padding:0;margin:0}.v{border:none;max-width:100%;border-top:none}}</style></head><body><div class="v"><div class="hdr"><div><h1>${st.company_name_en||'SUEUD AL TAAYIRA'}</h1></div><div class="vi"><h3>Loss Voucher</h3><p>Voucher: ${vno} | Date: ${m.date}</p></div></div><div class="body"><div class="eg"><div><p><span class="l">Employee:</span> <strong>${m.employees?.name||'N/A'}</strong></p><p><span class="l">Role:</span> ${m.employees?.role||'N/A'}</p></div><div style="text-align:right"><p><span class="l">Old Ticket:</span> ${m.old_ticket_no||'N/A'}</p><p><span class="l">New Ticket:</span> ${m.new_ticket_no||'N/A'}</p></div></div><div class="loss"><h3>Total Loss</h3><p class="amt">${(m.loss_amount||0).toFixed(2)} SAR</p></div><div class="note"><strong>Status:</strong> ${m.paid_by_employee?'Will be deducted from salary.':'Absorbed by company.'}</div></div><div class="ft"><p>Computer-generated. © ${new Date().getFullYear()} ${st.company_name_en||'SUEUD AL TAAYIRA'}</p></div></div></body></html>`;
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Mistake ${vno}</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',sans-serif;background:#fff;color:#1e293b}.v{max-width:210mm;margin:auto;border:1px solid #e2e8f0;border-top:10px solid #B91C1C;min-height:1120px;display:flex;flex-direction:column}.hdr{background:linear-gradient(135deg,#0F172A,#1E293B);color:#fff;padding:30px;display:flex;justify-content:space-between;align-items:center}.hdr h1{font-size:20px;font-weight:800;color:#FBBF24;margin:0}.vi{text-align:right}.vi h3{color:#FBBF24;font-size:20px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin:0}.vi p{font-size:12px;color:#c7d2fe;margin:3px 0 0}.body{padding:30px;flex:1}.eg{display:grid;grid-template-columns:1fr 1fr;gap:18px;background:#F8FAFC;padding:20px;border-radius:10px;border:1px solid #E2E8F0;margin-bottom:24px}.eg p{font-size:13px;margin:5px 0}.eg .l{color:#64748b;font-weight:500}.loss{background:linear-gradient(135deg,#EF4444,#B91C1C);color:#fff;padding:20px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;margin-top:18px}.loss h3{margin:0;text-transform:uppercase;font-size:15px}.loss .amt{font-size:28px;font-weight:800;margin:0}.note{margin-top:18px;font-size:13px;color:#334155;padding:18px;background:#FEF2F2;border-radius:8px;border:1px solid #FECACA}.ft{text-align:center;padding:20px;background:#F8FAFC;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;margin-top:auto}@media print{body{background:#fff;padding:0;margin:0}.v{border:none;max-width:100%;border-top:none}}</style></head><body><div class="v"><div class="hdr"><div><h1>${st.company_name_en||'SUEUD AL TAAYIRA'}</h1></div><div class="vi"><h3>Loss Voucher</h3><p>Voucher: ${vno} | Date: ${m.date}</p></div></div><div class="body"><div class="eg"><div><p><span class="l">Employee:</span> <strong>${m.employees?.name||'N/A'}</strong></p><p><span class="l">Role:</span> ${m.employees?.role||'N/A'}</p></div><div style="text-align:right"><p><span class="l">Old Ticket:</span> ${m.old_ticket_no||'N/A'}</p><p><span class="l">New Ticket:</span> ${m.new_ticket_no||'N/A'}</p></div></div><div class="loss"><h3>Total Loss</h3><p class="amt">${(m.loss_amount||0).toFixed(2)} SAR</p></div><div class="note"><strong>Status:</strong> ${m.paid_by_employee?'Will be deducted from salary.':'Absorbed by company.'}</div></div><div class="ft"><p>Computer-generated. © ${new Date().getFullYear()} ${st.company_name_en||'SUEUD AL TAAYIRA'}</p></div></div></body></html>`;
 };
 
 const getContractHTML = (s, name, date, isOffer, type, markup, terms) => {
@@ -95,7 +95,6 @@ export default function useERPState() {
   const router = useRouter();
   const today = new Date().toISOString().split('T')[0];
   const initDone = useRef(false);
-
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -114,7 +113,6 @@ export default function useERPState() {
   const [repDate, setRepDate] = useState({ from: '', to: '' });
   const [reportTab, setReportTab] = useState('sales');
   const [data, setData] = useState({ invoices:[], customers:[], corporates:[], creditors:[], vendors:[], packages:[], branches:[], portals:[], employees:[], services:[], expenses:[], investments:[], cashbook:[], payroll:[], empAdvances:[], staffMistakes:[], attendance:[], appUsers:[], tenants:[], audits:[], settings:{} });
-  
   const [invForm, setInvForm] = useState({ custType:'Individual', custId:'new', custName:'', custPhone:'', corpId:'new', corpName:'', corpVat:'', corpPhone:'', corpAddress:'', passengers:[''], employeeId:'', portalId:'', bookingDate:today, invoiceDate:today, bookingType:'New Booking', linkedInvId:'', oldTicketNo:'', oldPnr:'', oldAirline:'', oldSector:'', oldSellPrice:0, oldBookingDate:'', oldPassengers:'', oldFlightType:'', oldPaymentMethod:'', refundReason:'', service:'Flight Ticket', flightType:'Domestic', flightJourney:'Single', refundable:'Refundable', flightSector:'', airline:'', destination:'', hotelName:'', checkIn:'', checkOut:'', visaType:'Tourist', serviceName:'', pnr:'', ticketNo:'', qty:1, cost:0, sell:0, discount:0, taxRate:'15', payment:'Cash', paid:'', creditDueDate:'', creditorId:'', tabbyNo:'', tamaraNo:'', ticketStatus:'Confirmed', useCredit:0, creditCustId:'', status:'Unpaid' });
   const [editInvId, setEditInvId] = useState(null);
   const [expForm, setExpForm] = useState({ date:today, category:'General', description:'', payment_mode:'Cash', portal_id:'', items:[{ name:'', amount:0, category:'General' }] });
@@ -151,8 +149,6 @@ export default function useERPState() {
   const [contractType, setContractType] = useState('Flight Tickets');
   const [contractMarkup, setContractMarkup] = useState(0);
   const [contractTerms, setContractTerms] = useState('');
-
-  const t = useMemo(() => translations[lang] || translations.en, [lang]);
 
   const showToast = useCallback((msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); }, []);
   const logAction = useCallback(async (action) => { try { if (userProfile?.tenant_id) await supabase.from('audits').insert([{ action, user_id: userProfile.id, tenant_id: userProfile.tenant_id, created_at: new Date().toISOString() }]); } catch (e) { console.warn('Audit:', e.message); } }, [userProfile]);
@@ -214,7 +210,7 @@ export default function useERPState() {
 
   return {
     user, setUser, userProfile, setUserProfile, loading, setLoading, initError,
-    lang, setLang, t, page, setPage, modal, setModal, toast, setToast, showToast,
+    lang, setLang, page, setPage, modal, setModal, toast, setToast, showToast,
     chatOpen, setChatOpen, chatMessages, setChatMessages, chatInput, setChatInput,
     search, setSearch, tblPage, setTblPage, payFilter, setPayFilter,
     previewHTML, setPreviewHTML, repDate, setRepDate, reportTab, setReportTab,
@@ -229,20 +225,15 @@ export default function useERPState() {
     brnForm, setBrnForm, editBrnId, setEditBrnId,
     empForm, setEmpForm, editEmpId, setEditEmpId,
     srvForm, setSrvForm, editSrvId, setEditSrvId,
-    investForm, setInvestForm,
-    portalForm, setPortalForm,
-    settleForm, setSettleForm,
-    refundForm, setRefundForm,
-    transferForm, setTransferForm,
-    passForm, setPassForm,
+    investForm, setInvestForm, portalForm, setPortalForm,
+    settleForm, setSettleForm, refundForm, setRefundForm,
+    transferForm, setTransferForm, passForm, setPassForm,
     userForm, setUserForm, editUserId, setEditUserId,
-    tenantForm, setTenantForm,
-    profileForm, setProfileForm,
-    setForm, setSetForm,
-    payForm, setPayForm,
-    contractCorpName, setContractCorpName, contractType, setContractType, contractMarkup, setContractMarkup, contractTerms, setContractTerms,
-    today, router,
-    getInvoiceHTML, getRefundHTML, getExpenseHTML, getSalarySlipHTML, getMistakeHTML, getContractHTML,
-    filterData, exportToExcel
+    tenantForm, setTenantForm, profileForm, setProfileForm,
+    setForm, setSetForm, payForm, setPayForm,
+    contractCorpName, setContractCorpName, contractType, setContractType,
+    contractMarkup, setContractMarkup, contractTerms, setContractTerms,
+    today, router, tr: translations[lang] || translations.en,
+    filterData, exportToExcel,
+    getInvoiceHTML, getRefundHTML, getExpenseHTML, getSalarySlipHTML, getContractHTML, getMistakeHTML
   };
-}
