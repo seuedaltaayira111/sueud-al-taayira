@@ -3,13 +3,11 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
-// ==================== TRANSLATIONS ====================
 const translations = {
   en: { dashboard:'Dashboard', create:'Create Invoice', list:'Invoices', refunds:'Refunds', customers:'Customers', corporates:'Corporates', creditors:'Creditors', credit:'Credit Balances', vendors:'Vendors', packages:'Packages', branches:'Branches', portals:'Portals', bank:'Bank & Cash', invest:'Investors', hr:'Human Resources', users:'Users', settings:'Settings', reports:'Reports', audit:'Audit Logs', statements:'Statements', contract:'Corporate Contract', offer:'Corporate Offer', superadmin:'SuperAdmin', profile:'Profile', profitability:'Profitability', notifications:'Notifications', ai_dashboard:'AI Dashboard', quotations:'Quotations', hr_advanced:'HR & Payroll', ai_pricing:'AI Pricing', my_attendance:'My Attendance', credit_limits:'Credit Limits', customer_statement:'Customer Statement', refund_statement:'Refund Statement', supplier_statement:'Supplier Statement', multi_branch:'Multi-Branch', recurring_invoices:'Recurring Invoices', expense_approval:'Expense Approval', staff_mistakes:'Staff Mistakes', expenses:'Expenses', editInvoice:'Edit Invoice', generateInvoice:'Generate Invoice', updateInvoice:'Update Invoice', custType:'Customer Type', individual:'Individual', corporate:'Corporate', selectCustomer:'Select Customer', customerPhone:'Customer Phone', passengers:'Passengers', addPassenger:'+ Add Passenger', portal:'Portal', service:'Service', flightTicket:'Flight Ticket', hotel:'Hotel Booking', tourPackage:'Tour Package', visitVisa:'Visit Visa', umrahVisa:'Umrah Visa', newService:'New Service', flightType:'Flight Type', domestic:'Domestic', international:'International', airline:'Airline', sector:'Sector', pnr:'PNR', ticketNo:'Ticket No', qty:'Quantity', cost:'Cost', sell:'Sell', discount:'Discount', vatRate:'VAT Rate', invoiceDate:'Invoice Date', bookingType:'Booking Type', newBooking:'New Booking', reissue:'Reissue', extraLuggage:'Extra Luggage', previousBooking:'Previous Booking', salesPerson:'Sales Person', paymentMethod:'Payment Method', cash:'Cash', bankTransfer:'Bank Transfer', card:'Card / Network', credit:'Credit', creditBalance:'Credit Balance', tabby:'Tabby', tamara:'Tamara', paidAmount:'Paid Amount', invNo:'Inv No', total:'Total', due:'Due', method:'Method', actions:'Actions', preview:'Preview', print:'Print', edit:'Edit', delete:'Delete', refund:'Refund', quickSettle:'Settle', download_excel:'Export Excel', save:'Save', add:'Add', search:'Search...', changePass:'Change Password', logout:'Logout', selectEmployee:'Select Employee', attendanceDate:'Date', status:'Status', present:'Present', leave:'Leave', absent:'Absent', checkInTime:'Check-In', checkOutTime:'Check-Out', overtime:'OT', deduction:'Deduction', mark:'Mark', baseSalary:'Base Salary', commission:'Commission %', advDed:'Adv. Deduct', gift:'Gift/Bonus', month:'Month', mode:'Mode', paySalary:'Pay Salary', generateSlip:'Generate Slip', target:'Target (SAR)', achieved:'Achieved', percentage:'%', balance:'Balance' },
   ar: { dashboard:'لوحة التحكم', create:'إنشاء فاتورة', list:'الفواتير', refunds:'الاسترجاعات', customers:'العملاء', corporates:'الشركات', creditors:'الدائنون', credit:'أرصدة مستحقة', vendors:'الموردون', packages:'الباقات', branches:'الفروع', portals:'البوابات', bank:'البنك والصندوق', invest:'المستثمرون', hr:'الموارد البشرية', users:'المستخدمون', settings:'الإعدادات', reports:'التقارير', audit:'سجل التدقيق', statements:'كشوفات', contract:'عقد شركات', offer:'عرض شركات', superadmin:'المدير العام', profile:'الملف الشخصي', profitability:'الربحية', notifications:'الإشعارات', ai_dashboard:'لوحة ذكية', quotations:'عروض أسعار', hr_advanced:'الرواتب', ai_pricing:'تسعير ذكي', my_attendance:'حضوري', credit_limits:'حدود الائتمان', customer_statement:'كشف عميل', refund_statement:'كشف استرجاع', supplier_statement:'كشف مورد', multi_branch:'متعدد الفروع', recurring_invoices:'فواتير متكررة', expense_approval:'اعتماد مصروفات', staff_mistakes:'أخطاء الموظفين', expenses:'المصروفات', editInvoice:'تعديل الفاتورة', generateInvoice:'إنشاء الفاتورة', updateInvoice:'تحديث الفاتورة', custType:'نوع العميل', individual:'فرد', corporate:'شركة', selectCustomer:'اختر العميل', customerPhone:'هاتف العميل', passengers:'الركاب', addPassenger:'+ إضافة راكب', portal:'البوابة', service:'الخدمة', flightTicket:'تذكرة طيران', hotel:'حجز فندق', tourPackage:'باقة سياحية', visitVisa:'تأشيرة زيارة', umrahVisa:'تأشيرة عمرة', newService:'خدمة جديدة', flightType:'نوع الرحلة', domestic:'داخلي', international:'دولي', airline:'خط الطيران', sector:'القطاع', pnr:'رقم الحجز', ticketNo:'رقم التذكرة', qty:'الكمية', cost:'التكلفة', sell:'البيع', discount:'الخصم', vatRate:'نسبة الضريبة', invoiceDate:'تاريخ الفاتورة', bookingType:'نوع الحجز', newBooking:'حجز جديد', reissue:'إعادة إصدار', extraLuggage:'أمتعة إضافية', previousBooking:'حجز سابق', salesPerson:'موظف المبيعات', paymentMethod:'طريقة الدفع', cash:'نقداً', bankTransfer:'تحويل بنكي', card:'بطاقة', credit:'آجل', creditBalance:'رصيد مستحق', tabby:'تابي', tamara:'تمارة', paidAmount:'المبلغ المدفوع', invNo:'رقم الفاتورة', total:'الإجمالي', due:'المتبقي', method:'الطريقة', actions:'إجراءات', preview:'معاينة', print:'طباعة', edit:'تعديل', delete:'حذف', refund:'استرجاع', quickSettle:'تسوية', download_excel:'تصدير', save:'حفظ', add:'إضافة', search:'بحث...', changePass:'تغيير كلمة المرور', logout:'تسجيل خروج', selectEmployee:'اختر الموظف', attendanceDate:'التاريخ', status:'الحالة', present:'حاضر', leave:'إجازة', absent:'غائب', checkInTime:'وقت الحضور', checkOutTime:'وقت الانصراف', overtime:'إضافي', deduction:'خصم', mark:'تسجيل', baseSalary:'الراتب الأساسي', commission:'العمولة %', advDed:'خصم سلفة', gift:'هدية/مكافأة', month:'الشهر', mode:'الطريقة', paySalary:'دفع الراتب', generateSlip:'إنشاء قسيمة', target:'الهدف (ريال)', achieved:'المحقق', percentage:'%', balance:'الرصيد' }
 };
 
-// ==================== HTML GENERATORS ====================
 const getInvoiceHTML = (inv, s, lang = 'en') => {
   const st = s || {};
   const no = inv.invoice_no || 'N/A';
@@ -68,10 +66,9 @@ const getContractHTML = (s, name, date, isOffer, type, markup, terms) => {
   const st = s || {};
   const dt = isOffer ? 'OFFER' : 'CONTRACT';
   const tl = terms ? terms.split('\n').filter(t=>t.trim()).map(t=>`<li style="margin-bottom:10px;font-size:14px;color:#334155">${t.trim()}</li>`).join('') : '<li style="margin-bottom:10px;font-size:14px;color:#334155">Standard terms apply.</li>';
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${dt} - ${name}</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',sans-serif;background:#f0f4f8;padding:30px;color:#1e293b}.doc{max-width:210mm;margin:auto;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,0.1);padding:50px;border-radius:14px;border-top:10px solid #1E3A8A}.hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:35px;border-bottom:2px solid #e2e8f0;padding-bottom:18px}.hdr h1{font-size:28px;font-weight:800;color:#0F172A;text-transform:uppercase;letter-spacing:1px;margin:0}.hdr .lb{text-align:right}.hdr .lb h2{font-size:18px;font-weight:800;color:#1E3A8A;margin:0}.hdr .lb p{font-size:11px;color:#64748b;margin:4px 0 0}.mb{background:#F8FAFC;padding:20px;border-radius:10px;border-left:5px solid #FBBF24;margin-bottom:25px;display:grid;grid-template-columns:1fr 1fr;gap:18px}.mi p{font-size:13px;margin:5px 0}.mi .l{color:#64748b;font-weight:500;display:block;font-size:11px;text-transform:uppercase}.mi .v{color:#0F172A;font-weight:700;font-size:15px}.sec{margin-bottom:35px}.sec h2{font-size:20px;font-weight:700;color:#1E3A8A;margin-bottom:14px;border-left:4px solid #1E3A8A;padding-left:10px}.terms ul{padding-left:22px;list-style-type:square}.sg{display:grid;grid-template-columns:1fr 1fr;gap:35px;margin-top:50px}.sb{text-align:center}.sl{border-top:2px solid #0F172A;margin-bottom:10px;width:75%;margin-left:auto;margin-right:auto}.sb p{font-size:13px;color:#64748b;font-weight:600;margin:0}.ftr{margin-top:40px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:18px}@media print{body{background:#fff;padding:0}.doc{box-shadow:none;margin:0;max-width:100%;border-radius:0;border:none}}</style></head><body><div class="doc"><div class="hdr"><div><h1>${dt}</h1><p style="font-size:13px;color:#64748b;margin:5px 0 0">Date: ${date}</p></div><div class="lb"><h2>${st.company_name_en||'SUEUD AL TAAYIRA'}</h2><p>${st.company_name_ar||'صعود الطائرة'}</p><p>${st.phone||''}</p></div></div><div class="mb"><div class="mi"><span class="l">Client</span><span class="v">${name}</span></div><div class="mi"><span class="l">Service Type</span><span class="v">${type}</span></div><div class="mi"><span class="l">Fee / Markup</span><span class="v">${parseFloat(markup||0).toFixed(2)} SAR</span></div><div class="mi"><span class="l">Validity</span><span class="v">30 Days</span></div></div><div class="sec"><h2>Terms & Conditions</h2><div class="terms"><ul>${tl}</ul></div></div><div class="sg"><div class="sb"><div class="sl"></div><p>Authorized Signatory</p><p style="font-size:11px;color:#94a3b8">${st.company_name_en||'SUEUD AL TAAYIRA'}</p></div><div class="sb"><div class="sl"></div><p>Client Acceptance</p><p style="font-size:11px;color:#94a3b8">${name}</p></div></div><div class="ftr"><p>© ${new Date().getFullYear()} ${st.company_name_en||'SUEUD AL TAAYIRA'}. All rights reserved.</p></div></div></body></html>`;
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${dt} - ${name}</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',sans-serif;background:#f0f4f8;padding:30px;color:#1e293b}.doc{max-width:210mm;margin:auto;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,0.1);padding:50px;border-radius:14px;border-top:10px solid #1E3A8A}.hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:35px;border-bottom:2px solid #e2e8f0;padding-bottom:18px}.hdr h1{font-size:28px;font-weight:800;color:#0F172A;text-transform:uppercase;letter-spacing:1px;margin:0}.hdr .lb{text-align:right}.hdr .lb h2{font-size:18px;font-weight:800;color:#1E3A8A;margin:0}.hdr .lb p{font-size:11px;color:#64748b;margin:4px 0 0}.mb{background:#F8FAFC;padding:20px;border-radius:10px;border-left:5px solid #FBBF24;margin-bottom:25px;display:grid;grid-template-columns:1fr 1fr;gap:18px}.mi p{font-size:13px;margin:5px 0}.mi .l{color:#64748b;font-weight:500;display:block;font-size:11px;text-transform:uppercase}.mi .v{color:#0F172A;font-weight:700;font-size:15px}.sec{margin-bottom:35px}.sec h2{font-size:20px;font-weight:700;color:#1E3A8A;margin-bottom:14px;border-left:4px solid #1E3A8A;padding-left:10px}.terms ul{padding-left:22px;list-style-type:square}.sg{display:grid;grid-template-columns:1fr 1fr;gap:35px;margin-top:50px}.sb{text-align:center}.sl{border-top:2px solid #0F172A;margin-bottom:10px;width:75%;margin-left:auto;margin-right:auto}.sl p{font-size:13px;color:#64748b;font-weight:600;margin:0}.ftr{margin-top:40px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:18px}@media print{body{background:#fff;padding:0}.doc{box-shadow:none;margin:0;max-width:100%;border-radius:0;border:none}}</style></head><body><div class="doc"><div class="hdr"><div><h1>${dt}</h1><p style="font-size:13px;color:#64748b;margin:5px 0 0">Date: ${date}</p></div><div class="lb"><h2>${st.company_name_en||'SUEUD AL TAAYIRA'}</h2><p>${st.company_name_ar||'صعود الطائرة'}</p><p>${st.phone||''}</p></div></div><div class="mb"><div class="mi"><span class="l">Client</span><span class="v">${name}</span></div><div class="mi"><span class="l">Service Type</span><span class="v">${type}</span></div><div class="mi"><span class="l">Fee / Markup</span><span class="v">${parseFloat(markup||0).toFixed(2)} SAR</span></div><div class="mi"><span class="l">Validity</span><span class="v">30 Days</span></div></div><div class="sec"><h2>Terms & Conditions</h2><div class="terms"><ul>${tl}</ul></div></div><div class="sg"><div class="sb"><div class="sl"></div><p>Authorized Signatory</p><p style="font-size:11px;color:#94a3b8">${st.company_name_en||'SUEUD AL TAAYIRA'}</p></div><div class="sb"><div class="sl"></div><p>Client Acceptance</p><p style="font-size:11px;color:#94a3b8">${name}</p></div></div><div class="ftr"><p>© ${new Date().getFullYear()} ${st.company_name_en||'SUEUD AL TAAYIRA'}. All rights reserved.</p></div></div></body></html>`;
 };
 
-// ==================== UTILITY FUNCTIONS ====================
 const filterData = (data, dateField, dateRange) => {
   if (!data || !Array.isArray(data)) return [];
   if (!dateRange || (!dateRange.from && !dateRange.to)) return data;
@@ -94,61 +91,15 @@ const exportToExcel = (data, filename) => {
   URL.revokeObjectURL(url);
 };
 
-// ==================== ADVANCED: Debounce Utility ====================
-const debounce = (func, wait) => {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => { clearTimeout(timeout); func(...args); };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait || 300);
-  };
-};
-
-// ==================== ADVANCED: Search Helper ====================
-const searchInArray = (arr, term, fields = []) => {
-  if (!term || !arr) return arr || [];
-  const t = term.toLowerCase();
-  return arr.filter(item => {
-    if (fields.length === 0) return Object.values(item).some(v => typeof v === 'string' && v.toLowerCase().includes(t));
-    return fields.some(f => { const v = item[f]; return v && typeof v === 'string' && v.toLowerCase().includes(t); });
-  });
-};
-
-// ==================== ADVANCED: Pagination Helper ====================
-const getPagination = (total, page = 1, perPage = 10) => ({
-  totalPages: Math.ceil(total / perPage),
-  start: (page - 1) * perPage,
-  end: (page - 1) * perPage + perPage,
-  hasNext: page < Math.ceil(total / perPage),
-  hasPrev: page > 1
-});
-
-// ==================== ADVANCED: Format Helpers ====================
-const formatCurrency = (amt, cur = 'SAR') => `${(parseFloat(amt) || 0).toFixed(2)} ${cur}`;
-const formatDate = (d, fmt = 'short') => {
-  if (!d) return 'N/A';
-  try {
-    const dt = new Date(d);
-    if (fmt === 'long') return dt.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    if (fmt === 'time') return dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    return dt.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-  } catch { return d; }
-};
-
-// ==================== MAIN HOOK ====================
 export default function useERPState() {
   const router = useRouter();
   const today = new Date().toISOString().split('T')[0];
   const initDone = useRef(false);
-  const channelsRef = useRef([]);
 
-  // ==================== AUTH STATE ====================
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [initError, setInitError] = useState('');
-
-  // ==================== UI STATE ====================
   const [lang, setLang] = useState('en');
   const [page, setPage] = useState('dashboard');
   const [modal, setModal] = useState({ type: null, data: null });
@@ -162,15 +113,8 @@ export default function useERPState() {
   const [previewHTML, setPreviewHTML] = useState('');
   const [repDate, setRepDate] = useState({ from: '', to: '' });
   const [reportTab, setReportTab] = useState('sales');
-
-  // ==================== ADVANCED: Loading States ====================
-  const [actionLoading, setActionLoading] = useState(false);
-  const [fetchingTables, setFetchingTables] = useState({});
-
-  // ==================== DATA STATE ====================
   const [data, setData] = useState({ invoices:[], customers:[], corporates:[], creditors:[], vendors:[], packages:[], branches:[], portals:[], employees:[], services:[], expenses:[], investments:[], cashbook:[], payroll:[], empAdvances:[], staffMistakes:[], attendance:[], appUsers:[], tenants:[], audits:[], settings:{} });
-
-  // ==================== FORM STATES ====================
+  
   const [invForm, setInvForm] = useState({ custType:'Individual', custId:'new', custName:'', custPhone:'', corpId:'new', corpName:'', corpVat:'', corpPhone:'', corpAddress:'', passengers:[''], employeeId:'', portalId:'', bookingDate:today, invoiceDate:today, bookingType:'New Booking', linkedInvId:'', oldTicketNo:'', oldPnr:'', oldAirline:'', oldSector:'', oldSellPrice:0, oldBookingDate:'', oldPassengers:'', oldFlightType:'', oldPaymentMethod:'', refundReason:'', service:'Flight Ticket', flightType:'Domestic', flightJourney:'Single', refundable:'Refundable', flightSector:'', airline:'', destination:'', hotelName:'', checkIn:'', checkOut:'', visaType:'Tourist', serviceName:'', pnr:'', ticketNo:'', qty:1, cost:0, sell:0, discount:0, taxRate:'15', payment:'Cash', paid:'', creditDueDate:'', creditorId:'', tabbyNo:'', tamaraNo:'', ticketStatus:'Confirmed', useCredit:0, creditCustId:'', status:'Unpaid' });
   const [editInvId, setEditInvId] = useState(null);
   const [expForm, setExpForm] = useState({ date:today, category:'General', description:'', payment_mode:'Cash', portal_id:'', items:[{ name:'', amount:0, category:'General' }] });
@@ -208,49 +152,11 @@ export default function useERPState() {
   const [contractMarkup, setContractMarkup] = useState(0);
   const [contractTerms, setContractTerms] = useState('');
 
-  // ==================== MEMOIZED VALUES ====================
   const t = useMemo(() => translations[lang] || translations.en, [lang]);
 
-  // ==================== ADVANCED: Computed Dashboard Stats ====================
-  const stats = useMemo(() => {
-    const inv = data.invoices || [];
-    const exp = data.expenses || [];
-    const totalRev = inv.reduce((s, i) => s + (i.total || 0), 0);
-    const totalExp = exp.reduce((s, e) => s + (e.amount || 0), 0);
-    const totalProfit = inv.reduce((s, i) => s + (i.profit || 0), 0);
-    const unpaidCount = inv.filter(i => i.status === 'Unpaid').length;
-    const unpaidAmount = inv.filter(i => i.status === 'Unpaid').reduce((s, i) => s + (i.due_amount || 0), 0);
-    const portalBalance = (data.portals || []).reduce((s, p) => s + (p.current_balance || 0), 0);
-    const todayInv = inv.filter(i => i.invoice_date === today).length;
-    return { totalRev, totalExp, totalProfit, netProfit: totalRev - totalExp, unpaidCount, unpaidAmount, portalBalance, todayInv, totalInvoices: inv.length, totalCustomers: (data.customers || []).length, totalEmployees: (data.employees || []).length };
-  }, [data, today]);
-
-  // ==================== UTILITY FUNCTIONS ====================
   const showToast = useCallback((msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); }, []);
   const logAction = useCallback(async (action) => { try { if (userProfile?.tenant_id) await supabase.from('audits').insert([{ action, user_id: userProfile.id, tenant_id: userProfile.tenant_id, created_at: new Date().toISOString() }]); } catch (e) { console.warn('Audit:', e.message); } }, [userProfile]);
 
-  // ==================== ADVANCED: Fetch Single Table ====================
-  const fetchSingleTable = useCallback(async (table, tenantId) => {
-    if (!tenantId) return null;
-    try {
-      setFetchingTables(prev => ({ ...prev, [table]: true }));
-      let query;
-      switch (table) {
-        case 'invoices': query = supabase.from('invoices').select('*, customers(name,phone), corporates(name), employees(name)').eq('tenant_id', tenantId).order('invoice_date', { ascending: false }); break;
-        case 'customers': query = supabase.from('customers').select('*').eq('tenant_id', tenantId).order('name'); break;
-        case 'portals': query = supabase.from('portals').select('*').eq('tenant_id', tenantId).order('name'); break;
-        case 'cashbook': query = supabase.from('cashbook').select('*').eq('tenant_id', tenantId).order('trans_date', { ascending: false }).limit(500); break;
-        case 'expenses': query = supabase.from('expenses').select('*').eq('tenant_id', tenantId).order('expense_date', { ascending: false }); break;
-        default: return null;
-      }
-      const { data } = await query;
-      if (data !== null) setData(prev => ({ ...prev, [table]: data }));
-      return data;
-    } catch (err) { console.error(`fetchSingleTable ${table}:`, err); return null; }
-    finally { setFetchingTables(prev => ({ ...prev, [table]: false })); }
-  }, []);
-
-  // ==================== DATA FETCHING ====================
   const fetchAll = useCallback(async (tenantId) => {
     if (!tenantId) return;
     try {
@@ -277,19 +183,6 @@ export default function useERPState() {
     } catch (err) { console.error('fetchAll:', err); }
   }, []);
 
-  // ==================== ADVANCED: Realtime Subscriptions ====================
-  const setupRealtime = useCallback((tenantId) => {
-    if (!tenantId) return;
-    channelsRef.current.forEach(ch => supabase.removeChannel(ch));
-    channelsRef.current = [];
-    const tables = ['invoices', 'customers', 'portals', 'cashbook'];
-    tables.forEach(table => {
-      const ch = supabase.channel(`${table}-${tenantId}`).on('postgres_changes', { event: '*', schema: 'public', table, filter: `tenant_id=eq.${tenantId}` }, () => { fetchSingleTable(table, tenantId); }).subscribe();
-      channelsRef.current.push(ch);
-    });
-  }, [fetchSingleTable]);
-
-  // ==================== INITIALIZATION ====================
   useEffect(() => {
     if (initDone.current) return;
     initDone.current = true;
@@ -311,23 +204,21 @@ export default function useERPState() {
         setUserProfile(profile);
         setProfileForm({ username: profile.username||'', avatar_url: profile.avatar_url||'', phone: profile.phone||'', address: profile.address||'' });
         await fetchAll(profile.tenant_id);
-        setupRealtime(profile.tenant_id);
         setLoading(false);
       } catch (err) { console.error('Init:', err); setInitError('Failed: ' + err.message); setLoading(false); }
     };
     init();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => { if (event === 'SIGNED_OUT') { setUser(null); setUserProfile(null); channelsRef.current.forEach(ch => supabase.removeChannel(ch)); router.push('/login'); } });
-    return () => { subscription.unsubscribe(); channelsRef.current.forEach(ch => supabase.removeChannel(ch)); };
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => { if (event === 'SIGNED_OUT') { setUser(null); setUserProfile(null); router.push('/login'); } });
+    return () => { subscription.unsubscribe(); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ==================== RETURN ====================
   return {
     user, setUser, userProfile, setUserProfile, loading, setLoading, initError,
-    lang, setLang, t, page, setPage, modal, setModal, toast, setToast, showToast,
+    lang, setLang, t, tr: t, page, setPage, modal, setModal, toast, setToast, showToast,
     chatOpen, setChatOpen, chatMessages, setChatMessages, chatInput, setChatInput,
     search, setSearch, tblPage, setTblPage, payFilter, setPayFilter,
     previewHTML, setPreviewHTML, repDate, setRepDate, reportTab, setReportTab,
-    data, setData, fetchAll, fetchSingleTable, logAction,
+    data, setData, fetchAll, logAction,
     invForm, setInvForm, editInvId, setEditInvId,
     expForm, setExpForm, editExpId, setEditExpId,
     custForm, setCustForm, editCustId, setEditCustId,
@@ -352,9 +243,6 @@ export default function useERPState() {
     contractCorpName, setContractCorpName, contractType, setContractType, contractMarkup, setContractMarkup, contractTerms, setContractTerms,
     today, router,
     getInvoiceHTML, getRefundHTML, getExpenseHTML, getSalarySlipHTML, getMistakeHTML, getContractHTML,
-    filterData, exportToExcel,
-    // Advanced features
-    stats, actionLoading, setActionLoading, fetchingTables, setupRealtime,
-    searchInArray, getPagination, formatCurrency, formatDate, debounce
+    filterData, exportToExcel
   };
 }
