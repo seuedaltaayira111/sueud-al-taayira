@@ -1,104 +1,35 @@
+// hooks/useERPState.js
 'use client';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
-const translations = {
-  en: { dashboard:'Dashboard', create:'Create Invoice', list:'Invoices', refunds:'Refunds', customers:'Customers', corporates:'Corporates', creditors:'Creditors', credit:'Credit Balances', vendors:'Vendors', packages:'Packages', branches:'Branches', portals:'Portals', bank:'Bank & Cash', invest:'Investors', hr:'Human Resources', users:'Users', settings:'Settings', reports:'Reports', audit:'Audit Logs', statements:'Statements', contract:'Corporate Contract', offer:'Corporate Offer', superadmin:'SuperAdmin', profile:'Profile', profitability:'Profitability', notifications:'Notifications', ai_dashboard:'AI Dashboard', quotations:'Quotations', hr_advanced:'HR & Payroll', ai_pricing:'AI Pricing', my_attendance:'My Attendance', credit_limits:'Credit Limits', customer_statement:'Customer Statement', refund_statement:'Refund Statement', supplier_statement:'Supplier Statement', multi_branch:'Multi-Branch', recurring_invoices:'Recurring Invoices', expense_approval:'Expense Approval', staff_mistakes:'Staff Mistakes', expenses:'Expenses', editInvoice:'Edit Invoice', generateInvoice:'Generate Invoice', updateInvoice:'Update Invoice', custType:'Customer Type', individual:'Individual', corporate:'Corporate', selectCustomer:'Select Customer', customerPhone:'Customer Phone', passengers:'Passengers', addPassenger:'+ Add Passenger', portal:'Portal', service:'Service', flightTicket:'Flight Ticket', hotel:'Hotel Booking', tourPackage:'Tour Package', visitVisa:'Visit Visa', umrahVisa:'Umrah Visa', newService:'New Service', flightType:'Flight Type', domestic:'Domestic', international:'International', airline:'Airline', sector:'Sector', pnr:'PNR', ticketNo:'Ticket No', qty:'Quantity', cost:'Cost', sell:'Sell', discount:'Discount', vatRate:'VAT Rate', invoiceDate:'Invoice Date', bookingType:'Booking Type', newBooking:'New Booking', reissue:'Reissue', extraLuggage:'Extra Luggage', previousBooking:'Previous Booking', salesPerson:'Sales Person', paymentMethod:'Payment Method', cash:'Cash', bankTransfer:'Bank Transfer', card:'Card / Network', credit:'Credit', creditBalance:'Credit Balance', tabby:'Tabby', tamara:'Tamara', paidAmount:'Paid Amount', invNo:'Inv No', total:'Total', due:'Due', method:'Method', actions:'Actions', preview:'Preview', print:'Print', edit:'Edit', delete:'Delete', refund:'Refund', quickSettle:'Settle', download_excel:'Export Excel', save:'Save', add:'Add', search:'Search...', changePass:'Change Password', logout:'Logout', selectEmployee:'Select Employee', attendanceDate:'Date', status:'Status', present:'Present', leave:'Leave', absent:'Absent', checkInTime:'Check-In', checkOutTime:'Check-Out', overtime:'OT', deduction:'Deduction', mark:'Mark', baseSalary:'Base Salary', commission:'Commission %', advDed:'Adv. Deduct', gift:'Gift/Bonus', month:'Month', mode:'Mode', paySalary:'Pay Salary', generateSlip:'Generate Slip', target:'Target (SAR)', achieved:'Achieved', percentage:'%', balance:'Balance' },
-  ar: { dashboard:'لوحة التحكم', create:'إنشاء فاتورة', list:'الفواتير', refunds:'الاسترجاعات', customers:'العملاء', corporates:'الشركات', creditors:'الدائنون', credit:'أرصدة مستحقة', vendors:'الموردون', packages:'الباقات', branches:'الفروع', portals:'البوابات', bank:'البنك والصندوق', invest:'المستثمرون', hr:'الموارد البشرية', users:'المستخدمون', settings:'الإعدادات', reports:'التقارير', audit:'سجل التدقيق', statements:'كشوفات', contract:'عقد شركات', offer:'عرض شركات', superadmin:'المدير العام', profile:'الملف الشخصي', profitability:'الربحية', notifications:'الإشعارات', ai_dashboard:'لوحة ذكية', quotations:'عروض أسعار', hr_advanced:'الرواتب', ai_pricing:'تسعير ذكي', my_attendance:'حضوري', credit_limits:'حدود الائتمان', customer_statement:'كشف عميل', refund_statement:'كشف استرجاع', supplier_statement:'كشف مورد', multi_branch:'متعدد الفروع', recurring_invoices:'فواتير متكررة', expense_approval:'اعتماد مصروفات', staff_mistakes:'أخطاء الموظفين', expenses:'المصروفات', editInvoice:'تعديل الفاتورة', generateInvoice:'إنشاء الفاتورة', updateInvoice:'تحديث الفاتورة', custType:'نوع العميل', individual:'فرد', corporate:'شركة', selectCustomer:'اختر العميل', customerPhone:'هاتف العميل', passengers:'الركاب', addPassenger:'+ إضافة راكب', portal:'البوابة', service:'الخدمة', flightTicket:'تذكرة طيران', hotel:'حجز فندق', tourPackage:'باقة سياحية', visitVisa:'تأشيرة زيارة', umrahVisa:'تأشيرة عمرة', newService:'خدمة جديدة', flightType:'نوع الرحلة', domestic:'داخلي', international:'دولي', airline:'خط الطيران', sector:'القطاع', pnr:'رقم الحجز', ticketNo:'رقم التذكرة', qty:'الكمية', cost:'التكلفة', sell:'البيع', discount:'الخصم', vatRate:'نسبة الضريبة', invoiceDate:'تاريخ الفاتورة', bookingType:'نوع الحجز', newBooking:'حجز جديد', reissue:'إعادة إصدار', extraLuggage:'أمتعة إضافية', previousBooking:'حجز سابق', salesPerson:'موظف المبيعات', paymentMethod:'طريقة الدفع', cash:'نقداً', bankTransfer:'تحويل بنكي', card:'بطاقة', credit:'آجل', creditBalance:'رصيد مستحق', tabby:'تابي', tamara:'تمارة', paidAmount:'المبلغ المدفوع', invNo:'رقم الفاتورة', total:'الإجمالي', due:'المتبقي', method:'الطريقة', actions:'إجراءات', preview:'معاينة', print:'طباعة', edit:'تعديل', delete:'حذف', refund:'استرجاع', quickSettle:'تسوية', download_excel:'تصدير', save:'حفظ', add:'إضافة', search:'بحث...', changePass:'تغيير كلمة المرور', logout:'تسجيل خروج', selectEmployee:'اختر الموظف', attendanceDate:'التاريخ', status:'الحالة', present:'حاضر', leave:'إجازة', absent:'غائب', checkInTime:'وقت الحضور', checkOutTime:'وقت الانصراف', overtime:'إضافي', deduction:'خصم', mark:'تسجيل', baseSalary:'الراتب الأساسي', commission:'العمولة %', advDed:'خصم سلفة', gift:'هدية/مكافأة', month:'الشهر', mode:'الطريقة', paySalary:'دفع الراتب', generateSlip:'إنشاء قسيمة', target:'الهدف (ريال)', achieved:'المحقق', percentage:'%', balance:'الرصيد' }
-};
+// Import translations separately
+import { translations } from '@/utils/translations';
 
-const getInvoiceHTML = (inv, s, lang = 'en') => {
-  const st = s || {};
-  const no = inv.invoice_no || 'N/A';
-  const qr = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent('https://sueud-al-taayira.vercel.app/invoice/' + no)}`;
-  const ts = inv.total_sell || 0, disc = inv.discount || 0, sub = ts + disc;
-  const vr = inv.vat > 0 && ts > 0 ? Math.round((inv.vat / ts) * 100) : 0;
-  const vat = inv.vat || 0, tot = inv.total || 0, paid = inv.paid_amount || 0;
-  const uc = inv.used_credit || 0, cr = inv.cash_return || 0;
-  const cp = paid - uc - cr, due = inv.due_amount || 0;
-  const up = (inv.qty || 1) > 0 ? ts / inv.qty : ts;
-  const st2 = inv.status || (due > 0 ? 'Unpaid' : 'Paid');
-  let pd = inv.payment_method || 'Cash';
-  if (inv.payment_method === 'Credit' && inv.credit_due_date) pd = `Credit (Due: ${inv.credit_due_date})`;
-  const isRe = inv.booking_type === 'Reissue' || inv.booking_type === 'Previous Booking';
-  const pax = inv.passenger_names ? inv.passenger_names.replace(/\n/g, ', ') : 'N/A';
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Invoice ${no}</title><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0;padding:0}body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b}.inv{max-width:210mm;margin:auto;border:1px solid #e2e8f0}.hdr{display:flex;justify-content:space-between;padding:30px;background:linear-gradient(135deg,#0c1d3a,#1a365d);color:#fff;gap:20px}.cblk{display:flex;gap:15px;flex:1}.logo{width:80px;height:80px;object-fit:cover;border-radius:10px;background:rgba(255,255,255,0.1);padding:3px}.ct h2{font-size:18px;font-weight:800;color:#fbbf24;margin:0}.ct h1{font-size:13px;font-weight:600;color:rgba(255,255,255,0.85);text-transform:uppercase;letter-spacing:1.5px;margin:3px 0 0}.ct p{font-size:11px;color:rgba(255,255,255,0.7);line-height:1.8;margin:6px 0 0}.im{min-width:220px;background:rgba(255,255,255,0.06);padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.1)}.im h3{font-size:26px;font-weight:800;color:#fbbf24;text-transform:uppercase;line-height:1.1;margin:0}.im h3 span{font-size:13px;font-family:'Cairo';display:block;margin:2px 0 0}.mr{display:flex;justify-content:space-between;margin-top:5px;font-size:12px;border-bottom:1px dashed rgba(255,255,255,0.12);padding-bottom:3px}.mr .l{color:rgba(255,255,255,0.6)}.mr .v{color:#fbbf24;font-weight:700}.sb{display:inline-block;padding:5px 12px;border-radius:14px;font-size:11px;font-weight:700;margin-top:8px;${st2==='Unpaid'?'background:rgba(251,191,36,0.2);color:#fbbf24':'background:rgba(52,211,153,0.2);color:#34d399'}}.body{padding:25px}.bt{font-size:12px;font-weight:700;text-transform:uppercase;color:#94a3b8;margin-bottom:8px;border-bottom:2px solid #e2e8f0;padding-bottom:5px}.dg{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px}.ib{padding:14px;background:#f8fafc;border-radius:8px;border-left:4px solid #1a365d}.ir{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #f1f5f9}.ir:last-child{border:none}.ir .l{color:#64748b}.ir .v{color:#0f172a;font-weight:600;text-align:right}.rb{padding:14px;background:#fffbeb;border-radius:8px;border:1px solid #fde68a;margin-bottom:20px}.rt{font-size:13px;font-weight:700;color:#d97706;margin-bottom:8px;display:flex;justify-content:space-between;background:#fef3c7;padding:7px 10px;border-radius:6px}.rg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.ri{background:#fff;padding:8px;border-radius:6px;border:1px solid #fde68a}.ri .l{font-size:10px;color:#92400e;font-weight:600;text-transform:uppercase}.ri .v{font-size:12px;color:#78350f;font-weight:700;margin-top:2px}.rf{background:#dcfce7;border-color:#86efac;grid-column:span 3;display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:6px}.rf .l{color:#059669;font-size:12px}.rf .v{color:#047857;font-size:15px;font-weight:800}table{width:100%;border-collapse:collapse;margin-bottom:20px;border-radius:8px;overflow:hidden;box-shadow:0 2px 5px rgba(0,0,0,0.05)}thead th{padding:12px;background:#0c1d3a;color:#fbbf24;font-size:11px;text-transform:uppercase;text-align:left;letter-spacing:0.5px}thead th.r{text-align:right}thead th.c{text-align:center}tbody td{padding:12px;border-bottom:1px solid #f1f5f9;font-size:12px}tbody td.r{text-align:right;font-weight:600}tbody td.c{text-align:center}.bs{display:grid;grid-template-columns:1.5fr 1fr;gap:18px}.pb{padding:15px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0}.pr{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px dashed #cbd5e1}.pr:last-child{border:none}.tb{background:#0c1d3a;border-radius:8px;padding:15px;color:#fff;align-self:flex-start}.tr{display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:rgba(255,255,255,0.8)}.gt{display:flex;justify-content:space-between;padding:10px 0 0;margin-top:5px;border-top:2px solid rgba(255,255,255,0.12);font-size:18px;font-weight:800;color:#fff}.gt .v{color:#fbbf24}.tm{margin-top:20px;padding:15px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0}.tm h4{font-size:11px;color:#64748b;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px}.tm p{font-size:10px;color:#94a3b8;line-height:1.8;margin:0}.ft{padding:14px;background:#f8fafc;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e2e8f0;gap:14px;margin-top:auto}.qr img{height:65px;width:65px;border-radius:6px;border:1px solid #e2e8f0;padding:2px;background:#fff}.fx{text-align:center;flex:1}.am{font-size:11px;color:#475569;font-weight:600;margin:0 0 2px}.aa{font-size:11px;color:#64748b;font-family:'Cairo';margin:0}@media print{body{background:#fff;padding:0;margin:0}.inv{border:none;max-width:100%}}</style></head><body><div class="inv" style="min-height:1120px;display:flex;flex-direction:column"><div class="hdr"><div class="cblk">${st.logo_url?`<img src="${st.logo_url}" crossorigin="anonymous" class="logo"/>`:''}<div class="ct"><h2>${st.company_name_ar||'صعود الطائرة للسفر والسياحة'}</h2><h1>${st.company_name_en||'SUEUD AL TAAYIRA'}</h1><p>${st.address_ar||'Address'}<br/>VAT: ${st.vat_no||'N/A'} | CR: ${st.cr_no||'N/A'}<br/>Phone: ${st.phone||'N/A'}</p></div></div><div class="im"><h3>TAX INVOICE<span>فاتورة ضريبية</span></h3><div class="mr"><span class="l">Inv No</span><span class="v">${no}</span></div><div class="mr"><span class="l">Date</span><span class="v">${inv.invoice_date||''}</span></div><div class="mr"><span class="l">Booking</span><span class="v">${inv.booking_date||''}</span></div><div class="sb">${st2==='Unpaid'?'UNPAID / غير مدفوعة':'PAID / مدفوعة'}</div></div></div><div class="body"><div class="dg"><div class="ib"><div class="bt">BILL TO / فاتورة إلى</div><div class="ir"><span class="l">Name</span><span class="v">${inv.customers?.name||inv.corporates?.name||'N/A'}</span></div><div class="ir"><span class="l">Phone</span><span class="v">${inv.customers?.phone||'N/A'}</span></div><div class="ir"><span class="l">Sales Person</span><span class="v">${inv.employees?.name||'N/A'}</span></div><div class="ir"><span class="l">Passengers</span><span class="v" style="max-width:150px;font-size:11px;line-height:1.4">${pax}</span></div></div><div class="ib" style="border-left-color:#f59e0b"><div class="bt">FLIGHT DETAILS</div><div class="ir"><span class="l">Airline</span><span class="v">${inv.airline||'N/A'}</span></div><div class="ir"><span class="l">Sector</span><span class="v">${inv.flight_sector||'N/A'}</span></div><div class="ir"><span class="l">Type</span><span class="v">${inv.flight_type||'N/A'}</span></div><div class="ir"><span class="l">Journey</span><span class="v">${inv.flight_journey||'N/A'}</span></div><div class="ir"><span class="l">PNR</span><span class="v">${inv.pnr||'N/A'}</span></div><div class="ir"><span class="l">Ticket No</span><span class="v">${inv.ticket_no||'N/A'}</span></div><div class="ir"><span class="l">Refundable</span><span class="v">${inv.refundable_status||'N/A'}</span></div></div></div>${isRe?`<div class="rb"><div class="rt"><span>⚠️ PREVIOUS BOOKING DETAILS</span></div><div class="rg"><div class="ri"><div class="l">Old Date</div><div class="v">${inv.old_booking_date||'N/A'}</div></div><div class="ri"><div class="l">Old Airline</div><div class="v">${inv.old_airline||'N/A'}</div></div><div class="ri"><div class="l">Old Sector</div><div class="v">${inv.old_sector||'N/A'}</div></div><div class="ri"><div class="l">Old PNR</div><div class="v">${inv.old_pnr||'N/A'}</div></div><div class="ri"><div class="l">Old Ticket</div><div class="v">${inv.old_ticket_no||'N/A'}</div></div><div class="ri"><div class="l">Old Type</div><div class="v">${inv.old_flight_type||'N/A'}</div></div><div class="rf"><div class="l">Original Fare</div><div class="v">${parseFloat(inv.old_sell_price||0).toFixed(2)} SAR</div></div></div></div>`:''}<table><thead><tr><th>Description</th><th class="c">Qty</th><th class="r">Unit Price</th><th class="r">Total</th></tr></thead><tbody><tr><td>${inv.sector||inv.service_type||'Service'}</td><td class="c">${inv.qty||1}</td><td class="r">${up.toFixed(2)}</td><td class="r">${ts.toFixed(2)}</td></tr></tbody></table><div class="bs"><div class="pb"><div class="bt">PAYMENT BREAKDOWN</div><div class="pr"><span>Price</span><span style="font-weight:600">${tot.toFixed(2)} SAR</span></div>${disc>0?`<div class="pr" style="color:#34d399"><span>Discount</span><span>- ${disc.toFixed(2)} SAR</span></div>`:''}${uc>0?`<div class="pr" style="color:#7c3aed"><span>Credit Used</span><span>- ${uc.toFixed(2)} SAR</span></div>`:''}${cr>0?`<div class="pr" style="color:#ef4444"><span>Cash Returned</span><span>- ${cr.toFixed(2)} SAR</span></div>`:''}<div class="pr" style="border-top:2px solid #cbd5e1;margin-top:6px;padding-top:6px;font-weight:700"><span>Paid (${pd})</span><span style="color:#059669">${cp.toFixed(2)} SAR</span></div><div class="pr" style="font-weight:700"><span>Due</span><span style="color:${due>0?'#ef4444':'#059669'}">${due.toFixed(2)} SAR</span></div></div><div class="tb"><div class="tr"><span>Subtotal</span><span>${sub.toFixed(2)}</span></div>${disc>0?`<div class="tr" style="color:#34d399"><span>Discount</span><span>- ${disc.toFixed(2)}</span></div>`:''}<div class="tr"><span>VAT (${vr}%)</span><span>${vat.toFixed(2)}</span></div><div class="gt"><span>GRAND TOTAL</span><span class="v">${tot.toFixed(2)} SAR</span></div></div></div></div><div class="tm"><h4>Terms & Conditions</h4><p>1. All bookings subject to airline/hotel terms.<br/>2. Cancellation policies vary by provider.<br/>3. Computer-generated - valid without signature.<br/>4. Prices in SAR including VAT.<br/>5. Contact: ${st.phone||'our office'}.</p></div></div><div class="ft"><div class="qr"><img src="${qr}" alt="QR" crossorigin="anonymous"/></div><div class="fx"><p class="am">Thank you! Have a safe flight.</p><p class="aa">شكراً لاختياركم. رحلة سعيدة!</p></div><div style="width:80px"></div></div></div></body></html>`;
-};
+// Import HTML generators separately
+import { getInvoiceHTML, getRefundHTML } from '@/utils/htmlGenerators';
 
-const getRefundHTML = (inv, s, lang = 'en') => {
-  const st = s || {};
-  const no = inv.invoice_no || 'N/A';
-  const qr = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent('https://sueud-al-taayira.vercel.app/invoice/' + no)}`;
-  const of2 = inv.old_sell_price || inv.total_sell || 0;
-  const cRef = inv.refund_customer || 0;
-  const cn = inv.customers?.name || inv.old_customer_name || 'N/A';
-  const cp = inv.customers?.phone || inv.old_customer_phone || 'N/A';
-  const pax = inv.passenger_names ? inv.passenger_names.replace(/\n/g, ', ') : (inv.old_passengers || 'N/A');
-  let rm = inv.payment_method || 'Cash';
-  if (inv.payment_method === 'Credit') rm = 'Credit for New Booking';
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Refund ${no}</title><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0;padding:0}body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b}.inv{max-width:210mm;margin:auto;border:1px solid #e2e8f0;min-height:1120px;display:flex;flex-direction:column}.hdr{display:flex;justify-content:space-between;padding:30px;background:linear-gradient(135deg,#7f1d1d,#991b1b);color:#fff;gap:20px}.cblk{display:flex;gap:15px;flex:1}.logo{width:80px;height:80px;object-fit:cover;border-radius:10px;background:rgba(255,255,255,0.1);padding:3px}.ct h2{font-size:18px;font-weight:800;color:#fbbf24;margin:0}.ct h1{font-size:13px;font-weight:600;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1.5px;margin:3px 0 0}.ct p{font-size:11px;color:rgba(255,255,255,0.6);line-height:1.8;margin:6px 0 0}.im{min-width:210px;text-align:right}.im h3{font-size:26px;font-weight:800;color:#fbbf24;text-transform:uppercase;line-height:1.1;margin:0}.im h3 span{font-size:13px;font-family:'Cairo';display:block;margin:2px 0 0}.ino{font-size:12px;color:rgba(255,255,255,0.8);margin-top:5px;border-bottom:1px dashed rgba(255,255,255,0.2);padding-bottom:3px}.ino span{color:#fbbf24;font-weight:700}.sb{display:inline-block;padding:5px 12px;border-radius:14px;font-size:11px;font-weight:700;margin-top:8px;background:rgba(251,191,36,0.2);color:#fbbf24;border:1px solid rgba(251,191,36,0.3);align-self:flex-end}.body{padding:25px;flex:1}.ib{padding:15px;background:#fff5f5;border-radius:8px;border-left:4px solid #dc2626;margin-bottom:18px}.ib h4{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#dc2626;margin:0 0 8px;font-weight:700}.row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #fee2e2}.row:last-child{border:none}.row .l{color:#991b1b;font-weight:500}.row .v{color:#7f1d1d;font-weight:600;text-align:right}.cb{background:#fff;padding:18px;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:18px}.ct2{font-size:11px;text-transform:uppercase;color:#dc2626;margin-bottom:8px;border-bottom:1px solid #fee2e2;padding-bottom:5px;font-weight:700}.cr{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#334155}.cr.deduct{color:#ef4444}.cr.total{padding-top:8px;margin-top:5px;border-top:1px solid #e2e8f0;font-size:17px;font-weight:800;color:#059669}.pi{padding:15px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center}.ft{padding:14px;background:#f8fafc;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e2e8f0;gap:14px;margin-top:auto}.qr img{height:65px;width:65px;border-radius:6px;border:1px solid #e2e8f0;padding:2px;background:#fff}@media print{body{background:#fff;padding:0;margin:0}.inv{border:none;max-width:100%}}</style></head><body><div class="inv"><div class="hdr"><div class="cblk">${st.logo_url?`<img src="${st.logo_url}" crossorigin="anonymous" class="logo"/>`:''}<div class="ct"><h2>${st.company_name_ar||'صعود الطائرة'}</h2><h1>${st.company_name_en||'SUEUD AL TAAYIRA'}</h1><p>${st.address_ar||''}<br/>VAT: ${st.vat_no||'N/A'} | CR: ${st.cr_no||'N/A'}</p></div></div><div class="im"><h3>REFUND<span>استرجاع</span></h3><div class="ino">No: <span>${no}</span></div><div class="ino">Date: <span>${inv.refund_date||inv.invoice_date||''}</span></div><div class="sb">PROCESSED / تم الاسترجاع</div></div></div><div class="body"><div class="ib"><h4>BOOKING DETAILS</h4><div class="row"><span class="l">Customer</span><span class="v">${cn}</span></div><div class="row"><span class="l">Phone</span><span class="v">${cp}</span></div><div class="row"><span class="l">Passengers</span><span class="v" style="max-width:170px;font-size:11px;line-height:1.4">${pax}</span></div><div class="row"><span class="l">Airline</span><span class="v">${inv.airline||inv.old_airline||'N/A'}</span></div><div class="row"><span class="l">Date</span><span class="v">${inv.invoice_date||'N/A'}</span></div><div class="row"><span class="l">PNR</span><span class="v">${inv.pnr||inv.old_pnr||'N/A'}</span></div><div class="row"><span class="l">Reason</span><span class="v">${inv.refund_reason||'N/A'}</span></div></div><div class="cb"><div class="ct2">REFUND CALCULATION</div><div class="cr"><span>Original Fare</span><span style="font-weight:600">${of2.toFixed(2)} SAR</span></div><div class="cr deduct"><span>Less: Airline Fees</span><span style="font-weight:600">- ${(of2 - (inv.refund_company||0)).toFixed(2)} SAR</span></div><div class="cr total"><span>Refund to Customer</span><span>${cRef.toFixed(2)} SAR</span></div></div><div class="pi"><span style="font-size:12px;font-weight:600;color:#334155">Refund Method</span><span style="font-weight:600;color:#2563eb">${rm}</span></div></div><div class="ft"><div class="qr"><img src="${qr}" alt="QR" crossorigin="anonymous"/></div><div style="text-align:center;flex:1"><strong>${st.company_name_en||''}</strong><p style="font-size:10px;color:#94a3b8;margin:3px 0 0">Thank you! / شكراً!</p></div><div style="width:80px"></div></div></div></body></html>`;
-};
+// Import utilities
+import { filterData, exportToExcel } from '@/utils/dataUtils';
 
-const getExpenseHTML = (exp, s) => {
-  const st = s || {};
-  const eno = `EXP-${exp.id?.substring(0,8)||'N/A'}`;
-  const items = exp.items?.length > 0 ? exp.items : [{ name: exp.item_name||'Item', qty: 1, price: exp.amount||0 }];
-  const sub = items.reduce((s,it) => s + ((parseFloat(it.qty)||0) * (parseFloat(it.price)||0)), 0);
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Expense ${eno}</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',sans-serif;background:#fff;color:#1e293b}.inv{max-width:210mm;margin:auto;border:1px solid #e2e8f0;min-height:1120px;display:flex;flex-direction:column}.hdr{display:flex;justify-content:space-between;padding:30px;background:linear-gradient(135deg,#7c2d12,#9a3412);color:#fff}.ci h2{font-size:20px;font-weight:800;color:#fbbf24;margin:0}.ci h1{font-size:13px;font-weight:600;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:2px;margin:3px 0 0}.im{text-align:right}.im h3{font-size:26px;font-weight:800;color:#fbbf24;text-transform:uppercase;margin:0}.im p{font-size:12px;color:rgba(255,255,255,0.8);margin:5px 0 0}.im p span{color:#fbbf24;font-weight:700}.body{padding:30px;flex:1}.ib{padding:18px;background:#fff7ed;border-radius:8px;border-left:4px solid #ea580c;margin-bottom:24px}.ib h4{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#ea580c;margin:0 0 10px;font-weight:700}.row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0}.row .l{color:#9a3412;font-weight:500}.row .v{color:#7c2d12;font-weight:600}table{width:100%;border-collapse:collapse;margin-bottom:24px}thead th{text-align:left;padding:12px;background:#7c2d12;color:#fbbf24;font-size:10px;text-transform:uppercase;letter-spacing:1px}thead th.r{text-align:right}tbody td{padding:12px;border-bottom:1px solid #f1f5f9;font-size:12px}tbody td.r{text-align:right;font-weight:600}.totals{text-align:right;margin-top:18px}.totals p{font-size:12px;margin:5px 0;color:#64748b}.totals h3{font-size:22px;color:#ea580c;font-weight:800;margin:10px 0 0}.ft{padding:20px;background:#f8fafc;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e2e8f0;margin-top:auto}@media print{body{background:#fff;padding:0;margin:0}.inv{border:none;max-width:100%}}</style></head><body><div class="inv"><div class="hdr"><div class="ci"><h2>${st.company_name_ar||'صعود الطائرة'}</h2><h1>${st.company_name_en||'SUEUD AL TAAYIRA'}</h1></div><div class="im"><h3>EXPENSE VOUCHER</h3><p>No: <span>${eno}</span></p><p>Date: <span>${exp.expense_date||''}</span></p></div></div><div class="body"><div class="ib"><h4>DETAILS</h4><div class="row"><span class="l">Type</span><span class="v">${exp.expense_type||'N/A'}</span></div><div class="row"><span class="l">Payment</span><span class="v">${exp.payment_mode||'Cash'}</span></div></div><table><thead><tr><th>Item</th><th class="r">Qty</th><th class="r">Price</th><th class="r">Total</th></tr></thead><tbody>${items.map(it=>`<tr><td>${it.name||'Item'}</td><td class="r">${it.qty||1}</td><td class="r">${parseFloat(it.price||0).toFixed(2)}</td><td class="r">${((parseFloat(it.qty)||0)*(parseFloat(it.price)||0)).toFixed(2)}</td></tr>`).join('')}</tbody></table><div class="totals"><p>Subtotal: <strong>${sub.toFixed(2)} SAR</strong></p><h3>Total: ${(exp.amount||0).toFixed(2)} SAR</h3></div></div><div class="ft"><div style="text-align:center;flex:1"><strong>${st.company_name_en||''}</strong></div></div></div></body></html>`;
-};
-
-const getSalarySlipHTML = (pay, s) => {
-  const st = s || {};
-  const sno = `SLIP-${pay.id?.substring(0,8)||'N/A'}`;
-  const gross = (pay.base_salary||0)+(pay.commission||0)+(pay.overtime||0)+(pay.gift||0);
-  const tded = (pay.advance_deduction||0)+(pay.mistakes_deduction||0)+(pay.other_deduction||0);
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Slip ${sno}</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',sans-serif;background:#fff;color:#1e293b}.slip{max-width:210mm;margin:auto;border:1px solid #e2e8f0;min-height:1120px;display:flex;flex-direction:column}.hdr{background:linear-gradient(135deg,#0F172A,#1E3A8A);color:#fff;padding:30px;display:flex;justify-content:space-between;align-items:center}.hdr h1{font-size:20px;font-weight:800;color:#FBBF24;margin:0}.si{text-align:right}.si h3{color:#FBBF24;font-size:20px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin:0}.si p{font-size:12px;color:#c7d2fe;margin:3px 0 0}.body{padding:30px;flex:1}.eg{display:grid;grid-template-columns:1fr 1fr;gap:18px;background:#F8FAFC;padding:20px;border-radius:10px;border:1px solid #E2E8F0;margin-bottom:24px}.eg p{font-size:13px;margin:5px 0}.eg .l{color:#64748b;font-weight:500}table{width:100%;border-collapse:collapse;margin-bottom:20px;border-radius:8px;overflow:hidden}th,td{padding:14px;border-bottom:1px solid #f1f5f9;font-size:13px}th{text-align:left;background:#1E3A8A;color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:1px}th.r,td.r{text-align:right;font-weight:600}.net{background:linear-gradient(135deg,#059669,#047857);color:#fff;padding:20px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;margin-top:18px}.net h3{margin:0;text-transform:uppercase;font-size:15px}.net .amt{font-size:28px;font-weight:800;margin:0}.ft{text-align:center;padding:20px;background:#F8FAFC;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;margin-top:auto}@media print{body{background:#fff;padding:0;margin:0}.slip{border:none;max-width:100%}}</style></head><body><div class="slip"><div class="hdr"><div><h1>${st.company_name_en||'SUEUD AL TAAYIRA'}</h1></div><div class="si"><h3>Salary Slip</h3><p>Slip: ${sno} | Month: ${pay.month}</p></div></div><div class="body"><div class="eg"><div><p><span class="l">Employee:</span> <strong>${pay.employees?.name||'N/A'}</strong></p><p><span class="l">Role:</span> ${pay.employees?.role||'N/A'}</p></div><div style="text-align:right"><p><span class="l">Pay Date:</span> ${pay.payment_date||'N/A'}</p><p><span class="l">Mode:</span> ${pay.payment_mode||'N/A'}</p></div></div><table><thead><tr><th>Earnings</th><th class="r">Amount (SAR)</th></tr></thead><tbody><tr><td>Basic Salary</td><td class="r">${(pay.base_salary||0).toFixed(2)}</td></tr><tr><td>Commission</td><td class="r" style="color:#059669">+ ${(pay.commission||0).toFixed(2)}</td></tr><tr><td>Overtime</td><td class="r" style="color:#059669">+ ${(pay.overtime||0).toFixed(2)}</td></tr><tr><td>Gift/Bonus</td><td class="r" style="color:#059669">+ ${(pay.gift||0).toFixed(2)}</td></tr><tr style="background:#F8FAFC"><td><strong>Gross</strong></td><td class="r"><strong>${gross.toFixed(2)}</strong></td></tr></tbody></table><table><thead><tr><th>Deductions</th><th class="r">Amount (SAR)</th></tr></thead><tbody><tr><td>Advance</td><td class="r" style="color:#EF4444">- ${(pay.advance_deduction||0).toFixed(2)}</td></tr><tr><td>Mistakes</td><td class="r" style="color:#EF4444">- ${(pay.mistakes_deduction||0).toFixed(2)}</td></tr>${pay.other_deduction>0?`<tr><td>Other</td><td class="r" style="color:#EF4444">- ${(pay.other_deduction||0).toFixed(2)}</td></tr>`:''}<tr style="background:#F8FAFC"><td><strong>Total Deductions</strong></td><td class="r"><strong>${tded.toFixed(2)}</strong></td></tr></tbody></table><div class="net"><h3>Net Pay</h3><p class="amt">${(pay.amount||0).toFixed(2)} SAR</p></div></div><div class="ft"><p>Computer-generated salary slip. © ${new Date().getFullYear()} ${st.company_name_en||'SUEUD AL TAAYIRA'}</p></div></div></body></html>`;
-};
-
-const getMistakeHTML = (m, s) => {
-  const st = s || {};
-  const vno = `MST-${m.id?.substring(0,8)||'N/A'}`;
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Mistake ${vno}</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',sans-serif;background:#fff;color:#1e293b}.v{max-width:210mm;margin:auto;border:1px solid #e2e8f0;border-top:10px solid #B91C1C;min-height:1120px;display:flex;flex-direction:column}.hdr{background:linear-gradient(135deg,#0F172A,#1E293B);color:#fff;padding:30px;display:flex;justify-content:space-between;align-items:center}.hdr h1{font-size:20px;font-weight:800;color:#FBBF24;margin:0}.vi{text-align:right}.vi h3{color:#FBBF24;font-size:20px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin:0}.vi p{font-size:12px;color:#c7d2fe;margin:3px 0 0}.body{padding:30px;flex:1}.eg{display:grid;grid-template-columns:1fr 1fr;gap:18px;background:#F8FAFC;padding:20px;border-radius:10px;border:1px solid #E2E8F0;margin-bottom:24px}.eg p{font-size:13px;margin:5px 0}.eg .l{color:#64748b;font-weight:500}.loss{background:linear-gradient(135deg,#EF4444,#B91C1C);color:#fff;padding:20px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;margin-top:18px}.loss h3{margin:0;text-transform:uppercase;font-size:15px}.loss .amt{font-size:28px;font-weight:800;margin:0}.note{margin-top:18px;font-size:13px;color:#334155;padding:18px;background:#FEF2F2;border-radius:8px;border:1px solid #FECACA}.ft{text-align:center;padding:20px;background:#F8FAFC;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;margin-top:auto}@media print{body{background:#fff;padding:0;margin:0}.v{border:none;max-width:100%;border-top:none}}</style></head><body><div class="v"><div class="hdr"><div><h1>${st.company_name_en||'SUEUD AL TAAYIRA'}</h1></div><div class="vi"><h3>Loss Voucher</h3><p>Voucher: ${vno} | Date: ${m.date}</p></div></div><div class="body"><div class="eg"><div><p><span class="l">Employee:</span> <strong>${m.employees?.name||'N/A'}</strong></p><p><span class="l">Role:</span> ${m.employees?.role||'N/A'}</p></div><div style="text-align:right"><p><span class="l">Old Ticket:</span> ${m.old_ticket_no||'N/A'}</p><p><span class="l">New Ticket:</span> ${m.new_ticket_no||'N/A'}</p></div></div><div class="loss"><h3>Total Loss</h3><p class="amt">${(m.loss_amount||0).toFixed(2)} SAR</p></div><div class="note"><strong>Status:</strong> ${m.paid_by_employee?'Will be deducted from salary.':'Absorbed by company.'}</div></div><div class="ft"><p>Computer-generated. © ${new Date().getFullYear()} ${st.company_name_en||'SUEUD AL TAAYIRA'}</p></div></div></body></html>`;
-};
-
-const getContractHTML = (s, name, date, isOffer, type, markup, terms) => {
-  const st = s || {};
-  const dt = isOffer ? 'OFFER' : 'CONTRACT';
-  const tl = terms ? terms.split('\n').filter(t=>t.trim()).map(t=>`<li style="margin-bottom:10px;font-size:14px;color:#334155">${t.trim()}</li>`).join('') : '<li style="margin-bottom:10px;font-size:14px;color:#334155">Standard terms apply.</li>';
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${dt} - ${name}</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',sans-serif;background:#f0f4f8;padding:30px;color:#1e293b}.doc{max-width:210mm;margin:auto;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,0.1);padding:50px;border-radius:14px;border-top:10px solid #1E3A8A}.hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:35px;border-bottom:2px solid #e2e8f0;padding-bottom:18px}.hdr h1{font-size:28px;font-weight:800;color:#0F172A;text-transform:uppercase;letter-spacing:1px;margin:0}.hdr .lb{text-align:right}.hdr .lb h2{font-size:18px;font-weight:800;color:#1E3A8A;margin:0}.hdr .lb p{font-size:11px;color:#64748b;margin:4px 0 0}.mb{background:#F8FAFC;padding:20px;border-radius:10px;border-left:5px solid #FBBF24;margin-bottom:25px;display:grid;grid-template-columns:1fr 1fr;gap:18px}.mi p{font-size:13px;margin:5px 0}.mi .l{color:#64748b;font-weight:500;display:block;font-size:11px;text-transform:uppercase}.mi .v{color:#0F172A;font-weight:700;font-size:15px}.sec{margin-bottom:35px}.sec h2{font-size:20px;font-weight:700;color:#1E3A8A;margin-bottom:14px;border-left:4px solid #1E3A8A;padding-left:10px}.terms ul{padding-left:22px;list-style-type:square}.sg{display:grid;grid-template-columns:1fr 1fr;gap:35px;margin-top:50px}.sb{text-align:center}.sl{border-top:2px solid #0F172A;margin-bottom:10px;width:75%;margin-left:auto;margin-right:auto}.sb p{font-size:13px;color:#64748b;font-weight:600;margin:0}.ftr{margin-top:40px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:18px}@media print{body{background:#fff;padding:0}.doc{box-shadow:none;margin:0;max-width:100%;border-radius:0;border:none}}</style></head><body><div class="doc"><div class="hdr"><div><h1>${dt}</h1><p style="font-size:13px;color:#64748b;margin:5px 0 0">Date: ${date}</p></div><div class="lb"><h2>${st.company_name_en||'SUEUD AL TAAYIRA'}</h2><p>${st.company_name_ar||'صعود الطائرة'}</p><p>${st.phone||''}</p></div></div><div class="mb"><div class="mi"><span class="l">Client</span><span class="v">${name}</span></div><div class="mi"><span class="l">Service Type</span><span class="v">${type}</span></div><div class="mi"><span class="l">Fee / Markup</span><span class="v">${parseFloat(markup||0).toFixed(2)} SAR</span></div><div class="mi"><span class="l">Validity</span><span class="v">30 Days</span></div></div><div class="sec"><h2>Terms & Conditions</h2><div class="terms"><ul>${tl}</ul></div></div><div class="sg"><div class="sb"><div class="sl"></div><p>Authorized Signatory</p><p style="font-size:11px;color:#94a3b8">${st.company_name_en||'SUEUD AL TAAYIRA'}</p></div><div class="sb"><div class="sl"></div><p>Client Acceptance</p><p style="font-size:11px;color:#94a3b8">${name}</p></div></div><div class="ftr"><p>© ${new Date().getFullYear()} ${st.company_name_en||'SUEUD AL TAAYIRA'}. All rights reserved.</p></div></div></body></html>`;
-};
-
-const filterData = (data, dateField, dateRange) => {
-  if (!data || !Array.isArray(data)) return [];
-  if (!dateRange || (!dateRange.from && !dateRange.to)) return data;
-  return data.filter(item => {
-    const d = item[dateField];
-    if (!d) return true;
-    if (dateRange.from && d < dateRange.from) return false;
-    if (dateRange.to && d > dateRange.to) return false;
-    return true;
-  });
-};
-
-const exportToExcel = (data, filename) => {
-  if (!data || data.length === 0) return;
-  const headers = Object.keys(data[0]);
-  const csv = [headers.join(','), ...data.map(row => headers.map(h => { let val = row[h] ?? ''; if (typeof val === 'string' && (val.includes(',') || val.includes('"') || val.includes('\n'))) { val = `"${val.replace(/"/g, '""')}"`; } return val; }).join(','))].join('\n');
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = `${filename}.csv`; a.click();
-  URL.revokeObjectURL(url);
-};
-
+/**
+ * Custom hook for ERP state management
+ * Manages all application state, initialization, and data fetching
+ */
 export default function useERPState() {
   const router = useRouter();
   const today = new Date().toISOString().split('T')[0];
   const initDone = useRef(false);
+  const subscriptionRef = useRef(null);
+
+  // ==================== AUTH STATE ====================
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [initError, setInitError] = useState('');
+
+  // ==================== UI STATE ====================
   const [lang, setLang] = useState('en');
   const [page, setPage] = useState('dashboard');
   const [modal, setModal] = useState({ type: null, data: null });
@@ -110,131 +41,460 @@ export default function useERPState() {
   const [tblPage, setTblPage] = useState(1);
   const [payFilter, setPayFilter] = useState('All');
   const [previewHTML, setPreviewHTML] = useState('');
+
+  // ==================== REPORT STATE ====================
   const [repDate, setRepDate] = useState({ from: '', to: '' });
   const [reportTab, setReportTab] = useState('sales');
-  const [data, setData] = useState({ invoices:[], customers:[], corporates:[], creditors:[], vendors:[], packages:[], branches:[], portals:[], employees:[], services:[], expenses:[], investments:[], cashbook:[], payroll:[], empAdvances:[], staffMistakes:[], attendance:[], appUsers:[], tenants:[], audits:[], settings:{} });
-  const [invForm, setInvForm] = useState({ custType:'Individual', custId:'new', custName:'', custPhone:'', corpId:'new', corpName:'', corpVat:'', corpPhone:'', corpAddress:'', passengers:[''], employeeId:'', portalId:'', bookingDate:today, invoiceDate:today, bookingType:'New Booking', linkedInvId:'', oldTicketNo:'', oldPnr:'', oldAirline:'', oldSector:'', oldSellPrice:0, oldBookingDate:'', oldPassengers:'', oldFlightType:'', oldPaymentMethod:'', refundReason:'', service:'Flight Ticket', flightType:'Domestic', flightJourney:'Single', refundable:'Refundable', flightSector:'', airline:'', destination:'', hotelName:'', checkIn:'', checkOut:'', visaType:'Tourist', serviceName:'', pnr:'', ticketNo:'', qty:1, cost:0, sell:0, discount:0, taxRate:'15', payment:'Cash', paid:'', creditDueDate:'', creditorId:'', tabbyNo:'', tamaraNo:'', ticketStatus:'Confirmed', useCredit:0, creditCustId:'', status:'Unpaid' });
+
+  // ==================== DATA STATE ====================
+  const [data, setData] = useState({
+    invoices: [],
+    customers: [],
+    corporates: [],
+    creditors: [],
+    vendors: [],
+    packages: [],
+    branches: [],
+    portals: [],
+    employees: [],
+    services: [],
+    expenses: [],
+    investments: [],
+    cashbook: [],
+    payroll: [],
+    empAdvances: [],
+    staffMistakes: [],
+    attendance: [],
+    appUsers: [],
+    tenants: [],
+    audits: [],
+    settings: {}
+  });
+
+  // ==================== FORM STATES ====================
+  const [invForm, setInvForm] = useState({
+    custType: 'Individual',
+    custId: 'new',
+    custName: '',
+    custPhone: '',
+    corpId: 'new',
+    corpName: '',
+    corpVat: '',
+    corpPhone: '',
+    corpAddress: '',
+    passengers: [''],
+    employeeId: '',
+    portalId: '',
+    bookingDate: today,
+    invoiceDate: today,
+    bookingType: 'New Booking',
+    linkedInvId: '',
+    oldTicketNo: '',
+    oldPnr: '',
+    oldAirline: '',
+    oldSector: '',
+    oldSellPrice: 0,
+    oldBookingDate: '',
+    oldPassengers: '',
+    oldFlightType: '',
+    oldPaymentMethod: '',
+    refundReason: '',
+    service: 'Flight Ticket',
+    flightType: 'Domestic',
+    flightJourney: 'Single',
+    refundable: 'Refundable',
+    flightSector: '',
+    airline: '',
+    destination: '',
+    hotelName: '',
+    checkIn: '',
+    checkOut: '',
+    visaType: 'Tourist',
+    serviceName: '',
+    pnr: '',
+    ticketNo: '',
+    qty: 1,
+    cost: 0,
+    sell: 0,
+    discount: 0,
+    taxRate: '15',
+    payment: 'Cash',
+    paid: '',
+    creditDueDate: '',
+    creditorId: '',
+    tabbyNo: '',
+    tamaraNo: '',
+    ticketStatus: 'Confirmed',
+    useCredit: 0,
+    creditCustId: '',
+    status: 'Unpaid'
+  });
+
   const [editInvId, setEditInvId] = useState(null);
-  const [expForm, setExpForm] = useState({ date:today, category:'General', description:'', payment_mode:'Cash', portal_id:'', items:[{ name:'', amount:0, category:'General' }] });
-  const [editExpId, setEditExpId] = useState(null);
-  const [custForm, setCustForm] = useState({ name:'', phone:'', store_credit:0 });
-  const [editCustId, setEditCustId] = useState(null);
-  const [corpForm, setCorpForm] = useState({ name:'', vat_no:'', phone:'', address:'' });
-  const [editCorpId, setEditCorpId] = useState(null);
-  const [creditorForm, setCreditorForm] = useState({ name:'', phone:'', address:'' });
-  const [editCredId, setEditCredId] = useState(null);
-  const [vendorForm, setVendorForm] = useState({ name:'', phone:'', balance:0 });
-  const [editVendId, setEditVendId] = useState(null);
-  const [pkgForm, setPkgForm] = useState({ name:'', price:'', desc:'', duration:'', inclusions:'' });
-  const [editPkgId, setEditPkgId] = useState(null);
-  const [brnForm, setBrnForm] = useState({ name:'', location:'', phone:'', manager:'', email:'', timing:'', status:'Active' });
-  const [editBrnId, setEditBrnId] = useState(null);
-  const [empForm, setEmpForm] = useState({ name:'', role:'Sales', salary:0, phone:'', commission_rate:0, iqama_no:'', iqama_expiry:'' });
-  const [editEmpId, setEditEmpId] = useState(null);
-  const [srvForm, setSrvForm] = useState({ name:'' });
-  const [editSrvId, setEditSrvId] = useState(null);
-  const [investForm, setInvestForm] = useState({ name:'', phone:'', email:'', invested_amount:0, profit_share_percent:0, editId:null });
-  const [portalForm, setPortalForm] = useState({ name:'', portal_type:'GDS', current_balance:0, initial_balance:0, phone:'', contact_person:'', credit_limit:0 });
-  const [settleForm, setSettleForm] = useState({ id:'', date:today, mode:'Cash' });
-  const [refundForm, setRefundForm] = useState({ id:'', date:today, compRefund:0, custRefund:0, mode:'Cash', reason:'', portalId:'', creditBalance:0 });
-  const [transferForm, setTransferForm] = useState({ from:'Cash', to:'Bank', amount:0, date:today, description:'' });
-  const [passForm, setPassForm] = useState({ newPass:'' });
-  const [userForm, setUserForm] = useState({ username:'', email:'', is_admin:false, can_access_hr:false, can_access_bank:false, can_access_invoices:true, can_access_reports:false, can_access_settings:false });
-  const [editUserId, setEditUserId] = useState(null);
-  const [tenantForm, setTenantForm] = useState({ agency_name:'', owner_email:'', subscription_end_date:'', company_name_ar:'', vat_no:'', cr_no:'', phone:'', address_ar:'' });
-  const [profileForm, setProfileForm] = useState({ username:'', avatar_url:'', phone:'', address:'' });
-  const [setForm, setSetForm] = useState({ company_name_en:'', company_name_ar:'', address_ar:'', phone:'', vat_no:'', cr_no:'', license_no:'', logo_url:'', invoice_footer:'', custom_fields:[] });
-  const [payForm, setPayForm] = useState({ employee_id:'', month:today.slice(0,7), overtime:0, gift:0, advance:0, mistakes_deduction:0, other_deduction:0, payment_mode:'Cash', payment_date:today, notes:'' });
+
+  // Generic form states for simple CRUD entities
+  const [forms, setForms] = useState({
+    expense: { date: today, category: 'General', description: '', payment_mode: 'Cash', portal_id: '', items: [{ name: '', amount: 0, category: 'General' }] },
+    customer: { name: '', phone: '', store_credit: 0 },
+    corporate: { name: '', vat_no: '', phone: '', address: '' },
+    creditor: { name: '', phone: '', address: '' },
+    vendor: { name: '', phone: '', balance: 0 },
+    package: { name: '', price: '', desc: '', duration: '', inclusions: '' },
+    branch: { name: '', location: '', phone: '', manager: '', email: '', timing: '', status: 'Active' },
+    employee: { name: '', role: 'Sales', salary: 0, phone: '', commission_rate: 0, iqama_no: '', iqama_expiry: '' },
+    service: { name: '' },
+    investor: { name: '', phone: '', email: '', invested_amount: 0, profit_share_percent: 0 },
+    portal: { name: '', portal_type: 'GDS', current_balance: 0, initial_balance: 0, phone: '', contact_person: '', credit_limit: 0 },
+    settle: { id: '', date: today, mode: 'Cash' },
+    refund: { id: '', date: today, compRefund: 0, custRefund: 0, mode: 'Cash', reason: '', portalId: '', creditBalance: 0 },
+    transfer: { from: 'Cash', to: 'Bank', amount: 0, date: today, description: '' },
+    password: { newPass: '' },
+    user: { username: '', email: '', is_admin: false, can_access_hr: false, can_access_bank: false, can_access_invoices: true, can_access_reports: false, can_access_settings: false },
+    tenant: { agency_name: '', owner_email: '', subscription_end_date: '', company_name_ar: '', vat_no: '', cr_no: '', phone: '', address_ar: '' },
+    profile: { username: '', avatar_url: '', phone: '', address: '' },
+    settings: { company_name_en: '', company_name_ar: '', address_ar: '', phone: '', vat_no: '', cr_no: '', license_no: '', logo_url: '', invoice_footer: '', custom_fields: [] },
+    payroll: { employee_id: '', month: today.slice(0, 7), overtime: 0, gift: 0, advance: 0, mistakes_deduction: 0, other_deduction: 0, payment_mode: 'Cash', payment_date: today, notes: '' }
+  });
+
+  // Edit IDs for all entities
+  const [editIds, setEditIds] = useState({
+    expense: null,
+    customer: null,
+    corporate: null,
+    creditor: null,
+    vendor: null,
+    package: null,
+    branch: null,
+    employee: null,
+    service: null,
+    user: null
+  });
+
+  // Contract state
   const [contractCorpName, setContractCorpName] = useState('');
   const [contractType, setContractType] = useState('Flight Tickets');
   const [contractMarkup, setContractMarkup] = useState(0);
   const [contractTerms, setContractTerms] = useState('');
 
-  const showToast = useCallback((msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); }, []);
-  const logAction = useCallback(async (action) => { try { if (userProfile?.tenant_id) await supabase.from('audits').insert([{ action, user_id: userProfile.id, tenant_id: userProfile.tenant_id, created_at: new Date().toISOString() }]); } catch (e) { console.warn('Audit:', e.message); } }, [userProfile]);
-
-  const fetchAll = useCallback(async (tenantId) => {
-    if (!tenantId) return;
-    try {
-      const [i,c,co,cr,v,p,b,po,e,s,ex,cb,pa,ms,at,se,ad] = await Promise.all([
-        supabase.from('invoices').select('*, customers(name,phone), corporates(name), employees(name)').eq('tenant_id', tenantId).order('invoice_date',{ascending:false}),
-        supabase.from('customers').select('*').eq('tenant_id', tenantId).order('name'),
-        supabase.from('corporates').select('*').eq('tenant_id', tenantId).order('name'),
-        supabase.from('creditors').select('*').eq('tenant_id', tenantId).order('name'),
-        supabase.from('vendors').select('*').eq('tenant_id', tenantId).order('name'),
-        supabase.from('packages').select('*').eq('tenant_id', tenantId).order('name'),
-        supabase.from('branches').select('*').eq('tenant_id', tenantId).order('name'),
-        supabase.from('portals').select('*').eq('tenant_id', tenantId).order('name'),
-        supabase.from('employees').select('*').eq('tenant_id', tenantId).order('name'),
-        supabase.from('services').select('*').eq('tenant_id', tenantId).order('name'),
-        supabase.from('expenses').select('*').eq('tenant_id', tenantId).order('expense_date',{ascending:false}),
-        supabase.from('cashbook').select('*').eq('tenant_id', tenantId).order('trans_date',{ascending:false}).limit(500),
-        supabase.from('payroll').select('*, employees(name,role)').eq('tenant_id', tenantId).order('month',{ascending:false}),
-        supabase.from('staff_mistakes').select('*, employees(name,role)').eq('tenant_id', tenantId).order('date',{ascending:false}),
-        supabase.from('attendance').select('*, employees(name)').eq('tenant_id', tenantId).order('date',{ascending:false}),
-        supabase.from('settings').select('*').eq('tenant_id', tenantId).maybeSingle(),
-        supabase.from('emp_advances').select('*').eq('tenant_id', tenantId).order('date',{ascending:false})
-      ]);
-      setData(prev => ({...prev, invoices:i.data||[], customers:c.data||[], corporates:co.data||[], creditors:cr.data||[], vendors:v.data||[], packages:p.data||[], branches:b.data||[], portals:po.data||[], employees:e.data||[], services:s.data||[], expenses:ex.data||[], cashbook:cb.data||[], payroll:pa.data||[], staffMistakes:ms.data||[], attendance:at.data||[], settings:se.data||{}, empAdvances:ad.data||[]}));
-    } catch (err) { console.error('fetchAll:', err); }
+  // ==================== GENERIC FORM HANDLERS ====================
+  const updateForm = useCallback((formType, field, value) => {
+    setForms(prev => ({
+      ...prev,
+      [formType]: {
+        ...prev[formType],
+        [field]: value
+      }
+    }));
   }, []);
 
+  const resetForm = useCallback((formType, defaultValues = {}) => {
+    setForms(prev => ({
+      ...prev,
+      [formType]: defaultValues
+    }));
+  }, []);
+
+  const setEditId = useCallback((entityType, id) => {
+    setEditIds(prev => ({
+      ...prev,
+      [entityType]: id
+    }));
+  }, []);
+
+  // ==================== UTILITY FUNCTIONS ====================
+  const showToast = useCallback((msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 3000);
+  }, []);
+
+  const logAction = useCallback(async (action) => {
+    try {
+      if (userProfile?.tenant_id) {
+        await supabase.from('audits').insert([{
+          action,
+          user_id: userProfile.id,
+          tenant_id: userProfile.tenant_id,
+          created_at: new Date().toISOString()
+        }]);
+      }
+    } catch (e) {
+      console.warn('Audit logging failed:', e.message);
+    }
+  }, [userProfile]);
+
+  // ==================== MEMOIZED VALUES ====================
+  const t = useMemo(() => translations[lang] || translations.en, [lang]);
+
+  // ==================== DATA FETCHING ====================
+  const fetchAll = useCallback(async (tenantId) => {
+    if (!tenantId) return;
+
+    try {
+      const queries = [
+        { key: 'invoices', query: supabase.from('invoices').select('*, customers(name,phone), corporates(name), employees(name)').eq('tenant_id', tenantId).order('invoice_date', { ascending: false }) },
+        { key: 'customers', query: supabase.from('customers').select('*').eq('tenant_id', tenantId).order('name') },
+        { key: 'corporates', query: supabase.from('corporates').select('*').eq('tenant_id', tenantId).order('name') },
+        { key: 'creditors', query: supabase.from('creditors').select('*').eq('tenant_id', tenantId).order('name') },
+        { key: 'vendors', query: supabase.from('vendors').select('*').eq('tenant_id', tenantId).order('name') },
+        { key: 'packages', query: supabase.from('packages').select('*').eq('tenant_id', tenantId).order('name') },
+        { key: 'branches', query: supabase.from('branches').select('*').eq('tenant_id', tenantId).order('name') },
+        { key: 'portals', query: supabase.from('portals').select('*').eq('tenant_id', tenantId).order('name') },
+        { key: 'employees', query: supabase.from('employees').select('*').eq('tenant_id', tenantId).order('name') },
+        { key: 'services', query: supabase.from('services').select('*').eq('tenant_id', tenantId).order('name') },
+        { key: 'expenses', query: supabase.from('expenses').select('*').eq('tenant_id', tenantId).order('expense_date', { ascending: false }) },
+        { key: 'cashbook', query: supabase.from('cashbook').select('*').eq('tenant_id', tenantId).order('trans_date', { ascending: false }).limit(500) },
+        { key: 'payroll', query: supabase.from('payroll').select('*, employees(name,role)').eq('tenant_id', tenantId).order('month', { ascending: false }) },
+        { key: 'staffMistakes', query: supabase.from('staff_mistakes').select('*, employees(name,role)').eq('tenant_id', tenantId).order('date', { ascending: false }) },
+        { key: 'attendance', query: supabase.from('attendance').select('*, employees(name)').eq('tenant_id', tenantId).order('date', { ascending: false }) },
+        { key: 'settings', query: supabase.from('settings').select('*').eq('tenant_id', tenantId).maybeSingle() },
+        { key: 'empAdvances', query: supabase.from('emp_advances').select('*').eq('tenant_id', tenantId).order('date', { ascending: false }) }
+      ];
+
+      const results = await Promise.all(queries.map(q => q.query));
+      
+      const newData = {};
+      queries.forEach((q, index) => {
+        newData[q.key] = results[index].data || (q.key === 'settings' ? {} : []);
+      });
+
+      setData(prev => ({ ...prev, ...newData }));
+    } catch (err) {
+      console.error('fetchAll error:', err);
+      showToast('Failed to fetch data: ' + err.message);
+    }
+  }, [showToast]);
+
+  // ==================== REAL-TIME SUBSCRIPTIONS ====================
+  const setupRealtimeSubscriptions = useCallback((tenantId) => {
+    if (!tenantId) return;
+
+    // Clean up existing subscription
+    if (subscriptionRef.current) {
+      subscriptionRef.current.unsubscribe();
+    }
+
+    // Subscribe to important tables
+    const channels = ['invoices', 'customers', 'portals', 'cashbook'].map(table => {
+      return supabase
+        .channel(`${table}-changes`)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: table,
+          filter: `tenant_id=eq.${tenantId}`
+        }, (payload) => {
+          console.log(`Realtime ${table} change:`, payload.eventType);
+          // Fetch only the changed table instead of all data
+          fetchSingleTable(table, tenantId);
+        })
+        .subscribe();
+    });
+
+    subscriptionRef.current = {
+      unsubscribe: () => channels.forEach(ch => supabase.removeChannel(ch))
+    };
+  }, [fetchAll]);
+
+  // Fetch single table for realtime updates
+  const fetchSingleTable = useCallback(async (table, tenantId) => {
+    try {
+      let query;
+      switch (table) {
+        case 'invoices':
+          query = supabase.from('invoices').select('*, customers(name,phone), corporates(name), employees(name)').eq('tenant_id', tenantId).order('invoice_date', { ascending: false });
+          break;
+        case 'customers':
+          query = supabase.from('customers').select('*').eq('tenant_id', tenantId).order('name');
+          break;
+        case 'portals':
+          query = supabase.from('portals').select('*').eq('tenant_id', tenantId).order('name');
+          break;
+        case 'cashbook':
+          query = supabase.from('cashbook').select('*').eq('tenant_id', tenantId).order('trans_date', { ascending: false }).limit(500);
+          break;
+        default:
+          return;
+      }
+
+      const { data: tableData } = await query;
+      if (tableData) {
+        setData(prev => ({
+          ...prev,
+          [table]: tableData
+        }));
+      }
+    } catch (err) {
+      console.error(`Error fetching ${table}:`, err);
+    }
+  }, []);
+
+  // ==================== INITIALIZATION ====================
   useEffect(() => {
     if (initDone.current) return;
     initDone.current = true;
+
     const init = async () => {
       try {
         const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        if (!url || url.includes('dummy')) { setInitError('NEXT_PUBLIC_SUPABASE_URL not set in Vercel Environment Variables.'); setLoading(false); return; }
-        const { data: { user: authUser }, error: authErr } = await supabase.auth.getUser();
-        if (authErr) { setInitError('Auth error: ' + authErr.message); setLoading(false); router.push('/login'); return; }
-        if (!authUser) { setLoading(false); router.push('/login'); return; }
-        setUser(authUser);
-        const { data: profile, error: pErr } = await supabase.from('app_users').select('*').eq('id', authUser.id).maybeSingle();
-        if (pErr) { setInitError('Profile error: ' + pErr.message); setLoading(false); return; }
-        if (!profile) { setInitError('No profile found for your account. Contact admin.'); setLoading(false); return; }
-        if (!profile.is_super_admin) {
-          const { data: tenant } = await supabase.from('tenants').select('is_paid, subscription_end_date').eq('id', profile.tenant_id).maybeSingle();
-          if (tenant && !tenant.is_paid && tenant.subscription_end_date && new Date(tenant.subscription_end_date) < new Date()) { setInitError('Subscription expired on ' + tenant.subscription_end_date); setLoading(false); router.push('/subscription'); return; }
+        if (!url || url.includes('dummy')) {
+          setInitError('NEXT_PUBLIC_SUPABASE_URL not set in Vercel Environment Variables.');
+          setLoading(false);
+          return;
         }
+
+        const { data: { user: authUser }, error: authErr } = await supabase.auth.getUser();
+        if (authErr) {
+          setInitError('Auth error: ' + authErr.message);
+          setLoading(false);
+          router.push('/login');
+          return;
+        }
+
+        if (!authUser) {
+          setLoading(false);
+          router.push('/login');
+          return;
+        }
+
+        setUser(authUser);
+
+        const { data: profile, error: pErr } = await supabase
+          .from('app_users')
+          .select('*')
+          .eq('id', authUser.id)
+          .maybeSingle();
+
+        if (pErr) {
+          setInitError('Profile error: ' + pErr.message);
+          setLoading(false);
+          return;
+        }
+
+        if (!profile) {
+          setInitError('No profile found for your account. Contact admin.');
+          setLoading(false);
+          return;
+        }
+
+        // Check subscription status
+        if (!profile.is_super_admin) {
+          const { data: tenant } = await supabase
+            .from('tenants')
+            .select('is_paid, subscription_end_date')
+            .eq('id', profile.tenant_id)
+            .maybeSingle();
+
+          if (tenant && !tenant.is_paid && tenant.subscription_end_date && new Date(tenant.subscription_end_date) < new Date()) {
+            setInitError('Subscription expired on ' + tenant.subscription_end_date);
+            setLoading(false);
+            router.push('/subscription');
+            return;
+          }
+        }
+
         setUserProfile(profile);
-        setProfileForm({ username: profile.username||'', avatar_url: profile.avatar_url||'', phone: profile.phone||'', address: profile.address||'' });
+        updateForm('profile', 'username', profile.username || '');
+        updateForm('profile', 'avatar_url', profile.avatar_url || '');
+        updateForm('profile', 'phone', profile.phone || '');
+        updateForm('profile', 'address', profile.address || '');
+
         await fetchAll(profile.tenant_id);
+        
+        // Setup realtime subscriptions
+        setupRealtimeSubscriptions(profile.tenant_id);
+        
         setLoading(false);
-      } catch (err) { console.error('Init:', err); setInitError('Failed: ' + err.message); setLoading(false); }
+      } catch (err) {
+        console.error('Init error:', err);
+        setInitError('Failed: ' + err.message);
+        setLoading(false);
+      }
     };
+
     init();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => { if (event === 'SIGNED_OUT') { setUser(null); setUserProfile(null); router.push('/login'); } });
-    return () => { subscription.unsubscribe(); };
+
+    // Auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setUserProfile(null);
+        if (subscriptionRef.current) {
+          subscriptionRef.current.unsubscribe();
+        }
+        router.push('/login');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe();
+      }
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ==================== RETURN STATE ====================
   return {
+    // Auth
     user, setUser, userProfile, setUserProfile, loading, setLoading, initError,
-    lang, setLang, page, setPage, modal, setModal, toast, setToast, showToast,
+    
+    // UI
+    lang, setLang, t, page, setPage, modal, setModal, toast, setToast, showToast,
     chatOpen, setChatOpen, chatMessages, setChatMessages, chatInput, setChatInput,
     search, setSearch, tblPage, setTblPage, payFilter, setPayFilter,
     previewHTML, setPreviewHTML, repDate, setRepDate, reportTab, setReportTab,
-    data, setData, fetchAll, logAction,
+    
+    // Data
+    data, setData, fetchAll, fetchSingleTable, logAction,
+    
+    // Forms (backward compatible)
     invForm, setInvForm, editInvId, setEditInvId,
-    expForm, setExpForm, editExpId, setEditExpId,
-    custForm, setCustForm, editCustId, setEditCustId,
-    corpForm, setCorpForm, editCorpId, setEditCorpId,
-    creditorForm, setCreditorForm, editCredId, setEditCredId,
-    vendorForm, setVendorForm, editVendId, setEditVendId,
-    pkgForm, setPkgForm, editPkgId, setEditPkgId,
-    brnForm, setBrnForm, editBrnId, setEditBrnId,
-    empForm, setEmpForm, editEmpId, setEditEmpId,
-    srvForm, setSrvForm, editSrvId, setEditSrvId,
-    investForm, setInvestForm, portalForm, setPortalForm,
-    settleForm, setSettleForm, refundForm, setRefundForm,
-    transferForm, setTransferForm, passForm, setPassForm,
-    userForm, setUserForm, editUserId, setEditUserId,
-    tenantForm, setTenantForm, profileForm, setProfileForm,
-    setForm, setSetForm, payForm, setPayForm,
+    expForm: forms.expense, setExpForm: (val) => typeof val === 'function' ? setForms(prev => ({ ...prev, expense: val(prev.expense) })) : setForms(prev => ({ ...prev, expense: val })),
+    editExpId: editIds.expense, setEditExpId: (id) => setEditId('expense', id),
+    custForm: forms.customer, setCustForm: (val) => typeof val === 'function' ? setForms(prev => ({ ...prev, customer: val(prev.customer) })) : setForms(prev => ({ ...prev, customer: val })),
+    editCustId: editIds.customer, setEditCustId: (id) => setEditId('customer', id),
+    corpForm: forms.corporate, setCorpForm: (val) => typeof val === 'function' ? setForms(prev => ({ ...prev, corporate: val(prev.corporate) })) : setForms(prev => ({ ...prev, corporate: val })),
+    editCorpId: editIds.corporate, setEditCorpId: (id) => setEditId('corporate', id),
+    creditorForm: forms.creditor, setCreditorForm: (val) => typeof val === 'function' ? setForms(prev => ({ ...prev, creditor: val(prev.creditor) })) : setForms(prev => ({ ...prev, creditor: val })),
+    editCredId: editIds.creditor, setEditCredId: (id) => setEditId('creditor', id),
+    vendorForm: forms.vendor, setVendorForm: (val) => typeof val === 'function' ? setForms(prev => ({ ...prev, vendor: val(prev.vendor) })) : setForms(prev => ({ ...prev, vendor: val })),
+    editVendId: editIds.vendor, setEditVendId: (id) => setEditId('vendor', id),
+    pkgForm: forms.package, setPkgForm: (val) => typeof val === 'function' ? setForms(prev => ({ ...prev, package: val(prev.package) })) : setForms(prev => ({ ...prev, package: val })),
+    editPkgId: editIds.package, setEditPkgId: (id) => setEditId('package', id),
+    brnForm: forms.branch, setBrnForm: (val) => typeof val === 'function' ? setForms(prev => ({ ...prev, branch: val(prev.branch) })) : setForms(prev => ({ ...prev, branch: val })),
+    editBrnId: editIds.branch, setEditBrnId: (id) => setEditId('branch', id),
+    empForm: forms.employee, setEmpForm: (val) => typeof val === 'function' ? setForms(prev => ({ ...prev, employee: val(prev.employee) })) : setForms(prev => ({ ...prev, employee: val })),
+    editEmpId: editIds.employee, setEditEmpId: (id) => setEditId('employee', id),
+    srvForm: forms.service, setSrvForm: (val) => typeof val === 'function' ? setForms(prev => ({ ...prev, service: val(prev.service) })) : setForms(prev => ({ ...prev, service: val })),
+    editSrvId: editIds.service, setEditSrvId: (id) => setEditId('service', id),
+    investForm: forms.investor, setInvestForm: (val) => typeof val === 'function' ? setForms(prev => ({ ...prev, investor: val(prev.investor) })) : setForms(prev => ({ ...prev, investor: val })),
+    portalForm: forms.portal, setPortalForm: (val) => typeof val === 'function' ? setForms(prev => ({ ...prev, portal: val(prev.portal) })) : setForms(prev => ({ ...prev, portal: val })),
+    settleForm: forms.settle, setSettleForm: (val) => typeof val === 'function' ? setForms(prev => ({ ...prev, settle: val(prev.settle) })) : setForms(prev => ({ ...prev, settle: val })),
+    refundForm: forms.refund, setRefundForm: (val) => typeof val === 'function' ? setForms(prev => ({ ...prev, refund: val(prev.refund) })) : setForms(prev => ({ ...prev, refund: val })),
+    transferForm: forms.transfer, setTransferForm: (val) => typeof val === 'function' ? setForms(prev => ({ ...prev, transfer: val(prev.transfer) })) : setForms(prev => ({ ...prev, transfer: val })),
+    passForm: forms.password, setPassForm: (val) => typeof val === 'function' ? setForms(prev => ({ ...prev, password: val(prev.password) })) : setForms(prev => ({ ...prev, password: val })),
+    userForm: forms.user, setUserForm: (val) => typeof val === 'function' ? setForms(prev => ({ ...prev, user: val(prev.user) })) : setForms(prev => ({ ...prev, user: val })),
+    editUserId: editIds.user, setEditUserId: (id) => setEditId('user', id),
+    tenantForm: forms.tenant, setTenantForm: (val) => typeof val === 'function' ? setForms(prev => ({ ...prev, tenant: val(prev.tenant) })) : setForms(prev => ({ ...prev, tenant: val })),
+    profileForm: forms.profile, setProfileForm: (val) => typeof val === 'function' ? setForms(prev => ({ ...prev, profile: val(prev.profile) })) : setForms(prev => ({ ...prev, profile: val })),
+    setForm: forms.settings, setSetForm: (val) => typeof val === 'function' ? setForms(prev => ({ ...prev, settings: val(prev.settings) })) : setForms(prev => ({ ...prev, settings: val })),
+    payForm: forms.payroll, setPayForm: (val) => typeof val === 'function' ? setForms(prev => ({ ...prev, payroll: val(prev.payroll) })) : setForms(prev => ({ ...prev, payroll: val })),
+    
+    // Contract
     contractCorpName, setContractCorpName, contractType, setContractType,
     contractMarkup, setContractMarkup, contractTerms, setContractTerms,
-    today, router, tr: translations[lang] || translations.en,
+    
+    // Utilities
+    today, router,
+    
+    // HTML Generators
+    getInvoiceHTML, getRefundHTML,
+    
+    // Data Utils
     filterData, exportToExcel,
-    getInvoiceHTML, getRefundHTML, getExpenseHTML, getSalarySlipHTML, getContractHTML, getMistakeHTML
+    
+    // Generic form handlers (new)
+    updateForm, resetForm, setEditId,
+    forms, editIds
   };
 }
