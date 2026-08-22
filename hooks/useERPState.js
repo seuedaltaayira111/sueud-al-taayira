@@ -1,75 +1,47 @@
 'use client';
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
+/* ═══ TRANSLATIONS ═══ */
 const translations = {
   en: { dashboard:'Dashboard', create:'Create Invoice', list:'Invoices', refunds:'Refunds', customers:'Customers', corporates:'Corporates', creditors:'Creditors', credit:'Credit Balances', vendors:'Vendors', packages:'Packages', branches:'Branches', portals:'Portals', bank:'Bank & Cash', invest:'Investors', hr:'Human Resources', users:'Users', settings:'Settings', reports:'Reports', audit:'Audit Logs', statements:'Statements', contract:'Corporate Contract', offer:'Corporate Offer', superadmin:'SuperAdmin', profile:'Profile', profitability:'Profitability', notifications:'Notifications', ai_dashboard:'AI Dashboard', quotations:'Quotations', hr_advanced:'HR & Payroll', ai_pricing:'AI Pricing', my_attendance:'My Attendance', credit_limits:'Credit Limits', customer_statement:'Customer Statement', refund_statement:'Refund Statement', supplier_statement:'Supplier Statement', multi_branch:'Multi-Branch', recurring_invoices:'Recurring Invoices', expense_approval:'Expense Approval', staff_mistakes:'Staff Mistakes', expenses:'Expenses', editInvoice:'Edit Invoice', generateInvoice:'Generate Invoice', updateInvoice:'Update Invoice', custType:'Customer Type', individual:'Individual', corporate:'Corporate', selectCustomer:'Select Customer', customerPhone:'Customer Phone', passengers:'Passengers', addPassenger:'+ Add Passenger', portal:'Portal', service:'Service', flightTicket:'Flight Ticket', hotel:'Hotel Booking', tourPackage:'Tour Package', visitVisa:'Visit Visa', umrahVisa:'Umrah Visa', newService:'New Service', flightType:'Flight Type', domestic:'Domestic', international:'International', airline:'Airline', sector:'Sector', pnr:'PNR', ticketNo:'Ticket No', qty:'Quantity', cost:'Cost', sell:'Sell', discount:'Discount', vatRate:'VAT Rate', invoiceDate:'Invoice Date', bookingType:'Booking Type', newBooking:'New Booking', reissue:'Reissue', extraLuggage:'Extra Luggage', previousBooking:'Previous Booking', salesPerson:'Sales Person', paymentMethod:'Payment Method', cash:'Cash', bankTransfer:'Bank Transfer', card:'Card / Network', credit:'Credit', creditBalance:'Credit Balance', tabby:'Tabby', tamara:'Tamara', paidAmount:'Paid Amount', invNo:'Inv No', total:'Total', due:'Due', method:'Method', actions:'Actions', preview:'Preview', print:'Print', edit:'Edit', delete:'Delete', refund:'Refund', quickSettle:'Settle', download_excel:'Export Excel', save:'Save', add:'Add', search:'Search...', changePass:'Change Password', logout:'Logout', selectEmployee:'Select Employee', attendanceDate:'Date', status:'Status', present:'Present', leave:'Leave', absent:'Absent', checkInTime:'Check-In', checkOutTime:'Check-Out', overtime:'OT', deduction:'Deduction', mark:'Mark', baseSalary:'Base Salary', commission:'Commission %', advDed:'Adv. Deduct', gift:'Gift/Bonus', month:'Month', mode:'Mode', paySalary:'Pay Salary', generateSlip:'Generate Slip', target:'Target (SAR)', achieved:'Achieved', percentage:'%', balance:'Balance' },
   ar: { dashboard:'لوحة التحكم', create:'إنشاء فاتورة', list:'الفواتير', refunds:'الاسترجاعات', customers:'العملاء', corporates:'الشركات', creditors:'الدائنون', credit:'أرصدة مستحقة', vendors:'الموردون', packages:'الباقات', branches:'الفروع', portals:'البوابات', bank:'البنك والصندوق', invest:'المستثمرون', hr:'الموارد البشرية', users:'المستخدمون', settings:'الإعدادات', reports:'التقارير', audit:'سجل التدقيق', statements:'كشوفات', contract:'عقد شركات', offer:'عرض شركات', superadmin:'المدير العام', profile:'الملف الشخصي', profitability:'الربحية', notifications:'الإشعارات', ai_dashboard:'لوحة ذكية', quotations:'عروض أسعار', hr_advanced:'الرواتب', ai_pricing:'تسعير ذكي', my_attendance:'حضوري', credit_limits:'حدود الائتمان', customer_statement:'كشف عميل', refund_statement:'كشف استرجاع', supplier_statement:'كشف مورد', multi_branch:'متعدد الفروع', recurring_invoices:'فواتير متكررة', expense_approval:'اعتماد مصروفات', staff_mistakes:'أخطاء الموظفين', expenses:'المصروفات', editInvoice:'تعديل الفاتورة', generateInvoice:'إنشاء الفاتورة', updateInvoice:'تحديث الفاتورة', custType:'نوع العميل', individual:'فرد', corporate:'شركة', selectCustomer:'اختر العميل', customerPhone:'هاتف العميل', passengers:'الركاب', addPassenger:'+ إضافة راكب', portal:'البوابة', service:'الخدمة', flightTicket:'تذكرة طيران', hotel:'حجز فندق', tourPackage:'باقة سياحية', visitVisa:'تأشيرة زيارة', umrahVisa:'تأشيرة عمرة', newService:'خدمة جديدة', flightType:'نوع الرحلة', domestic:'داخلي', international:'دولي', airline:'خط الطيران', sector:'القطاع', pnr:'رقم الحجز', ticketNo:'رقم التذكرة', qty:'الكمية', cost:'التكلفة', sell:'البيع', discount:'الخصم', vatRate:'نسبة الضريبة', invoiceDate:'تاريخ الفاتورة', bookingType:'نوع الحجز', newBooking:'حجز جديد', reissue:'إعادة إصدار', extraLuggage:'أمتعة إضافية', previousBooking:'حجز سابق', salesPerson:'موظف المبيعات', paymentMethod:'طريقة الدفع', cash:'نقداً', bankTransfer:'تحويل بنكي', card:'بطاقة', credit:'آجل', creditBalance:'رصيد مستحق', tabby:'تابي', tamara:'تمارة', paidAmount:'المبلغ المدفوع', invNo:'رقم الفاتورة', total:'الإجمالي', due:'المتبقي', method:'الطريقة', actions:'إجراءات', preview:'معاينة', print:'طباعة', edit:'تعديل', delete:'حذف', refund:'استرجاع', quickSettle:'تسوية', download_excel:'تصدير', save:'حفظ', add:'إضافة', search:'بحث...', changePass:'تغيير كلمة المرور', logout:'تسجيل خروج', selectEmployee:'اختر الموظف', attendanceDate:'التاريخ', status:'الحالة', present:'حاضر', leave:'إجازة', absent:'غائب', checkInTime:'وقت الحضور', checkOutTime:'وقت الانصراف', overtime:'إضافي', deduction:'خصم', mark:'تسجيل', baseSalary:'الراتب الأساسي', commission:'العمولة %', advDed:'خصم سلفة', gift:'هدية/مكافأة', month:'الشهر', mode:'الطريقة', paySalary:'دفع الراتب', generateSlip:'إنشاء قسيمة', target:'الهدف (ريال)', achieved:'المحقق', percentage:'%', balance:'الرصيد' }
 };
 
-/* ═══════════ AIRLINE CHECK-IN URL MAPPER ═══════════ */
+/* ═══ AIRLINE CHECK-IN URL MAPPER ═══ */
 const getAirlineCheckInURL = (airline, pnr) => {
   if (!airline || !pnr) return null;
   const a = airline.toLowerCase();
   const urls = {
     'saudia': `https://www.saudia.com/check-in?pnr=${pnr}`, 'sv': `https://www.saudia.com/check-in?pnr=${pnr}`,
-    'flynas': `https://www.flynas.com/en/manage-booking?ref=${pnr}`, 'xy': `https://www.flynas.com/en/manage-booking?ref=${pnr}`,
-    'flyadeal': `https://www.flyadeal.com/en/manage-booking?ref=${pnr}`, 'f3': `https://www.flyadeal.com/en/manage-booking?ref=${pnr}`,
-    'gulf air': `https://www.gulfair.com/check-in?pnr=${pnr}`, 'gf': `https://www.gulfair.com/check-in?pnr=${pnr}`,
-    'emirates': `https://www.emirates.com/manage-booking/retrieve-check-in?pnr=${pnr}`, 'ek': `https://www.emirates.com/manage-booking/retrieve-check-in?pnr=${pnr}`,
-    'etihad': `https://www.etihad.com/en-us/manage-booking/check-in?pnr=${pnr}`, 'ey': `https://www.etihad.com/en-us/manage-booking/check-in?pnr=${pnr}`,
-    'qatar': `https://www.qatarairways.com/en/check-in.html?pnr=${pnr}`, 'qr': `https://www.qatarairways.com/en/check-in.html?pnr=${pnr}`,
-    'egyptair': `https://www.egyptair.com/en/Manage-Booking/Check-In?pnr=${pnr}`, 'ms': `https://www.egyptair.com/en/Manage-Booking/Check-In?pnr=${pnr}`,
-    'royal jordanian': `https://www.rj.com/en/manage-booking?pnr=${pnr}`, 'rj': `https://www.rj.com/en/manage-booking?pnr=${pnr}`,
-    'middle east': `https://www.meairlines.com/en/ManageBooking?pnr=${pnr}`, 'me': `https://www.meairlines.com/en/ManageBooking?pnr=${pnr}`,
-    'pakistan': `https://www.piac.com.pk/manage-booking?pnr=${pnr}`, 'pk': `https://www.piac.com.pk/manage-booking?pnr=${pnr}`,
-    'oman air': `https://www.omanair.com/manage-booking?pnr=${pnr}`, 'wy': `https://www.omanair.com/manage-booking?pnr=${pnr}`,
-    'kuwait': `https://www.kuwaitairways.com/en/manage-booking?pnr=${pnr}`,
-    'air arabia': `https://www.airarabia.com/manage-booking?pnr=${pnr}`, 'g9': `https://www.airarabia.com/manage-booking?pnr=${pnr}`,
-    'wizz air': `https://wizzair.com/en-gb/manage-booking?pnr=${pnr}`, 'w6': `https://wizzair.com/en-gb/manage-booking?pnr=${pnr}`,
-    'pegasus': `https://www.flypgs.com/en/manage-booking?pnr=${pnr}`, 'pc': `https://www.flypgs.com/en/manage-booking?pnr=${pnr}`,
-    'turkish': `https://www.turkishairlines.com/en-us/check-in?pnr=${pnr}`, 'tk': `https://www.turkishairlines.com/en-us/check-in?pnr=${pnr}`,
-    'indigo': `https://www.goindigo.in/manage-booking?pnr=${pnr}`, '6e': `https://www.goindigo.in/manage-booking?pnr=${pnr}`,
-    'spicejet': `https://www.spicejet.com/manage-booking?pnr=${pnr}`, 'sg': `https://www.spicejet.com/manage-booking?pnr=${pnr}`,
-    'air india': `https://www.airindia.in/manage-booking?pnr=${pnr}`, 'ai': `https://www.airindia.in/manage-booking?pnr=${pnr}`,
-    'air cairo': `https://www.aircairo.com/en/manage-booking?pnr=${pnr}`,
-    'nile air': `https://www.nileair.com/en/manage-booking?pnr=${pnr}`, 'np': `https://www.nileair.com/en/manage-booking?pnr=${pnr}`,
-    'salam air': `https://www.salamair.com/manage-booking?pnr=${pnr}`, 'ov': `https://www.salamair.com/manage-booking?pnr=${pnr}`,
-    'jazeera': `https://www.jazeeraairways.com/en/manage-booking?ref=${pnr}`, 'j9': `https://www.jazeeraairways.com/en/manage-booking?ref=${pnr}`,
-    'flydubai': `https://www.flydubai.com/en/manage-booking?ref=${pnr}`, 'fz': `https://www.flydubai.com/en/manage-booking?ref=${pnr}`,
-    'virgin': `https://www.virginatlantic.com/check-in?pnr=${pnr}`, 'vs': `https://www.virginatlantic.com/check-in?pnr=${pnr}`,
+    'flynas': `https://www.flynas.com/en/manage-booking?ref=${pnr}`, 'flyadeal': `https://www.flyadeal.com/en/manage-booking?ref=${pnr}`,
+    'gulf air': `https://www.gulfair.com/check-in?pnr=${pnr}`, 'emirates': `https://www.emirates.com/manage-booking/retrieve-check-in?pnr=${pnr}`,
+    'etihad': `https://www.etihad.com/en-us/manage-booking/check-in?pnr=${pnr}`, 'qatar': `https://www.qatarairways.com/en/check-in.html?pnr=${pnr}`,
+    'egyptair': `https://www.egyptair.com/en/Manage-Booking/Check-In?pnr=${pnr}`, 'turkish': `https://www.turkishairlines.com/en-us/check-in?pnr=${pnr}`,
+    'flydubai': `https://www.flydubai.com/en/manage-booking?ref=${pnr}`, 'air arabia': `https://www.airarabia.com/manage-booking?pnr=${pnr}`,
+    'royal jordanian': `https://www.rj.com/en/manage-booking?pnr=${pnr}`, 'oman air': `https://www.omanair.com/manage-booking?pnr=${pnr}`,
+    'kuwait': `https://www.kuwaitairways.com/en/manage-booking?pnr=${pnr}`, 'pakistan': `https://www.piac.com.pk/manage-booking?pnr=${pnr}`,
+    'indigo': `https://www.goindigo.in/manage-booking?pnr=${pnr}`, 'spicejet': `https://www.spicejet.com/manage-booking?pnr=${pnr}`,
+    'air india': `https://www.airindia.in/manage-booking?pnr=${pnr}`, 'virgin': `https://www.virginatlantic.com/check-in?pnr=${pnr}`,
   };
-  for (const [key, url] of Object.entries(urls)) {
-    if (a.includes(key)) return url;
-  }
-  return `https://www.google.com/search?q=${encodeURIComponent(airline + ' online check in pnr ' + pnr)}`;
+  for (const [key, url] of Object.entries(urls)) { if (a.includes(key)) return url; }
+  return `https://www.google.com/search?q=${encodeURIComponent(airline + ' check in pnr ' + pnr)}`;
 };
 
-/* ═══════════ AI FOOTER MESSAGES ═══════════ */
-const getAIMessage = (inv, lang = 'en') => {
-  const messages = [
+/* ═══ AI MESSAGE ═══ */
+const getAIMessage = (inv, lang) => {
+  const msgs = [
     { en: "✈️ Wishing you a wonderful journey! Safe travels.", ar: "✈️ نتمنى لك رحلة سعيدة! سفر آمن." },
     { en: "🌟 Your trust means the world to us. Amazing trip!", ar: "🌟 ثقتكم تعني لنا كل شيء. رحلة رائعة!" },
-    { en: "🏔️ Explore the world with confidence. We're here!", ar: "🏔️ استكشف العالم بثقة. نحن هنا!" },
-    { en: "🕌 Wishing you a blessed and safe journey.", ar: "🕌 نتمنى لك رحلة مباركة وسفر آمن." },
-    { en: "🌴 Whether business or leisure, enjoy your trip!", ar: "🌴 سواء أعمال أو ترفيه، استمتعوا!" },
     { en: "💎 Premium service, unforgettable experiences.", ar: "💎 خدمة مميزة، تجارب لا تُنسى." },
-    { en: "🌏 The world is your destination. Let us help!", ar: "🌏 العالم وجهتكم. دعونا نساعد!" },
-    { en: "⭐ Your satisfaction is our mission. Safe travels!", ar: "⭐ رضاكم مهمتنا. سفر آمن!" },
-    { en: "🎭 Making travel dreams come true!", ar: "🎭 نحقق أحلام سفركم!" },
     { en: "🌅 New horizons await! Thank you!", ar: "🌅 آفاق جديدة تنتظركم! شكراً!" },
-    { en: "🏨 From flights to hotels, we've got you!", ar: "🏨 من الرحلات إلى الفنادق، نحن هنا!" },
-    { en: "🎊 Another successful booking. Safe travels!", ar: "🎊 حجز ناجح. سفر آمن!" },
   ];
-  const idx = (inv.id?.charCodeAt(0) || 0) % messages.length;
-  const msg = messages[idx];
-  return lang === 'ar' ? msg.ar : msg.en;
+  const idx = (inv.id?.charCodeAt(0) || 0) % msgs.length;
+  return lang === 'ar' ? msgs[idx].ar : msgs[idx].en;
 };
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   INVOICE HTML — SINGLE PAGE A4
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* ═══ INVOICE HTML — SINGLE PAGE ═══ */
 const getInvoiceHTML = (inv, s, lang = 'en') => {
   const st = s || {};
   const no = inv.invoice_no || 'N/A';
@@ -85,8 +57,6 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
   const cp = paid - uc - cr, due = inv.due_amount || 0;
   const up = (inv.qty || 1) > 0 ? ts / inv.qty : ts;
   const st2 = inv.status || (due > 0 ? 'Unpaid' : 'Paid');
-  let pd = inv.payment_method || 'Cash';
-  if (inv.payment_method === 'Credit' && inv.credit_due_date) pd = `Credit (Due: ${inv.credit_due_date})`;
   const isRe = inv.booking_type === 'Reissue' || inv.booking_type === 'Previous Booking';
   const pax = inv.passenger_names ? inv.passenger_names.replace(/\n/g, ', ') : 'N/A';
   const aiMsg = getAIMessage(inv, lang);
@@ -124,19 +94,16 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
 .ir:last-child{border:none}.ir .l{color:#64748b}.ir .v{color:#0f172a;font-weight:600;text-align:${isRTL ? 'left' : 'right'};max-width:65%;word-break:break-word}
 .rb{padding:6px 8px;background:#fffbeb;border-radius:5px;border:1px solid #fde68a}
 .rt{font-size:9px;font-weight:700;color:#d97706;margin-bottom:5px;display:flex;justify-content:space-between;background:#fef3c7;padding:4px 8px;border-radius:4px}
-.rt span{font-family:'Cairo';font-size:8px}
 .rg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
 .ri{background:#fff;padding:3px 6px;border-radius:4px;border:1px solid #fde68a}
 .ri .l{font-size:7px;color:#92400e;font-weight:600;text-transform:uppercase}.ri .v{font-size:8px;color:#78350f;font-weight:700;margin-top:1px}
 .rf{background:#dcfce7;border-color:#86efac;grid-column:span 3;display:flex;justify-content:space-between;align-items:center;padding:4px 8px;border-radius:4px}
 .rf .l{color:#059669;font-size:8px}.rf .v{color:#047857;font-size:12px;font-weight:800}
 table{width:100%;border-collapse:collapse;border-radius:5px;overflow:hidden;border:1px solid #e2e8f0}
-thead th{padding:5px 6px;background:#0c1d3a;color:#fbbf24;font-size:7px;text-transform:uppercase;text-align:${isRTL ? 'right' : 'left'};letter-spacing:0.3px;border-bottom:1.5px solid #fbbf24}
-thead th span{font-family:'Cairo';font-size:7px;opacity:0.8;display:block}
+thead th{padding:5px 6px;background:#0c1d3a;color:#fbbf24;font-size:7px;text-transform:uppercase;text-align:${isRTL ? 'right' : 'left'};border-bottom:1.5px solid #fbbf24}
 thead th.r{text-align:${isRTL ? 'left' : 'right'}}thead th.c{text-align:center}
 tbody td{padding:4px 6px;border-bottom:1px solid #f1f5f9;font-size:8px}
 tbody td.r{text-align:${isRTL ? 'left' : 'right'};font-weight:600}tbody td.c{text-align:center}
-tbody tr:last-child td{border-bottom:none}
 .bs{display:grid;grid-template-columns:1.5fr 1fr;gap:6px}
 .pb{padding:6px 8px;background:#f8fafc;border-radius:5px;border:1px solid #e2e8f0}
 .pr{display:flex;justify-content:space-between;font-size:8px;padding:2px 0;border-bottom:1px dashed #cbd5e1}
@@ -146,24 +113,18 @@ tbody tr:last-child td{border-bottom:none}
 .gt{display:flex;justify-content:space-between;padding:6px 0 0;margin-top:4px;border-top:1.5px solid rgba(255,255,255,0.15);font-size:13px;font-weight:800;color:#fff}
 .gt .v{color:#fbbf24}
 .terms{padding:5px 8px;background:#f8fafc;border-radius:4px;border:1px solid #e2e8f0}
-.terms h4{font-size:7px;color:#64748b;margin:0 0 2px;text-transform:uppercase;letter-spacing:0.5px}
 .terms p{font-size:7px;color:#94a3b8;line-height:1.5;margin:0}
 .ft{padding:6px 16px;background:linear-gradient(135deg,#f8fafc,#f1f5f9);display:flex;justify-content:space-between;align-items:center;border-top:1.5px solid #e2e8f0;gap:8px;margin-top:auto}
 .code-box{display:flex;align-items:center;gap:6px}
 .barcode-img{height:28px;width:auto;min-width:160px;border:1px solid #e2e8f0;padding:1px 4px;background:#fff;border-radius:2px}
 .qr-img{height:36px;width:36px;border:1px solid #e2e8f0;padding:1px;background:#fff;border-radius:3px}
-.code-label{font-size:6px;font-weight:700;text-transform:uppercase;text-align:center;letter-spacing:0.2px;color:#475569;line-height:1.2}
-.code-label span{font-family:'Cairo';display:block;font-size:6px;color:#0c1d3a}
-.code-label.checkin{color:#059669}.code-label.checkin span{color:#047857}
-.code-label.download{color:#2563eb}.code-label.download span{color:#1d4ed8}
-.ft-divider{width:1px;background:#cbd5e1;align-self:stretch;min-height:40px}
+.code-label{font-size:6px;font-weight:700;text-transform:uppercase;text-align:center;color:#475569}
 .ai-msg{text-align:center;flex:1;padding:4px 10px;background:linear-gradient(135deg,#eff6ff,#dbeafe);border-radius:6px;border:1px solid #93c5fd}
 .ai-msg p{font-size:8px;color:#1e3a8a;margin:0;line-height:1.4;font-weight:500}
-.ai-msg p span{font-family:'Cairo';display:block;font-size:8px;margin-top:1px}
-.ai-label{font-size:6px;color:#3b82f6;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px}
+.ai-label{font-size:6px;color:#3b82f6;font-weight:700;text-transform:uppercase;margin-bottom:2px}
 .ft-info{width:70px;text-align:center}
 .ft-info p{font-size:6px;color:#94a3b8;margin:1px 0}
-@media print{body{background:#fff;padding:0;margin:0}.inv{border:none;border-radius:0;box-shadow:none}}
+@media print{body{background:#fff;padding:0;margin:0}.inv{border:none}}
 </style></head><body>
 <div class="inv">
 <div class="hdr">
@@ -172,14 +133,13 @@ tbody tr:last-child td{border-bottom:none}
     <div class="ct">
       <h2>${st.company_name_ar || 'صعود الطائرة للسفر والسياحة'}</h2>
       <h1>${st.company_name_en || 'SUEUD AL TAAYIRA TRAVEL & TOURISM'}</h1>
-      <p>${st.address_ar || 'Address'} ${st.phone ? '| ' + st.phone : ''} ${st.website ? '| ' + st.website : ''}</p>
+      <p>${st.address_ar || 'Address'} ${st.phone ? '| ' + st.phone : ''}</p>
     </div>
   </div>
   <div class="im">
     <h3>TAX INVOICE<span>فاتورة ضريبية</span></h3>
     <div class="mr"><span class="l">Inv No / رقم</span><span class="v">${no}</span></div>
     <div class="mr"><span class="l">Date / التاريخ</span><span class="v">${inv.invoice_date || ''}</span></div>
-    <div class="mr"><span class="l">Booking / الحجز</span><span class="v">${inv.booking_date || ''}</span></div>
     <div class="sb">${st2 === 'Unpaid' ? 'UNPAID / غير مدفوعة' : 'PAID / مدفوعة'}</div>
   </div>
 </div>
@@ -195,38 +155,29 @@ tbody tr:last-child td{border-bottom:none}
       <div class="sec-title">BILL TO / فاتورة إلى</div>
       <div class="ir"><span class="l">Name / الاسم</span><span class="v">${inv.customers?.name || inv.corporates?.name || 'N/A'}</span></div>
       <div class="ir"><span class="l">Phone / الهاتف</span><span class="v">${inv.customers?.phone || 'N/A'}</span></div>
-      ${inv.corporates?.vat_no ? `<div class="ir"><span class="l">VAT / ضريبي</span><span class="v">${inv.corporates.vat_no}</span></div>` : ''}
       <div class="ir"><span class="l">Sales Person / موظف</span><span class="v">${inv.employees?.name || 'N/A'}</span></div>
-      <div class="ir"><span class="l">Passengers / الركاب</span><span class="v" style="font-size:7px;line-height:1.4">${pax}</span></div>
+      <div class="ir"><span class="l">Passengers / الركاب</span><span class="v" style="font-size:7px">${pax}</span></div>
     </div>
     <div class="ib" style="border-left-color:#f59e0b;${isRTL ? 'border-left:1px solid #e2e8f0;border-right:3px solid #f59e0b' : ''}">
       <div class="sec-title">FLIGHT DETAILS / تفاصيل الرحلة</div>
       <div class="ir"><span class="l">Airline / الخطوط</span><span class="v">${inv.airline || 'N/A'}</span></div>
       <div class="ir"><span class="l">Sector / القطاع</span><span class="v">${inv.flight_sector || 'N/A'}</span></div>
       <div class="ir"><span class="l">Type / النوع</span><span class="v">${inv.flight_type || 'N/A'}</span></div>
-      <div class="ir"><span class="l">Journey / الرحلة</span><span class="v">${inv.flight_journey || 'N/A'}</span></div>
       <div class="ir"><span class="l">PNR / رقم الحجز</span><span class="v" style="color:#2563eb;font-weight:700">${inv.pnr || 'N/A'}</span></div>
       <div class="ir"><span class="l">Ticket No / التذكرة</span><span class="v">${inv.ticket_no || 'N/A'}</span></div>
-      <div class="ir"><span class="l">Refundable / قابلة للاسترجاع</span><span class="v">${inv.refundable_status || 'N/A'}</span></div>
       <div class="ir"><span class="l">Service / الخدمة</span><span class="v">${inv.service_type || 'N/A'}</span></div>
     </div>
   </div>
-  ${isRe ? `<div class="rb"><div class="rt"><span>⚠️ PREVIOUS BOOKING / الحجز السابق</span><span>تفاصيل</span></div><div class="rg">
+  ${isRe ? `<div class="rb"><div class="rt"><span>⚠️ PREVIOUS BOOKING / الحجز السابق</span></div><div class="rg">
     <div class="ri"><div class="l">Old Date</div><div class="v">${inv.old_booking_date || 'N/A'}</div></div>
     <div class="ri"><div class="l">Old Airline</div><div class="v">${inv.old_airline || 'N/A'}</div></div>
     <div class="ri"><div class="l">Old Sector</div><div class="v">${inv.old_sector || 'N/A'}</div></div>
     <div class="ri"><div class="l">Old PNR</div><div class="v">${inv.old_pnr || 'N/A'}</div></div>
     <div class="ri"><div class="l">Old Ticket</div><div class="v">${inv.old_ticket_no || 'N/A'}</div></div>
-    <div class="ri"><div class="l">Old Type</div><div class="v">${inv.old_flight_type || 'N/A'}</div></div>
     <div class="rf"><div class="l">Original Fare / الأجرة الأصلية</div><div class="v">${parseFloat(inv.old_sell_price || 0).toFixed(2)} SAR</div></div>
   </div></div>` : ''}
   <table>
-    <thead><tr>
-      <th>Description<span>الوصف</span></th>
-      <th class="c">Qty<span>الكمية</span></th>
-      <th class="r">Unit Price<span>سعر الوحدة</span></th>
-      <th class="r">Total<span>الإجمالي</span></th>
-    </tr></thead>
+    <thead><tr><th>Description<span>الوصف</span></th><th class="c">Qty<span>الكمية</span></th><th class="r">Unit Price<span>سعر الوحدة</span></th><th class="r">Total<span>الإجمالي</span></th></tr></thead>
     <tbody>
       <tr><td>${inv.sector || inv.service_type || 'Service'}</td><td class="c">${inv.qty || 1}</td><td class="r">${up.toFixed(2)}</td><td class="r">${ts.toFixed(2)}</td></tr>
       ${disc > 0 ? `<tr style="background:#f0fdf4"><td colspan="3" style="text-align:${isRTL ? 'left' : 'right'};color:#059669">Discount / خصم</td><td class="r" style="color:#059669">- ${disc.toFixed(2)}</td></tr>` : ''}
@@ -238,47 +189,37 @@ tbody tr:last-child td{border-bottom:none}
       <div class="pr"><span>Subtotal / المجموع الفرعي</span><span style="font-weight:600">${sub.toFixed(2)} SAR</span></div>
       ${disc > 0 ? `<div class="pr" style="color:#059669"><span>Discount / خصم</span><span>- ${disc.toFixed(2)} SAR</span></div>` : ''}
       <div class="pr"><span>VAT (${vr}%) / ضريبة</span><span>${vat.toFixed(2)} SAR</span></div>
-      ${uc > 0 ? `<div class="pr" style="color:#7c3aed"><span>Credit Used / رصيد مستخدم</span><span>- ${uc.toFixed(2)} SAR</span></div>` : ''}
-      ${cr > 0 ? `<div class="pr" style="color:#ef4444"><span>Cash Returned / مردود</span><span>- ${cr.toFixed(2)} SAR</span></div>` : ''}
-      <div class="pr" style="border-top:1.5px solid #cbd5e1;margin-top:3px;padding-top:3px;font-weight:700"><span>Paid (${pd}) / مدفوع</span><span style="color:#059669">${cp.toFixed(2)} SAR</span></div>
+      <div class="pr" style="border-top:1.5px solid #cbd5e1;margin-top:3px;padding-top:3px;font-weight:700"><span>Paid / مدفوع</span><span style="color:#059669">${cp.toFixed(2)} SAR</span></div>
       <div class="pr" style="font-weight:700;font-size:10px"><span>Due / المتبقي</span><span style="color:${due > 0 ? '#ef4444' : '#059669'}">${due.toFixed(2)} SAR</span></div>
     </div>
     <div class="tb">
-      <div class="tr"><span>Subtotal / المجموع الفرعي</span><span>${sub.toFixed(2)}</span></div>
-      ${disc > 0 ? `<div class="tr" style="color:#34d399"><span>Discount / خصم</span><span>- ${disc.toFixed(2)}</span></div>` : ''}
-      <div class="tr"><span>VAT (${vr}%) / ضريبة</span><span>${vat.toFixed(2)}</span></div>
+      <div class="tr"><span>Subtotal</span><span>${sub.toFixed(2)}</span></div>
+      <div class="tr"><span>VAT (${vr}%)</span><span>${vat.toFixed(2)}</span></div>
       <div class="gt"><span>GRAND TOTAL</span><span class="v">${tot.toFixed(2)} SAR</span></div>
     </div>
   </div>
-  <div class="terms">
-    <h4>Terms / الشروط</h4>
-    <p>1. Bookings subject to airline/hotel terms. الحجوزات تخضع لشروط الخطوط/الفنادق &nbsp; 2. Cancellation policies vary. سياسات الإلغاء تختلف &nbsp; 3. Computer-generated - valid without signature. مستند آلي صالح بدون توقيع &nbsp; 4. Prices in SAR incl. VAT. الأسعار بالريال شاملة الضريبة &nbsp; 5. Electronic invoice under Fatoorah. فاتورة إلكترونية بموجب لوائح فاتورة</p>
-  </div>
+  <div class="terms"><p>1. Bookings subject to airline terms. 2. Cancellation policies vary. 3. Computer-generated - valid without signature. 4. Prices in SAR incl. VAT. 5. Electronic invoice under Fatoorah regulations.</p></div>
 </div>
 <div class="ft">
   <div class="code-box">
     <img src="${barcode}" alt="Barcode" class="barcode-img" crossorigin="anonymous"/>
-    <div class="code-label checkin">CHECK-IN<span>تسجيل</span></div>
+    <div class="code-label">CHECK-IN</div>
     <img src="${qr}" alt="QR" class="qr-img" crossorigin="anonymous"/>
-    <div class="code-label download">INVOICE<span>فاتورة</span></div>
+    <div class="code-label">INVOICE</div>
   </div>
-  <div class="ft-divider"></div>
-  <div class="ai-msg">
-    <div class="ai-label">🤖 AI</div>
-    <p>${aiMsg}<span>${lang === 'ar' ? '✈️ رحلة سعيدة!' : 'Safe flight!'}</span></p>
-  </div>
-  <div class="ft-divider"></div>
+  <div class="ft-divider" style="width:1px;background:#cbd5e1;align-self:stretch;min-height:40px"></div>
+  <div class="ai-msg"><div class="ai-label">🤖 AI</div><p>${aiMsg}<span>${lang === 'ar' ? '✈️ رحلة سعيدة!' : 'Safe flight!'}</span></p></div>
+  <div class="ft-divider" style="width:1px;background:#cbd5e1;align-self:stretch;min-height:40px"></div>
   <div class="ft-info">
     <p style="font-weight:700;color:#0f172a;font-size:7px">${st.company_name_en || 'SUEUD AL TAAYIRA'}</p>
     <p>${st.phone || ''}</p>
     <p style="font-family:'Cairo';font-size:7px">${st.company_name_ar || ''}</p>
-    <p style="color:#cbd5e1;margin-top:2px">${st.vat_no ? 'VAT: ' + st.vat_no : ''}</p>
   </div>
 </div>
 </div></body></html>`;
 };
 
-/* ═══════════ REFUND HTML — SINGLE PAGE ═══════════ */
+/* ═══ REFUND HTML — SINGLE PAGE ═══ */
 const getRefundHTML = (inv, s, lang = 'en') => {
   const st = s || {};
   const no = inv.invoice_no || 'N/A';
@@ -290,12 +231,9 @@ const getRefundHTML = (inv, s, lang = 'en') => {
   const cn = inv.customers?.name || inv.old_customer_name || 'N/A';
   const cp = inv.customers?.phone || inv.old_customer_phone || 'N/A';
   const pax = inv.passenger_names ? inv.passenger_names.replace(/\n/g, ', ') : (inv.old_passengers || 'N/A');
-  let rm = inv.payment_method || 'Cash';
-  if (inv.payment_method === 'Credit') rm = 'Credit for New Booking / رصيد لحجز جديد';
   const aiMsg = getAIMessage(inv, lang);
   const isRTL = lang === 'ar';
-  const dir = isRTL ? 'rtl' : 'ltr';
-  return `<!DOCTYPE html><html lang="${lang}" dir="${dir}"><head><meta charset="UTF-8"><title>Refund ${no}</title>
+  return `<!DOCTYPE html><html lang="${lang}" dir="${isRTL ? 'rtl' : 'ltr'}"><head><meta charset="UTF-8"><title>Refund ${no}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 @page{size:A4 portrait;margin:0}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0;padding:0}
@@ -308,7 +246,6 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
 .logo{width:50px;height:50px;object-fit:cover;border-radius:6px;background:rgba(255,255,255,0.1);padding:2px;border:1px solid rgba(251,191,36,0.3)}
 .ct h2{font-size:14px;font-weight:800;color:#fbbf24;margin:0;font-family:'Cairo'}
 .ct h1{font-size:9px;font-weight:600;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1.5px;margin:2px 0 0}
-.ct p{font-size:8px;color:rgba(255,255,255,0.6);line-height:1.5;margin:3px 0 0}
 .im{min-width:160px;text-align:${isRTL ? 'left' : 'right'}}
 .im h3{font-size:18px;font-weight:800;color:#fbbf24;text-transform:uppercase;margin:0}
 .im h3 span{font-size:9px;font-family:'Cairo';display:block;margin:2px 0 0;color:rgba(255,255,255,0.8)}
@@ -334,11 +271,9 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
 .code-box{display:flex;align-items:center;gap:6px}
 .qr-img{height:36px;width:36px;border:1px solid #fecaca;padding:1px;background:#fff;border-radius:3px}
 .code-label{font-size:6px;font-weight:700;text-transform:uppercase;text-align:center;color:#991b1b}
-.code-label span{font-family:'Cairo';display:block;font-size:6px}
 .ft-divider{width:1px;background:#fecaca;align-self:stretch;min-height:40px}
 .ai-msg{text-align:center;flex:1;padding:4px 10px;background:linear-gradient(135deg,#fef2f2,#fee2e2);border-radius:6px;border:1px solid #fca5a5}
 .ai-msg p{font-size:8px;color:#7f1d1d;margin:0;line-height:1.4;font-weight:500}
-.ai-msg p span{font-family:'Cairo';display:block;font-size:8px;margin-top:1px}
 .ai-label{font-size:6px;color:#dc2626;font-weight:700;text-transform:uppercase;margin-bottom:2px}
 .ft-info{width:70px;text-align:center}
 .ft-info p{font-size:6px;color:#94a3b8;margin:1px 0}
@@ -350,7 +285,7 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
     ${st.logo_url ? `<img src="${st.logo_url}" crossorigin="anonymous" class="logo"/>` : '<div class="logo" style="display:flex;align-items:center;justify-content:center;font-size:20px">✈️</div>'}
     <div class="ct"><h2>${st.company_name_ar || 'صعود الطائرة'}</h2><h1>${st.company_name_en || 'SUEUD AL TAAYIRA'}</h1><p>${st.address_ar || ''} ${st.phone ? '| ' + st.phone : ''}</p></div>
   </div>
-  <div class="im"><h3>REFUND<span>استرجاع</span></h3><div class="ino">No / رقم: <span>${no}</span></div><div class="ino">Date / التاريخ: <span>${inv.refund_date || inv.invoice_date || ''}</span></div><div class="sb">PROCESSED / تم</div></div>
+  <div class="im"><h3>REFUND<span>استرجاع</span></h3><div class="ino">No: <span>${no}</span></div><div class="ino">Date: <span>${inv.refund_date || inv.invoice_date || ''}</span></div><div class="sb">PROCESSED / تم</div></div>
 </div>
 <div class="comp-det">
   <div class="ci"><span class="cl">VAT No / رقم ضريبي</span><span class="cv">${st.vat_no || 'N/A'}</span></div>
@@ -376,10 +311,10 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
     <div class="cr"><span>Refund to Portal / استرجاع للبوابة</span><span style="font-weight:600;color:#2563eb">${compRef.toFixed(2)} SAR</span></div>
     <div class="cr total"><span>Refund to Customer / استرجاع للعميل</span><span>${cRef.toFixed(2)} SAR</span></div>
   </div>
-  <div class="pi"><span style="font-weight:600;color:#334155">Refund Method / طريقة الاسترجاع</span><span style="font-weight:600;color:#2563eb">${rm}</span></div>
+  <div class="pi"><span style="font-weight:600;color:#334155">Refund Method / طريقة الاسترجاع</span><span style="font-weight:600;color:#2563eb">${inv.payment_method || 'Cash'}</span></div>
 </div>
 <div class="ft">
-  <div class="code-box"><img src="${qr}" alt="QR" class="qr-img" crossorigin="anonymous"/><div class="code-label">DOWNLOAD<span>تحميل</span></div></div>
+  <div class="code-box"><img src="${qr}" alt="QR" class="qr-img" crossorigin="anonymous"/><div class="code-label">DOWNLOAD</div></div>
   <div class="ft-divider"></div>
   <div class="ai-msg"><div class="ai-label">🤖 AI</div><p>${aiMsg}<span>${lang === 'ar' ? '🔄 تم الاسترجاع' : 'Refund processed!'}</span></p></div>
   <div class="ft-divider"></div>
@@ -388,15 +323,14 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
 </div></body></html>`;
 };
 
-/* ═══════════ EXPENSE VOUCHER HTML — SINGLE PAGE ═══════════ */
+/* ═══ EXPENSE HTML — SINGLE PAGE ═══ */
 const getExpenseHTML = (exp, s, lang = 'en') => {
   const st = s || {};
   const eno = `EXP-${exp.id ? exp.id.substring(0, 8) : 'N/A'}`;
   const items = exp.items && exp.items.length > 0 ? exp.items : [{ name: exp.item_name || 'Item', qty: 1, price: exp.amount || 0 }];
   const aiMsg = getAIMessage(exp, lang);
   const isRTL = lang === 'ar';
-  const dir = isRTL ? 'rtl' : 'ltr';
-  return `<!DOCTYPE html><html lang="${lang}" dir="${dir}"><head><meta charset="UTF-8"><title>Expense ${eno}</title>
+  return `<!DOCTYPE html><html lang="${lang}" dir="${isRTL ? 'rtl' : 'ltr'}"><head><meta charset="UTF-8"><title>Expense ${eno}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 @page{size:A4 portrait;margin:0}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0;padding:0}
@@ -420,8 +354,7 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
 .row{display:flex;justify-content:space-between;font-size:8px;padding:2px 0;border-bottom:1px solid #fed7aa}
 .row:last-child{border:none}.row .l{color:#9a3412;font-weight:500}.row .v{color:#7c2d12;font-weight:600}
 table{width:100%;border-collapse:collapse;border-radius:5px;overflow:hidden;border:1px solid #e2e8f0}
-thead th{padding:5px 6px;background:#7c2d12;color:#fbbf24;font-size:7px;text-transform:uppercase;text-align:${isRTL ? 'right' : 'left'};letter-spacing:0.5px}
-thead th span{font-family:'Cairo';font-size:7px;opacity:0.8;display:block}
+thead th{padding:5px 6px;background:#7c2d12;color:#fbbf24;font-size:7px;text-transform:uppercase;text-align:${isRTL ? 'right' : 'left'}}
 thead th.r{text-align:${isRTL ? 'left' : 'right'}}
 tbody td{padding:4px 6px;border-bottom:1px solid #f1f5f9;font-size:8px}
 tbody td.r{text-align:${isRTL ? 'left' : 'right'};font-weight:600}
@@ -430,7 +363,6 @@ tbody td.r{text-align:${isRTL ? 'left' : 'right'};font-weight:600}
 .ft{padding:8px 16px;background:linear-gradient(135deg,#fff7ed,#ffedd5);display:flex;justify-content:space-between;align-items:center;border-top:1.5px solid #fed7aa;gap:8px;margin-top:auto}
 .ai-msg{text-align:center;flex:1;padding:4px 10px;background:linear-gradient(135deg,#fff7ed,#fed7aa);border-radius:6px;border:1px solid #fdba74}
 .ai-msg p{font-size:8px;color:#7c2d12;margin:0;line-height:1.4;font-weight:500}
-.ai-msg p span{font-family:'Cairo';display:block;font-size:8px;margin-top:1px}
 .ai-label{font-size:6px;color:#9a3412;font-weight:700;text-transform:uppercase;margin-bottom:2px}
 .ft-info{width:70px;text-align:center}
 .ft-info p{font-size:6px;color:#94a3b8;margin:1px 0}
@@ -453,7 +385,7 @@ tbody td.r{text-align:${isRTL ? 'left' : 'right'};font-weight:600}
     <div class="row"><span class="l">Description / الوصف</span><span class="v">${exp.description || 'N/A'}</span></div>
   </div>
   <table>
-    <thead><tr><th>Item / البند<span>الوصف</span></th><th class="r">Qty<span>الكمية</span></th><th class="r">Price<span>السعر</span></th><th class="r">Total<span>المجموع</span></th></tr></thead>
+    <thead><tr><th>Item / البند</th><th class="r">Qty</th><th class="r">Price</th><th class="r">Total</th></tr></thead>
     <tbody>${items.map(function(it) { return '<tr><td>' + (it.name || 'Item') + '</td><td class="r">' + (it.qty || 1) + '</td><td class="r">' + parseFloat(it.price || 0).toFixed(2) + '</td><td class="r">' + ((parseFloat(it.qty) || 0) * (parseFloat(it.price) || 0)).toFixed(2) + '</td></tr>'; }).join('')}</tbody>
   </table>
   <div class="totals"><h3>TOTAL / الإجمالي</h3><p class="amt">${(exp.amount || 0).toFixed(2)} SAR</p></div>
@@ -466,7 +398,7 @@ tbody td.r{text-align:${isRTL ? 'left' : 'right'};font-weight:600}
 </div></body></html>`;
 };
 
-/* ═══════════ SALARY SLIP HTML — SINGLE PAGE ═══════════ */
+/* ═══ SALARY SLIP HTML — SINGLE PAGE ═══ */
 const getSalarySlipHTML = (pay, s, lang = 'en') => {
   const st = s || {};
   const sno = `SLIP-${pay.id ? pay.id.substring(0, 8) : 'N/A'}`;
@@ -475,8 +407,7 @@ const getSalarySlipHTML = (pay, s, lang = 'en') => {
   const net = gross - tded;
   const aiMsg = getAIMessage(pay, lang);
   const isRTL = lang === 'ar';
-  const dir = isRTL ? 'rtl' : 'ltr';
-  return `<!DOCTYPE html><html lang="${lang}" dir="${dir}"><head><meta charset="UTF-8"><title>Slip ${sno}</title>
+  return `<!DOCTYPE html><html lang="${lang}" dir="${isRTL ? 'rtl' : 'ltr'}"><head><meta charset="UTF-8"><title>Slip ${sno}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 @page{size:A4 portrait;margin:0}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0;padding:0}
@@ -487,7 +418,7 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
 .hdr{background:linear-gradient(135deg,#0F172A,#1E3A8A);color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:5px}
 .hdr h1{font-size:14px;font-weight:800;color:#FBBF24;margin:0}
 .si{text-align:${isRTL ? 'left' : 'right'}}
-.si h3{color:#FBBF24;font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;margin:0}
+.si h3{color:#FBBF24;font-size:16px;font-weight:800;text-transform:uppercase;margin:0}
 .si h3 span{font-family:'Cairo';display:block;font-size:8px;color:rgba(255,255,255,0.8);margin:1px 0 0}
 .si p{font-size:8px;color:rgba(255,255,255,0.8);margin:3px 0 0}.si p span{color:#FBBF24;font-weight:700}
 .comp-det{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:6px 16px;background:#EFF6FF;border-bottom:1px solid #BFDBFE}
@@ -507,7 +438,6 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
 .ft{padding:8px 16px;background:linear-gradient(135deg,#EFF6FF,#DBEAFE);display:flex;justify-content:space-between;align-items:center;border-top:1.5px solid #BFDBFE;gap:8px;margin-top:auto}
 .ai-msg{text-align:center;flex:1;padding:4px 10px;background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border-radius:6px;border:1px solid #93C5FD}
 .ai-msg p{font-size:8px;color:#1E3A8A;margin:0;line-height:1.4;font-weight:500}
-.ai-msg p span{font-family:'Cairo';display:block;font-size:8px;margin-top:1px}
 .ai-label{font-size:6px;color:#3B82F6;font-weight:700;text-transform:uppercase;margin-bottom:2px}
 .ft-info{width:70px;text-align:center}
 .ft-info p{font-size:6px;color:#94A3B8;margin:1px 0}
@@ -557,9 +487,71 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
 </div></body></html>`;
 };
 
-/* ═══════════ HELPERS ═══════════ */
-const DRAFT_KEY = 'erp_invoice_draft';
+/* ═══ CONTRACT HTML (stub - expand if needed) ═══ */
+const getContractHTML = (settings, corpName, date, isOffer, type, markup, terms) => {
+  const st = settings || {};
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${isOffer ? 'Offer' : 'Contract'}</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+@page{size:A4 portrait;margin:0}*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-size:11px;padding:40px}
+h1{color:#0c1d3a;font-size:24px;margin-bottom:20px;text-align:center}
+h2{color:#1a365d;font-size:16px;margin:20px 0 10px;border-bottom:2px solid #fbbf24;padding-bottom:5px}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0}
+.info-item{background:#f8fafc;padding:10px;border-radius:6px;border-left:3px solid #1a365d}
+.info-item .label{font-size:9px;color:#64748b;text-transform:uppercase}
+.info-item .value{font-size:13px;font-weight:600;color:#0f172a;margin-top:2px}
+.terms{background:#f8fafc;padding:15px;border-radius:8px;margin:20px 0;line-height:1.8}
+.signature{display:flex;justify-content:space-between;margin-top:60px}
+.sig-box{width:200px;text-align:center}
+.sig-line{border-bottom:1px solid #1e293b;margin-bottom:5px;height:60px}
+</style></head><body>
+<h1>${isOffer ? 'CORPORATE OFFER' : 'CORPORATE CONTRACT'}</h1>
+<div style="text-align:center;color:#64748b;margin-bottom:30px">Date: ${date}</div>
+<div class="info-grid">
+  <div class="info-item"><div class="label">Company</div><div class="value">${st.company_name_en || 'SUEUD AL TAAYIRA'}</div></div>
+  <div class="info-item"><div class="label">Corporate</div><div class="value">${corpName || 'N/A'}</div></div>
+  <div class="info-item"><div class="label">Type</div><div class="value">${type || 'Standard'}</div></div>
+  <div class="info-item"><div class="label">Markup</div><div class="value">${markup || '0'}%</div></div>
+</div>
+<h2>Terms & Conditions / الشروط والأحكام</h2>
+<div class="terms">${(terms || 'Standard terms apply. All bookings subject to airline/hotel terms and availability. Prices quoted are in SAR including VAT unless stated otherwise. Payment terms as agreed between parties.')}</div>
+<div class="signature">
+  <div class="sig-box"><div class="sig-line"></div>Authorized Signature / التوقيع</div>
+  <div class="sig-box"><div class="sig-line"></div>Corporate Signature / التوقيع</div>
+</div>
+</body></html>`;
+};
 
+/* ═══ MISTAKE HTML (stub) ═══ */
+const getMistakeHTML = (m, settings, lang) => {
+  const st = settings || {};
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Staff Mistake</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+@page{size:A4 portrait;margin:0}*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-size:11px;padding:40px}
+h1{color:#7f1d1d;font-size:20px;margin-bottom:20px;text-align:center}
+.info{background:#fff5f5;padding:15px;border-radius:8px;border-left:3px solid #dc2626;margin:20px 0}
+.row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #fecaca}
+.row:last-child{border:none}
+.total{background:#7f1d1d;color:#fff;padding:15px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;margin-top:20px;font-size:16px;font-weight:700}
+.total span:last-child{color:#fbbf24}
+</style></head><body>
+<h1>STAFF MISTAKE REPORT</h1>
+<div style="text-align:center;color:#64748b;margin-bottom:20px">${st.company_name_en || ''} | Date: ${m.date || 'N/A'}</div>
+<div class="info">
+  <div class="row"><span>Employee / الموظف</span><span style="font-weight:600">${m.employees?.name || 'N/A'}</span></div>
+  <div class="row"><span>Old Ticket No / التذكرة القديمة</span><span style="font-weight:600">${m.old_ticket_no || 'N/A'}</span></div>
+  <div class="row"><span>New Ticket No / التذكرة الجديدة</span><span style="font-weight:600">${m.new_ticket_no || 'N/A'}</span></div>
+  <div class="row"><span>Paid by Employee / دفع من الموظف</span><span style="font-weight:600">${m.paid_by_employee ? 'Yes' : 'No'}</span></div>
+</div>
+<div class="total"><span>Loss Amount / مبلغ الخسارة</span><span>${(m.loss_amount || 0).toFixed(2)} SAR</span></div>
+</body></html>`;
+};
+
+/* ═══ HELPERS ═══ */
+const DRAFT_KEY = 'erp_invoice_draft';
 const exportToExcel = (data, filename) => {
   if (!data || data.length === 0) return;
   const headers = Object.keys(data[0]);
@@ -578,491 +570,245 @@ const exportToExcel = (data, filename) => {
   a.click();
   URL.revokeObjectURL(url);
 };
+const loadDrafts = () => { try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || '[]'); } catch (e) { return []; } };
+const saveDraft = (draft) => { try { const d = loadDrafts(); const i = d.findIndex(x => x.id === draft.id); if (i >= 0) d[i] = draft; else d.unshift(draft); localStorage.setItem(DRAFT_KEY, JSON.stringify(d.slice(0, 20))); } catch (e) { } };
+const deleteDraft = (id) => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(loadDrafts().filter(d => d.id !== id))); } catch (e) { } };
+const generateInvoiceNo = async () => { const n = new Date(); const p = 'INV-' + n.getFullYear().toString().slice(-2) + (n.getMonth() + 1).toString().padStart(2, '0'); try { const { data } = await supabase.from('invoices').select('invoice_no').ilike('invoice_no', p + '%').order('invoice_no', { ascending: false }).limit(1); if (data && data.length > 0) { const num = parseInt(data[0].invoice_no.split('-').pop() || '0'); return p + '-' + (num + 1).toString().padStart(4, '0'); } } catch (e) { } return p + '-0001'; };
+const generateRefundNo = async () => { const n = new Date(); const p = 'REF-' + n.getFullYear().toString().slice(-2) + (n.getMonth() + 1).toString().padStart(2, '0'); try { const { data } = await supabase.from('invoices').select('invoice_no').ilike('invoice_no', p + '%').order('invoice_no', { ascending: false }).limit(1); if (data && data.length > 0) { const num = parseInt(data[0].invoice_no.split('-').pop() || '0'); return p + '-' + (num + 1).toString().padStart(4, '0'); } } catch (e) { } return p + '-0001'; };
 
-const loadDrafts = () => {
-  try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || '[]'); }
-  catch (e) { return []; }
-};
-
-const saveDraft = (draft) => {
-  try {
-    const drafts = loadDrafts();
-    const idx = drafts.findIndex(d => d.id === draft.id);
-    if (idx >= 0) drafts[idx] = draft; else drafts.unshift(draft);
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts.slice(0, 20)));
-  } catch (e) { /* silent */ }
-};
-
-const deleteDraft = (id) => {
-  try {
-    const drafts = loadDrafts().filter(d => d.id !== id);
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts));
-  } catch (e) { /* silent */ }
-};
-
-const generateInvoiceNo = async () => {
-  const now = new Date();
-  const y = now.getFullYear().toString().slice(-2);
-  const m = (now.getMonth() + 1).toString().padStart(2, '0');
-  const prefix = 'INV-' + y + m;
-  try {
-    const { data } = await supabase.from('invoices').select('invoice_no').ilike('invoice_no', prefix + '%').order('invoice_no', { ascending: false }).limit(1);
-    if (data && data.length > 0) {
-      const lastNum = parseInt(data[0].invoice_no.split('-').pop() || '0');
-      return prefix + '-' + (lastNum + 1).toString().padStart(4, '0');
-    }
-  } catch (e) { /* fallback */ }
-  return prefix + '-0001';
-};
-
-const generateRefundNo = async () => {
-  const now = new Date();
-  const y = now.getFullYear().toString().slice(-2);
-  const m = (now.getMonth() + 1).toString().padStart(2, '0');
-  const prefix = 'REF-' + y + m;
-  try {
-    const { data } = await supabase.from('refunds').select('invoice_no').ilike('invoice_no', prefix + '%').order('invoice_no', { ascending: false }).limit(1);
-    if (data && data.length > 0) {
-      const lastNum = parseInt(data[0].invoice_no.split('-').pop() || '0');
-      return prefix + '-' + (lastNum + 1).toString().padStart(4, '0');
-    }
-  } catch (e) { /* fallback */ }
-  return prefix + '-0001';
-};
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   MAIN HOOK
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* ═══ MAIN HOOK — Compatible with useERPActions ═══ */
 export default function useERPState() {
   const router = useRouter();
   const [lang, setLang] = useState('en');
   const t = useMemo(() => translations[lang], [lang]);
+  const tr = translations;
 
   /* ── Auth ── */
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
+  const [initError, setInitError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  /* ── Data ── */
-  const [invoices, setInvoices] = useState([]);
-  const [refunds, setRefunds] = useState([]);
-  const [customers, setCustomers] = useState([]);
-  const [corporates, setCorporates] = useState([]);
-  const [employees, setEmployees] = useState([]);
-  const [expenses, setExpenses] = useState([]);
-  const [vendors, setVendors] = useState([]);
-  const [packages, setPackages] = useState([]);
-  const [branches, setBranches] = useState([]);
-  const [portals, setPortals] = useState([]);
-  const [bankTransactions, setBankTransactions] = useState([]);
-  const [investors, setInvestors] = useState([]);
-  const [auditLogs, setAuditLogs] = useState([]);
-  const [settings, setSettings] = useState({});
-  const [notifications, setNotifications] = useState([]);
-  const [attendance, setAttendance] = useState([]);
-  const [salaryPayments, setSalaryPayments] = useState([]);
-  const [creditLimits, setCreditLimits] = useState([]);
-  const [recurringInvoices, setRecurringInvoices] = useState([]);
-  const [quotationRequests, setQuotationRequests] = useState([]);
-  const [staffMistakes, setStaffMistakes] = useState([]);
-  const [drafts, setDrafts] = useState([]);
-
-  /* ── UI State ── */
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activePage, setActivePage] = useState('dashboard');
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState(null);
-  const [modalData, setModalData] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [dateFilter, setDateFilter] = useState({ from: '', to: '' });
-  const [statusFilter, setStatusFilter] = useState('all');
-
-  const refreshDrafts = useCallback(() => setDrafts(loadDrafts()), []);
-
-  /* ── Safe query wrapper — 404/timeout se crash nahi hoga ── */
-  const safeQuery = useCallback(async (fn, label) => {
-    try {
-      const timeout = new Promise(function (resolve) { setTimeout(resolve, 6000); });
-      await Promise.race([fn(), timeout]);
-    } catch (e) {
-      console.warn('[ERP] Skip ' + (label || 'query') + ':', (e && e.message) || e);
-    }
+  /* ── Toast ── */
+  const [toast, setToast] = useState(null);
+  const showToast = useCallback((msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3500);
   }, []);
 
-  /* ── Generic Table Loader ── */
-  const loadTable = useCallback(async (table, setter, opts) => {
+  /* ── Page ── */
+  const [page, setPage] = useState('dashboard');
+
+  /* ── Modal ── */
+  const [modal, setModal] = useState({ type: null, data: null });
+
+  /* ── Preview ── */
+  const [previewHTML, setPreviewHTML] = useState('');
+
+  /* ── Chat ── */
+  const [chatInput, setChatInput] = useState('');
+  const [chatMessages, setChatMessages] = useState([]);
+
+  /* ── Today ── */
+  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
+
+  /* ── Contract ── */
+  const [contractCorpName, setContractCorpName] = useState('');
+  const [contractType, setContractType] = useState('Standard');
+  const [contractMarkup, setContractMarkup] = useState('0');
+  const [contractTerms, setContractTerms] = useState('');
+
+  /* ── Data Object (compatible with useERPActions) ── */
+  const [data, setData] = useState({
+    invoices: [], refunds: [], customers: [], corporates: [], creditors: [],
+    employees: [], expenses: [], vendors: [], packages: [], branches: [],
+    portals: [], bankTransactions: [], investors: [], auditLogs: [],
+    settings: {}, notifications: [], attendance: [], payroll: [],
+    creditLimits: [], recurringInvoices: [], quotationRequests: [],
+    staffMistakes: [], cashbook: [], tenants: []
+  });
+
+  /* ── Form States ── */
+  const [invForm, setInvForm] = useState({
+    custType: 'Individual', custId: 'new', custName: '', custPhone: '',
+    corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '',
+    passengers: [''], employeeId: '', portalId: '',
+    bookingDate: today, invoiceDate: today, bookingType: 'New Booking',
+    linkedInvId: '', oldTicketNo: '', oldPnr: '', oldAirline: '', oldSector: '',
+    oldSellPrice: 0, oldBookingDate: '', oldPassengers: '', oldFlightType: '',
+    oldPaymentMethod: '', refundReason: '', service: 'Flight Ticket',
+    flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable',
+    flightSector: '', airline: '', destination: '', hotelName: '',
+    checkIn: '', checkOut: '', visaType: 'Tourist', serviceName: '',
+    pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0, discount: 0,
+    taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '', creditorId: '',
+    tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed',
+    useCredit: 0, creditCustId: '', status: 'Unpaid'
+  });
+  const [expForm, setExpForm] = useState({ expense_type: '', payment_mode: 'Cash', description: '', amount: '', expense_date: today, items: [] });
+  const [corpForm, setCorpForm] = useState({ name: '', vat_no: '', phone: '', address: '' });
+  const [creditorForm, setCreditorForm] = useState({ name: '', phone: '', address: '' });
+  const [custForm, setCustForm] = useState({ name: '', phone: '', store_credit: 0 });
+  const [vendorForm, setVendorForm] = useState({ name: '', phone: '', balance: 0 });
+  const [pkgForm, setPkgForm] = useState({ name: '', price: '', desc: '', duration: '', inclusions: '' });
+  const [brnForm, setBrnForm] = useState({ name: '', location: '', phone: '', manager: '', email: '', timing: '', status: 'Active' });
+  const [empForm, setEmpForm] = useState({ name: '', phone: '', email: '', role: '', base_salary: '', commission: '' });
+  const [srvForm, setSrvForm] = useState({ name: '', type: '', price: '' });
+  const [investForm, setInvestForm] = useState({ name: '', amount: '', date: '' });
+  const [settleForm, setSettleForm] = useState({ id: '', date: today, mode: 'Cash' });
+  const [refundForm, setRefundForm] = useState({ id: '', date: today, compRefund: 0, custRefund: 0, mode: 'Cash', reason: '', portalId: '', creditBalance: 0 });
+  const [transferForm, setTransferForm] = useState({ from: '', to: '', amount: '', date: today, reason: '' });
+  const [setForm, setSetForm] = useState({ custom_fields: [] });
+  const [userForm, setUserForm] = useState({ name: '', email: '', role: '', password: '' });
+  const [portalForm, setPortalForm] = useState({ name: '', current_balance: 0 });
+  const [tenantForm, setTenantForm] = useState({ agency_name: '', owner_email: '', subscription_end_date: '', company_name_ar: '', vat_no: '', cr_no: '', phone: '', address_ar: '' });
+  const [profileForm, setProfileForm] = useState({ username: '', avatar_url: '', phone: '', address: '' });
+  const [payForm, setPayForm] = useState({ employee_id: '', month: '', base_salary: 0, commission: 0, overtime: 0, gift: 0, advance_deduction: 0, mistakes_deduction: 0, other_deduction: 0, payment_mode: 'Cash' });
+  const [passForm, setPassForm] = useState({ newPass: '' });
+
+  /* ── Edit IDs ── */
+  const [editInvId, setEditInvId] = useState(null);
+  const [editExpId, setEditExpId] = useState(null);
+  const [editCorpId, setEditCorpId] = useState(null);
+  const [editCredId, setEditCredId] = useState(null);
+  const [editCustId, setEditCustId] = useState(null);
+  const [editVendId, setEditVendId] = useState(null);
+  const [editPkgId, setEditPkgId] = useState(null);
+  const [editBrnId, setEditBrnId] = useState(null);
+  const [editEmpId, setEditEmpId] = useState(null);
+  const [editSrvId, setEditSrvId] = useState(null);
+  const [editUserId, setEditUserId] = useState(null);
+
+  /* ── Safe Table Loader ── */
+  const safeLoad = useCallback(async (table, key, opts) => {
     opts = opts || {};
     try {
       var q = supabase.from(table).select(opts.select || '*');
       if (opts.order) q = q.order(opts.order.col, { ascending: opts.order.asc !== false });
       if (opts.limit) q = q.limit(opts.limit);
       if (opts.eq) { Object.keys(opts.eq).forEach(function (k) { q = q.eq(k, opts.eq[k]); }); }
-      if (opts.ilike) { Object.keys(opts.ilike).forEach(function (k) { q = q.ilike(k, opts.ilike[k]); }); }
-      var result = await q;
-      if (result.data) setter(result.data);
-    } catch (e) {
-      console.warn('[ERP] Table ' + table + ' not loaded:', (e && e.message) || e);
-    }
+      if (opts.single) { var r = await q.single(); if (r.data) setData(prev => ({ ...prev, [key]: r.data })); }
+      else { var r2 = await q; if (r2.data) setData(prev => ({ ...prev, [key]: r2.data })); }
+    } catch (e) { console.warn('[ERP] Skip ' + table + ':', e.message); }
   }, []);
 
-  /* ── Load Settings ── */
-  const loadSettings = useCallback(async () => {
-    try {
-      var result = await supabase.from('company_settings').select('*').limit(1).single();
-      if (result.data) setSettings(result.data);
-    } catch (e) { /* silent */ }
-  }, []);
-
-  /* ── Load Invoices ── */
-  const loadInvoices = useCallback(async () => {
-    try {
-      var result = await supabase.from('invoices').select('*, customers(id,name,phone), corporates(id,name,vat_no), employees(id,name)').order('created_at', { ascending: false });
-      if (result.data) setInvoices(result.data);
-    } catch (e) { /* silent */ }
-  }, []);
-
-  /* ── Load Refunds ── */
-  const loadRefunds = useCallback(async () => {
-    try {
-      var result = await supabase.from('refunds').select('*, customers(id,name,phone), invoices(invoice_no)').order('created_at', { ascending: false });
-      if (result.data) setRefunds(result.data);
-    } catch (e) { /* silent */ }
-  }, []);
-
-  /* ── LOAD ALL — Promise.allSettled + finally + timeout ── */
-  const loadAll = useCallback(async () => {
+  /* ── Fetch All ── */
+  const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
       await Promise.allSettled([
-        safeQuery(loadSettings, 'settings'),
-        safeQuery(loadInvoices, 'invoices'),
-        safeQuery(loadRefunds, 'refunds'),
-        safeQuery(function () { return loadTable('customers', setCustomers, { order: { col: 'name', asc: true } }); }, 'customers'),
-        safeQuery(function () { return loadTable('corporates', setCorporates, { order: { col: 'name', asc: true } }); }, 'corporates'),
-        safeQuery(function () { return loadTable('employees', setEmployees, { order: { col: 'name', asc: true } }); }, 'employees'),
-        safeQuery(function () { return loadTable('expenses', setExpenses, { order: { col: 'created_at', asc: false } }); }, 'expenses'),
-        safeQuery(function () { return loadTable('vendors', setVendors, { order: { col: 'name', asc: true } }); }, 'vendors'),
-        safeQuery(function () { return loadTable('packages', setPackages, { order: { col: 'name', asc: true } }); }, 'packages'),
-        safeQuery(function () { return loadTable('branches', setBranches, { order: { col: 'name', asc: true } }); }, 'branches'),
-        safeQuery(function () { return loadTable('portals', setPortals, { order: { col: 'name', asc: true } }); }, 'portals'),
-        safeQuery(function () { return loadTable('bank_transactions', setBankTransactions, { order: { col: 'created_at', asc: false } }); }, 'bank_transactions'),
-        safeQuery(function () { return loadTable('investors', setInvestors, { order: { col: 'name', asc: true } }); }, 'investors'),
-        safeQuery(function () { return loadTable('audit_logs', setAuditLogs, { order: { col: 'created_at', asc: false }, limit: 500 }); }, 'audit_logs'),
-        safeQuery(function () { return loadTable('notifications', setNotifications, { order: { col: 'created_at', asc: false }, limit: 100 }); }, 'notifications'),
-        safeQuery(function () { return loadTable('attendance', setAttendance, { order: { col: 'date', asc: false } }); }, 'attendance'),
-        safeQuery(function () { return loadTable('salary_payments', setSalaryPayments, { order: { col: 'created_at', asc: false } }); }, 'salary_payments'),
-        safeQuery(function () { return loadTable('credit_limits', setCreditLimits); }, 'credit_limits'),
-        safeQuery(function () { return loadTable('recurring_invoices', setRecurringInvoices); }, 'recurring_invoices'),
-        safeQuery(function () { return loadTable('quotation_requests', setQuotationRequests); }, 'quotation_requests'),
-        safeQuery(function () { return loadTable('staff_mistakes', setStaffMistakes); }, 'staff_mistakes'),
+        safeLoad('company_settings', 'settings', { single: true }),
+        safeLoad('invoices', 'invoices', { order: { col: 'created_at', asc: false }, select: '*, customers(name,phone), corporates(name,vat_no), employees(name)' }),
+        safeLoad('customers', 'customers', { order: { col: 'name', asc: true } }),
+        safeLoad('corporates', 'corporates', { order: { col: 'name', asc: true } }),
+        safeLoad('creditors', 'creditors', { order: { col: 'name', asc: true } }),
+        safeLoad('employees', 'employees', { order: { col: 'name', asc: true } }),
+        safeLoad('expenses', 'expenses', { order: { col: 'created_at', asc: false } }),
+        safeLoad('vendors', 'vendors', { order: { col: 'name', asc: true } }),
+        safeLoad('packages', 'packages', { order: { col: 'name', asc: true } }),
+        safeLoad('branches', 'branches', { order: { col: 'name', asc: true } }),
+        safeLoad('portals', 'portals', { order: { col: 'name', asc: true } }),
+        safeLoad('bank_transactions', 'bankTransactions', { order: { col: 'created_at', asc: false } }),
+        safeLoad('investors', 'investors', { order: { col: 'name', asc: true } }),
+        safeLoad('audit_logs', 'auditLogs', { order: { col: 'created_at', asc: false }, limit: 500 }),
+        safeLoad('notifications', 'notifications', { order: { col: 'created_at', asc: false }, limit: 100 }),
+        safeLoad('attendance', 'attendance', { order: { col: 'date', asc: false } }),
+        safeLoad('salary_payments', 'payroll', { order: { col: 'created_at', asc: false } }),
+        safeLoad('staff_mistakes', 'staffMistakes', { order: { col: 'created_at', asc: false } }),
+        safeLoad('tenants', 'tenants', { order: { col: 'created_at', asc: false } }),
       ]);
-      refreshDrafts();
-    } catch (e) {
-      console.error('[ERP] loadAll error:', e);
-    } finally {
-      setLoading(false);
-    }
-  }, [loadSettings, loadInvoices, loadRefunds, loadTable, refreshDrafts, safeQuery]);
+    } catch (e) { console.error('[ERP] fetchAll error:', e); }
+    finally { setLoading(false); }
+  }, [safeLoad]);
 
-  /* ── Create Invoice ── */
-  const createInvoice = useCallback(async (invData) => {
-    var invoiceNo = await generateInvoiceNo();
-    var ts = invData.total_sell || 0;
-    var disc = invData.discount || 0;
-    var vr = invData.vat_rate || 15;
-    var vat = Math.round(ts * vr) / 100;
-    var total = ts - disc + vat;
-    var paid = invData.paid_amount || 0;
-    var due = total - paid - (invData.used_credit || 0) + (invData.cash_return || 0);
-    var row = Object.assign({}, invData, {
-      invoice_no: invoiceNo, total_sell: ts, vat: vat, vat_rate: vr,
-      total: total, due_amount: due, status: due <= 0 ? 'Paid' : 'Unpaid'
-    });
-    var result = await supabase.from('invoices').insert([row]).select('*, customers(id,name,phone), corporates(id,name,vat_no), employees(id,name)').single();
-    if (result.data) {
-      setInvoices(function (prev) { return [result.data].concat(prev); });
-      if (invData.used_credit > 0 && invData.customer_id) {
-        try { await supabase.rpc('deduct_credit', { cust_id: invData.customer_id, amount: invData.used_credit }); } catch (e) { /* silent */ }
+  /* ── Log Action ── */
+  const logAction = useCallback(async (details) => {
+    try {
+      await supabase.from('audit_logs').insert([{ action: 'user_action', details: details, user_id: user?.id, tenant_id: userProfile?.tenant_id }]);
+    } catch (e) { /* silent */ }
+  }, [user, userProfile]);
+
+  /* ── Init: Auth + Profile ── */
+  useEffect(function () {
+    const init = async () => {
+      try {
+        /* Get auth session */
+        const { data: { session }, error: authErr } = await supabase.auth.getSession();
+        if (authErr || !session) {
+          setInitError('Not authenticated. Please login.');
+          router.push('/login');
+          return;
+        }
+        setUser(session.user);
+
+        /* Try to get user profile — but don't fail if table doesn't exist */
+        let profile = {
+          id: session.user.id,
+          email: session.user.email,
+          name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+          role: 'Admin',
+          is_admin: true,
+          can_access_hr: true,
+          can_access_bank: true,
+          can_access_invoices: true,
+          can_access_reports: true,
+          can_access_settings: true,
+          tenant_id: session.user.user_metadata?.tenant_id || 'default'
+        };
+        try {
+          const { data: profData } = await supabase.from('app_users').select('*').eq('id', session.user.id).single();
+          if (profData) profile = { ...profile, ...profData };
+        } catch (e) {
+          console.warn('[ERP] app_users table not found, using default profile');
+        }
+        setUserProfile(profile);
+
+        /* Load all data */
+        await fetchAll();
+      } catch (e) {
+        console.error('[ERP] Init error:', e);
+        setInitError(e.message || 'Initialization failed');
       }
-      if (paid > 0 && (invData.payment_method === 'Cash' || invData.payment_method === 'Bank Transfer')) {
-        try { await supabase.from('bank_transactions').insert([{ type: 'credit', amount: paid, description: 'Invoice ' + invoiceNo, reference: invoiceNo, payment_method: invData.payment_method }]); } catch (e) { /* silent */ }
-      }
-      try { await supabase.from('audit_logs').insert([{ action: 'create_invoice', details: invoiceNo, user_id: user ? user.id : null }]); } catch (e) { /* silent */ }
-      return result.data;
-    }
-    throw result.error;
-  }, [user]);
-
-  /* ── Update Invoice ── */
-  const updateInvoice = useCallback(async (id, updates) => {
-    var ts = updates.total_sell != null ? updates.total_sell : 0;
-    var disc = updates.discount != null ? updates.discount : 0;
-    var vr = updates.vat_rate != null ? updates.vat_rate : 15;
-    var vat = Math.round(ts * vr) / 100;
-    var total = ts - disc + vat;
-    var paid = updates.paid_amount != null ? updates.paid_amount : 0;
-    var due = total - paid - (updates.used_credit || 0) + (updates.cash_return || 0);
-    var row = Object.assign({}, updates, { vat: vat, total: total, due_amount: due, status: due <= 0 ? 'Paid' : 'Unpaid' });
-    var result = await supabase.from('invoices').update(row).eq('id', id).select('*, customers(id,name,phone), corporates(id,name,vat_no), employees(id,name)').single();
-    if (result.data) {
-      setInvoices(function (prev) { return prev.map(function (i) { return i.id === id ? result.data : i; }); });
-      try { await supabase.from('audit_logs').insert([{ action: 'update_invoice', details: result.data.invoice_no, user_id: user ? user.id : null }]); } catch (e) { /* silent */ }
-      return result.data;
-    }
-    throw result.error;
-  }, [user]);
-
-  /* ── Delete Invoice ── */
-  const deleteInvoice = useCallback(async (id) => {
-    var result = await supabase.from('invoices').delete().eq('id', id);
-    if (!result.error) {
-      setInvoices(function (prev) { return prev.filter(function (i) { return i.id !== id; }); });
-      try { await supabase.from('audit_logs').insert([{ action: 'delete_invoice', details: id, user_id: user ? user.id : null }]); } catch (e) { /* silent */ }
-    }
-    return !result.error;
-  }, [user]);
-
-  /* ── Quick Settle ── */
-  const settleInvoice = useCallback(async (id, amount, method) => {
-    method = method || 'Cash';
-    var inv = invoices.find(function (i) { return i.id === id; });
-    if (!inv) return;
-    var newPaid = (inv.paid_amount || 0) + amount;
-    var newDue = (inv.total || 0) - newPaid - (inv.used_credit || 0) + (inv.cash_return || 0);
-    return updateInvoice(id, { paid_amount: newPaid, due_amount: Math.max(0, newDue), payment_method: method, status: newDue <= 0 ? 'Paid' : 'Unpaid' });
-  }, [invoices, updateInvoice]);
-
-  /* ── Create Refund ── */
-  const createRefund = useCallback(async (refData) => {
-    var refundNo = await generateRefundNo();
-    var row = Object.assign({}, refData, { invoice_no: refundNo });
-    var result = await supabase.from('refunds').insert([row]).select('*, customers(id,name,phone)').single();
-    if (result.data) {
-      setRefunds(function (prev) { return [result.data].concat(prev); });
-      if (refData.refund_customer > 0) {
-        try { await supabase.from('bank_transactions').insert([{ type: 'debit', amount: refData.refund_customer, description: 'Refund ' + refundNo, reference: refundNo, payment_method: refData.payment_method || 'Cash' }]); } catch (e) { /* silent */ }
-      }
-      try { await supabase.from('audit_logs').insert([{ action: 'create_refund', details: refundNo, user_id: user ? user.id : null }]); } catch (e) { /* silent */ }
-      return result.data;
-    }
-    throw result.error;
-  }, [user]);
-
-  /* ── Delete Refund ── */
-  const deleteRefund = useCallback(async (id) => {
-    var result = await supabase.from('refunds').delete().eq('id', id);
-    if (!result.error) {
-      setRefunds(function (prev) { return prev.filter(function (r) { return r.id !== id; }); });
-    }
-    return !result.error;
-  }, []);
-
-  /* ── Customer CRUD ── */
-  const createCustomer = useCallback(async (cData) => {
-    var r = await supabase.from('customers').insert([cData]).select().single();
-    if (r.data) { setCustomers(function (p) { return p.concat([r.data]); }); return r.data; }
-    throw r.error;
-  }, []);
-  const updateCustomer = useCallback(async (id, updates) => {
-    var r = await supabase.from('customers').update(updates).eq('id', id).select().single();
-    if (r.data) { setCustomers(function (p) { return p.map(function (c) { return c.id === id ? r.data : c; }); }); return r.data; }
-    throw r.error;
-  }, []);
-  const deleteCustomer = useCallback(async (id) => {
-    var r = await supabase.from('customers').delete().eq('id', id);
-    if (!r.error) setCustomers(function (p) { return p.filter(function (c) { return c.id !== id; }); });
-    return !r.error;
-  }, []);
-
-  /* ── Corporate CRUD ── */
-  const createCorporate = useCallback(async (cData) => {
-    var r = await supabase.from('corporates').insert([cData]).select().single();
-    if (r.data) { setCorporates(function (p) { return p.concat([r.data]); }); return r.data; }
-    throw r.error;
-  }, []);
-  const updateCorporate = useCallback(async (id, updates) => {
-    var r = await supabase.from('corporates').update(updates).eq('id', id).select().single();
-    if (r.data) { setCorporates(function (p) { return p.map(function (c) { return c.id === id ? r.data : c; }); }); return r.data; }
-    throw r.error;
-  }, []);
-  const deleteCorporate = useCallback(async (id) => {
-    var r = await supabase.from('corporates').delete().eq('id', id);
-    if (!r.error) setCorporates(function (p) { return p.filter(function (c) { return c.id !== id; }); });
-    return !r.error;
-  }, []);
-
-  /* ── Employee CRUD ── */
-  const createEmployee = useCallback(async (eData) => {
-    var r = await supabase.from('employees').insert([eData]).select().single();
-    if (r.data) { setEmployees(function (p) { return p.concat([r.data]); }); return r.data; }
-    throw r.error;
-  }, []);
-  const updateEmployee = useCallback(async (id, updates) => {
-    var r = await supabase.from('employees').update(updates).eq('id', id).select().single();
-    if (r.data) { setEmployees(function (p) { return p.map(function (e) { return e.id === id ? r.data : e; }); }); return r.data; }
-    throw r.error;
-  }, []);
-  const deleteEmployee = useCallback(async (id) => {
-    var r = await supabase.from('employees').delete().eq('id', id);
-    if (!r.error) setEmployees(function (p) { return p.filter(function (e) { return e.id !== id; }); });
-    return !r.error;
-  }, []);
-
-  /* ── Expense CRUD ── */
-  const createExpense = useCallback(async (eData) => {
-    var r = await supabase.from('expenses').insert([eData]).select().single();
-    if (r.data) {
-      setExpenses(function (p) { return [r.data].concat(p); });
-      if (eData.amount > 0) {
-        try { await supabase.from('bank_transactions').insert([{ type: 'debit', amount: eData.amount, description: 'Expense: ' + (eData.description || eData.expense_type || ''), payment_method: eData.payment_mode || 'Cash' }]); } catch (e) { /* silent */ }
-      }
-      return r.data;
-    }
-    throw r.error;
-  }, []);
-  const deleteExpense = useCallback(async (id) => {
-    var r = await supabase.from('expenses').delete().eq('id', id);
-    if (!r.error) setExpenses(function (p) { return p.filter(function (e) { return e.id !== id; }); });
-    return !r.error;
-  }, []);
-
-  /* ── Attendance ── */
-  const markAttendance = useCallback(async (aData) => {
-    var r = await supabase.from('attendance').upsert([aData], { onConflict: 'employee_id,date' }).select().single();
-    if (r.data) {
-      setAttendance(function (p) {
-        var idx = p.findIndex(function (a) { return a.employee_id === r.data.employee_id && a.date === r.data.date; });
-        if (idx >= 0) { var n = p.slice(); n[idx] = r.data; return n; }
-        return [r.data].concat(p);
-      });
-      return r.data;
-    }
-    throw r.error;
-  }, []);
-
-  /* ── Salary Payment ── */
-  const paySalary = useCallback(async (pData) => {
-    var r = await supabase.from('salary_payments').insert([pData]).select().single();
-    if (r.data) {
-      setSalaryPayments(function (p) { return [r.data].concat(p); });
-      if (pData.net_salary > 0) {
-        try { await supabase.from('bank_transactions').insert([{ type: 'debit', amount: pData.net_salary, description: 'Salary: ' + (pData.employees ? pData.employees.name : pData.employee_id), payment_method: pData.payment_mode || 'Cash' }]); } catch (e) { /* silent */ }
-      }
-      return r.data;
-    }
-    throw r.error;
-  }, []);
-
-  /* ── Bank Transaction ── */
-  const createBankTransaction = useCallback(async (bData) => {
-    var r = await supabase.from('bank_transactions').insert([bData]).select().single();
-    if (r.data) { setBankTransactions(function (p) { return [r.data].concat(p); }); return r.data; }
-    throw r.error;
-  }, []);
-  const deleteBankTransaction = useCallback(async (id) => {
-    var r = await supabase.from('bank_transactions').delete().eq('id', id);
-    if (!r.error) setBankTransactions(function (p) { return p.filter(function (b) { return b.id !== id; }); });
-    return !r.error;
-  }, []);
-
-  /* ── Update Settings ── */
-  const updateSettings = useCallback(async (updates) => {
-    if (!settings.id) return null;
-    var r = await supabase.from('company_settings').update(updates).eq('id', settings.id).select().single();
-    if (r.data) { setSettings(r.data); return r.data; }
-    throw r.error;
-  }, [settings.id]);
-
-  /* ── Other Creates ── */
-  const createVendor = useCallback(async (vData) => { var r = await supabase.from('vendors').insert([vData]).select().single(); if (r.data) { setVendors(function (p) { return p.concat([r.data]); }); return r.data; } throw r.error; }, []);
-  const createBranch = useCallback(async (bData) => { var r = await supabase.from('branches').insert([bData]).select().single(); if (r.data) { setBranches(function (p) { return p.concat([r.data]); }); return r.data; } throw r.error; }, []);
-  const createPortal = useCallback(async (pData) => { var r = await supabase.from('portals').insert([pData]).select().single(); if (r.data) { setPortals(function (p) { return p.concat([r.data]); }); return r.data; } throw r.error; }, []);
-  const createPackage = useCallback(async (pData) => { var r = await supabase.from('packages').insert([pData]).select().single(); if (r.data) { setPackages(function (p) { return p.concat([r.data]); }); return r.data; } throw r.error; }, []);
-  const createQuotation = useCallback(async (qData) => { var r = await supabase.from('quotation_requests').insert([qData]).select().single(); if (r.data) { setQuotationRequests(function (p) { return [r.data].concat(p); }); return r.data; } throw r.error; }, []);
-  const createStaffMistake = useCallback(async (mData) => { var r = await supabase.from('staff_mistakes').insert([mData]).select().single(); if (r.data) { setStaffMistakes(function (p) { return [r.data].concat(p); }); return r.data; } throw r.error; }, []);
-
-  /* ── Dashboard Stats ── */
-  const dashboardStats = useMemo(function () {
-    var today = new Date().toISOString().split('T')[0];
-    var thisMonth = today.substring(0, 7);
-    var todayInvoices = invoices.filter(function (i) { return (i.invoice_date || (i.created_at ? i.created_at.split('T')[0] : '')) === today; });
-    var monthInvoices = invoices.filter(function (i) { var d = i.invoice_date || (i.created_at ? i.created_at.split('T')[0] : ''); return d.startsWith(thisMonth); });
-    var totalRevenue = monthInvoices.reduce(function (s, i) { return s + (i.total || 0); }, 0);
-    var totalCost = monthInvoices.reduce(function (s, i) { return s + (i.total_cost || 0); }, 0);
-    var totalProfit = totalRevenue - totalCost;
-    var unpaidInvoices = invoices.filter(function (i) { return (i.due_amount || 0) > 0; });
-    var expenseThisMonth = expenses.filter(function (e) { var d = e.expense_date || (e.created_at ? e.created_at.split('T')[0] : ''); return d.startsWith(thisMonth); });
-    var bankBalance = bankTransactions.reduce(function (s, b) { return s + (b.type === 'credit' ? (b.amount || 0) : -(b.amount || 0)); }, 0);
-    return {
-      todayCount: todayInvoices.length, monthCount: monthInvoices.length,
-      totalRevenue: totalRevenue, totalCost: totalCost, totalProfit: totalProfit,
-      unpaidCount: unpaidInvoices.length, unpaidTotal: unpaidInvoices.reduce(function (s, i) { return s + (i.due_amount || 0); }, 0),
-      refundTotal: refunds.reduce(function (s, r) { return s + (r.refund_customer || 0); }, 0),
-      expenseTotal: expenseThisMonth.reduce(function (s, e) { return s + (e.amount || 0); }, 0),
-      bankBalance: bankBalance,
-      customerCount: customers.length, corporateCount: corporates.length, employeeCount: employees.length
     };
-  }, [invoices, refunds, expenses, bankTransactions, customers, corporates, employees]);
+    init();
+  }, [router, fetchAll]);
 
-  /* ── Filtered Invoices ── */
-  const filteredInvoices = useMemo(function () {
-    var result = invoices;
-    if (searchQuery) {
-      var q = searchQuery.toLowerCase();
-      result = result.filter(function (i) {
-        return (i.invoice_no || '').toLowerCase().indexOf(q) >= 0 ||
-          (i.customers && i.customers.name || '').toLowerCase().indexOf(q) >= 0 ||
-          (i.corporates && i.corporates.name || '').toLowerCase().indexOf(q) >= 0 ||
-          (i.pnr || '').toLowerCase().indexOf(q) >= 0 ||
-          (i.airline || '').toLowerCase().indexOf(q) >= 0;
-      });
-    }
-    if (statusFilter !== 'all') {
-      result = result.filter(function (i) { return (i.status || (i.due_amount > 0 ? 'Unpaid' : 'Paid')) === statusFilter; });
-    }
-    if (dateFilter.from) result = result.filter(function (i) { return (i.invoice_date || '') >= dateFilter.from; });
-    if (dateFilter.to) result = result.filter(function (i) { return (i.invoice_date || '') <= dateFilter.to; });
-    return result;
-  }, [invoices, searchQuery, statusFilter, dateFilter]);
-
-  /* ── Print Helper ── */
-  const printHTML = useCallback(function (html) {
-    var w = window.open('', '_blank', 'width=900,height=700');
-    if (w) { w.document.write(html); w.document.close(); setTimeout(function () { w.focus(); w.print(); }, 500); }
-  }, []);
-
-  /* ── Initial Load ── */
-  useEffect(function () { loadAll(); }, [loadAll]);
+  /* ── Listen for auth changes ── */
+  useEffect(function () {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(function (event, session) {
+      if (event === 'SIGNED_OUT') { setUser(null); setUserProfile(null); router.push('/login'); }
+      if (event === 'SIGNED_IN' && session) { setUser(session.user); window.location.reload(); }
+    });
+    return () => subscription.unsubscribe();
+  }, [router]);
 
   return {
-    t: t, lang: lang, setLang: setLang, translations: translations,
-    user: user, setUser: setUser, loading: loading, setLoading: setLoading,
-    invoices: invoices, refunds: refunds, customers: customers, corporates: corporates,
-    employees: employees, expenses: expenses, vendors: vendors, packages: packages,
-    branches: branches, portals: portals, bankTransactions: bankTransactions, investors: investors,
-    auditLogs: auditLogs, settings: settings, notifications: notifications, attendance: attendance,
-    salaryPayments: salaryPayments, creditLimits: creditLimits, recurringInvoices: recurringInvoices,
-    quotationRequests: quotationRequests, staffMistakes: staffMistakes, drafts: drafts,
-    sidebarOpen: sidebarOpen, setSidebarOpen: setSidebarOpen, activePage: activePage, setActivePage: setActivePage,
-    modalOpen: modalOpen, setModalOpen: setModalOpen, modalType: modalType, setModalType: setModalType,
-    modalData: modalData, setModalData: setModalData,
-    searchQuery: searchQuery, setSearchQuery: setSearchQuery, dateFilter: dateFilter, setDateFilter: setDateFilter,
-    statusFilter: statusFilter, setStatusFilter: setStatusFilter,
-    loadAll: loadAll, loadInvoices: loadInvoices, loadRefunds: loadRefunds, refreshDrafts: refreshDrafts,
-    createInvoice: createInvoice, updateInvoice: updateInvoice, deleteInvoice: deleteInvoice, settleInvoice: settleInvoice,
-    createRefund: createRefund, deleteRefund: deleteRefund,
-    createCustomer: createCustomer, updateCustomer: updateCustomer, deleteCustomer: deleteCustomer,
-    createCorporate: createCorporate, updateCorporate: updateCorporate, deleteCorporate: deleteCorporate,
-    createEmployee: createEmployee, updateEmployee: updateEmployee, deleteEmployee: deleteEmployee,
-    createExpense: createExpense, deleteExpense: deleteExpense,
-    markAttendance: markAttendance, paySalary: paySalary,
-    createBankTransaction: createBankTransaction, deleteBankTransaction: deleteBankTransaction,
-    updateSettings: updateSettings,
-    createVendor: createVendor, createBranch: createBranch, createPortal: createPortal, createPackage: createPackage,
-    createQuotation: createQuotation, createStaffMistake: createStaffMistake,
-    dashboardStats: dashboardStats, filteredInvoices: filteredInvoices,
-    printHTML: printHTML, exportToExcel: exportToExcel, saveDraft: saveDraft, deleteDraft: deleteDraft, loadDrafts: loadDrafts,
-    generateInvoiceNo: generateInvoiceNo, generateRefundNo: generateRefundNo,
-    getAirlineCheckInURL: getAirlineCheckInURL, getAIMessage: getAIMessage,
-    getInvoiceHTML: getInvoiceHTML, getRefundHTML: getRefundHTML, getExpenseHTML: getExpenseHTML, getSalarySlipHTML: getSalarySlipHTML,
+    /* Core */
+    t, tr, lang, setLang, translations: tr,
+    user, setUser, userProfile, setUserProfile, initError, loading, setLoading,
+    data, setData, fetchAll, logAction, showToast, toast, setToast,
+    router, page, setPage, today,
+    modal, setModal, previewHTML, setPreviewHTML,
+    chatInput, setChatInput, chatMessages, setChatMessages,
+    contractCorpName, setContractCorpName, contractType, setContractType,
+    contractMarkup, setContractMarkup, contractTerms, setContractTerms,
+    /* Forms */
+    invForm, setInvForm, expForm, setExpForm, corpForm, setCorpForm,
+    creditorForm, setCreditorForm, custForm, setCustForm, vendorForm, setVendorForm,
+    pkgForm, setPkgForm, brnForm, setBrnForm, empForm, setEmpForm,
+    srvForm, setSrvForm, investForm, setInvestForm, settleForm, setSettleForm,
+    refundForm, setRefundForm, transferForm, setTransferForm, setForm, setSetForm,
+    userForm, setUserForm, portalForm, setPortalForm, tenantForm, setTenantForm,
+    profileForm, setProfileForm, payForm, setPayForm, passForm, setPassForm,
+    /* Edit IDs */
+    editInvId, setEditInvId, editExpId, setEditExpId, editCorpId, setEditCorpId,
+    editCredId, setEditCredId, editCustId, setEditCustId, editVendId, setEditVendId,
+    editPkgId, setEditPkgId, editBrnId, setEditBrnId, editEmpId, setEditEmpId,
+    editSrvId, setEditSrvId, editUserId, setEditUserId,
+    /* HTML Generators */
+    getInvoiceHTML, getRefundHTML, getExpenseHTML, getSalarySlipHTML, getContractHTML, getMistakeHTML,
+    /* Helpers */
+    getAirlineCheckInURL, getAIMessage, exportToExcel, loadDrafts, saveDraft, deleteDraft,
+    generateInvoiceNo, generateRefundNo,
   };
 }
