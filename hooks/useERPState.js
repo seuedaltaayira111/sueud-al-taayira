@@ -13,32 +13,32 @@ const getAirlineCheckInURL = (airline, pnr) => {
   if (!airline || !pnr) return null;
   const a = airline.toLowerCase();
   const urls = {
-    'saudia':`https://www.saudia.com/check-in?pnr=${pnr}`,'sv':`https://www.saudia.com/check-in?pnr=${pnr}`,
-    'flynas':`https://www.flynas.com/en/manage-booking?ref=${pnr}`,'xy':`https://www.flynas.com/en/manage-booking?ref=${pnr}`,
-    'flyadeal':`https://www.flyadeal.com/en/manage-booking?ref=${pnr}`,'f3':`https://www.flyadeal.com/en/manage-booking?ref=${pnr}`,
-    'gulf air':`https://www.gulfair.com/check-in?pnr=${pnr}`,'gf':`https://www.gulfair.com/check-in?pnr=${pnr}`,
-    'emirates':`https://www.emirates.com/manage-booking/retrieve-check-in?pnr=${pnr}`,'ek':`https://www.emirates.com/manage-booking/retrieve-check-in?pnr=${pnr}`,
-    'etihad':`https://www.etihad.com/en-us/manage-booking/check-in?pnr=${pnr}`,'ey':`https://www.etihad.com/en-us/manage-booking/check-in?pnr=${pnr}`,
-    'qatar':`https://www.qatarairways.com/en/check-in.html?pnr=${pnr}`,'qr':`https://www.qatarairways.com/en/check-in.html?pnr=${pnr}`,
-    'egyptair':`https://www.egyptair.com/en/Manage-Booking/Check-In?pnr=${pnr}`,'ms':`https://www.egyptair.com/en/Manage-Booking/Check-In?pnr=${pnr}`,
-    'royal jordanian':`https://www.rj.com/en/manage-booking?pnr=${pnr}`,'rj':`https://www.rj.com/en/manage-booking?pnr=${pnr}`,
-    'middle east':`https://www.meairlines.com/en/ManageBooking?pnr=${pnr}`,'me':`https://www.meairlines.com/en/ManageBooking?pnr=${pnr}`,
-    'pakistan':`https://www.piac.com.pk/manage-booking?pnr=${pnr}`,'pk':`https://www.piac.com.pk/manage-booking?pnr=${pnr}`,
-    'oman air':`https://www.omanair.com/manage-booking?pnr=${pnr}`,'wy':`https://www.omanair.com/manage-booking?pnr=${pnr}`,
-    'kuwait':`https://www.kuwaitairways.com/en/manage-booking?pnr=${pnr}`,
-    'air arabia':`https://www.airarabia.com/manage-booking?pnr=${pnr}`,'g9':`https://www.airarabia.com/manage-booking?pnr=${pnr}`,
-    'wizz air':`https://wizzair.com/en-gb/manage-booking?pnr=${pnr}`,'w6':`https://wizzair.com/en-gb/manage-booking?pnr=${pnr}`,
-    'pegasus':`https://www.flypgs.com/en/manage-booking?pnr=${pnr}`,'pc':`https://www.flypgs.com/en/manage-booking?pnr=${pnr}`,
-    'turkish':`https://www.turkishairlines.com/en-us/check-in?pnr=${pnr}`,'tk':`https://www.turkishairlines.com/en-us/check-in?pnr=${pnr}`,
-    'indigo':`https://www.goindigo.in/manage-booking?pnr=${pnr}`,'6e':`https://www.goindigo.in/manage-booking?pnr=${pnr}`,
-    'spicejet':`https://www.spicejet.com/manage-booking?pnr=${pnr}`,'sg':`https://www.spicejet.com/manage-booking?pnr=${pnr}`,
-    'air india':`https://www.airindia.in/manage-booking?pnr=${pnr}`,'ai':`https://www.airindia.in/manage-booking?pnr=${pnr}`,
-    'air cairo':`https://www.aircairo.com/en/manage-booking?pnr=${pnr}`,
-    'nile air':`https://www.nileair.com/en/manage-booking?pnr=${pnr}`,'np':`https://www.nileair.com/en/manage-booking?pnr=${pnr}`,
-    'salam air':`https://www.salamair.com/manage-booking?pnr=${pnr}`,'ov':`https://www.salamair.com/manage-booking?pnr=${pnr}`,
-    'jazeera':`https://www.jazeeraairways.com/en/manage-booking?ref=${pnr}`,'j9':`https://www.jazeeraairways.com/en/manage-booking?ref=${pnr}`,
-    'flydubai':`https://www.flydubai.com/en/manage-booking?ref=${pnr}`,'fz':`https://www.flydubai.com/en/manage-booking?ref=${pnr}`,
-    'virgin':`https://www.virginatlantic.com/check-in?pnr=${pnr}`,'vs':`https://www.virginatlantic.com/check-in?pnr=${pnr}`,
+    'saudia': `https://www.saudia.com/check-in?pnr=${pnr}`, 'sv': `https://www.saudia.com/check-in?pnr=${pnr}`,
+    'flynas': `https://www.flynas.com/en/manage-booking?ref=${pnr}`, 'xy': `https://www.flynas.com/en/manage-booking?ref=${pnr}`,
+    'flyadeal': `https://www.flyadeal.com/en/manage-booking?ref=${pnr}`, 'f3': `https://www.flyadeal.com/en/manage-booking?ref=${pnr}`,
+    'gulf air': `https://www.gulfair.com/check-in?pnr=${pnr}`, 'gf': `https://www.gulfair.com/check-in?pnr=${pnr}`,
+    'emirates': `https://www.emirates.com/manage-booking/retrieve-check-in?pnr=${pnr}`, 'ek': `https://www.emirates.com/manage-booking/retrieve-check-in?pnr=${pnr}`,
+    'etihad': `https://www.etihad.com/en-us/manage-booking/check-in?pnr=${pnr}`, 'ey': `https://www.etihad.com/en-us/manage-booking/check-in?pnr=${pnr}`,
+    'qatar': `https://www.qatarairways.com/en/check-in.html?pnr=${pnr}`, 'qr': `https://www.qatarairways.com/en/check-in.html?pnr=${pnr}`,
+    'egyptair': `https://www.egyptair.com/en/Manage-Booking/Check-In?pnr=${pnr}`, 'ms': `https://www.egyptair.com/en/Manage-Booking/Check-In?pnr=${pnr}`,
+    'royal jordanian': `https://www.rj.com/en/manage-booking?pnr=${pnr}`, 'rj': `https://www.rj.com/en/manage-booking?pnr=${pnr}`,
+    'middle east': `https://www.meairlines.com/en/ManageBooking?pnr=${pnr}`, 'me': `https://www.meairlines.com/en/ManageBooking?pnr=${pnr}`,
+    'pakistan': `https://www.piac.com.pk/manage-booking?pnr=${pnr}`, 'pk': `https://www.piac.com.pk/manage-booking?pnr=${pnr}`,
+    'oman air': `https://www.omanair.com/manage-booking?pnr=${pnr}`, 'wy': `https://www.omanair.com/manage-booking?pnr=${pnr}`,
+    'kuwait': `https://www.kuwaitairways.com/en/manage-booking?pnr=${pnr}`,
+    'air arabia': `https://www.airarabia.com/manage-booking?pnr=${pnr}`, 'g9': `https://www.airarabia.com/manage-booking?pnr=${pnr}`,
+    'wizz air': `https://wizzair.com/en-gb/manage-booking?pnr=${pnr}`, 'w6': `https://wizzair.com/en-gb/manage-booking?pnr=${pnr}`,
+    'pegasus': `https://www.flypgs.com/en/manage-booking?pnr=${pnr}`, 'pc': `https://www.flypgs.com/en/manage-booking?pnr=${pnr}`,
+    'turkish': `https://www.turkishairlines.com/en-us/check-in?pnr=${pnr}`, 'tk': `https://www.turkishairlines.com/en-us/check-in?pnr=${pnr}`,
+    'indigo': `https://www.goindigo.in/manage-booking?pnr=${pnr}`, '6e': `https://www.goindigo.in/manage-booking?pnr=${pnr}`,
+    'spicejet': `https://www.spicejet.com/manage-booking?pnr=${pnr}`, 'sg': `https://www.spicejet.com/manage-booking?pnr=${pnr}`,
+    'air india': `https://www.airindia.in/manage-booking?pnr=${pnr}`, 'ai': `https://www.airindia.in/manage-booking?pnr=${pnr}`,
+    'air cairo': `https://www.aircairo.com/en/manage-booking?pnr=${pnr}`,
+    'nile air': `https://www.nileair.com/en/manage-booking?pnr=${pnr}`, 'np': `https://www.nileair.com/en/manage-booking?pnr=${pnr}`,
+    'salam air': `https://www.salamair.com/manage-booking?pnr=${pnr}`, 'ov': `https://www.salamair.com/manage-booking?pnr=${pnr}`,
+    'jazeera': `https://www.jazeeraairways.com/en/manage-booking?ref=${pnr}`, 'j9': `https://www.jazeeraairways.com/en/manage-booking?ref=${pnr}`,
+    'flydubai': `https://www.flydubai.com/en/manage-booking?ref=${pnr}`, 'fz': `https://www.flydubai.com/en/manage-booking?ref=${pnr}`,
+    'virgin': `https://www.virginatlantic.com/check-in?pnr=${pnr}`, 'vs': `https://www.virginatlantic.com/check-in?pnr=${pnr}`,
   };
   for (const [key, url] of Object.entries(urls)) {
     if (a.includes(key)) return url;
@@ -68,14 +68,14 @@ const getAIMessage = (inv, lang = 'en') => {
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   INVOICE HTML — SINGLE PAGE (A4: 210mm × 297mm)
+   INVOICE HTML — SINGLE PAGE A4
    ═══════════════════════════════════════════════════════════════════════════ */
 const getInvoiceHTML = (inv, s, lang = 'en') => {
   const st = s || {};
   const no = inv.invoice_no || 'N/A';
   const checkInURL = getAirlineCheckInURL(inv.airline, inv.pnr);
   const invoicePageURL = `https://sueud-al-taayira.vercel.app/invoice/${no}`;
-  const barcodeData = checkInURL || `https://www.google.com/search?q=${encodeURIComponent((inv.airline||'')+' check in '+(inv.pnr||''))}`;
+  const barcodeData = checkInURL || `https://www.google.com/search?q=${encodeURIComponent((inv.airline || '') + ' check in ' + (inv.pnr || ''))}`;
   const barcode = `https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(barcodeData)}&scale=2&height=35&barcolor=0c1d3a&backgroundcolor=ffffff&includetext=false`;
   const qr = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(invoicePageURL)}`;
   const ts = inv.total_sell || 0, disc = inv.discount || 0, sub = ts + disc;
@@ -92,12 +92,10 @@ const getInvoiceHTML = (inv, s, lang = 'en') => {
   const aiMsg = getAIMessage(inv, lang);
   const isRTL = lang === 'ar';
   const dir = isRTL ? 'rtl' : 'ltr';
-
   return `<!DOCTYPE html><html lang="${lang}" dir="${dir}"><head><meta charset="UTF-8"><title>Invoice ${no}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-@page{size:A4 portrait;margin:0}
-*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0;padding:0}
+@page{size:A4 portrait;margin:0}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0;padding:0}
 body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-size:9px}
 .inv{width:210mm;height:297mm;margin:auto;border:2px solid #0c1d3a;display:flex;flex-direction:column;position:relative;overflow:hidden}
 .inv::before{content:'';position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,#0c1d3a,#1a365d,#2563eb,#0c1d3a)}
@@ -108,23 +106,22 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
 .ct h2{font-size:14px;font-weight:800;color:#fbbf24;margin:0;font-family:'Cairo'}
 .ct h1{font-size:9px;font-weight:600;color:rgba(255,255,255,0.85);text-transform:uppercase;letter-spacing:1.5px;margin:2px 0 0}
 .ct p{font-size:8px;color:rgba(255,255,255,0.6);line-height:1.6;margin:3px 0 0}
-.im{min-width:160px;background:rgba(255,255,255,0.06);padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);text-align:${isRTL?'left':'right'}}
+.im{min-width:160px;background:rgba(255,255,255,0.06);padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);text-align:${isRTL ? 'left' : 'right'}}
 .im h3{font-size:18px;font-weight:800;color:#fbbf24;text-transform:uppercase;line-height:1;margin:0}
 .im h3 span{font-size:9px;font-family:'Cairo';display:block;margin:2px 0 0;color:rgba(255,255,255,0.8)}
 .mr{display:flex;justify-content:space-between;margin-top:3px;font-size:8px;border-bottom:1px dashed rgba(255,255,255,0.15);padding-bottom:2px}
 .mr .l{color:rgba(255,255,255,0.6)}.mr .v{color:#fbbf24;font-weight:700}
-.sb{display:inline-block;padding:3px 10px;border-radius:12px;font-size:8px;font-weight:700;margin-top:5px;${st2==='Unpaid'?'background:rgba(251,191,36,0.2);color:#fbbf24;border:1px solid rgba(251,191,36,0.3)':'background:rgba(52,211,153,0.2);color:#34d399;border:1px solid rgba(52,211,153,0.3)'}}
+.sb{display:inline-block;padding:3px 10px;border-radius:12px;font-size:8px;font-weight:700;margin-top:5px;${st2 === 'Unpaid' ? 'background:rgba(251,191,36,0.2);color:#fbbf24;border:1px solid rgba(251,191,36,0.3)' : 'background:rgba(52,211,153,0.2);color:#34d399;border:1px solid rgba(52,211,153,0.3)'}}
 .comp-det{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:6px 16px;background:#f0f4ff;border-bottom:1px solid #e2e8f0}
 .comp-det .ci{display:flex;flex-direction:column;gap:0}
 .comp-det .cl{font-size:7px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.3px}
 .comp-det .cv{font-size:8px;color:#0f172a;font-weight:600}
 .body{padding:8px 16px;flex:1;display:flex;flex-direction:column;gap:6px}
-.sec-title{font-size:8px;font-weight:700;text-transform:uppercase;color:#0c1d3a;margin-bottom:4px;border-bottom:1.5px solid #0c1d3a;padding-bottom:3px;display:flex;justify-content:space-between;align-items:center}
-.sec-title span{font-family:'Cairo';font-size:8px;color:#1a365d}
+.sec-title{font-size:8px;font-weight:700;text-transform:uppercase;color:#0c1d3a;margin-bottom:4px;border-bottom:1.5px solid #0c1d3a;padding-bottom:3px}
 .dg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .ib{padding:6px 8px;background:#f8fafc;border-radius:5px;border:1px solid #e2e8f0;border-left:3px solid #1a365d}
 .ir{display:flex;justify-content:space-between;font-size:8px;padding:2px 0;border-bottom:1px solid #f1f5f9}
-.ir:last-child{border:none}.ir .l{color:#64748b}.ir .v{color:#0f172a;font-weight:600;text-align:${isRTL?'left':'right'};max-width:65%;word-break:break-word}
+.ir:last-child{border:none}.ir .l{color:#64748b}.ir .v{color:#0f172a;font-weight:600;text-align:${isRTL ? 'left' : 'right'};max-width:65%;word-break:break-word}
 .rb{padding:6px 8px;background:#fffbeb;border-radius:5px;border:1px solid #fde68a}
 .rt{font-size:9px;font-weight:700;color:#d97706;margin-bottom:5px;display:flex;justify-content:space-between;background:#fef3c7;padding:4px 8px;border-radius:4px}
 .rt span{font-family:'Cairo';font-size:8px}
@@ -134,11 +131,11 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
 .rf{background:#dcfce7;border-color:#86efac;grid-column:span 3;display:flex;justify-content:space-between;align-items:center;padding:4px 8px;border-radius:4px}
 .rf .l{color:#059669;font-size:8px}.rf .v{color:#047857;font-size:12px;font-weight:800}
 table{width:100%;border-collapse:collapse;border-radius:5px;overflow:hidden;border:1px solid #e2e8f0}
-thead th{padding:5px 6px;background:#0c1d3a;color:#fbbf24;font-size:7px;text-transform:uppercase;text-align:${isRTL?'right':'left'};letter-spacing:0.3px;border-bottom:1.5px solid #fbbf24}
+thead th{padding:5px 6px;background:#0c1d3a;color:#fbbf24;font-size:7px;text-transform:uppercase;text-align:${isRTL ? 'right' : 'left'};letter-spacing:0.3px;border-bottom:1.5px solid #fbbf24}
 thead th span{font-family:'Cairo';font-size:7px;opacity:0.8;display:block}
-thead th.r{text-align:${isRTL?'left':'right'}}thead th.c{text-align:center}
+thead th.r{text-align:${isRTL ? 'left' : 'right'}}thead th.c{text-align:center}
 tbody td{padding:4px 6px;border-bottom:1px solid #f1f5f9;font-size:8px}
-tbody td.r{text-align:${isRTL?'left':'right'};font-weight:600}tbody td.c{text-align:center}
+tbody td.r{text-align:${isRTL ? 'left' : 'right'};font-weight:600}tbody td.c{text-align:center}
 tbody tr:last-child td{border-bottom:none}
 .bs{display:grid;grid-template-columns:1.5fr 1fr;gap:6px}
 .pb{padding:6px 8px;background:#f8fafc;border-radius:5px;border:1px solid #e2e8f0}
@@ -171,58 +168,58 @@ tbody tr:last-child td{border-bottom:none}
 <div class="inv">
 <div class="hdr">
   <div class="cblk">
-    ${st.logo_url?`<img src="${st.logo_url}" crossorigin="anonymous" class="logo"/>`:'<div class="logo" style="display:flex;align-items:center;justify-content:center;font-size:20px">✈️</div>'}
+    ${st.logo_url ? `<img src="${st.logo_url}" crossorigin="anonymous" class="logo"/>` : '<div class="logo" style="display:flex;align-items:center;justify-content:center;font-size:20px">✈️</div>'}
     <div class="ct">
-      <h2>${st.company_name_ar||'صعود الطائرة للسفر والسياحة'}</h2>
-      <h1>${st.company_name_en||'SUEUD AL TAAYIRA TRAVEL & TOURISM'}</h1>
-      <p>${st.address_ar||'Address'} ${st.phone?'| '+st.phone:''} ${st.website?'| '+st.website:''}</p>
+      <h2>${st.company_name_ar || 'صعود الطائرة للسفر والسياحة'}</h2>
+      <h1>${st.company_name_en || 'SUEUD AL TAAYIRA TRAVEL & TOURISM'}</h1>
+      <p>${st.address_ar || 'Address'} ${st.phone ? '| ' + st.phone : ''} ${st.website ? '| ' + st.website : ''}</p>
     </div>
   </div>
   <div class="im">
     <h3>TAX INVOICE<span>فاتورة ضريبية</span></h3>
     <div class="mr"><span class="l">Inv No / رقم</span><span class="v">${no}</span></div>
-    <div class="mr"><span class="l">Date / التاريخ</span><span class="v">${inv.invoice_date||''}</span></div>
-    <div class="mr"><span class="l">Booking / الحجز</span><span class="v">${inv.booking_date||''}</span></div>
-    <div class="sb">${st2==='Unpaid'?'UNPAID / غير مدفوعة':'PAID / مدفوعة'}</div>
+    <div class="mr"><span class="l">Date / التاريخ</span><span class="v">${inv.invoice_date || ''}</span></div>
+    <div class="mr"><span class="l">Booking / الحجز</span><span class="v">${inv.booking_date || ''}</span></div>
+    <div class="sb">${st2 === 'Unpaid' ? 'UNPAID / غير مدفوعة' : 'PAID / مدفوعة'}</div>
   </div>
 </div>
 <div class="comp-det">
-  <div class="ci"><span class="cl">VAT No / رقم ضريبي</span><span class="cv">${st.vat_no||'N/A'}</span></div>
-  <div class="ci"><span class="cl">CR No / رقم سجل</span><span class="cv">${st.cr_no||'N/A'}</span></div>
-  <div class="ci"><span class="cl">License / ترخيص</span><span class="cv">${st.license_no||'N/A'}</span></div>
-  <div class="ci"><span class="cl">Tourism Lic. / ترخيص سياحة</span><span class="cv">${st.tourism_license_no||'N/A'}</span></div>
+  <div class="ci"><span class="cl">VAT No / رقم ضريبي</span><span class="cv">${st.vat_no || 'N/A'}</span></div>
+  <div class="ci"><span class="cl">CR No / رقم سجل</span><span class="cv">${st.cr_no || 'N/A'}</span></div>
+  <div class="ci"><span class="cl">License / ترخيص</span><span class="cv">${st.license_no || 'N/A'}</span></div>
+  <div class="ci"><span class="cl">Tourism Lic.</span><span class="cv">${st.tourism_license_no || 'N/A'}</span></div>
 </div>
 <div class="body">
   <div class="dg">
     <div class="ib">
-      <div class="sec-title">BILL TO / فاتورة إلى<span></span></div>
-      <div class="ir"><span class="l">Name / الاسم</span><span class="v">${inv.customers?.name||inv.corporates?.name||'N/A'}</span></div>
-      <div class="ir"><span class="l">Phone / الهاتف</span><span class="v">${inv.customers?.phone||'N/A'}</span></div>
-      ${inv.corporates?.vat_no?`<div class="ir"><span class="l">VAT / ضريبي</span><span class="v">${inv.corporates.vat_no}</span></div>`:''}
-      <div class="ir"><span class="l">Sales Person / موظف</span><span class="v">${inv.employees?.name||'N/A'}</span></div>
+      <div class="sec-title">BILL TO / فاتورة إلى</div>
+      <div class="ir"><span class="l">Name / الاسم</span><span class="v">${inv.customers?.name || inv.corporates?.name || 'N/A'}</span></div>
+      <div class="ir"><span class="l">Phone / الهاتف</span><span class="v">${inv.customers?.phone || 'N/A'}</span></div>
+      ${inv.corporates?.vat_no ? `<div class="ir"><span class="l">VAT / ضريبي</span><span class="v">${inv.corporates.vat_no}</span></div>` : ''}
+      <div class="ir"><span class="l">Sales Person / موظف</span><span class="v">${inv.employees?.name || 'N/A'}</span></div>
       <div class="ir"><span class="l">Passengers / الركاب</span><span class="v" style="font-size:7px;line-height:1.4">${pax}</span></div>
     </div>
-    <div class="ib" style="border-left-color:#f59e0b;${isRTL?'border-left:1px solid #e2e8f0;border-right:3px solid #f59e0b':''}">
-      <div class="sec-title">FLIGHT DETAILS / تفاصيل الرحلة<span></span></div>
-      <div class="ir"><span class="l">Airline / الخطوط</span><span class="v">${inv.airline||'N/A'}</span></div>
-      <div class="ir"><span class="l">Sector / القطاع</span><span class="v">${inv.flight_sector||'N/A'}</span></div>
-      <div class="ir"><span class="l">Type / النوع</span><span class="v">${inv.flight_type||'N/A'}</span></div>
-      <div class="ir"><span class="l">Journey / الرحلة</span><span class="v">${inv.flight_journey||'N/A'}</span></div>
-      <div class="ir"><span class="l">PNR / رقم الحجز</span><span class="v" style="color:#2563eb;font-weight:700">${inv.pnr||'N/A'}</span></div>
-      <div class="ir"><span class="l">Ticket No / التذكرة</span><span class="v">${inv.ticket_no||'N/A'}</span></div>
-      <div class="ir"><span class="l">Refundable / قابلة للاسترجاع</span><span class="v">${inv.refundable_status||'N/A'}</span></div>
-      <div class="ir"><span class="l">Service / الخدمة</span><span class="v">${inv.service_type||'N/A'}</span></div>
+    <div class="ib" style="border-left-color:#f59e0b;${isRTL ? 'border-left:1px solid #e2e8f0;border-right:3px solid #f59e0b' : ''}">
+      <div class="sec-title">FLIGHT DETAILS / تفاصيل الرحلة</div>
+      <div class="ir"><span class="l">Airline / الخطوط</span><span class="v">${inv.airline || 'N/A'}</span></div>
+      <div class="ir"><span class="l">Sector / القطاع</span><span class="v">${inv.flight_sector || 'N/A'}</span></div>
+      <div class="ir"><span class="l">Type / النوع</span><span class="v">${inv.flight_type || 'N/A'}</span></div>
+      <div class="ir"><span class="l">Journey / الرحلة</span><span class="v">${inv.flight_journey || 'N/A'}</span></div>
+      <div class="ir"><span class="l">PNR / رقم الحجز</span><span class="v" style="color:#2563eb;font-weight:700">${inv.pnr || 'N/A'}</span></div>
+      <div class="ir"><span class="l">Ticket No / التذكرة</span><span class="v">${inv.ticket_no || 'N/A'}</span></div>
+      <div class="ir"><span class="l">Refundable / قابلة للاسترجاع</span><span class="v">${inv.refundable_status || 'N/A'}</span></div>
+      <div class="ir"><span class="l">Service / الخدمة</span><span class="v">${inv.service_type || 'N/A'}</span></div>
     </div>
   </div>
-  ${isRe?`<div class="rb"><div class="rt"><span>⚠️ PREVIOUS BOOKING / الحجز السابق</span><span>تفاصيل</span></div><div class="rg">
-    <div class="ri"><div class="l">Old Date</div><div class="v">${inv.old_booking_date||'N/A'}</div></div>
-    <div class="ri"><div class="l">Old Airline</div><div class="v">${inv.old_airline||'N/A'}</div></div>
-    <div class="ri"><div class="l">Old Sector</div><div class="v">${inv.old_sector||'N/A'}</div></div>
-    <div class="ri"><div class="l">Old PNR</div><div class="v">${inv.old_pnr||'N/A'}</div></div>
-    <div class="ri"><div class="l">Old Ticket</div><div class="v">${inv.old_ticket_no||'N/A'}</div></div>
-    <div class="ri"><div class="l">Old Type</div><div class="v">${inv.old_flight_type||'N/A'}</div></div>
-    <div class="rf"><div class="l">Original Fare / الأجرة الأصلية</div><div class="v">${parseFloat(inv.old_sell_price||0).toFixed(2)} SAR</div></div>
-  </div></div>`:''}
+  ${isRe ? `<div class="rb"><div class="rt"><span>⚠️ PREVIOUS BOOKING / الحجز السابق</span><span>تفاصيل</span></div><div class="rg">
+    <div class="ri"><div class="l">Old Date</div><div class="v">${inv.old_booking_date || 'N/A'}</div></div>
+    <div class="ri"><div class="l">Old Airline</div><div class="v">${inv.old_airline || 'N/A'}</div></div>
+    <div class="ri"><div class="l">Old Sector</div><div class="v">${inv.old_sector || 'N/A'}</div></div>
+    <div class="ri"><div class="l">Old PNR</div><div class="v">${inv.old_pnr || 'N/A'}</div></div>
+    <div class="ri"><div class="l">Old Ticket</div><div class="v">${inv.old_ticket_no || 'N/A'}</div></div>
+    <div class="ri"><div class="l">Old Type</div><div class="v">${inv.old_flight_type || 'N/A'}</div></div>
+    <div class="rf"><div class="l">Original Fare / الأجرة الأصلية</div><div class="v">${parseFloat(inv.old_sell_price || 0).toFixed(2)} SAR</div></div>
+  </div></div>` : ''}
   <table>
     <thead><tr>
       <th>Description<span>الوصف</span></th>
@@ -231,31 +228,31 @@ tbody tr:last-child td{border-bottom:none}
       <th class="r">Total<span>الإجمالي</span></th>
     </tr></thead>
     <tbody>
-      <tr><td>${inv.sector||inv.service_type||'Service'}</td><td class="c">${inv.qty||1}</td><td class="r">${up.toFixed(2)}</td><td class="r">${ts.toFixed(2)}</td></tr>
-      ${disc>0?`<tr style="background:#f0fdf4"><td colspan="3" style="text-align:${isRTL?'left':'right'};color:#059669">Discount / خصم</td><td class="r" style="color:#059669">- ${disc.toFixed(2)}</td></tr>`:''}
+      <tr><td>${inv.sector || inv.service_type || 'Service'}</td><td class="c">${inv.qty || 1}</td><td class="r">${up.toFixed(2)}</td><td class="r">${ts.toFixed(2)}</td></tr>
+      ${disc > 0 ? `<tr style="background:#f0fdf4"><td colspan="3" style="text-align:${isRTL ? 'left' : 'right'};color:#059669">Discount / خصم</td><td class="r" style="color:#059669">- ${disc.toFixed(2)}</td></tr>` : ''}
     </tbody>
   </table>
   <div class="bs">
     <div class="pb">
-      <div class="sec-title">PAYMENT BREAKDOWN / تفصيل الدفع<span></span></div>
+      <div class="sec-title">PAYMENT BREAKDOWN / تفصيل الدفع</div>
       <div class="pr"><span>Subtotal / المجموع الفرعي</span><span style="font-weight:600">${sub.toFixed(2)} SAR</span></div>
-      ${disc>0?`<div class="pr" style="color:#059669"><span>Discount / خصم</span><span>- ${disc.toFixed(2)} SAR</span></div>`:''}
+      ${disc > 0 ? `<div class="pr" style="color:#059669"><span>Discount / خصم</span><span>- ${disc.toFixed(2)} SAR</span></div>` : ''}
       <div class="pr"><span>VAT (${vr}%) / ضريبة</span><span>${vat.toFixed(2)} SAR</span></div>
-      ${uc>0?`<div class="pr" style="color:#7c3aed"><span>Credit Used / رصيد مستخدم</span><span>- ${uc.toFixed(2)} SAR</span></div>`:''}
-      ${cr>0?`<div class="pr" style="color:#ef4444"><span>Cash Returned / مردود</span><span>- ${cr.toFixed(2)} SAR</span></div>`:''}
+      ${uc > 0 ? `<div class="pr" style="color:#7c3aed"><span>Credit Used / رصيد مستخدم</span><span>- ${uc.toFixed(2)} SAR</span></div>` : ''}
+      ${cr > 0 ? `<div class="pr" style="color:#ef4444"><span>Cash Returned / مردود</span><span>- ${cr.toFixed(2)} SAR</span></div>` : ''}
       <div class="pr" style="border-top:1.5px solid #cbd5e1;margin-top:3px;padding-top:3px;font-weight:700"><span>Paid (${pd}) / مدفوع</span><span style="color:#059669">${cp.toFixed(2)} SAR</span></div>
-      <div class="pr" style="font-weight:700;font-size:10px"><span>Due / المتبقي</span><span style="color:${due>0?'#ef4444':'#059669'}">${due.toFixed(2)} SAR</span></div>
+      <div class="pr" style="font-weight:700;font-size:10px"><span>Due / المتبقي</span><span style="color:${due > 0 ? '#ef4444' : '#059669'}">${due.toFixed(2)} SAR</span></div>
     </div>
     <div class="tb">
       <div class="tr"><span>Subtotal / المجموع الفرعي</span><span>${sub.toFixed(2)}</span></div>
-      ${disc>0?`<div class="tr" style="color:#34d399"><span>Discount / خصم</span><span>- ${disc.toFixed(2)}</span></div>`:''}
+      ${disc > 0 ? `<div class="tr" style="color:#34d399"><span>Discount / خصم</span><span>- ${disc.toFixed(2)}</span></div>` : ''}
       <div class="tr"><span>VAT (${vr}%) / ضريبة</span><span>${vat.toFixed(2)}</span></div>
       <div class="gt"><span>GRAND TOTAL</span><span class="v">${tot.toFixed(2)} SAR</span></div>
     </div>
   </div>
   <div class="terms">
     <h4>Terms / الشروط</h4>
-    <p>1. Bookings subject to airline/hotel terms. الحجوزات تخضع لشروط الخطوط/الفنادق &nbsp; 2. Cancellation policies vary. سياسات الإلغاء تختلف &nbsp; 3. Computer-generated - valid without signature. مستند آلي صالح بدون توقيع &nbsp; 4. Prices in SAR incl. VAT. الأسعار بالريال شاملة الضريبة &nbsp; 5. Electronic invoice under Fatoorah regulations. فاتورة إلكترونية بموجب لوائح فاتورة</p>
+    <p>1. Bookings subject to airline/hotel terms. الحجوزات تخضع لشروط الخطوط/الفنادق &nbsp; 2. Cancellation policies vary. سياسات الإلغاء تختلف &nbsp; 3. Computer-generated - valid without signature. مستند آلي صالح بدون توقيع &nbsp; 4. Prices in SAR incl. VAT. الأسعار بالريال شاملة الضريبة &nbsp; 5. Electronic invoice under Fatoorah. فاتورة إلكترونية بموجب لوائح فاتورة</p>
   </div>
 </div>
 <div class="ft">
@@ -268,14 +265,14 @@ tbody tr:last-child td{border-bottom:none}
   <div class="ft-divider"></div>
   <div class="ai-msg">
     <div class="ai-label">🤖 AI</div>
-    <p>${aiMsg}<span>${lang==='ar'?'✈️ رحلة سعيدة!':'Safe flight!'}</span></p>
+    <p>${aiMsg}<span>${lang === 'ar' ? '✈️ رحلة سعيدة!' : 'Safe flight!'}</span></p>
   </div>
   <div class="ft-divider"></div>
   <div class="ft-info">
-    <p style="font-weight:700;color:#0f172a;font-size:7px">${st.company_name_en||'SUEUD AL TAAYIRA'}</p>
-    <p>${st.phone||''}</p>
-    <p style="font-family:'Cairo';font-size:7px">${st.company_name_ar||''}</p>
-    <p style="color:#cbd5e1;margin-top:2px">${st.vat_no?'VAT: '+st.vat_no:''}</p>
+    <p style="font-weight:700;color:#0f172a;font-size:7px">${st.company_name_en || 'SUEUD AL TAAYIRA'}</p>
+    <p>${st.phone || ''}</p>
+    <p style="font-family:'Cairo';font-size:7px">${st.company_name_ar || ''}</p>
+    <p style="color:#cbd5e1;margin-top:2px">${st.vat_no ? 'VAT: ' + st.vat_no : ''}</p>
   </div>
 </div>
 </div></body></html>`;
@@ -298,12 +295,10 @@ const getRefundHTML = (inv, s, lang = 'en') => {
   const aiMsg = getAIMessage(inv, lang);
   const isRTL = lang === 'ar';
   const dir = isRTL ? 'rtl' : 'ltr';
-
   return `<!DOCTYPE html><html lang="${lang}" dir="${dir}"><head><meta charset="UTF-8"><title>Refund ${no}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-@page{size:A4 portrait;margin:0}
-*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0;padding:0}
+@page{size:A4 portrait;margin:0}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0;padding:0}
 body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-size:9px}
 .inv{width:210mm;height:297mm;margin:auto;border:2px solid #7f1d1d;display:flex;flex-direction:column;position:relative;overflow:hidden}
 .inv::before{content:'';position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,#7f1d1d,#991b1b,#dc2626,#7f1d1d)}
@@ -314,7 +309,7 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
 .ct h2{font-size:14px;font-weight:800;color:#fbbf24;margin:0;font-family:'Cairo'}
 .ct h1{font-size:9px;font-weight:600;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1.5px;margin:2px 0 0}
 .ct p{font-size:8px;color:rgba(255,255,255,0.6);line-height:1.5;margin:3px 0 0}
-.im{min-width:160px;text-align:${isRTL?'left':'right'}}
+.im{min-width:160px;text-align:${isRTL ? 'left' : 'right'}}
 .im h3{font-size:18px;font-weight:800;color:#fbbf24;text-transform:uppercase;margin:0}
 .im h3 span{font-size:9px;font-family:'Cairo';display:block;margin:2px 0 0;color:rgba(255,255,255,0.8)}
 .ino{font-size:8px;color:rgba(255,255,255,0.8);margin-top:3px;border-bottom:1px dashed rgba(255,255,255,0.2);padding-bottom:2px}
@@ -326,13 +321,11 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
 .comp-det .cv{font-size:8px;color:#7f1d1d;font-weight:600}
 .body{padding:10px 16px;flex:1;display:flex;flex-direction:column;gap:8px}
 .sec-title{font-size:8px;font-weight:700;text-transform:uppercase;color:#7f1d1d;margin-bottom:4px;border-bottom:1.5px solid #7f1d1d;padding-bottom:3px}
-.sec-title span{font-family:'Cairo';font-size:8px;color:#991b1b}
 .ib{padding:8px;background:#fff5f5;border-radius:5px;border:1px solid #fecaca;border-left:3px solid #dc2626}
 .row{display:flex;justify-content:space-between;font-size:8px;padding:2px 0;border-bottom:1px solid #fee2e2}
-.row:last-child{border:none}.row .l{color:#991b1b;font-weight:500}.row .v{color:#7f1d1d;font-weight:600;text-align:${isRTL?'left':'right'};max-width:65%}
+.row:last-child{border:none}.row .l{color:#991b1b;font-weight:500}.row .v{color:#7f1d1d;font-weight:600;text-align:${isRTL ? 'left' : 'right'};max-width:65%}
 .cb{background:#fff;padding:10px;border-radius:5px;border:1px solid #e2e8f0}
 .ct2{font-size:8px;text-transform:uppercase;color:#dc2626;margin-bottom:5px;border-bottom:1.5px solid #fecaca;padding-bottom:3px;font-weight:700}
-.ct2 span{font-family:'Cairo'}
 .cr{display:flex;justify-content:space-between;padding:4px 0;font-size:9px;color:#334155;border-bottom:1px dashed #e2e8f0}
 .cr:last-child{border:none}.cr.deduct{color:#ef4444}
 .cr.total{padding-top:6px;margin-top:5px;border-top:1.5px solid #dc2626;font-size:14px;font-weight:800;color:#059669;border-bottom:none}
@@ -354,30 +347,30 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
 <div class="inv">
 <div class="hdr">
   <div class="cblk">
-    ${st.logo_url?`<img src="${st.logo_url}" crossorigin="anonymous" class="logo"/>`:'<div class="logo" style="display:flex;align-items:center;justify-content:center;font-size:20px">✈️</div>'}
-    <div class="ct"><h2>${st.company_name_ar||'صعود الطائرة'}</h2><h1>${st.company_name_en||'SUEUD AL TAAYIRA'}</h1><p>${st.address_ar||''} ${st.phone?'| '+st.phone:''}</p></div>
+    ${st.logo_url ? `<img src="${st.logo_url}" crossorigin="anonymous" class="logo"/>` : '<div class="logo" style="display:flex;align-items:center;justify-content:center;font-size:20px">✈️</div>'}
+    <div class="ct"><h2>${st.company_name_ar || 'صعود الطائرة'}</h2><h1>${st.company_name_en || 'SUEUD AL TAAYIRA'}</h1><p>${st.address_ar || ''} ${st.phone ? '| ' + st.phone : ''}</p></div>
   </div>
-  <div class="im"><h3>REFUND<span>استرجاع</span></h3><div class="ino">No / رقم: <span>${no}</span></div><div class="ino">Date / التاريخ: <span>${inv.refund_date||inv.invoice_date||''}</span></div><div class="sb">PROCESSED / تم</div></div>
+  <div class="im"><h3>REFUND<span>استرجاع</span></h3><div class="ino">No / رقم: <span>${no}</span></div><div class="ino">Date / التاريخ: <span>${inv.refund_date || inv.invoice_date || ''}</span></div><div class="sb">PROCESSED / تم</div></div>
 </div>
 <div class="comp-det">
-  <div class="ci"><span class="cl">VAT No / رقم ضريبي</span><span class="cv">${st.vat_no||'N/A'}</span></div>
-  <div class="ci"><span class="cl">CR No / رقم سجل</span><span class="cv">${st.cr_no||'N/A'}</span></div>
-  <div class="ci"><span class="cl">License / ترخيص</span><span class="cv">${st.license_no||'N/A'}</span></div>
-  <div class="ci"><span class="cl">Tourism Lic.</span><span class="cv">${st.tourism_license_no||'N/A'}</span></div>
+  <div class="ci"><span class="cl">VAT No / رقم ضريبي</span><span class="cv">${st.vat_no || 'N/A'}</span></div>
+  <div class="ci"><span class="cl">CR No / رقم سجل</span><span class="cv">${st.cr_no || 'N/A'}</span></div>
+  <div class="ci"><span class="cl">License / ترخيص</span><span class="cv">${st.license_no || 'N/A'}</span></div>
+  <div class="ci"><span class="cl">Tourism Lic.</span><span class="cv">${st.tourism_license_no || 'N/A'}</span></div>
 </div>
 <div class="body">
   <div class="ib">
-    <div class="sec-title">BOOKING DETAILS / تفاصيل الحجز<span></span></div>
+    <div class="sec-title">BOOKING DETAILS / تفاصيل الحجز</div>
     <div class="row"><span class="l">Customer / العميل</span><span class="v">${cn}</span></div>
     <div class="row"><span class="l">Phone / الهاتف</span><span class="v">${cp}</span></div>
     <div class="row"><span class="l">Passengers / الركاب</span><span class="v" style="font-size:7px">${pax}</span></div>
-    <div class="row"><span class="l">Airline / الخطوط</span><span class="v">${inv.airline||inv.old_airline||'N/A'}</span></div>
-    <div class="row"><span class="l">Date / التاريخ</span><span class="v">${inv.invoice_date||'N/A'}</span></div>
-    <div class="row"><span class="l">PNR / رقم الحجز</span><span class="v">${inv.pnr||inv.old_pnr||'N/A'}</span></div>
-    <div class="row"><span class="l">Reason / السبب</span><span class="v">${inv.refund_reason||'N/A'}</span></div>
+    <div class="row"><span class="l">Airline / الخطوط</span><span class="v">${inv.airline || inv.old_airline || 'N/A'}</span></div>
+    <div class="row"><span class="l">Date / التاريخ</span><span class="v">${inv.invoice_date || 'N/A'}</span></div>
+    <div class="row"><span class="l">PNR / رقم الحجز</span><span class="v">${inv.pnr || inv.old_pnr || 'N/A'}</span></div>
+    <div class="row"><span class="l">Reason / السبب</span><span class="v">${inv.refund_reason || 'N/A'}</span></div>
   </div>
   <div class="cb">
-    <div class="ct2">REFUND CALCULATION / حساب الاسترجاع<span></span></div>
+    <div class="ct2">REFUND CALCULATION / حساب الاسترجاع</div>
     <div class="cr"><span>Original Fare / الأجرة الأصلية</span><span style="font-weight:600">${of2.toFixed(2)} SAR</span></div>
     <div class="cr deduct"><span>Less: Airline Fees / خصم رسوم الخطوط</span><span style="font-weight:600">- ${airlineFees.toFixed(2)} SAR</span></div>
     <div class="cr"><span>Refund to Portal / استرجاع للبوابة</span><span style="font-weight:600;color:#2563eb">${compRef.toFixed(2)} SAR</span></div>
@@ -388,9 +381,9 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
 <div class="ft">
   <div class="code-box"><img src="${qr}" alt="QR" class="qr-img" crossorigin="anonymous"/><div class="code-label">DOWNLOAD<span>تحميل</span></div></div>
   <div class="ft-divider"></div>
-  <div class="ai-msg"><div class="ai-label">🤖 AI</div><p>${aiMsg}<span>${lang==='ar'?'🔄 تم الاسترجاع':'Refund processed!'}</span></p></div>
+  <div class="ai-msg"><div class="ai-label">🤖 AI</div><p>${aiMsg}<span>${lang === 'ar' ? '🔄 تم الاسترجاع' : 'Refund processed!'}</span></p></div>
   <div class="ft-divider"></div>
-  <div class="ft-info"><p style="font-weight:700;color:#7f1d1d">${st.company_name_en||''}</p><p>${st.phone||''}</p><p style="font-family:'Cairo'">${st.company_name_ar||''}</p></div>
+  <div class="ft-info"><p style="font-weight:700;color:#7f1d1d">${st.company_name_en || ''}</p><p>${st.phone || ''}</p><p style="font-family:'Cairo'">${st.company_name_ar || ''}</p></div>
 </div>
 </div></body></html>`;
 };
@@ -398,16 +391,15 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
 /* ═══════════ EXPENSE VOUCHER HTML — SINGLE PAGE ═══════════ */
 const getExpenseHTML = (exp, s, lang = 'en') => {
   const st = s || {};
-  const eno = `EXP-${exp.id?.substring(0,8)||'N/A'}`;
-  const items = exp.items?.length > 0 ? exp.items : [{ name: exp.item_name||'Item', qty: 1, price: exp.amount||0 }];
+  const eno = `EXP-${exp.id ? exp.id.substring(0, 8) : 'N/A'}`;
+  const items = exp.items && exp.items.length > 0 ? exp.items : [{ name: exp.item_name || 'Item', qty: 1, price: exp.amount || 0 }];
   const aiMsg = getAIMessage(exp, lang);
   const isRTL = lang === 'ar';
   const dir = isRTL ? 'rtl' : 'ltr';
   return `<!DOCTYPE html><html lang="${lang}" dir="${dir}"><head><meta charset="UTF-8"><title>Expense ${eno}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-@page{size:A4 portrait;margin:0}
-*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0;padding:0}
+@page{size:A4 portrait;margin:0}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0;padding:0}
 body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-size:9px}
 .inv{width:210mm;height:297mm;margin:auto;border:2px solid #7c2d12;display:flex;flex-direction:column;position:relative;overflow:hidden}
 .inv::before{content:'';position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,#7c2d12,#9a3412,#ea580c,#7c2d12)}
@@ -415,7 +407,7 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
 .hdr{display:flex;justify-content:space-between;padding:10px 16px;background:linear-gradient(135deg,#7c2d12,#9a3412);color:#fff;margin-top:5px;align-items:center}
 .ci h2{font-size:14px;font-weight:800;color:#fbbf24;margin:0;font-family:'Cairo'}
 .ci h1{font-size:9px;font-weight:600;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1.5px;margin:2px 0 0}
-.im{text-align:${isRTL?'left':'right'}}
+.im{text-align:${isRTL ? 'left' : 'right'}}
 .im h3{font-size:18px;font-weight:800;color:#fbbf24;text-transform:uppercase;margin:0}
 .im p{font-size:8px;color:rgba(255,255,255,0.8);margin:3px 0 0}.im p span{color:#fbbf24;font-weight:700}
 .comp-det{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:6px 16px;background:#fff7ed;border-bottom:1px solid #fed7aa}
@@ -424,16 +416,15 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
 .comp-det .cv{font-size:8px;color:#7c2d12;font-weight:600}
 .body{padding:10px 16px;flex:1;display:flex;flex-direction:column;gap:8px}
 .sec-title{font-size:8px;font-weight:700;text-transform:uppercase;color:#7c2d12;margin-bottom:4px;border-bottom:1.5px solid #7c2d12;padding-bottom:3px}
-.sec-title span{font-family:'Cairo';font-size:8px;color:#9a3412}
 .ib{padding:8px;background:#fff7ed;border-radius:5px;border-left:3px solid #ea580c;border:1px solid #fed7aa}
 .row{display:flex;justify-content:space-between;font-size:8px;padding:2px 0;border-bottom:1px solid #fed7aa}
 .row:last-child{border:none}.row .l{color:#9a3412;font-weight:500}.row .v{color:#7c2d12;font-weight:600}
 table{width:100%;border-collapse:collapse;border-radius:5px;overflow:hidden;border:1px solid #e2e8f0}
-thead th{padding:5px 6px;background:#7c2d12;color:#fbbf24;font-size:7px;text-transform:uppercase;text-align:${isRTL?'right':'left'};letter-spacing:0.5px}
+thead th{padding:5px 6px;background:#7c2d12;color:#fbbf24;font-size:7px;text-transform:uppercase;text-align:${isRTL ? 'right' : 'left'};letter-spacing:0.5px}
 thead th span{font-family:'Cairo';font-size:7px;opacity:0.8;display:block}
-thead th.r{text-align:${isRTL?'left':'right'}}
+thead th.r{text-align:${isRTL ? 'left' : 'right'}}
 tbody td{padding:4px 6px;border-bottom:1px solid #f1f5f9;font-size:8px}
-tbody td.r{text-align:${isRTL?'left':'right'};font-weight:600}
+tbody td.r{text-align:${isRTL ? 'left' : 'right'};font-weight:600}
 .totals{background:linear-gradient(135deg,#7c2d12,#9a3412);color:#fff;padding:12px 16px;border-radius:6px;display:flex;justify-content:space-between;align-items:center}
 .totals h3{margin:0;text-transform:uppercase;font-size:10px}.totals .amt{font-size:20px;font-weight:800;margin:0;color:#fbbf24}
 .ft{padding:8px 16px;background:linear-gradient(135deg,#fff7ed,#ffedd5);display:flex;justify-content:space-between;align-items:center;border-top:1.5px solid #fed7aa;gap:8px;margin-top:auto}
@@ -446,30 +437,30 @@ tbody td.r{text-align:${isRTL?'left':'right'};font-weight:600}
 @media print{body{background:#fff;padding:0;margin:0}.inv{border:none}}
 </style></head><body>
 <div class="inv">
-<div class="hdr"><div class="ci"><h2>${st.company_name_ar||'صعود الطائرة'}</h2><h1>${st.company_name_en||'SUEUD AL TAAYIRA'}</h1></div>
-<div class="im"><h3>EXPENSE VOUCHER</h3><p>No: <span>${eno}</span></p><p>Date: <span>${exp.expense_date||''}</span></p></div></div>
+<div class="hdr"><div class="ci"><h2>${st.company_name_ar || 'صعود الطائرة'}</h2><h1>${st.company_name_en || 'SUEUD AL TAAYIRA'}</h1></div>
+<div class="im"><h3>EXPENSE VOUCHER</h3><p>No: <span>${eno}</span></p><p>Date: <span>${exp.expense_date || ''}</span></p></div></div>
 <div class="comp-det">
-  <div class="ci"><span class="cl">VAT No / رقم ضريبي</span><span class="cv">${st.vat_no||'N/A'}</span></div>
-  <div class="ci"><span class="cl">CR No / رقم سجل</span><span class="cv">${st.cr_no||'N/A'}</span></div>
-  <div class="ci"><span class="cl">License / ترخيص</span><span class="cv">${st.license_no||'N/A'}</span></div>
-  <div class="ci"><span class="cl">Tourism Lic.</span><span class="cv">${st.tourism_license_no||'N/A'}</span></div>
+  <div class="ci"><span class="cl">VAT No / رقم ضريبي</span><span class="cv">${st.vat_no || 'N/A'}</span></div>
+  <div class="ci"><span class="cl">CR No / رقم سجل</span><span class="cv">${st.cr_no || 'N/A'}</span></div>
+  <div class="ci"><span class="cl">License / ترخيص</span><span class="cv">${st.license_no || 'N/A'}</span></div>
+  <div class="ci"><span class="cl">Tourism Lic.</span><span class="cv">${st.tourism_license_no || 'N/A'}</span></div>
 </div>
 <div class="body">
   <div class="ib">
-    <div class="sec-title">DETAILS / التفاصيل<span></span></div>
-    <div class="row"><span class="l">Type / النوع</span><span class="v">${exp.expense_type||'N/A'}</span></div>
-    <div class="row"><span class="l">Payment / الدفع</span><span class="v">${exp.payment_mode||'Cash'}</span></div>
-    <div class="row"><span class="l">Description / الوصف</span><span class="v">${exp.description||'N/A'}</span></div>
+    <div class="sec-title">DETAILS / التفاصيل</div>
+    <div class="row"><span class="l">Type / النوع</span><span class="v">${exp.expense_type || 'N/A'}</span></div>
+    <div class="row"><span class="l">Payment / الدفع</span><span class="v">${exp.payment_mode || 'Cash'}</span></div>
+    <div class="row"><span class="l">Description / الوصف</span><span class="v">${exp.description || 'N/A'}</span></div>
   </div>
   <table>
     <thead><tr><th>Item / البند<span>الوصف</span></th><th class="r">Qty<span>الكمية</span></th><th class="r">Price<span>السعر</span></th><th class="r">Total<span>المجموع</span></th></tr></thead>
-    <tbody>${items.map(it=>`<tr><td>${it.name||'Item'}</td><td class="r">${it.qty||1}</td><td class="r">${parseFloat(it.price||0).toFixed(2)}</td><td class="r">${((parseFloat(it.qty)||0)*(parseFloat(it.price)||0)).toFixed(2)}</td></tr>`).join('')}</tbody>
+    <tbody>${items.map(function(it) { return '<tr><td>' + (it.name || 'Item') + '</td><td class="r">' + (it.qty || 1) + '</td><td class="r">' + parseFloat(it.price || 0).toFixed(2) + '</td><td class="r">' + ((parseFloat(it.qty) || 0) * (parseFloat(it.price) || 0)).toFixed(2) + '</td></tr>'; }).join('')}</tbody>
   </table>
-  <div class="totals"><h3>TOTAL / الإجمالي</h3><p class="amt">${(exp.amount||0).toFixed(2)} SAR</p></div>
+  <div class="totals"><h3>TOTAL / الإجمالي</h3><p class="amt">${(exp.amount || 0).toFixed(2)} SAR</p></div>
 </div>
 <div class="ft">
-  <div class="ft-info"><p style="font-weight:700;color:#7c2d12">${st.company_name_en||''}</p><p>${st.phone||''}</p><p style="font-family:'Cairo'">${st.company_name_ar||''}</p></div>
-  <div class="ai-msg"><div class="ai-label">🤖 AI</div><p>${aiMsg}<span>${lang==='ar'?'📝 سند مصروفات':'Expense voucher'}</span></p></div>
+  <div class="ft-info"><p style="font-weight:700;color:#7c2d12">${st.company_name_en || ''}</p><p>${st.phone || ''}</p><p style="font-family:'Cairo'">${st.company_name_ar || ''}</p></div>
+  <div class="ai-msg"><div class="ai-label">🤖 AI</div><p>${aiMsg}<span>${lang === 'ar' ? '📝 سند مصروفات' : 'Expense voucher'}</span></p></div>
   <div style="width:70px"></div>
 </div>
 </div></body></html>`;
@@ -478,9 +469,9 @@ tbody td.r{text-align:${isRTL?'left':'right'};font-weight:600}
 /* ═══════════ SALARY SLIP HTML — SINGLE PAGE ═══════════ */
 const getSalarySlipHTML = (pay, s, lang = 'en') => {
   const st = s || {};
-  const sno = `SLIP-${pay.id?.substring(0,8)||'N/A'}`;
-  const gross = (pay.base_salary||0)+(pay.commission_amount||0)+(pay.overtime||0)+(pay.gift||0);
-  const tded = (pay.advance_deduction||0)+(pay.mistakes_deduction||0)+(pay.other_deduction||0);
+  const sno = `SLIP-${pay.id ? pay.id.substring(0, 8) : 'N/A'}`;
+  const gross = (pay.base_salary || 0) + (pay.commission_amount || 0) + (pay.overtime || 0) + (pay.gift || 0);
+  const tded = (pay.advance_deduction || 0) + (pay.mistakes_deduction || 0) + (pay.other_deduction || 0);
   const net = gross - tded;
   const aiMsg = getAIMessage(pay, lang);
   const isRTL = lang === 'ar';
@@ -488,15 +479,14 @@ const getSalarySlipHTML = (pay, s, lang = 'en') => {
   return `<!DOCTYPE html><html lang="${lang}" dir="${dir}"><head><meta charset="UTF-8"><title>Slip ${sno}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-@page{size:A4 portrait;margin:0}
-*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0;padding:0}
+@page{size:A4 portrait;margin:0}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0;padding:0}
 body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-size:9px}
 .slip{width:210mm;height:297mm;margin:auto;border:2px solid #0F172A;display:flex;flex-direction:column;position:relative;overflow:hidden}
 .slip::before{content:'';position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,#0F172A,#1E3A8A,#2563EB,#0F172A)}
 .slip::after{content:'';position:absolute;bottom:0;left:0;right:0;height:5px;background:linear-gradient(90deg,#0F172A,#2563EB,#1E3A8A,#0F172A)}
 .hdr{background:linear-gradient(135deg,#0F172A,#1E3A8A);color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:5px}
 .hdr h1{font-size:14px;font-weight:800;color:#FBBF24;margin:0}
-.si{text-align:${isRTL?'left':'right'}}
+.si{text-align:${isRTL ? 'left' : 'right'}}
 .si h3{color:#FBBF24;font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;margin:0}
 .si h3 span{font-family:'Cairo';display:block;font-size:8px;color:rgba(255,255,255,0.8);margin:1px 0 0}
 .si p{font-size:8px;color:rgba(255,255,255,0.8);margin:3px 0 0}.si p span{color:#FBBF24;font-weight:700}
@@ -524,44 +514,44 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
 @media print{body{background:#fff;padding:0;margin:0}.slip{border:none}}
 </style></head><body>
 <div class="slip">
-<div class="hdr"><h1>${st.company_name_ar||'صعود الطائرة'}</h1>
-<div class="si"><h3>SALARY SLIP<span>قسيمة راتب</span></h3><p>No: <span>${sno}</span></p><p>Month: <span>${pay.month||'N/A'}</span></p><p>Employee: <span>${pay.employees?.name||'N/A'}</span></p></div></div>
+<div class="hdr"><h1>${st.company_name_ar || 'صعود الطائرة'}</h1>
+<div class="si"><h3>SALARY SLIP<span>قسيمة راتب</span></h3><p>No: <span>${sno}</span></p><p>Month: <span>${pay.month || 'N/A'}</span></p><p>Employee: <span>${pay.employees ? pay.employees.name : 'N/A'}</span></p></div></div>
 <div class="comp-det">
-  <div class="ci"><span class="cl">VAT No / رقم ضريبي</span><span class="cv">${st.vat_no||'N/A'}</span></div>
-  <div class="ci"><span class="cl">CR No / رقم سجل</span><span class="cv">${st.cr_no||'N/A'}</span></div>
-  <div class="ci"><span class="cl">License / ترخيص</span><span class="cv">${st.license_no||'N/A'}</span></div>
-  <div class="ci"><span class="cl">Tourism Lic.</span><span class="cv">${st.tourism_license_no||'N/A'}</span></div>
+  <div class="ci"><span class="cl">VAT No / رقم ضريبي</span><span class="cv">${st.vat_no || 'N/A'}</span></div>
+  <div class="ci"><span class="cl">CR No / رقم سجل</span><span class="cv">${st.cr_no || 'N/A'}</span></div>
+  <div class="ci"><span class="cl">License / ترخيص</span><span class="cv">${st.license_no || 'N/A'}</span></div>
+  <div class="ci"><span class="cl">Tourism Lic.</span><span class="cv">${st.tourism_license_no || 'N/A'}</span></div>
 </div>
 <div class="body">
   <div class="dg">
     <div class="ib earn">
       <div class="sec-title">EARNINGS / الإيرادات</div>
-      <div class="row"><span class="l">Base Salary / أساسي</span><span class="v">${(pay.base_salary||0).toFixed(2)}</span></div>
-      <div class="row"><span class="l">Commission / عمولة</span><span class="v">${(pay.commission_amount||0).toFixed(2)}</span></div>
-      <div class="row"><span class="l">Overtime / إضافي</span><span class="v">${(pay.overtime||0).toFixed(2)}</span></div>
-      <div class="row"><span class="l">Gift/Bonus / مكافأة</span><span class="v">${(pay.gift||0).toFixed(2)}</span></div>
+      <div class="row"><span class="l">Base Salary / أساسي</span><span class="v">${(pay.base_salary || 0).toFixed(2)}</span></div>
+      <div class="row"><span class="l">Commission / عمولة</span><span class="v">${(pay.commission_amount || 0).toFixed(2)}</span></div>
+      <div class="row"><span class="l">Overtime / إضافي</span><span class="v">${(pay.overtime || 0).toFixed(2)}</span></div>
+      <div class="row"><span class="l">Gift/Bonus / مكافأة</span><span class="v">${(pay.gift || 0).toFixed(2)}</span></div>
       <div class="row" style="font-weight:700;border-top:1px solid #059669;margin-top:3px;padding-top:3px"><span class="l">GROSS / الإجمالي</span><span class="v" style="color:#059669">${gross.toFixed(2)}</span></div>
     </div>
     <div class="ib ded">
       <div class="sec-title">DEDUCTIONS / الخصومات</div>
-      <div class="row"><span class="l">Advance / سلفة</span><span class="v">${(pay.advance_deduction||0).toFixed(2)}</span></div>
-      <div class="row"><span class="l">Mistakes / أخطاء</span><span class="v">${(pay.mistakes_deduction||0).toFixed(2)}</span></div>
-      <div class="row"><span class="l">Other / أخرى</span><span class="v">${(pay.other_deduction||0).toFixed(2)}</span></div>
+      <div class="row"><span class="l">Advance / سلفة</span><span class="v">${(pay.advance_deduction || 0).toFixed(2)}</span></div>
+      <div class="row"><span class="l">Mistakes / أخطاء</span><span class="v">${(pay.mistakes_deduction || 0).toFixed(2)}</span></div>
+      <div class="row"><span class="l">Other / أخرى</span><span class="v">${(pay.other_deduction || 0).toFixed(2)}</span></div>
       <div class="row" style="font-weight:700;border-top:1px solid #EF4444;margin-top:3px;padding-top:3px"><span class="l">TOTAL DED. / إجمالي الخصم</span><span class="v" style="color:#EF4444">${tded.toFixed(2)}</span></div>
     </div>
     <div class="ib" style="border-left:3px solid #2563EB">
       <div class="sec-title" style="color:#2563EB;border-color:#2563EB">SUMMARY / ملخص</div>
-      <div class="row"><span class="l">Mode / الطريقة</span><span class="v">${pay.payment_mode||'Cash'}</span></div>
-      <div class="row"><span class="l">Working Days</span><span class="v">${pay.working_days||'N/A'}</span></div>
-      <div class="row"><span class="l">Leaves / إجازات</span><span class="v">${pay.leaves_taken||0}</span></div>
+      <div class="row"><span class="l">Mode / الطريقة</span><span class="v">${pay.payment_mode || 'Cash'}</span></div>
+      <div class="row"><span class="l">Working Days</span><span class="v">${pay.working_days || 'N/A'}</span></div>
+      <div class="row"><span class="l">Leaves / إجازات</span><span class="v">${pay.leaves_taken || 0}</span></div>
       <div class="row" style="font-weight:700;border-top:1px solid #2563EB;margin-top:3px;padding-top:3px"><span class="l">NET PAY / صافي</span><span class="v" style="color:#2563EB;font-size:12px">${net.toFixed(2)}</span></div>
     </div>
   </div>
   <div class="totals"><h3>NET SALARY / الراتب الصافي</h3><p class="amt">${net.toFixed(2)} SAR</p></div>
 </div>
 <div class="ft">
-  <div class="ft-info"><p style="font-weight:700;color:#0F172A">${st.company_name_en||''}</p><p>${st.phone||''}</p><p style="font-family:'Cairo'">${st.company_name_ar||''}</p></div>
-  <div class="ai-msg"><div class="ai-label">🤖 AI</div><p>${aiMsg}<span>${lang==='ar'?'💰 راتب تم صرفه':'Salary processed'}</span></p></div>
+  <div class="ft-info"><p style="font-weight:700;color:#0F172A">${st.company_name_en || ''}</p><p>${st.phone || ''}</p><p style="font-family:'Cairo'">${st.company_name_ar || ''}</p></div>
+  <div class="ai-msg"><div class="ai-label">🤖 AI</div><p>${aiMsg}<span>${lang === 'ar' ? '💰 راتب تم صرفه' : 'Salary processed'}</span></p></div>
   <div style="width:70px"></div>
 </div>
 </div></body></html>`;
@@ -576,7 +566,7 @@ const exportToExcel = (data, filename) => {
   const csv = [headers.join(','), ...data.map(row => headers.map(h => {
     let val = row[h] ?? '';
     if (typeof val === 'string' && (val.includes(',') || val.includes('"') || val.includes('\n'))) {
-      val = `"${val.replace(/"/g, '""')}"`;
+      val = '"' + val.replace(/"/g, '""') + '"';
     }
     return val;
   }).join(','))].join('\n');
@@ -584,7 +574,7 @@ const exportToExcel = (data, filename) => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${filename}.csv`;
+  a.download = filename + '.csv';
   a.click();
   URL.revokeObjectURL(url);
 };
@@ -614,30 +604,30 @@ const generateInvoiceNo = async () => {
   const now = new Date();
   const y = now.getFullYear().toString().slice(-2);
   const m = (now.getMonth() + 1).toString().padStart(2, '0');
-  const prefix = `INV-${y}${m}`;
+  const prefix = 'INV-' + y + m;
   try {
-    const { data } = await supabase.from('invoices').select('invoice_no').ilike('invoice_no', `${prefix}%`).order('invoice_no', { ascending: false }).limit(1);
+    const { data } = await supabase.from('invoices').select('invoice_no').ilike('invoice_no', prefix + '%').order('invoice_no', { ascending: false }).limit(1);
     if (data && data.length > 0) {
       const lastNum = parseInt(data[0].invoice_no.split('-').pop() || '0');
-      return `${prefix}-${(lastNum + 1).toString().padStart(4, '0')}`;
+      return prefix + '-' + (lastNum + 1).toString().padStart(4, '0');
     }
   } catch (e) { /* fallback */ }
-  return `${prefix}-0001`;
+  return prefix + '-0001';
 };
 
 const generateRefundNo = async () => {
   const now = new Date();
   const y = now.getFullYear().toString().slice(-2);
   const m = (now.getMonth() + 1).toString().padStart(2, '0');
-  const prefix = `REF-${y}${m}`;
+  const prefix = 'REF-' + y + m;
   try {
-    const { data } = await supabase.from('refunds').select('invoice_no').ilike('invoice_no', `${prefix}%`).order('invoice_no', { ascending: false }).limit(1);
+    const { data } = await supabase.from('refunds').select('invoice_no').ilike('invoice_no', prefix + '%').order('invoice_no', { ascending: false }).limit(1);
     if (data && data.length > 0) {
       const lastNum = parseInt(data[0].invoice_no.split('-').pop() || '0');
-      return `${prefix}-${(lastNum + 1).toString().padStart(4, '0')}`;
+      return prefix + '-' + (lastNum + 1).toString().padStart(4, '0');
     }
   } catch (e) { /* fallback */ }
-  return `${prefix}-0001`;
+  return prefix + '-0001';
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -650,7 +640,7 @@ export default function useERPState() {
 
   /* ── Auth ── */
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   /* ── Data ── */
   const [invoices, setInvoices] = useState([]);
@@ -688,430 +678,391 @@ export default function useERPState() {
 
   const refreshDrafts = useCallback(() => setDrafts(loadDrafts()), []);
 
+  /* ── Safe query wrapper — 404/timeout se crash nahi hoga ── */
+  const safeQuery = useCallback(async (fn, label) => {
+    try {
+      const timeout = new Promise(function (resolve) { setTimeout(resolve, 6000); });
+      await Promise.race([fn(), timeout]);
+    } catch (e) {
+      console.warn('[ERP] Skip ' + (label || 'query') + ':', (e && e.message) || e);
+    }
+  }, []);
+
+  /* ── Generic Table Loader ── */
+  const loadTable = useCallback(async (table, setter, opts) => {
+    opts = opts || {};
+    try {
+      var q = supabase.from(table).select(opts.select || '*');
+      if (opts.order) q = q.order(opts.order.col, { ascending: opts.order.asc !== false });
+      if (opts.limit) q = q.limit(opts.limit);
+      if (opts.eq) { Object.keys(opts.eq).forEach(function (k) { q = q.eq(k, opts.eq[k]); }); }
+      if (opts.ilike) { Object.keys(opts.ilike).forEach(function (k) { q = q.ilike(k, opts.ilike[k]); }); }
+      var result = await q;
+      if (result.data) setter(result.data);
+    } catch (e) {
+      console.warn('[ERP] Table ' + table + ' not loaded:', (e && e.message) || e);
+    }
+  }, []);
+
   /* ── Load Settings ── */
   const loadSettings = useCallback(async () => {
     try {
-      const { data } = await supabase.from('company_settings').select('*').limit(1).single();
-      if (data) setSettings(data);
+      var result = await supabase.from('company_settings').select('*').limit(1).single();
+      if (result.data) setSettings(result.data);
     } catch (e) { /* silent */ }
   }, []);
 
-  /* ── Generic Data Loader ── */
-  const loadTable = useCallback(async (table, setter, opts = {}) => {
-    try {
-      let q = supabase.from(table).select(opts.select || '*');
-      if (opts.order) q = q.order(opts.order.col, { ascending: opts.order.asc ?? false });
-      if (opts.limit) q = q.limit(opts.limit);
-      if (opts.eq) { for (const [k, v] of Object.entries(opts.eq)) q = q.eq(k, v); }
-      if (opts.ilike) { for (const [k, v] of Object.entries(opts.ilike)) q = q.ilike(k, v); }
-      const { data, error } = await q;
-      if (!error && data) setter(data);
-    } catch (e) { /* silent */ }
-  }, []);
-
-  /* ── Load Invoices with joins ── */
+  /* ── Load Invoices ── */
   const loadInvoices = useCallback(async () => {
     try {
-      const { data, error } = await supabase.from('invoices').select(`
-        *, customers(id,name,phone), corporates(id,name,vat_no), employees(id,name)
-      `).order('created_at', { ascending: false });
-      if (!error && data) setInvoices(data);
+      var result = await supabase.from('invoices').select('*, customers(id,name,phone), corporates(id,name,vat_no), employees(id,name)').order('created_at', { ascending: false });
+      if (result.data) setInvoices(result.data);
     } catch (e) { /* silent */ }
   }, []);
 
-  /* ── Load Refunds with joins ── */
+  /* ── Load Refunds ── */
   const loadRefunds = useCallback(async () => {
     try {
-      const { data, error } = await supabase.from('refunds').select(`
-        *, customers(id,name,phone), invoices(invoice_no)
-      `).order('created_at', { ascending: false });
-      if (!error && data) setRefunds(data);
+      var result = await supabase.from('refunds').select('*, customers(id,name,phone), invoices(invoice_no)').order('created_at', { ascending: false });
+      if (result.data) setRefunds(result.data);
     } catch (e) { /* silent */ }
   }, []);
 
-  /* ── Load All ── */
+  /* ── LOAD ALL — Promise.allSettled + finally + timeout ── */
   const loadAll = useCallback(async () => {
     setLoading(true);
-    await Promise.all([
-      loadSettings(),
-      loadInvoices(),
-      loadRefunds(),
-      loadTable('customers', setCustomers, { order: { col: 'name', asc: true } }),
-      loadTable('corporates', setCorporates, { order: { col: 'name', asc: true } }),
-      loadTable('employees', setEmployees, { order: { col: 'name', asc: true } }),
-      loadTable('expenses', setExpenses, { order: { col: 'created_at', asc: false } }),
-      loadTable('vendors', setVendors, { order: { col: 'name', asc: true } }),
-      loadTable('packages', setPackages, { order: { col: 'name', asc: true } }),
-      loadTable('branches', setBranches, { order: { col: 'name', asc: true } }),
-      loadTable('portals', setPortals, { order: { col: 'name', asc: true } }),
-      loadTable('bank_transactions', setBankTransactions, { order: { col: 'created_at', asc: false } }),
-      loadTable('investors', setInvestors, { order: { col: 'name', asc: true } }),
-      loadTable('audit_logs', setAuditLogs, { order: { col: 'created_at', asc: false }, limit: 500 }),
-      loadTable('notifications', setNotifications, { order: { col: 'created_at', asc: false }, limit: 100 }),
-      loadTable('attendance', setAttendance, { order: { col: 'date', asc: false } }),
-      loadTable('salary_payments', setSalaryPayments, { order: { col: 'created_at', asc: false } }),
-      loadTable('credit_limits', setCreditLimits),
-      loadTable('recurring_invoices', setRecurringInvoices),
-      loadTable('quotation_requests', setQuotationRequests),
-      loadTable('staff_mistakes', setStaffMistakes),
-    ]);
-    refreshDrafts();
-    setLoading(false);
-  }, [loadSettings, loadInvoices, loadRefunds, loadTable, refreshDrafts]);
+    try {
+      await Promise.allSettled([
+        safeQuery(loadSettings, 'settings'),
+        safeQuery(loadInvoices, 'invoices'),
+        safeQuery(loadRefunds, 'refunds'),
+        safeQuery(function () { return loadTable('customers', setCustomers, { order: { col: 'name', asc: true } }); }, 'customers'),
+        safeQuery(function () { return loadTable('corporates', setCorporates, { order: { col: 'name', asc: true } }); }, 'corporates'),
+        safeQuery(function () { return loadTable('employees', setEmployees, { order: { col: 'name', asc: true } }); }, 'employees'),
+        safeQuery(function () { return loadTable('expenses', setExpenses, { order: { col: 'created_at', asc: false } }); }, 'expenses'),
+        safeQuery(function () { return loadTable('vendors', setVendors, { order: { col: 'name', asc: true } }); }, 'vendors'),
+        safeQuery(function () { return loadTable('packages', setPackages, { order: { col: 'name', asc: true } }); }, 'packages'),
+        safeQuery(function () { return loadTable('branches', setBranches, { order: { col: 'name', asc: true } }); }, 'branches'),
+        safeQuery(function () { return loadTable('portals', setPortals, { order: { col: 'name', asc: true } }); }, 'portals'),
+        safeQuery(function () { return loadTable('bank_transactions', setBankTransactions, { order: { col: 'created_at', asc: false } }); }, 'bank_transactions'),
+        safeQuery(function () { return loadTable('investors', setInvestors, { order: { col: 'name', asc: true } }); }, 'investors'),
+        safeQuery(function () { return loadTable('audit_logs', setAuditLogs, { order: { col: 'created_at', asc: false }, limit: 500 }); }, 'audit_logs'),
+        safeQuery(function () { return loadTable('notifications', setNotifications, { order: { col: 'created_at', asc: false }, limit: 100 }); }, 'notifications'),
+        safeQuery(function () { return loadTable('attendance', setAttendance, { order: { col: 'date', asc: false } }); }, 'attendance'),
+        safeQuery(function () { return loadTable('salary_payments', setSalaryPayments, { order: { col: 'created_at', asc: false } }); }, 'salary_payments'),
+        safeQuery(function () { return loadTable('credit_limits', setCreditLimits); }, 'credit_limits'),
+        safeQuery(function () { return loadTable('recurring_invoices', setRecurringInvoices); }, 'recurring_invoices'),
+        safeQuery(function () { return loadTable('quotation_requests', setQuotationRequests); }, 'quotation_requests'),
+        safeQuery(function () { return loadTable('staff_mistakes', setStaffMistakes); }, 'staff_mistakes'),
+      ]);
+      refreshDrafts();
+    } catch (e) {
+      console.error('[ERP] loadAll error:', e);
+    } finally {
+      setLoading(false);
+    }
+  }, [loadSettings, loadInvoices, loadRefunds, loadTable, refreshDrafts, safeQuery]);
 
   /* ── Create Invoice ── */
   const createInvoice = useCallback(async (invData) => {
-    const invoiceNo = await generateInvoiceNo();
-    const ts = invData.total_sell || 0;
-    const disc = invData.discount || 0;
-    const vr = invData.vat_rate || 15;
-    const vat = Math.round(ts * vr) / 100;
-    const total = ts - disc + vat;
-    const paid = invData.paid_amount || 0;
-    const due = total - paid - (invData.used_credit || 0) + (invData.cash_return || 0);
-
-    const row = {
-      ...invData,
-      invoice_no: invoiceNo,
-      total_sell: ts,
-      vat: vat,
-      vat_rate: vr,
-      total: total,
-      due_amount: due,
-      status: due <= 0 ? 'Paid' : 'Unpaid',
-    };
-
-    const { data, error } = await supabase.from('invoices').insert([row]).select('*, customers(id,name,phone), corporates(id,name,vat_no), employees(id,name)').single();
-    if (!error && data) {
-      setInvoices(prev => [data, ...prev]);
-      /* Update customer credit balance if credit used */
+    var invoiceNo = await generateInvoiceNo();
+    var ts = invData.total_sell || 0;
+    var disc = invData.discount || 0;
+    var vr = invData.vat_rate || 15;
+    var vat = Math.round(ts * vr) / 100;
+    var total = ts - disc + vat;
+    var paid = invData.paid_amount || 0;
+    var due = total - paid - (invData.used_credit || 0) + (invData.cash_return || 0);
+    var row = Object.assign({}, invData, {
+      invoice_no: invoiceNo, total_sell: ts, vat: vat, vat_rate: vr,
+      total: total, due_amount: due, status: due <= 0 ? 'Paid' : 'Unpaid'
+    });
+    var result = await supabase.from('invoices').insert([row]).select('*, customers(id,name,phone), corporates(id,name,vat_no), employees(id,name)').single();
+    if (result.data) {
+      setInvoices(function (prev) { return [result.data].concat(prev); });
       if (invData.used_credit > 0 && invData.customer_id) {
-        await supabase.rpc('deduct_credit', { cust_id: invData.customer_id, amount: invData.used_credit });
+        try { await supabase.rpc('deduct_credit', { cust_id: invData.customer_id, amount: invData.used_credit }); } catch (e) { /* silent */ }
       }
-      /* Add to bank if cash/bank */
       if (paid > 0 && (invData.payment_method === 'Cash' || invData.payment_method === 'Bank Transfer')) {
-        await supabase.from('bank_transactions').insert([{
-          type: 'credit', amount: paid, description: `Invoice ${invoiceNo}`, reference: invoiceNo, payment_method: invData.payment_method
-        }]);
+        try { await supabase.from('bank_transactions').insert([{ type: 'credit', amount: paid, description: 'Invoice ' + invoiceNo, reference: invoiceNo, payment_method: invData.payment_method }]); } catch (e) { /* silent */ }
       }
-      /* Audit log */
-      await supabase.from('audit_logs').insert([{ action: 'create_invoice', details: invoiceNo, user_id: user?.id }]);
-      return data;
+      try { await supabase.from('audit_logs').insert([{ action: 'create_invoice', details: invoiceNo, user_id: user ? user.id : null }]); } catch (e) { /* silent */ }
+      return result.data;
     }
-    throw error;
+    throw result.error;
   }, [user]);
 
   /* ── Update Invoice ── */
   const updateInvoice = useCallback(async (id, updates) => {
-    const ts = updates.total_sell ?? 0;
-    const disc = updates.discount ?? 0;
-    const vr = updates.vat_rate ?? 15;
-    const vat = Math.round(ts * vr) / 100;
-    const total = ts - disc + vat;
-    const paid = updates.paid_amount ?? 0;
-    const due = total - paid - (updates.used_credit || 0) + (updates.cash_return || 0);
-
-    const row = { ...updates, vat, total, due_amount: due, status: due <= 0 ? 'Paid' : 'Unpaid' };
-    const { data, error } = await supabase.from('invoices').update(row).eq('id', id).select('*, customers(id,name,phone), corporates(id,name,vat_no), employees(id,name)').single();
-    if (!error && data) {
-      setInvoices(prev => prev.map(i => i.id === id ? data : i));
-      await supabase.from('audit_logs').insert([{ action: 'update_invoice', details: data.invoice_no, user_id: user?.id }]);
-      return data;
+    var ts = updates.total_sell != null ? updates.total_sell : 0;
+    var disc = updates.discount != null ? updates.discount : 0;
+    var vr = updates.vat_rate != null ? updates.vat_rate : 15;
+    var vat = Math.round(ts * vr) / 100;
+    var total = ts - disc + vat;
+    var paid = updates.paid_amount != null ? updates.paid_amount : 0;
+    var due = total - paid - (updates.used_credit || 0) + (updates.cash_return || 0);
+    var row = Object.assign({}, updates, { vat: vat, total: total, due_amount: due, status: due <= 0 ? 'Paid' : 'Unpaid' });
+    var result = await supabase.from('invoices').update(row).eq('id', id).select('*, customers(id,name,phone), corporates(id,name,vat_no), employees(id,name)').single();
+    if (result.data) {
+      setInvoices(function (prev) { return prev.map(function (i) { return i.id === id ? result.data : i; }); });
+      try { await supabase.from('audit_logs').insert([{ action: 'update_invoice', details: result.data.invoice_no, user_id: user ? user.id : null }]); } catch (e) { /* silent */ }
+      return result.data;
     }
-    throw error;
+    throw result.error;
   }, [user]);
 
   /* ── Delete Invoice ── */
   const deleteInvoice = useCallback(async (id) => {
-    const { error } = await supabase.from('invoices').delete().eq('id', id);
-    if (!error) {
-      setInvoices(prev => prev.filter(i => i.id !== id));
-      await supabase.from('audit_logs').insert([{ action: 'delete_invoice', details: id, user_id: user?.id }]);
+    var result = await supabase.from('invoices').delete().eq('id', id);
+    if (!result.error) {
+      setInvoices(function (prev) { return prev.filter(function (i) { return i.id !== id; }); });
+      try { await supabase.from('audit_logs').insert([{ action: 'delete_invoice', details: id, user_id: user ? user.id : null }]); } catch (e) { /* silent */ }
     }
-    return !error;
+    return !result.error;
   }, [user]);
 
-  /* ── Quick Settle Invoice ── */
-  const settleInvoice = useCallback(async (id, amount, method = 'Cash') => {
-    const inv = invoices.find(i => i.id === id);
+  /* ── Quick Settle ── */
+  const settleInvoice = useCallback(async (id, amount, method) => {
+    method = method || 'Cash';
+    var inv = invoices.find(function (i) { return i.id === id; });
     if (!inv) return;
-    const newPaid = (inv.paid_amount || 0) + amount;
-    const newDue = (inv.total || 0) - newPaid - (inv.used_credit || 0) + (inv.cash_return || 0);
+    var newPaid = (inv.paid_amount || 0) + amount;
+    var newDue = (inv.total || 0) - newPaid - (inv.used_credit || 0) + (inv.cash_return || 0);
     return updateInvoice(id, { paid_amount: newPaid, due_amount: Math.max(0, newDue), payment_method: method, status: newDue <= 0 ? 'Paid' : 'Unpaid' });
   }, [invoices, updateInvoice]);
 
   /* ── Create Refund ── */
   const createRefund = useCallback(async (refData) => {
-    const refundNo = await generateRefundNo();
-    const row = { ...refData, invoice_no: refundNo };
-    const { data, error } = await supabase.from('refunds').insert([row]).select('*, customers(id,name,phone)').single();
-    if (!error && data) {
-      setRefunds(prev => [data, ...prev]);
-      /* Add bank debit for customer refund */
+    var refundNo = await generateRefundNo();
+    var row = Object.assign({}, refData, { invoice_no: refundNo });
+    var result = await supabase.from('refunds').insert([row]).select('*, customers(id,name,phone)').single();
+    if (result.data) {
+      setRefunds(function (prev) { return [result.data].concat(prev); });
       if (refData.refund_customer > 0) {
-        await supabase.from('bank_transactions').insert([{
-          type: 'debit', amount: refData.refund_customer, description: `Refund ${refundNo}`, reference: refundNo, payment_method: refData.payment_method || 'Cash'
-        }]);
+        try { await supabase.from('bank_transactions').insert([{ type: 'debit', amount: refData.refund_customer, description: 'Refund ' + refundNo, reference: refundNo, payment_method: refData.payment_method || 'Cash' }]); } catch (e) { /* silent */ }
       }
-      await supabase.from('audit_logs').insert([{ action: 'create_refund', details: refundNo, user_id: user?.id }]);
-      return data;
+      try { await supabase.from('audit_logs').insert([{ action: 'create_refund', details: refundNo, user_id: user ? user.id : null }]); } catch (e) { /* silent */ }
+      return result.data;
     }
-    throw error;
+    throw result.error;
   }, [user]);
 
   /* ── Delete Refund ── */
   const deleteRefund = useCallback(async (id) => {
-    const { error } = await supabase.from('refunds').delete().eq('id', id);
-    if (!error) {
-      setRefunds(prev => prev.filter(r => r.id !== id));
-      await supabase.from('audit_logs').insert([{ action: 'delete_refund', details: id, user_id: user?.id }]);
+    var result = await supabase.from('refunds').delete().eq('id', id);
+    if (!result.error) {
+      setRefunds(function (prev) { return prev.filter(function (r) { return r.id !== id; }); });
     }
-    return !error;
-  }, [user]);
+    return !result.error;
+  }, []);
 
-  /* ── Create Customer ── */
+  /* ── Customer CRUD ── */
   const createCustomer = useCallback(async (cData) => {
-    const { data, error } = await supabase.from('customers').insert([cData]).select().single();
-    if (!error && data) { setCustomers(prev => [...prev, data]); return data; }
-    throw error;
+    var r = await supabase.from('customers').insert([cData]).select().single();
+    if (r.data) { setCustomers(function (p) { return p.concat([r.data]); }); return r.data; }
+    throw r.error;
   }, []);
-
   const updateCustomer = useCallback(async (id, updates) => {
-    const { data, error } = await supabase.from('customers').update(updates).eq('id', id).select().single();
-    if (!error && data) { setCustomers(prev => prev.map(c => c.id === id ? data : c)); return data; }
-    throw error;
+    var r = await supabase.from('customers').update(updates).eq('id', id).select().single();
+    if (r.data) { setCustomers(function (p) { return p.map(function (c) { return c.id === id ? r.data : c; }); }); return r.data; }
+    throw r.error;
   }, []);
-
   const deleteCustomer = useCallback(async (id) => {
-    const { error } = await supabase.from('customers').delete().eq('id', id);
-    if (!error) setCustomers(prev => prev.filter(c => c.id !== id));
-    return !error;
+    var r = await supabase.from('customers').delete().eq('id', id);
+    if (!r.error) setCustomers(function (p) { return p.filter(function (c) { return c.id !== id; }); });
+    return !r.error;
   }, []);
 
-  /* ── Create Corporate ── */
+  /* ── Corporate CRUD ── */
   const createCorporate = useCallback(async (cData) => {
-    const { data, error } = await supabase.from('corporates').insert([cData]).select().single();
-    if (!error && data) { setCorporates(prev => [...prev, data]); return data; }
-    throw error;
+    var r = await supabase.from('corporates').insert([cData]).select().single();
+    if (r.data) { setCorporates(function (p) { return p.concat([r.data]); }); return r.data; }
+    throw r.error;
   }, []);
-
   const updateCorporate = useCallback(async (id, updates) => {
-    const { data, error } = await supabase.from('corporates').update(updates).eq('id', id).select().single();
-    if (!error && data) { setCorporates(prev => prev.map(c => c.id === id ? data : c)); return data; }
-    throw error;
+    var r = await supabase.from('corporates').update(updates).eq('id', id).select().single();
+    if (r.data) { setCorporates(function (p) { return p.map(function (c) { return c.id === id ? r.data : c; }); }); return r.data; }
+    throw r.error;
   }, []);
-
   const deleteCorporate = useCallback(async (id) => {
-    const { error } = await supabase.from('corporates').delete().eq('id', id);
-    if (!error) setCorporates(prev => prev.filter(c => c.id !== id));
-    return !error;
+    var r = await supabase.from('corporates').delete().eq('id', id);
+    if (!r.error) setCorporates(function (p) { return p.filter(function (c) { return c.id !== id; }); });
+    return !r.error;
   }, []);
 
   /* ── Employee CRUD ── */
   const createEmployee = useCallback(async (eData) => {
-    const { data, error } = await supabase.from('employees').insert([eData]).select().single();
-    if (!error && data) { setEmployees(prev => [...prev, data]); return data; }
-    throw error;
+    var r = await supabase.from('employees').insert([eData]).select().single();
+    if (r.data) { setEmployees(function (p) { return p.concat([r.data]); }); return r.data; }
+    throw r.error;
   }, []);
-
   const updateEmployee = useCallback(async (id, updates) => {
-    const { data, error } = await supabase.from('employees').update(updates).eq('id', id).select().single();
-    if (!error && data) { setEmployees(prev => prev.map(e => e.id === id ? data : e)); return data; }
-    throw error;
+    var r = await supabase.from('employees').update(updates).eq('id', id).select().single();
+    if (r.data) { setEmployees(function (p) { return p.map(function (e) { return e.id === id ? r.data : e; }); }); return r.data; }
+    throw r.error;
   }, []);
-
   const deleteEmployee = useCallback(async (id) => {
-    const { error } = await supabase.from('employees').delete().eq('id', id);
-    if (!error) setEmployees(prev => prev.filter(e => e.id !== id));
-    return !error;
+    var r = await supabase.from('employees').delete().eq('id', id);
+    if (!r.error) setEmployees(function (p) { return p.filter(function (e) { return e.id !== id; }); });
+    return !r.error;
   }, []);
 
   /* ── Expense CRUD ── */
   const createExpense = useCallback(async (eData) => {
-    const { data, error } = await supabase.from('expenses').insert([eData]).select().single();
-    if (!error && data) {
-      setExpenses(prev => [data, ...prev]);
+    var r = await supabase.from('expenses').insert([eData]).select().single();
+    if (r.data) {
+      setExpenses(function (p) { return [r.data].concat(p); });
       if (eData.amount > 0) {
-        await supabase.from('bank_transactions').insert([{
-          type: 'debit', amount: eData.amount, description: `Expense: ${eData.description || eData.expense_type || ''}`, payment_method: eData.payment_mode || 'Cash'
-        }]);
+        try { await supabase.from('bank_transactions').insert([{ type: 'debit', amount: eData.amount, description: 'Expense: ' + (eData.description || eData.expense_type || ''), payment_method: eData.payment_mode || 'Cash' }]); } catch (e) { /* silent */ }
       }
-      return data;
+      return r.data;
     }
-    throw error;
+    throw r.error;
   }, []);
-
   const deleteExpense = useCallback(async (id) => {
-    const { error } = await supabase.from('expenses').delete().eq('id', id);
-    if (!error) setExpenses(prev => prev.filter(e => e.id !== id));
-    return !error;
+    var r = await supabase.from('expenses').delete().eq('id', id);
+    if (!r.error) setExpenses(function (p) { return p.filter(function (e) { return e.id !== id; }); });
+    return !r.error;
   }, []);
 
   /* ── Attendance ── */
   const markAttendance = useCallback(async (aData) => {
-    const { data, error } = await supabase.from('attendance').upsert([aData], { onConflict: 'employee_id,date' }).select().single();
-    if (!error && data) { setAttendance(prev => { const idx = prev.findIndex(a => a.employee_id === data.employee_id && a.date === data.date); if (idx >= 0) { const n = [...prev]; n[idx] = data; return n; } return [data, ...prev]; }); return data; }
-    throw error;
+    var r = await supabase.from('attendance').upsert([aData], { onConflict: 'employee_id,date' }).select().single();
+    if (r.data) {
+      setAttendance(function (p) {
+        var idx = p.findIndex(function (a) { return a.employee_id === r.data.employee_id && a.date === r.data.date; });
+        if (idx >= 0) { var n = p.slice(); n[idx] = r.data; return n; }
+        return [r.data].concat(p);
+      });
+      return r.data;
+    }
+    throw r.error;
   }, []);
 
   /* ── Salary Payment ── */
   const paySalary = useCallback(async (pData) => {
-    const { data, error } = await supabase.from('salary_payments').insert([pData]).select().single();
-    if (!error && data) {
-      setSalaryPayments(prev => [data, ...prev]);
+    var r = await supabase.from('salary_payments').insert([pData]).select().single();
+    if (r.data) {
+      setSalaryPayments(function (p) { return [r.data].concat(p); });
       if (pData.net_salary > 0) {
-        await supabase.from('bank_transactions').insert([{
-          type: 'debit', amount: pData.net_salary, description: `Salary: ${pData.employees?.name || pData.employee_id}`, payment_method: pData.payment_mode || 'Cash'
-        }]);
+        try { await supabase.from('bank_transactions').insert([{ type: 'debit', amount: pData.net_salary, description: 'Salary: ' + (pData.employees ? pData.employees.name : pData.employee_id), payment_method: pData.payment_mode || 'Cash' }]); } catch (e) { /* silent */ }
       }
-      return data;
+      return r.data;
     }
-    throw error;
+    throw r.error;
   }, []);
 
   /* ── Bank Transaction ── */
   const createBankTransaction = useCallback(async (bData) => {
-    const { data, error } = await supabase.from('bank_transactions').insert([bData]).select().single();
-    if (!error && data) { setBankTransactions(prev => [data, ...prev]); return data; }
-    throw error;
+    var r = await supabase.from('bank_transactions').insert([bData]).select().single();
+    if (r.data) { setBankTransactions(function (p) { return [r.data].concat(p); }); return r.data; }
+    throw r.error;
   }, []);
-
   const deleteBankTransaction = useCallback(async (id) => {
-    const { error } = await supabase.from('bank_transactions').delete().eq('id', id);
-    if (!error) setBankTransactions(prev => prev.filter(b => b.id !== id));
-    return !error;
+    var r = await supabase.from('bank_transactions').delete().eq('id', id);
+    if (!r.error) setBankTransactions(function (p) { return p.filter(function (b) { return b.id !== id; }); });
+    return !r.error;
   }, []);
 
   /* ── Update Settings ── */
   const updateSettings = useCallback(async (updates) => {
-    const { data, error } = await supabase.from('company_settings').update(updates).eq('id', settings.id).select().single();
-    if (!error && data) { setSettings(data); return data; }
-    throw error;
+    if (!settings.id) return null;
+    var r = await supabase.from('company_settings').update(updates).eq('id', settings.id).select().single();
+    if (r.data) { setSettings(r.data); return r.data; }
+    throw r.error;
   }, [settings.id]);
 
-  /* ── Vendor CRUD ── */
-  const createVendor = useCallback(async (vData) => {
-    const { data, error } = await supabase.from('vendors').insert([vData]).select().single();
-    if (!error && data) { setVendors(prev => [...prev, data]); return data; }
-    throw error;
-  }, []);
-
-  /* ── Branch CRUD ── */
-  const createBranch = useCallback(async (bData) => {
-    const { data, error } = await supabase.from('branches').insert([bData]).select().single();
-    if (!error && data) { setBranches(prev => [...prev, data]); return data; }
-    throw error;
-  }, []);
-
-  /* ── Portal CRUD ── */
-  const createPortal = useCallback(async (pData) => {
-    const { data, error } = await supabase.from('portals').insert([pData]).select().single();
-    if (!error && data) { setPortals(prev => [...prev, data]); return data; }
-    throw error;
-  }, []);
-
-  /* ── Package CRUD ── */
-  const createPackage = useCallback(async (pData) => {
-    const { data, error } = await supabase.from('packages').insert([pData]).select().single();
-    if (!error && data) { setPackages(prev => [...prev, data]); return data; }
-    throw error;
-  }, []);
-
-  /* ── Quotation CRUD ── */
-  const createQuotation = useCallback(async (qData) => {
-    const { data, error } = await supabase.from('quotation_requests').insert([qData]).select().single();
-    if (!error && data) { setQuotationRequests(prev => [data, ...prev]); return data; }
-    throw error;
-  }, []);
-
-  /* ── Staff Mistake ── */
-  const createStaffMistake = useCallback(async (mData) => {
-    const { data, error } = await supabase.from('staff_mistakes').insert([mData]).select().single();
-    if (!error && data) { setStaffMistakes(prev => [data, ...prev]); return data; }
-    throw error;
-  }, []);
+  /* ── Other Creates ── */
+  const createVendor = useCallback(async (vData) => { var r = await supabase.from('vendors').insert([vData]).select().single(); if (r.data) { setVendors(function (p) { return p.concat([r.data]); }); return r.data; } throw r.error; }, []);
+  const createBranch = useCallback(async (bData) => { var r = await supabase.from('branches').insert([bData]).select().single(); if (r.data) { setBranches(function (p) { return p.concat([r.data]); }); return r.data; } throw r.error; }, []);
+  const createPortal = useCallback(async (pData) => { var r = await supabase.from('portals').insert([pData]).select().single(); if (r.data) { setPortals(function (p) { return p.concat([r.data]); }); return r.data; } throw r.error; }, []);
+  const createPackage = useCallback(async (pData) => { var r = await supabase.from('packages').insert([pData]).select().single(); if (r.data) { setPackages(function (p) { return p.concat([r.data]); }); return r.data; } throw r.error; }, []);
+  const createQuotation = useCallback(async (qData) => { var r = await supabase.from('quotation_requests').insert([qData]).select().single(); if (r.data) { setQuotationRequests(function (p) { return [r.data].concat(p); }); return r.data; } throw r.error; }, []);
+  const createStaffMistake = useCallback(async (mData) => { var r = await supabase.from('staff_mistakes').insert([mData]).select().single(); if (r.data) { setStaffMistakes(function (p) { return [r.data].concat(p); }); return r.data; } throw r.error; }, []);
 
   /* ── Dashboard Stats ── */
-  const dashboardStats = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
-    const thisMonth = today.substring(0, 7);
-    const todayInvoices = invoices.filter(i => (i.invoice_date || i.created_at?.split('T')[0]) === today);
-    const monthInvoices = invoices.filter(i => (i.invoice_date || i.created_at?.split('T')[0])?.startsWith(thisMonth));
-    const totalRevenue = monthInvoices.reduce((s, i) => s + (i.total || 0), 0);
-    const totalCost = monthInvoices.reduce((s, i) => s + (i.total_cost || 0), 0);
-    const totalProfit = totalRevenue - totalCost;
-    const unpaidCount = invoices.filter(i => (i.due_amount || 0) > 0).length;
-    const unpaidTotal = invoices.filter(i => (i.due_amount || 0) > 0).reduce((s, i) => s + (i.due_amount || 0), 0);
-    const refundTotal = refunds.reduce((s, r) => s + (r.refund_customer || 0), 0);
-    const expenseTotal = expenses.filter(e => (e.expense_date || e.created_at?.split('T')[0])?.startsWith(thisMonth)).reduce((s, e) => s + (e.amount || 0), 0);
-    const bankBalance = bankTransactions.reduce((s, b) => s + (b.type === 'credit' ? (b.amount || 0) : -(b.amount || 0)), 0);
-    return { todayCount: todayInvoices.length, monthCount: monthInvoices.length, totalRevenue, totalCost, totalProfit, unpaidCount, unpaidTotal, refundTotal, expenseTotal, bankBalance, customerCount: customers.length, corporateCount: corporates.length, employeeCount: employees.length };
+  const dashboardStats = useMemo(function () {
+    var today = new Date().toISOString().split('T')[0];
+    var thisMonth = today.substring(0, 7);
+    var todayInvoices = invoices.filter(function (i) { return (i.invoice_date || (i.created_at ? i.created_at.split('T')[0] : '')) === today; });
+    var monthInvoices = invoices.filter(function (i) { var d = i.invoice_date || (i.created_at ? i.created_at.split('T')[0] : ''); return d.startsWith(thisMonth); });
+    var totalRevenue = monthInvoices.reduce(function (s, i) { return s + (i.total || 0); }, 0);
+    var totalCost = monthInvoices.reduce(function (s, i) { return s + (i.total_cost || 0); }, 0);
+    var totalProfit = totalRevenue - totalCost;
+    var unpaidInvoices = invoices.filter(function (i) { return (i.due_amount || 0) > 0; });
+    var expenseThisMonth = expenses.filter(function (e) { var d = e.expense_date || (e.created_at ? e.created_at.split('T')[0] : ''); return d.startsWith(thisMonth); });
+    var bankBalance = bankTransactions.reduce(function (s, b) { return s + (b.type === 'credit' ? (b.amount || 0) : -(b.amount || 0)); }, 0);
+    return {
+      todayCount: todayInvoices.length, monthCount: monthInvoices.length,
+      totalRevenue: totalRevenue, totalCost: totalCost, totalProfit: totalProfit,
+      unpaidCount: unpaidInvoices.length, unpaidTotal: unpaidInvoices.reduce(function (s, i) { return s + (i.due_amount || 0); }, 0),
+      refundTotal: refunds.reduce(function (s, r) { return s + (r.refund_customer || 0); }, 0),
+      expenseTotal: expenseThisMonth.reduce(function (s, e) { return s + (e.amount || 0); }, 0),
+      bankBalance: bankBalance,
+      customerCount: customers.length, corporateCount: corporates.length, employeeCount: employees.length
+    };
   }, [invoices, refunds, expenses, bankTransactions, customers, corporates, employees]);
 
   /* ── Filtered Invoices ── */
-  const filteredInvoices = useMemo(() => {
-    let result = invoices;
+  const filteredInvoices = useMemo(function () {
+    var result = invoices;
     if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(i =>
-        (i.invoice_no || '').toLowerCase().includes(q) ||
-        (i.customers?.name || '').toLowerCase().includes(q) ||
-        (i.corporates?.name || '').toLowerCase().includes(q) ||
-        (i.pnr || '').toLowerCase().includes(q) ||
-        (i.airline || '').toLowerCase().includes(q)
-      );
+      var q = searchQuery.toLowerCase();
+      result = result.filter(function (i) {
+        return (i.invoice_no || '').toLowerCase().indexOf(q) >= 0 ||
+          (i.customers && i.customers.name || '').toLowerCase().indexOf(q) >= 0 ||
+          (i.corporates && i.corporates.name || '').toLowerCase().indexOf(q) >= 0 ||
+          (i.pnr || '').toLowerCase().indexOf(q) >= 0 ||
+          (i.airline || '').toLowerCase().indexOf(q) >= 0;
+      });
     }
     if (statusFilter !== 'all') {
-      result = result.filter(i => (i.status || (i.due_amount > 0 ? 'Unpaid' : 'Paid')) === statusFilter);
+      result = result.filter(function (i) { return (i.status || (i.due_amount > 0 ? 'Unpaid' : 'Paid')) === statusFilter; });
     }
-    if (dateFilter.from) result = result.filter(i => (i.invoice_date || '') >= dateFilter.from);
-    if (dateFilter.to) result = result.filter(i => (i.invoice_date || '') <= dateFilter.to);
+    if (dateFilter.from) result = result.filter(function (i) { return (i.invoice_date || '') >= dateFilter.from; });
+    if (dateFilter.to) result = result.filter(function (i) { return (i.invoice_date || '') <= dateFilter.to; });
     return result;
   }, [invoices, searchQuery, statusFilter, dateFilter]);
 
   /* ── Print Helper ── */
-  const printHTML = useCallback((html) => {
-    const w = window.open('', '_blank', 'width=900,height=700');
-    if (w) { w.document.write(html); w.document.close(); setTimeout(() => { w.focus(); w.print(); }, 500); }
+  const printHTML = useCallback(function (html) {
+    var w = window.open('', '_blank', 'width=900,height=700');
+    if (w) { w.document.write(html); w.document.close(); setTimeout(function () { w.focus(); w.print(); }, 500); }
   }, []);
 
   /* ── Initial Load ── */
-  useEffect(() => { loadAll(); }, [loadAll]);
+  useEffect(function () { loadAll(); }, [loadAll]);
 
   return {
-    /* Translations */
-    t, lang, setLang, translations,
-    /* Auth */
-    user, setUser, loading, setLoading,
-    /* Data */
-    invoices, refunds, customers, corporates, employees, expenses, vendors,
-    packages, branches, portals, bankTransactions, investors, auditLogs,
-    settings, notifications, attendance, salaryPayments, creditLimits,
-    recurringInvoices, quotationRequests, staffMistakes, drafts,
-    /* UI */
-    sidebarOpen, setSidebarOpen, activePage, setActivePage,
-    modalOpen, setModalOpen, modalType, setModalType, modalData, setModalData,
-    searchQuery, setSearchQuery, dateFilter, setDateFilter, statusFilter, setStatusFilter,
-    /* Actions */
-    loadAll, loadInvoices, loadRefunds, refreshDrafts,
-    createInvoice, updateInvoice, deleteInvoice, settleInvoice,
-    createRefund, deleteRefund,
-    createCustomer, updateCustomer, deleteCustomer,
-    createCorporate, updateCorporate, deleteCorporate,
-    createEmployee, updateEmployee, deleteEmployee,
-    createExpense, deleteExpense,
-    markAttendance, paySalary,
-    createBankTransaction, deleteBankTransaction,
-    updateSettings,
-    createVendor, createBranch, createPortal, createPackage,
-    createQuotation, createStaffMistake,
-    /* Computed */
-    dashboardStats, filteredInvoices,
-    /* Helpers */
-    printHTML, exportToExcel, saveDraft, deleteDraft, loadDrafts,
-    generateInvoiceNo, generateRefundNo,
-    getAirlineCheckInURL, getAIMessage,
-    /* HTML Generators */
-    getInvoiceHTML, getRefundHTML, getExpenseHTML, getSalarySlipHTML,
+    t: t, lang: lang, setLang: setLang, translations: translations,
+    user: user, setUser: setUser, loading: loading, setLoading: setLoading,
+    invoices: invoices, refunds: refunds, customers: customers, corporates: corporates,
+    employees: employees, expenses: expenses, vendors: vendors, packages: packages,
+    branches: branches, portals: portals, bankTransactions: bankTransactions, investors: investors,
+    auditLogs: auditLogs, settings: settings, notifications: notifications, attendance: attendance,
+    salaryPayments: salaryPayments, creditLimits: creditLimits, recurringInvoices: recurringInvoices,
+    quotationRequests: quotationRequests, staffMistakes: staffMistakes, drafts: drafts,
+    sidebarOpen: sidebarOpen, setSidebarOpen: setSidebarOpen, activePage: activePage, setActivePage: setActivePage,
+    modalOpen: modalOpen, setModalOpen: setModalOpen, modalType: modalType, setModalType: setModalType,
+    modalData: modalData, setModalData: setModalData,
+    searchQuery: searchQuery, setSearchQuery: setSearchQuery, dateFilter: dateFilter, setDateFilter: setDateFilter,
+    statusFilter: statusFilter, setStatusFilter: setStatusFilter,
+    loadAll: loadAll, loadInvoices: loadInvoices, loadRefunds: loadRefunds, refreshDrafts: refreshDrafts,
+    createInvoice: createInvoice, updateInvoice: updateInvoice, deleteInvoice: deleteInvoice, settleInvoice: settleInvoice,
+    createRefund: createRefund, deleteRefund: deleteRefund,
+    createCustomer: createCustomer, updateCustomer: updateCustomer, deleteCustomer: deleteCustomer,
+    createCorporate: createCorporate, updateCorporate: updateCorporate, deleteCorporate: deleteCorporate,
+    createEmployee: createEmployee, updateEmployee: updateEmployee, deleteEmployee: deleteEmployee,
+    createExpense: createExpense, deleteExpense: deleteExpense,
+    markAttendance: markAttendance, paySalary: paySalary,
+    createBankTransaction: createBankTransaction, deleteBankTransaction: deleteBankTransaction,
+    updateSettings: updateSettings,
+    createVendor: createVendor, createBranch: createBranch, createPortal: createPortal, createPackage: createPackage,
+    createQuotation: createQuotation, createStaffMistake: createStaffMistake,
+    dashboardStats: dashboardStats, filteredInvoices: filteredInvoices,
+    printHTML: printHTML, exportToExcel: exportToExcel, saveDraft: saveDraft, deleteDraft: deleteDraft, loadDrafts: loadDrafts,
+    generateInvoiceNo: generateInvoiceNo, generateRefundNo: generateRefundNo,
+    getAirlineCheckInURL: getAirlineCheckInURL, getAIMessage: getAIMessage,
+    getInvoiceHTML: getInvoiceHTML, getRefundHTML: getRefundHTML, getExpenseHTML: getExpenseHTML, getSalarySlipHTML: getSalarySlipHTML,
   };
 }
