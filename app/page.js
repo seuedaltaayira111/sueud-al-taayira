@@ -27,18 +27,12 @@ export default function Home() {
   }, [erp.setPage]);
 
   useEffect(() => {
-    const pt = erp.menu?.find(m => m.id === erp.page)?.label || 'Dashboard';
-    document.title = pt + ' | SUEUD AL TAAYIRA ERP';
-  }, [erp.page, erp.menu]);
-
-  useEffect(() => {
     const u = () => setIsOnline(navigator.onLine);
     window.addEventListener('online', u);
-    window.addEventListener('offline', u);
     return () => { window.removeEventListener('online', u); window.removeEventListener('offline', u); };
   }, []);
 
-  /* ═══ ERROR SCREEN ═══ */
+  /* ERROR */
   if (erp.initError) {
     return (
       <div style={{ display:'flex', justifyContent:'center', alignItems:'center', height:'100vh', fontFamily:"'Poppins',sans-serif", background:'linear-gradient(135deg,#0F172A,#1E293B)', color:'#fff', padding:'40px' }}>
@@ -48,20 +42,19 @@ export default function Home() {
           <p style={{ color:'#CBD5E1', fontSize:'14px', lineHeight:'1.8', background:'rgba(255,255,255,0.05)', padding:'20px', borderRadius:'12px', border:'1px solid #334155', wordBreak:'break-word' }}>{erp.initError}</p>
           <div style={{ marginTop:'20px', display:'flex', gap:'10px', justifyContent:'center', flexWrap:'wrap' }}>
             <button onClick={() => window.location.href = '/login'} style={{ padding:'12px 30px', background:'#F59E0B', color:'#0F172A', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'bold', fontSize:'15px' }}>Go to Login →</button>
-            <button onClick={() => { forceOpen.current = true; window.location.reload(); }} style={{ padding:'12px 30px', background:'#2563EB', color:'#fff', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'bold', fontSize:'15px' }}>⚡ Force Open</button>
-            <button onClick={() => { if (window.confirm('Clear cache and reload?')) { localStorage.clear(); window.location.reload(); }} style={{ padding:'12px 30px', background:'transparent', color:'#94A3B8', border:'1px solid #475569', borderRadius:'8px', cursor:'pointer', fontWeight:'600', fontSize:'15px' }}>🔄 Clear Cache & Retry</button>
+            <button onClick={() => { if (window.confirm('Clear cache and reload?')) { localStorage.clear(); window.location.reload(); }} style={{ padding:'12px 30px', background:'#2563EB', color:'#fff', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'600', fontSize:'15px' }}>🔄 Clear Cache & Retry</button>
           </div>
         </div>
       </div>
     );
   }
 
-  /* ═══ LOADING — ONLY auth check, NOT profile ═══ */
+  /* LOADING — auth only */
   if (!forceOpen.current && !erp.user) {
     return (
       <div style={{ display:'flex', justifyContent:'center', alignItems:'center', height:'100vh', fontFamily:"'Poppins',sans-serif", background:'linear-gradient(135deg,#0F172A,#1E293B)', color:'#F59E0B' }}>
         <div style={{ textAlign:'center' }}>
-          <style>{'@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}'}</style>
+          <style>{'@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg}}'}</style>
           <div style={{ fontSize:'60px', marginBottom:'20px', animation:'spin 2s linear infinite' }}>✈️</div>
           <h2>Loading ERP System...</h2>
           <p style={{ color:'#64748B', fontSize:'12px', marginTop:'10px' }}>Authenticating...</p>
@@ -71,7 +64,7 @@ export default function Home() {
     );
   }
 
-  /* ═══ MAIN ERP ═══ */
+  /* MAIN ERP */
   const profile = erp.userProfile || {};
   const isSuperAdmin = profile.role === 'SuperAdmin';
   const isAdmin = profile.is_admin === true;
@@ -122,22 +115,11 @@ export default function Home() {
     { id:'settings', label:t('settings','Settings'), show:canAccessSettings, section:'System Admin' },
     { id:'profile', label:t('profile','Profile'), show:true, section:'System Admin' },
   ].filter(m => m.show);
-
   return (
     <div dir={erp.lang === 'ar' ? 'rtl' : 'ltr'}>
-      {!isOnline && (
-        <div style={{ position:'fixed', top:0, left:0, right:0, background:'#EF4444', color:'white', textAlign:'center', padding:'10px', zIndex:10000, fontWeight:'bold' }}>
-          ⚠️ You are offline. Please check your internet connection.
-        </div>
-      )}
-      {erp.toast && (
-        <div style={{ position:'fixed', top:'20px', right:'20px', background:'linear-gradient(135deg,#1E3A8A,#2563EB)', color:'#FBBF24', padding:'15px 25px', borderRadius:'12px', zIndex:10001, boxShadow:'0 5px 15px rgba(0,0,0,0.3)', fontWeight:'600', fontSize:'14px', cursor:'pointer', onClick:()=>setToast(null) }}>
-          {erp.toast}
-        </div>
-      )}
-      <ERPLayout {...erp} menu={menu}>
-        <ERPViews {...erp} />
-      </ERPLayout>
+      {!isOnline && <div style={{ position:'fixed', top:0, left:0, right:0, background:'#EF4444', color:'white', textAlign:'center', padding:'10px', zIndex:10000, fontWeight:'bold', fontSize:'15px' }}>⚠️ Offline</div>}
+      {erp.toast && <div style={{ position:'fixed', top:'20px', right:'20px', background:'linear-gradient(135deg,#1E3A8A,#2563EB)', color:'#FBBF24', padding:'15px 25px', borderRadius:'12px', zIndex:10001, boxShadow:'0 5px 15px rgba(0,0,0.3)', fontWeight:'600', fontSize:'14px', cursor:'pointer', onClick:()=>setToast(null) }}>{erp.toast}</div>}
+      <ERPLayout {...erp} menu={menu}><ERPViews {...erp} /></ERPLayout>
     </div>
   );
 }
