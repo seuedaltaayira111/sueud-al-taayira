@@ -1,70 +1,315 @@
 'use client';
-import { useState, useMemo } from 'react';
+import React, { useState } from 'react';
+
+const styles = { 
+  input: { width: '100%', padding: '12px 15px', margin: '6px 0', border: '1px solid #334155', borderRadius: '8px', outline: 'none', boxSizing: 'border-box', fontSize: '14px', background: '#0F172A', color: '#E2E8F0' }, 
+  btnPrimary: { padding: '12px 15px', background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', width: '100%', boxShadow: '0 4px 6px rgba(37, 99, 235, 0.3)' }, 
+  btnSuccess: { padding: '8px 12px', background: '#059669', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }, 
+  btnDanger: { padding: '8px 12px', background: '#EF4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }, 
+  btnWarning: { padding: '8px 12px', background: '#FBBF24', color: '#1E293B', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }, 
+  card: { background: '#1E293B', padding: '25px', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.2)', marginBottom: '20px', border: '1px solid #334155' }, 
+  label: { fontSize: '13px', fontWeight: '600', color: '#94A3B8', marginBottom: '6px', display: 'block', marginTop: '12px' },
+  tableHeader: { background: '#0F172A', color: '#FBBF24', padding: '15px', textAlign: 'start', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '2px solid #334155' },
+  tableCell: { padding: '15px', borderBottom: '1px solid #1E293B', fontSize: '14px', color: '#CBD5E1' },
+  tabBtn: { padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', background: '#334155', color: '#94A3B8', transition: 'all 0.2s' },
+  tabBtnActive: { background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', boxShadow: '0 4px 6px rgba(37, 99, 235, 0.3)' }
+};
 
 export default function ERPViewsSystem(props) {
-  const {
-    page, data, lang, tr, modal, setModal, setPage,
-    userProfile, user, setForm, setSetForm, setProfileForm, profileForm, passForm, setPassForm,
-    handleSaveSettings, handleSaveProfile, handleChangePassword, handleLogout,
-    handleDelete, setModal: openModal, showToast
+  const { 
+    page, data, tr, userProfile, user, lang,
+    setForm, setSetForm, profileForm, setProfileForm, 
+    passForm, setPassForm, userForm, setUserForm,
+    tenantForm, setTenantForm,
+    contractCorpName, setContractCorpName, 
+    contractType, setContractType, 
+    contractMarkup, setContractMarkup, 
+    contractTerms, setContractTerms,
+    handleSaveSettings, handleSaveProfile, handleChangePassword, 
+    handleLogout, handleDelete, handleLogoUpload, handleProfilePicUpload,
+    handleAddTenant, handleToggleSubscription, handleDeleteTenant,
+    handleGenerateContract, handleGenerateOffer,
+    handleAddCustomField, handleRemoveCustomField, handleCustomFieldChange,
+    setModal, setPage, showToast
   } = props;
+  
+  // Local state for features not in global state
+  const [statementType, setStatementType] = useState('sales');
+  const [reportTab, setReportTab] = useState('sales');
+  const [repDate, setRepDate] = useState({ from: '', to: '' });
+  const [editUserId, setEditUserId] = useState(null);
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
-
-  const t = (key, fallback) => tr?.[key] || fallback || key;
-  const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
-
-  const styles = {
-    container: { padding: '20px', background: '#0F172A', minHeight: '100vh', color: '#E2E8F0' },
-    card: { background: '#1E293B', borderRadius: '12px', padding: '20px', marginBottom: '20px', border: '1px solid #334155' },
-    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' },
-    title: { fontSize: '24px', fontWeight: '700', color: '#FBBF24', display: 'flex', alignItems: 'center', gap: '10px' },
-    input: { padding: '10px 15px', background: '#0F172A', border: '1px solid #475569', borderRadius: '8px', color: '#E2E8F0', fontSize: '14px', outline: 'none', minWidth: '200px' },
-    select: { padding: '10px 15px', background: '#0F172A', border: '1px solid #475569', borderRadius: '8px', color: '#E2E8F0', fontSize: '14px', outline: 'none' },
-    btn: { padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '13px' },
-    btnPrimary: { background: 'linear-gradient(135deg, #2563EB, #1D4ED8)', color: '#fff' },
-    btnSuccess: { background: 'linear-gradient(135deg, #059669, #047857)', color: '#fff' },
-    btnDanger: { background: 'linear-gradient(135deg, #DC2626, #B91C1C)', color: '#fff' },
-    btnWarning: { background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#0F172A' },
-    table: { width: '100%', borderCollapse: 'collapse', fontSize: '13px' },
-    th: { padding: '12px', background: '#0F172A', color: '#FBBF24', textAlign: 'left', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '2px solid #334155' },
-    td: { padding: '12px', borderBottom: '1px solid #1E293B', color: '#CBD5E1' },
-    tdRight: { padding: '12px', borderBottom: '1px solid #1E293B', color: '#CBD5E1', textAlign: 'right', fontWeight: '600' },
-    tdCenter: { padding: '12px', borderBottom: '1px solid #1E293B', color: '#CBD5E1', textAlign: 'center' },
-    badge: { padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600' },
-    statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '20px' },
-    statCard: { background: 'linear-gradient(135deg, #1E293B, #0F172A)', padding: '20px', borderRadius: '12px', border: '1px solid #334155' },
-    statLabel: { fontSize: '12px', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' },
-    statValue: { fontSize: '24px', fontWeight: '700', color: '#FBBF24', marginTop: '5px' },
-    emptyState: { textAlign: 'center', padding: '60px 20px', color: '#64748B' },
-    emptyIcon: { fontSize: '60px', marginBottom: '15px' },
-    formGroup: { marginBottom: '15px' },
-    formLabel: { display: 'block', marginBottom: '5px', color: '#94A3B8', fontSize: '13px', fontWeight: '600' },
-    formInput: { width: '100%', padding: '10px 15px', background: '#0F172A', border: '1px solid #475569', borderRadius: '8px', color: '#E2E8F0', fontSize: '14px', outline: 'none', boxSizing: 'border-box' },
-    formRow: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' },
-    actionBtn: { padding: '6px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }
+  // Helper: Filter data by date range
+  const filterData = (items, dateField) => {
+    if (!items) return [];
+    let filtered = items;
+    if (repDate.from) {
+      filtered = filtered.filter(i => i[dateField] >= repDate.from);
+    }
+    if (repDate.to) {
+      filtered = filtered.filter(i => i[dateField] <= repDate.to);
+    }
+    return filtered;
   };
 
-  // ═══════════ USERS PAGE ═══════════
-  if (page === 'users') {
+  // Helper: Export to Excel (CSV)
+  const exportToExcel = (data, filename) => {
+    if (!data || data.length === 0) {
+      showToast?.('No data to export') || alert('No data to export');
+      return;
+    }
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row => headers.map(h => `"${row[h] || ''}"`).join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
+  // Helper: Safe form update
+  const updateSetForm = (updates) => {
+    if (setSetForm) {
+      setSetForm(prev => ({ ...(prev || {}), ...updates }));
+    }
+  };
+
+  // Safe access to setForm
+  const currentSetForm = setForm || {};
+
+  // ═══════════════════════════════════════════════════════════════
+  // 1. PROFITABILITY ANALYZER
+  // ═══════════════════════════════════════════════════════════════
+  if (page === 'profitability') {
+    const activeInvoices = (data.invoices || []).filter(i => !i.invoice_no?.startsWith('REF-'));
+    const airlineProfits = {};
+    activeInvoices.forEach(inv => {
+      const key = inv.airline || inv.service_type || 'Unknown';
+      if (!airlineProfits[key]) airlineProfits[key] = { revenue: 0, cost: 0, profit: 0, count: 0 };
+      airlineProfits[key].revenue += (inv.total_sell || 0);
+      airlineProfits[key].cost += (inv.total_cost || 0);
+      airlineProfits[key].profit += (inv.profit || 0);
+      airlineProfits[key].count += 1;
+    });
+    const sortedAirlines = Object.keys(airlineProfits).map(k => ({ name: k, ...airlineProfits[k] })).sort((a, b) => b.profit - a.profit);
+    const maxProfit = sortedAirlines.length > 0 ? Math.max(...sortedAirlines.map(a => Math.abs(a.profit)), 1) : 1;
+
     return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>👥 {t('users', 'Users')}</h1>
+      <div style={{ padding: '20px', background: '#0F172A', minHeight: '100vh', color: '#E2E8F0' }}>
+        <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', padding: '30px', borderRadius: '16px', marginBottom: '20px' }}>
+          <h2 style={{ margin: 0, fontSize: '24px', color: '#FBBF24' }}>📊 Ticket Profitability Analyzer</h2>
+          <p style={{ margin: '5px 0 0', opacity: 0.9 }}>Analyze which airlines or services are generating the most profit.</p>
+        </div>
+        <div style={{ background: '#1E293B', borderRadius: '12px', overflow: 'hidden', border: '1px solid #334155' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
+              <thead>
+                <tr>
+                  <th style={styles.tableHeader}>Airline / Service</th>
+                  <th style={styles.tableHeader}>Tickets Sold</th>
+                  <th style={{ ...styles.tableHeader, textAlign: 'right' }}>Total Revenue</th>
+                  <th style={{ ...styles.tableHeader, textAlign: 'right' }}>Total Cost</th>
+                  <th style={{ ...styles.tableHeader, textAlign: 'right' }}>Net Profit</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedAirlines.length === 0 ? (
+                  <tr><td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>No invoice data available. Create invoices to see profitability analysis.</td></tr>
+                ) : (
+                  sortedAirlines.map((a, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid #1E293B' }}>
+                      <td style={{...styles.tableCell, fontWeight: 'bold', color: '#FBBF24'}}>{a.name}</td>
+                      <td style={{ ...styles.tableCell, textAlign: 'center' }}>{a.count}</td>
+                      <td style={{...styles.tableCell, color: '#34D399', textAlign: 'right'}}>{a.revenue.toFixed(2)} SAR</td>
+                      <td style={{...styles.tableCell, color: '#FCA5A5', textAlign: 'right'}}>{a.cost.toFixed(2)} SAR</td>
+                      <td style={styles.tableCell}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ flex: 1, background: '#0F172A', borderRadius: '6px', overflow: 'hidden', height: '10px' }}>
+                            <div style={{ width: `${(Math.abs(a.profit) / maxProfit) * 100}%`, background: a.profit > 0 ? '#059669' : '#EF4444', height: '100%' }}></div>
+                          </div>
+                          <span style={{ fontWeight: 'bold', color: a.profit > 0 ? '#34D399' : '#FCA5A5', minWidth: '100px', textAlign: 'right' }}>{a.profit.toFixed(2)}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 2. PROFILE PAGE
+  // ═══════════════════════════════════════════════════════════════
+  if (page === 'profile') {
+    return (
+      <div style={{ padding: '20px', background: '#0F172A', minHeight: '100vh', color: '#E2E8F0' }}>
+        <h2 style={{ color: '#FBBF24', marginBottom: '20px' }}>👤 {tr?.profile || 'Profile'}</h2>
+        <div style={{...styles.card, maxWidth: '600px', margin: '0 auto'}}>
+          <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+            <div style={{ 
+              width: '120px', height: '120px', borderRadius: '50%', margin: '0 auto 15px',
+              background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', 
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '40px', color: 'white', overflow: 'hidden', border: '3px solid #FBBF24'
+            }}>
+              {profileForm?.avatar_url ? (
+                <img src={profileForm.avatar_url} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                (userProfile?.username || userProfile?.name || 'U')?.charAt(0)?.toUpperCase()
+              )}
+            </div>
+            <h3 style={{ marginTop: '0', color: '#FBBF24', marginBottom: '5px' }}>{profileForm?.username || userProfile?.username || 'User'}</h3>
+            <p style={{ color: '#94A3B8', margin: 0 }}>{userProfile?.email || user?.email}</p>
+            <span style={{ 
+              padding: '4px 12px', borderRadius: '12px', background: '#1E3A8A', color: '#60A5FA', 
+              fontSize: '11px', fontWeight: '700', display: 'inline-block', marginTop: '8px'
+            }}>
+              {userProfile?.role || 'Staff'}
+            </span>
+          </div>
+          
+          <form onSubmit={handleSaveProfile} style={{ display: 'grid', gap: '15px' }}>
+            <div>
+              <label style={styles.label}>Update Profile Picture</label>
+              <input type="file" accept="image/*" onChange={handleProfilePicUpload} style={{ ...styles.input, padding: '10px', border: 'none' }} />
+            </div>
+            <div>
+              <label style={styles.label}>Username</label>
+              <input value={profileForm?.username || ''} onChange={e => setProfileForm(prev => ({...prev, username: e.target.value}))} style={styles.input} required />
+            </div>
+            <div>
+              <label style={styles.label}>Phone Number</label>
+              <input value={profileForm?.phone || ''} onChange={e => setProfileForm(prev => ({...prev, phone: e.target.value}))} style={styles.input} />
+            </div>
+            <div>
+              <label style={styles.label}>Address</label>
+              <input value={profileForm?.address || ''} onChange={e => setProfileForm(prev => ({...prev, address: e.target.value}))} style={styles.input} />
+            </div>
+            <button type="submit" style={styles.btnPrimary}>💾 Save Profile Changes</button>
+          </form>
+
+          <div style={{ marginTop: '30px', borderTop: '1px solid #334155', paddingTop: '20px' }}>
+            <h3 style={{ color: '#FBBF24', marginTop: 0, marginBottom: '15px' }}>🔒 Security</h3>
+            <form onSubmit={handleChangePassword}>
+              <label style={styles.label}>New Password</label>
+              <input 
+                type="password" 
+                value={passForm?.newPass || ''} 
+                onChange={e => setPassForm(prev => ({...prev, newPass: e.target.value}))} 
+                style={styles.input} 
+                required 
+                minLength={6}
+                placeholder="Minimum 6 characters"
+              />
+              <button type="submit" style={{ ...styles.btnWarning, width: '100%', marginTop: '10px', padding: '12px' }}>
+                🔑 Change Password
+              </button>
+            </form>
+          </div>
+
+          <div style={{ marginTop: '20px' }}>
+            <button onClick={handleLogout} style={{ ...styles.btnDanger, width: '100%', padding: '12px' }}>
+              🚪 Logout
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 3. SUPERADMIN PANEL
+  // ═══════════════════════════════════════════════════════════════
+  if (page === 'superadmin') {
+    if (userProfile?.role !== 'SuperAdmin') {
+      return (
+        <div style={{ padding: '20px', background: '#0F172A', minHeight: '100vh', color: '#E2E8F0', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '80px', marginBottom: '20px' }}>🔒</div>
+            <h2 style={{ color: '#FCA5A5', marginBottom: '10px' }}>Access Denied</h2>
+            <p style={{ color: '#94A3B8' }}>You don't have SuperAdmin permissions.</p>
+            <button onClick={() => setPage('dashboard')} style={{ ...styles.btnPrimary, marginTop: '20px', width: 'auto', padding: '12px 30px' }}>
+              ← Back to Dashboard
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ padding: '20px', background: '#0F172A', minHeight: '100vh', color: '#E2E8F0' }}>
+        <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', padding: '30px', borderRadius: '16px', marginBottom: '20px' }}>
+          <h2 style={{ margin: 0, fontSize: '24px' }}>👑 SuperAdmin Panel - Manage Agencies</h2>
+          <p style={{ margin: '5px 0 0', opacity: 0.9 }}>Create new travel agencies and manage their subscriptions.</p>
         </div>
         <div style={styles.card}>
-          <div style={styles.emptyState}>
-            <div style={styles.emptyIcon}>👥</div>
-            <h2 style={{ color: '#FBBF24', marginBottom: '15px' }}>User Management</h2>
+          <h3 style={{marginTop: 0, color: '#FBBF24'}}>➕ Add New Travel Agency</h3>
+          <form onSubmit={handleAddTenant} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+            <div><label style={styles.label}>Agency Name (English) *</label><input value={tenantForm?.agency_name || ''} onChange={e => setTenantForm(prev => ({...prev, agency_name: e.target.value}))} style={styles.input} required /></div>
+            <div><label style={styles.label}>Company Name (Arabic)</label><input value={tenantForm?.company_name_ar || ''} onChange={e => setTenantForm(prev => ({...prev, company_name_ar: e.target.value}))} style={styles.input} /></div>
+            <div><label style={styles.label}>Owner Email *</label><input type="email" value={tenantForm?.owner_email || ''} onChange={e => setTenantForm(prev => ({...prev, owner_email: e.target.value}))} style={styles.input} required /></div>
+            <div><label style={styles.label}>Subscription End Date *</label><input type="date" value={tenantForm?.subscription_end_date || ''} onChange={e => setTenantForm(prev => ({...prev, subscription_end_date: e.target.value}))} style={styles.input} required /></div>
+            <div><label style={styles.label}>VAT Number</label><input value={tenantForm?.vat_no || ''} onChange={e => setTenantForm(prev => ({...prev, vat_no: e.target.value}))} style={styles.input} /></div>
+            <div><label style={styles.label}>CR Number</label><input value={tenantForm?.cr_no || ''} onChange={e => setTenantForm(prev => ({...prev, cr_no: e.target.value}))} style={styles.input} /></div>
+            <div><label style={styles.label}>Phone</label><input value={tenantForm?.phone || ''} onChange={e => setTenantForm(prev => ({...prev, phone: e.target.value}))} style={styles.input} /></div>
+            <div><label style={styles.label}>Address</label><input value={tenantForm?.address_ar || ''} onChange={e => setTenantForm(prev => ({...prev, address_ar: e.target.value}))} style={styles.input} /></div>
+            <button type="submit" style={{ ...styles.btnPrimary, gridColumn: '1 / -1', marginTop: '10px' }}>🚀 Create Agency & Generate Password</button>
+          </form>
+        </div>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+          {(data.tenants || []).map(t => (
+            <div key={t.id} style={{ background: '#1E293B', borderRadius: '16px', overflow: 'hidden', border: '1px solid #334155' }}>
+              <div style={{ padding: '20px', background: t.is_paid ? 'rgba(5, 150, 105, 0.1)' : 'rgba(239, 68, 68, 0.1)', borderBottom: '1px solid #334155' }}>
+                <h3 style={{ margin: '0 0 5px', color: '#FBBF24' }}>{t.agency_name}</h3>
+                <p style={{ margin: 0, fontSize: '14px', color: '#94A3B8' }}>{t.owner_email}</p>
+              </div>
+              <div style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '10px' }}>
+                  <span style={{ color: '#94A3B8' }}>Sub. End Date:</span>
+                  <span style={{ fontWeight: '600', color: '#E2E8F0' }}>{t.subscription_end_date}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', marginBottom: '15px' }}>
+                  <span style={{ color: '#94A3B8' }}>Status:</span>
+                  <span style={{ padding: '4px 10px', borderRadius: '12px', background: t.is_paid ? '#059669' : '#EF4444', color: 'white', fontSize: '11px', fontWeight: '700' }}>{t.is_paid ? '✅ Active' : '❌ Suspended'}</span>
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button onClick={() => handleToggleSubscription(t)} style={{...styles.btnWarning, flex: 1}}>{t.is_paid ? '⏸ Suspend' : '▶ Activate'}</button>
+                  <button onClick={() => handleDeleteTenant(t.id)} style={{...styles.btnDanger, flex: 1}}>🗑 Delete</button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 4. USERS PAGE
+  // ═══════════════════════════════════════════════════════════════
+  if (page === 'users') {
+    // Simple user management since app_users might not be loaded
+    return (
+      <div style={{ padding: '20px', background: '#0F172A', minHeight: '100vh', color: '#E2E8F0' }}>
+        <h2 style={{ color: '#FBBF24', marginBottom: '20px' }}>👥 {tr?.users || 'Users'}</h2>
+        <div style={styles.card}>
+          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <div style={{ fontSize: '60px', marginBottom: '15px' }}>👥</div>
+            <h3 style={{ color: '#FBBF24', marginBottom: '10px' }}>User Management</h3>
             <p style={{ color: '#94A3B8', maxWidth: '500px', margin: '0 auto 20px', lineHeight: '1.6' }}>
-              User accounts are created through the SuperAdmin panel. Contact your system administrator to add new users or modify existing accounts.
+              User accounts are managed through the SuperAdmin panel. Contact your system administrator to add new users or modify existing accounts.
             </p>
-            <button 
-              style={{ ...styles.btn, ...styles.btnPrimary, marginRight: '10px' }} 
-              onClick={() => setPage('superadmin')}
-            >
+            <button style={{ ...styles.btnPrimary, width: 'auto', padding: '12px 30px' }} onClick={() => setPage('superadmin')}>
               Go to SuperAdmin →
             </button>
           </div>
@@ -73,91 +318,270 @@ export default function ERPViewsSystem(props) {
     );
   }
 
-  // ═══════════ AUDIT LOGS PAGE ═══════════
-  if (page === 'audit') {
-    const filteredLogs = (data.auditLogs || [])
-      .filter(l => !searchTerm || 
-        l.action?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        l.user_email?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-      .filter(l => !dateFilter || l.created_at?.startsWith(dateFilter))
-      .slice(0, 200);
+  // ═══════════════════════════════════════════════════════════════
+  // 5. SETTINGS PAGE
+  // ═══════════════════════════════════════════════════════════════
+  if (page === 'settings') {
+    return (
+      <div style={{ padding: '20px', background: '#0F172A', minHeight: '100vh', color: '#E2E8F0' }}>
+        <h2 style={{ color: '#FBBF24', marginBottom: '20px' }}>⚙️ {tr?.settings || 'Settings'}</h2>
+        <div style={styles.card}>
+          <form onSubmit={handleSaveSettings} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+            <div><label style={styles.label}>Company Name (EN) *</label><input value={currentSetForm.company_name_en || ''} onChange={e => updateSetForm({ company_name_en: e.target.value })} style={styles.input} required /></div>
+            <div><label style={styles.label}>Company Name (AR)</label><input dir="rtl" value={currentSetForm.company_name_ar || ''} onChange={e => updateSetForm({ company_name_ar: e.target.value })} style={styles.input} /></div>
+            <div><label style={styles.label}>VAT No</label><input value={currentSetForm.vat_no || ''} onChange={e => updateSetForm({ vat_no: e.target.value })} style={styles.input} /></div>
+            <div><label style={styles.label}>CR No</label><input value={currentSetForm.cr_no || ''} onChange={e => updateSetForm({ cr_no: e.target.value })} style={styles.input} /></div>
+            <div><label style={styles.label}>Phone</label><input value={currentSetForm.phone || ''} onChange={e => updateSetForm({ phone: e.target.value })} style={styles.input} /></div>
+            <div><label style={styles.label}>Website</label><input value={currentSetForm.website || ''} onChange={e => updateSetForm({ website: e.target.value })} style={styles.input} /></div>
+            <div><label style={styles.label}>Address (AR)</label><input dir="rtl" value={currentSetForm.address_ar || ''} onChange={e => updateSetForm({ address_ar: e.target.value })} style={styles.input} /></div>
+            <div><label style={styles.label}>License No</label><input value={currentSetForm.license_no || ''} onChange={e => updateSetForm({ license_no: e.target.value })} style={styles.input} /></div>
+            <div><label style={styles.label}>Tourism License No</label><input value={currentSetForm.tourism_license_no || ''} onChange={e => updateSetForm({ tourism_license_no: e.target.value })} style={styles.input} /></div>
+            <div><label style={styles.label}>Logo Upload</label><input type="file" accept="image/*" onChange={handleLogoUpload} style={styles.input} /></div>
+            {currentSetForm.logo_url && (
+              <div style={{ gridColumn: '1 / -1' }}>
+                <img src={currentSetForm.logo_url} alt="Logo" style={{ height: '80px', borderRadius: '8px', border: '1px solid #334155' }} />
+              </div>
+            )}
+            
+            <div style={{ gridColumn: '1 / -1', borderTop: '1px solid #334155', marginTop: '10px', paddingTop: '20px' }}>
+              <h3 style={{ margin: '0 0 15px', color: '#FBBF24' }}>📝 Custom Fields (Invoice Footer)</h3>
+              {(currentSetForm.custom_fields || []).map((cf, i) => (
+                <div key={i} style={{ display: 'flex', gap: '15px', marginBottom: '15px' }}>
+                  <input placeholder="Label (e.g. IATA No)" value={cf.key || ''} onChange={e => handleCustomFieldChange?.(i, 'key', e.target.value)} style={{ ...styles.input, flex: 1 }} />
+                  <input placeholder="Value" value={cf.value || ''} onChange={e => handleCustomFieldChange?.(i, 'value', e.target.value)} style={{ ...styles.input, flex: 1 }} />
+                  <button type="button" onClick={() => handleRemoveCustomField?.(i)} style={{...styles.btnDanger, width: 'auto', padding: '12px 20px' }}>✕</button>
+                </div>
+              ))}
+              <button type="button" onClick={handleAddCustomField} style={{ ...styles.btnSuccess, width: 'auto', padding: '10px 20px' }}>+ Add Custom Field</button>
+            </div>
+
+            <button type="submit" style={{ ...styles.btnPrimary, gridColumn: '1 / -1', padding: '15px' }}>💾 Save Settings</button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 6. CONTRACT & OFFER PAGE
+  // ═══════════════════════════════════════════════════════════════
+  if (page === 'contract' || page === 'offer') {
+    const isContract = page === 'contract';
+    
+    const aiStandardTerms = [
+      "Payment Terms: 100% advance payment required to confirm the booking.",
+      "Validity: This document is valid for 30 days from the date of issue.",
+      "Refund Policy: All cancellations are subject to airline/hotel cancellation policies.",
+      "Prices are subject to change based on availability at the time of final booking.",
+      "Passenger names must match exactly as per passport/ID."
+    ];
+
+    const handleTermToggle = (term) => {
+      const currentTerms = contractTerms ? contractTerms.split('\n').filter(t => t.trim()) : [];
+      if (currentTerms.includes(term)) {
+        setContractTerms(currentTerms.filter(t => t !== term).join('\n'));
+      } else {
+        setContractTerms([...currentTerms, term].join('\n'));
+      }
+    };
 
     return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>📜 {t('audit', 'Audit Logs')}</h1>
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <input 
-              style={styles.input} 
-              placeholder="Search actions, users..." 
-              value={searchTerm} 
-              onChange={e => setSearchTerm(e.target.value)} 
-            />
-            <input 
-              type="date" 
-              style={styles.input} 
-              value={dateFilter} 
-              onChange={e => setDateFilter(e.target.value)} 
-            />
-            {dateFilter && (
-              <button 
-                style={{ ...styles.btn, ...styles.btnWarning }}
-                onClick={() => { setDateFilter(''); setSearchTerm(''); }}
-              >
-                Clear Filters
-              </button>
-            )}
+      <div style={{ padding: '20px', background: '#0F172A', minHeight: '100vh', color: '#E2E8F0' }}>
+        <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', padding: '30px', borderRadius: '16px', marginBottom: '20px' }}>
+          <h2 style={{ margin: 0, fontSize: '24px' }}>{isContract ? '📝 Corporate Contract Generator' : '🎁 Corporate Offer Generator'}</h2>
+          <p style={{ margin: '5px 0 0', opacity: 0.9 }}>{isContract ? "Generate a formal dynamic agreement." : "Generate a special dynamic offer letter."}</p>
+        </div>
+        <div style={{...styles.card, borderInlineStart: '5px solid #FBBF24'}}>
+          <form onSubmit={isContract ? handleGenerateContract : handleGenerateOffer} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={styles.label}>Corporate Company Name *</label>
+              <input type="text" value={contractCorpName || ''} onChange={e => setContractCorpName(e.target.value)} style={{...styles.input, padding: '15px', fontSize: '16px'}} required placeholder="e.g. Saudi Aramco" />
+            </div>
+            <div>
+              <label style={styles.label}>Service Type</label>
+              <select value={contractType || 'Flight Tickets'} onChange={e => setContractType(e.target.value)} style={styles.input}>
+                <option>Flight Tickets</option><option>Hotel Booking</option><option>Visa Services</option><option>Hajj/Umrah Packages</option><option>Complete Travel Management</option>
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Service Fee / Markup (SAR)</label>
+              <input type="number" value={contractMarkup || '10'} onChange={e => setContractMarkup(e.target.value)} style={styles.input} required />
+            </div>
+            
+            <div style={{ gridColumn: '1 / -1', marginTop: '10px' }}>
+              <label style={styles.label}>🤖 AI Generated Terms (Click to add/remove)</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '15px' }}>
+                {aiStandardTerms.map((term, idx) => {
+                  const isSelected = contractTerms?.includes(term);
+                  return (
+                    <button 
+                      key={idx} 
+                      type="button" 
+                      onClick={() => handleTermToggle(term)}
+                      style={{
+                        padding: '8px 15px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', transition: 'all 0.2s',
+                        background: isSelected ? '#1E3A8A' : '#334155',
+                        color: isSelected ? 'white' : '#94A3B8',
+                        border: isSelected ? '1px solid #2563EB' : '1px solid #475569'
+                      }}
+                    >
+                      {isSelected ? '✓ ' : '+ '}{term.substring(0, 40)}...
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={styles.label}>Custom Terms & Conditions (One per line)</label>
+              <textarea rows="6" value={contractTerms || ''} onChange={e => setContractTerms(e.target.value)} style={{...styles.input, resize: 'vertical', fontFamily: 'sans-serif'}}></textarea>
+            </div>
+            <button type="submit" style={{ ...styles.btnPrimary, gridColumn: '1 / -1', padding: '15px', fontSize: '16px' }}>
+              📄 Generate {isContract ? 'Contract' : 'Offer'} PDF
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 7. REPORTS PAGE
+  // ═══════════════════════════════════════════════════════════════
+  if (page === 'reports') {
+    const filteredInvoices = filterData((data.invoices || []).filter(i => !i.invoice_no?.startsWith('REF-')), 'invoice_date');
+    const filteredExpenses = filterData(data.expenses || [], 'expense_date');
+    const salesTotal = filteredInvoices.reduce((s, i) => s + (i.total || 0), 0);
+    const expTotal = filteredExpenses.reduce((s, e) => s + (e.amount || 0), 0);
+    const profitTotal = salesTotal - expTotal;
+
+    return (
+      <div style={{ padding: '20px', background: '#0F172A', minHeight: '100vh', color: '#E2E8F0' }}>
+        <h2 style={{ color: '#FBBF24', marginBottom: '20px' }}>📊 {tr?.reports || 'Reports'}</h2>
+        
+        {/* Date Filters */}
+        <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', flexWrap: 'wrap', background: '#1E293B', padding: '20px', borderRadius: '12px', border: '1px solid #334155' }}>
+          <div>
+            <label style={styles.label}>From Date</label>
+            <input type="date" value={repDate.from} onChange={e => setRepDate({...repDate, from: e.target.value})} style={{...styles.input, maxWidth: '200px'}} />
+          </div>
+          <div>
+            <label style={styles.label}>To Date</label>
+            <input type="date" value={repDate.to} onChange={e => setRepDate({...repDate, to: e.target.value})} style={{...styles.input, maxWidth: '200px'}} />
           </div>
         </div>
-
-        <div style={styles.statsGrid}>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Total Logs</div>
-            <div style={styles.statValue}>{data.auditLogs?.length || 0}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Showing</div>
-            <div style={{ ...styles.statValue, color: '#60A5FA' }}>{filteredLogs.length}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Today's Activity</div>
-            <div style={styles.statValue}>
-              {(data.auditLogs || []).filter(l => l.created_at?.startsWith(new Date().toISOString().split('T')[0])).length}
+        
+        {/* Tabs */}
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          {['sales', 'expenses', 'profit', 'portals', 'outstanding'].map(tab => (
+            <button key={tab} onClick={() => setReportTab(tab)} style={{...styles.tabBtn, ...(reportTab === tab && styles.tabBtnActive)}}>
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
+        </div>
+        
+        {/* Sales Tab */}
+        {reportTab === 'sales' && (
+          <div style={{ background: '#1E293B', borderRadius: '12px', overflow: 'hidden', border: '1px solid #334155' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid #334155' }}>
+              <h3 style={{ color: '#FBBF24', margin: 0 }}>Total Sales: <span style={{ color: '#34D399' }}>{salesTotal.toFixed(2)} SAR</span></h3>
+              <button onClick={() => exportToExcel(filteredInvoices.map(i => ({ Date: i.invoice_date, Inv: i.invoice_no, Customer: i.customers?.name, Total: i.total, Due: i.due_amount })), 'SalesReport')} style={styles.btnSuccess}>📥 Export CSV</button>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+                <thead><tr><th style={styles.tableHeader}>Date</th><th style={styles.tableHeader}>Inv</th><th style={styles.tableHeader}>Customer</th><th style={{ ...styles.tableHeader, textAlign: 'right' }}>Total</th></tr></thead>
+                <tbody>{filteredInvoices.map(i => (<tr key={i.id} style={{ borderBottom: '1px solid #1E293B' }}><td style={styles.tableCell}>{i.invoice_date}</td><td style={{...styles.tableCell, color: '#60A5FA'}}>{i.invoice_no}</td><td style={styles.tableCell}>{i.customers?.name || 'N/A'}</td><td style={{...styles.tableCell, textAlign: 'right', color: '#34D399'}}>{(i.total || 0).toFixed(2)}</td></tr>))}</tbody>
+              </table>
             </div>
           </div>
-        </div>
+        )}
 
-        <div style={styles.card}>
-          {filteredLogs.length === 0 ? (
-            <div style={styles.emptyState}>
-              <div style={styles.emptyIcon}>📜</div>
+        {/* Expenses Tab */}
+        {reportTab === 'expenses' && (
+          <div style={{ background: '#1E293B', borderRadius: '12px', overflow: 'hidden', border: '1px solid #334155' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid #334155' }}>
+              <h3 style={{ color: '#FBBF24', margin: 0 }}>Total Expenses: <span style={{ color: '#FCA5A5' }}>{expTotal.toFixed(2)} SAR</span></h3>
+              <button onClick={() => exportToExcel(filteredExpenses.map(e => ({ Date: e.expense_date, Type: e.expense_type, Description: e.description, Amount: e.amount })), 'ExpenseReport')} style={styles.btnSuccess}>📥 Export CSV</button>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+                <thead><tr><th style={styles.tableHeader}>Date</th><th style={styles.tableHeader}>Type</th><th style={styles.tableHeader}>Description</th><th style={{ ...styles.tableHeader, textAlign: 'right' }}>Amount</th></tr></thead>
+                <tbody>{filteredExpenses.map(e => (<tr key={e.id} style={{ borderBottom: '1px solid #1E293B' }}><td style={styles.tableCell}>{e.expense_date}</td><td style={styles.tableCell}>{e.expense_type}</td><td style={styles.tableCell}>{e.description}</td><td style={{...styles.tableCell, textAlign: 'right', color: '#FCA5A5'}}>{(e.amount || 0).toFixed(2)}</td></tr>))}</tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Profit Tab */}
+        {reportTab === 'profit' && (
+          <div style={{ background: '#1E293B', padding: '40px', borderRadius: '12px', textAlign: 'center', border: '1px solid #334155' }}>
+            <h3 style={{ color: '#FBBF24', fontSize: '24px', marginTop: 0 }}>Profit & Loss Statement</h3>
+            <p style={{ fontSize: '48px', fontWeight: 'bold', color: profitTotal >= 0 ? '#34D399' : '#FCA5A5', margin: '20px 0' }}>{profitTotal.toFixed(2)} SAR</p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '50px', marginTop: '20px', flexWrap: 'wrap' }}>
+              <div><h4 style={{ color: '#94A3B8', margin: 0 }}>Total Sales</h4><p style={{ fontSize: '20px', color: '#34D399', fontWeight: 'bold' }}>{salesTotal.toFixed(2)}</p></div>
+              <div><h4 style={{ color: '#94A3B8', margin: 0 }}>Total Expenses</h4><p style={{ fontSize: '20px', color: '#FCA5A5', fontWeight: 'bold' }}>{expTotal.toFixed(2)}</p></div>
+            </div>
+          </div>
+        )}
+
+        {/* Portals Tab */}
+        {reportTab === 'portals' && (
+          <div style={{ background: '#1E293B', borderRadius: '12px', overflow: 'hidden', border: '1px solid #334155' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid #334155' }}>
+              <h3 style={{ color: '#FBBF24', margin: 0 }}>Portal Balances Report</h3>
+              <button onClick={() => exportToExcel((data.portals || []).map(p => ({ Name: p.name, Balance: p.current_balance })), 'PortalReport')} style={styles.btnSuccess}>📥 Export CSV</button>
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr><th style={styles.tableHeader}>Portal</th><th style={{ ...styles.tableHeader, textAlign: 'right' }}>Balance (SAR)</th></tr></thead>
+              <tbody>{(data.portals || []).map(p => (<tr key={p.id} style={{ borderBottom: '1px solid #1E293B' }}><td style={styles.tableCell}>{p.name}</td><td style={{...styles.tableCell, textAlign: 'right', fontWeight: 'bold', color: (p.current_balance || 0) < 0 ? '#FCA5A5' : '#34D399'}}>{(p.current_balance || 0).toFixed(2)}</td></tr>))}</tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Outstanding Tab */}
+        {reportTab === 'outstanding' && (() => {
+          const outInvs = (data.invoices || []).filter(i => (i.due_amount || 0) > 0);
+          const totalDue = outInvs.reduce((s, i) => s + (i.due_amount || 0), 0);
+          return (
+            <div style={{ background: '#1E293B', borderRadius: '12px', overflow: 'hidden', border: '1px solid #334155' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid #334155' }}>
+                <h3 style={{ color: '#FBBF24', margin: 0 }}>Total Outstanding: <span style={{color: '#FCA5A5'}}>{totalDue.toFixed(2)} SAR</span></h3>
+                <button onClick={() => exportToExcel(outInvs.map(i => ({ Inv: i.invoice_no, Customer: i.customers?.name, Due: i.due_amount })), 'OutstandingReport')} style={styles.btnSuccess}>📥 Export CSV</button>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+                  <thead><tr><th style={styles.tableHeader}>Inv</th><th style={styles.tableHeader}>Customer</th><th style={{ ...styles.tableHeader, textAlign: 'right' }}>Due</th></tr></thead>
+                  <tbody>{outInvs.map(i => (<tr key={i.id} style={{ borderBottom: '1px solid #1E293B' }}><td style={{...styles.tableCell, color: '#60A5FA'}}>{i.invoice_no}</td><td style={styles.tableCell}>{i.customers?.name || 'N/A'}</td><td style={{...styles.tableCell, textAlign: 'right', color: '#FCA5A5', fontWeight: 'bold'}}>{(i.due_amount || 0).toFixed(2)}</td></tr>))}</tbody>
+                </table>
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 8. AUDIT LOGS PAGE
+  // ═══════════════════════════════════════════════════════════════
+  if (page === 'audit') {
+    const auditData = data.auditLogs || data.audits || []; // Support both names
+    
+    return (
+      <div style={{ padding: '20px', background: '#0F172A', minHeight: '100vh', color: '#E2E8F0' }}>
+        <h2 style={{ color: '#FBBF24', marginBottom: '20px' }}>📜 {tr?.audit || 'Audit Logs'}</h2>
+        <div style={{ background: '#1E293B', borderRadius: '12px', overflow: 'hidden', border: '1px solid #334155' }}>
+          {auditData.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748B' }}>
+              <div style={{ fontSize: '60px', marginBottom: '15px' }}>📜</div>
               <h3>No Audit Logs Found</h3>
               <p>Logs will appear here as users perform actions in the system.</p>
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={{ ...styles.th, width: '180px' }}>Date/Time</th>
-                    <th style={{ ...styles.th, width: '200px' }}>User</th>
-                    <th style={styles.th}>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredLogs.map((log, idx) => (
-                    <tr key={log.id || idx} style={{ background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
-                      <td style={{ ...styles.td, fontSize: '12px', color: '#94A3B8', fontFamily: 'monospace' }}>
-                        {log.created_at ? new Date(log.created_at).toLocaleString() : '-'}
-                      </td>
-                      <td style={{ ...styles.td, fontWeight: '600', color: '#60A5FA' }}>
-                        {log.user_email || 'Unknown'}
-                      </td>
-                      <td style={styles.td}>{log.action}</td>
-                    </tr>
-                  ))}
-                </tbody>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+                <thead><tr><th style={styles.tableHeader}>Date</th><th style={styles.tableHeader}>User</th><th style={styles.tableHeader}>Action</th></tr></thead>
+                <tbody>{auditData.map(a => (<tr key={a.id} style={{ borderBottom: '1px solid #1E293B' }}><td style={{...styles.tableCell, fontFamily: 'monospace', fontSize: '12px', color: '#94A3B8'}}>{a.created_at?.split('T')[0]} {a.created_at?.split('T')[1]?.split('.')[0]}</td><td style={{...styles.tableCell, color: '#60A5FA', fontWeight: '600'}}>{a.user_email || 'Unknown'}</td><td style={styles.tableCell}>{a.action}</td></tr>))}</tbody>
               </table>
             </div>
           )}
@@ -166,842 +590,155 @@ export default function ERPViewsSystem(props) {
     );
   }
 
-  // ═══════════ REPORTS PAGE ═══════════
-  if (page === 'reports') {
-    const invoices = (data.invoices || []).filter(i => !i.invoice_no?.startsWith('REF-'));
-    const refunds = (data.invoices || []).filter(i => i.invoice_no?.startsWith('REF-'));
-    
-    const totalRevenue = invoices.reduce((s, i) => s + (i.total || 0), 0);
-    const totalCost = invoices.reduce((s, i) => s + (i.total_cost || 0), 0);
-    const totalProfit = invoices.reduce((s, i) => s + (i.profit || 0), 0);
-    const totalExpenses = (data.expenses || []).reduce((s, e) => s + (e.amount || 0), 0);
-    const totalRefunded = refunds.reduce((s, r) => s + (r.refund_customer || 0), 0);
-    const netProfit = totalProfit - totalExpenses;
-
-    // Revenue by service type
-    const byService = {};
-    invoices.forEach(i => {
-      const svc = i.service_type || 'Other';
-      byService[svc] = (byService[svc] || 0) + (i.total || 0);
-    });
-
-    // Revenue by airline
-    const byAirline = {};
-    invoices.filter(i => i.airline).forEach(i => {
-      const al = i.airline;
-      byAirline[al] = (byAirline[al] || 0) + (i.total || 0);
-    });
-
-    // Revenue by payment method
-    const byPayment = {};
-    invoices.forEach(i => {
-      const pm = i.payment_method || 'Cash';
-      byPayment[pm] = (byPayment[pm] || 0) + (i.total || 0);
-    });
-
-    // Monthly revenue (last 6 months)
-    const monthlyRev = {};
-    const now = new Date();
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = d.toISOString().slice(0, 7);
-      monthlyRev[key] = 0;
-    }
-    invoices.forEach(i => {
-      if (i.invoice_date) {
-        const key = i.invoice_date.slice(0, 7);
-        if (monthlyRev.hasOwnProperty(key)) {
-          monthlyRev[key] += i.total || 0;
-        }
-      }
-    });
-
-    return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>📊 {t('reports', 'Reports')}</h1>
-        </div>
-
-        {/* Main Stats */}
-        <div style={styles.statsGrid}>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Total Revenue</div>
-            <div style={{ ...styles.statValue, color: '#34D399' }}>{fmt(totalRevenue)}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Total Cost</div>
-            <div style={{ ...styles.statValue, color: '#FCA5A5' }}>{fmt(totalCost)}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Invoice Profit</div>
-            <div style={{ ...styles.statValue, color: '#FBBF24' }}>{fmt(totalProfit)}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Total Expenses</div>
-            <div style={{ ...styles.statValue, color: '#F87171' }}>{fmt(totalExpenses)}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Net Profit</div>
-            <div style={{ ...styles.statValue, color: netProfit >= 0 ? '#34D399' : '#FCA5A5' }}>{fmt(netProfit)}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Total Refunded</div>
-            <div style={{ ...styles.statValue, color: '#FB923C' }}>{fmt(totalRefunded)}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Total Invoices</div>
-            <div style={styles.statValue}>{invoices.length}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Total Refunds</div>
-            <div style={styles.statValue}>{refunds.length}</div>
-          </div>
-        </div>
-
-        {/* Monthly Revenue */}
-        <div style={styles.card}>
-          <h3 style={{ color: '#FBBF24', marginBottom: '15px', fontSize: '16px' }}>📈 Monthly Revenue (Last 6 Months)</h3>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', height: '150px', padding: '0 10px' }}>
-            {Object.entries(monthlyRev).map(([month, amount]) => {
-              const maxAmount = Math.max(...Object.values(monthlyRev), 1);
-              const height = (amount / maxAmount) * 130;
-              return (
-                <div key={month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
-                  <span style={{ fontSize: '11px', color: '#94A3B8', marginBottom: '5px' }}>{fmt(amount)}</span>
-                  <div style={{ 
-                    width: '100%', 
-                    height: `${Math.max(height, 5)}px`, 
-                    background: 'linear-gradient(180deg, #34D399, #059669)', 
-                    borderRadius: '4px 4px 0 0',
-                    transition: 'height 0.3s'
-                  }}></div>
-                  <span style={{ fontSize: '10px', color: '#64748B', marginTop: '5px' }}>{month}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-          {/* Revenue by Service */}
-          <div style={styles.card}>
-            <h3 style={{ color: '#FBBF24', marginBottom: '15px', fontSize: '16px' }}>🎯 Revenue by Service Type</h3>
-            {Object.entries(byService).sort((a, b) => b[1] - a[1]).map(([svc, amt]) => {
-              const pct = totalRevenue > 0 ? (amt / totalRevenue * 100) : 0;
-              return (
-                <div key={svc} style={{ marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ color: '#CBD5E1', fontSize: '13px' }}>{svc}</span>
-                    <span style={{ color: '#34D399', fontWeight: '600', fontSize: '13px' }}>{fmt(amt)} ({pct.toFixed(1)}%)</span>
-                  </div>
-                  <div style={{ height: '6px', background: '#0F172A', borderRadius: '3px', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${pct}%`, background: 'linear-gradient(90deg, #34D399, #059669)', borderRadius: '3px' }}></div>
-                  </div>
-                </div>
-              );
-            })}
-            {Object.keys(byService).length === 0 && <p style={{ color: '#64748B', textAlign: 'center' }}>No data available</p>}
-          </div>
-
-          {/* Revenue by Airline */}
-          <div style={styles.card}>
-            <h3 style={{ color: '#FBBF24', marginBottom: '15px', fontSize: '16px' }}>✈️ Revenue by Airline</h3>
-            {Object.entries(byAirline).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([airline, amt]) => {
-              const pct = totalRevenue > 0 ? (amt / totalRevenue * 100) : 0;
-              return (
-                <div key={airline} style={{ marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ color: '#CBD5E1', fontSize: '13px' }}>{airline}</span>
-                    <span style={{ color: '#60A5FA', fontWeight: '600', fontSize: '13px' }}>{fmt(amt)} ({pct.toFixed(1)}%)</span>
-                  </div>
-                  <div style={{ height: '6px', background: '#0F172A', borderRadius: '3px', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${pct}%`, background: 'linear-gradient(90deg, #60A5FA, #2563EB)', borderRadius: '3px' }}></div>
-                  </div>
-                </div>
-              );
-            })}
-            {Object.keys(byAirline).length === 0 && <p style={{ color: '#64748B', textAlign: 'center' }}>No flight data available</p>}
-          </div>
-        </div>
-
-        {/* Payment Methods */}
-        <div style={styles.card}>
-          <h3 style={{ color: '#FBBF24', marginBottom: '15px', fontSize: '16px' }}>💳 Revenue by Payment Method</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px' }}>
-            {Object.entries(byPayment).sort((a, b) => b[1] - a[1]).map(([method, amt]) => (
-              <div key={method} style={{ 
-                background: '#0F172A', 
-                padding: '15px', 
-                borderRadius: '8px', 
-                border: '1px solid #334155',
-                textAlign: 'center'
-              }}>
-                <div style={{ color: '#94A3B8', fontSize: '12px', marginBottom: '5px' }}>{method}</div>
-                <div style={{ color: '#FBBF24', fontSize: '18px', fontWeight: '700' }}>{fmt(amt)}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Summary Table */}
-        <div style={styles.card}>
-          <h3 style={{ color: '#FBBF24', marginBottom: '15px', fontSize: '16px' }}>📋 P&L Summary</h3>
-          <table style={styles.table}>
-            <tbody>
-              <tr>
-                <td style={{ ...styles.td, fontWeight: '600', width: '300px' }}>Total Revenue</td>
-                <td style={{ ...styles.tdRight, color: '#34D399', fontSize: '16px' }}>{fmt(totalRevenue)}</td>
-              </tr>
-              <tr>
-                <td style={{ ...styles.td, fontWeight: '600' }}>Total Cost (Portal)</td>
-                <td style={{ ...styles.tdRight, color: '#FCA5A5' }}>- {fmt(totalCost)}</td>
-              </tr>
-              <tr style={{ background: 'rgba(251,191,36,0.05)' }}>
-                <td style={{ ...styles.td, fontWeight: '700', color: '#FBBF24' }}>Gross Profit</td>
-                <td style={{ ...styles.tdRight, color: '#FBBF24', fontWeight: '700', fontSize: '16px' }}>{fmt(totalProfit)}</td>
-              </tr>
-              <tr>
-                <td style={{ ...styles.td, fontWeight: '600' }}>Operating Expenses</td>
-                <td style={{ ...styles.tdRight, color: '#FCA5A5' }}>- {fmt(totalExpenses)}</td>
-              </tr>
-              <tr style={{ background: netProfit >= 0 ? 'rgba(52,211,153,0.1)' : 'rgba(252,165,165,0.1)' }}>
-                <td style={{ ...styles.td, fontWeight: '700', color: netProfit >= 0 ? '#34D399' : '#FCA5A5', fontSize: '16px' }}>Net Profit</td>
-                <td style={{ ...styles.tdRight, color: netProfit >= 0 ? '#34D399' : '#FCA5A5', fontWeight: '700', fontSize: '18px' }}>{fmt(netProfit)}</td>
-              </tr>
-              <tr>
-                <td style={{ ...styles.td, fontWeight: '600' }}>Refunds Issued</td>
-                <td style={{ ...styles.tdRight, color: '#FB923C' }}>- {fmt(totalRefunded)}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
-  }
-
-  // ═══════════ STATEMENTS PAGE ═══════════
+  // ═══════════════════════════════════════════════════════════════
+  // 9. STATEMENTS PAGE
+  // ═══════════════════════════════════════════════════════════════
   if (page === 'statements') {
-    return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>📑 {t('statements', 'Statements')}</h1>
-        </div>
-        <div style={styles.card}>
-          <div style={styles.emptyState}>
-            <div style={styles.emptyIcon}>📑</div>
-            <h2 style={{ color: '#FBBF24', marginBottom: '15px' }}>Statements</h2>
-            <p style={{ color: '#94A3B8', maxWidth: '500px', margin: '0 auto 25px', lineHeight: '1.6' }}>
-              Generate detailed account statements for customers or suppliers. Use the specific statement pages for more options.
-            </p>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <button 
-                style={{ ...styles.btn, ...styles.btnPrimary }} 
-                onClick={() => setPage('customer_statement')}
-              >
-                📊 Customer Statement
-              </button>
-              <button 
-                style={{ ...styles.btn, ...styles.btnSuccess }} 
-                onClick={() => setPage('supplier_statement')}
-              >
-                📊 Supplier Statement
-              </button>
-              <button 
-                style={{ ...styles.btn, ...styles.btnWarning }} 
-                onClick={() => setPage('refund_statement')}
-              >
-                🔄 Refund Statement
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ═══════════ SETTINGS PAGE ═══════════
-  if (page === 'settings') {
-    const currentSettings = data.settings || {};
+    const tabs = ['sales', 'portals', 'vendors', 'salary', 'expenses', 'customers', 'creditors', 'credit', 'branches', 'cash', 'bank'];
     
-    // Initialize form if not set
-    if (!setForm?.company_name_en && currentSettings.company_name_en) {
-      setSetForm({
-        company_name_en: currentSettings.company_name_en || '',
-        company_name_ar: currentSettings.company_name_ar || '',
-        address_ar: currentSettings.address_ar || '',
-        phone: currentSettings.phone || '',
-        website: currentSettings.website || '',
-        vat_no: currentSettings.vat_no || '',
-        cr_no: currentSettings.cr_no || '',
-        license_no: currentSettings.license_no || '',
-        tourism_license_no: currentSettings.tourism_license_no || '',
-        logo_url: currentSettings.logo_url || '',
-        custom_fields: currentSettings.custom_fields || []
-      });
-    }
-
-    return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>⚙️ {t('settings', 'Settings')}</h1>
-        </div>
-        
-        <div style={styles.card}>
-          <h3 style={{ color: '#FBBF24', marginBottom: '20px', fontSize: '18px' }}>🏢 Company Information</h3>
-          <form onSubmit={handleSaveSettings}>
-            <div style={styles.formRow}>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>Company Name (English) *</label>
-                <input 
-                  style={styles.formInput} 
-                  value={setForm?.company_name_en || ''} 
-                  onChange={e => setSetForm(prev => ({ ...prev, company_name_en: e.target.value }))}
-                  required
-                />
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>Company Name (Arabic) *</label>
-                <input 
-                  style={styles.formInput} 
-                  dir="rtl"
-                  value={setForm?.company_name_ar || ''} 
-                  onChange={e => setSetForm(prev => ({ ...prev, company_name_ar: e.target.value }))}
-                  required
-                />
-              </div>
-            </div>
-            <div style={styles.formRow}>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>Address (Arabic)</label>
-                <input 
-                  style={styles.formInput} 
-                  dir="rtl"
-                  value={setForm?.address_ar || ''} 
-                  onChange={e => setSetForm(prev => ({ ...prev, address_ar: e.target.value }))}
-                />
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>Phone</label>
-                <input 
-                  style={styles.formInput} 
-                  value={setForm?.phone || ''} 
-                  onChange={e => setSetForm(prev => ({ ...prev, phone: e.target.value }))}
-                />
-              </div>
-            </div>
-            <div style={styles.formRow}>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>Website</label>
-                <input 
-                  style={styles.formInput} 
-                  value={setForm?.website || ''} 
-                  onChange={e => setSetForm(prev => ({ ...prev, website: e.target.value }))}
-                />
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>Logo URL</label>
-                <input 
-                  style={styles.formInput} 
-                  value={setForm?.logo_url || ''} 
-                  onChange={e => setSetForm(prev => ({ ...prev, logo_url: e.target.value }))}
-                  placeholder="https://..."
-                />
-              </div>
-            </div>
-            <h3 style={{ color: '#FBBF24', margin: '25px 0 15px', fontSize: '18px' }}>📄 Legal Information</h3>
-            <div style={styles.formRow}>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>VAT Number</label>
-                <input 
-                  style={styles.formInput} 
-                  value={setForm?.vat_no || ''} 
-                  onChange={e => setSetForm(prev => ({ ...prev, vat_no: e.target.value }))}
-                />
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>CR Number</label>
-                <input 
-                  style={styles.formInput} 
-                  value={setForm?.cr_no || ''} 
-                  onChange={e => setSetForm(prev => ({ ...prev, cr_no: e.target.value }))}
-                />
-              </div>
-            </div>
-            <div style={styles.formRow}>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>License Number</label>
-                <input 
-                  style={styles.formInput} 
-                  value={setForm?.license_no || ''} 
-                  onChange={e => setSetForm(prev => ({ ...prev, license_no: e.target.value }))}
-                />
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>Tourism License Number</label>
-                <input 
-                  style={styles.formInput} 
-                  value={setForm?.tourism_license_no || ''} 
-                  onChange={e => setSetForm(prev => ({ ...prev, tourism_license_no: e.target.value }))}
-                />
-              </div>
-            </div>
-            <div style={{ marginTop: '25px', display: 'flex', gap: '10px' }}>
-              <button type="submit" style={{ ...styles.btn, ...styles.btnSuccess, padding: '12px 30px' }}>
-                💾 Save Settings
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {setForm?.logo_url && (
-          <div style={styles.card}>
-            <h3 style={{ color: '#FBBF24', marginBottom: '15px', fontSize: '18px' }}>🖼️ Logo Preview</h3>
-            <img 
-              src={setForm.logo_url} 
-              alt="Company Logo" 
-              style={{ maxWidth: '200px', maxHeight: '100px', borderRadius: '8px', border: '1px solid #334155' }}
-              onError={e => e.target.style.display = 'none'}
-            />
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // ═══════════ PROFILE PAGE ═══════════
-  if (page === 'profile') {
-    return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>👤 {t('profile', 'Profile')}</h1>
-        </div>
-
-        {/* User Info Card */}
-        <div style={styles.card}>
-          <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginBottom: '20px' }}>
-            <div style={{ 
-              width: '80px', 
-              height: '80px', 
-              borderRadius: '50%', 
-              background: 'linear-gradient(135deg, #2563EB, #1D4ED8)', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              fontSize: '30px',
-              color: '#fff',
-              overflow: 'hidden'
-            }}>
-              {profileForm?.avatar_url ? (
-                <img src={profileForm.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
-                (userProfile?.username || userProfile?.name || 'U')?.charAt(0)?.toUpperCase()
-              )}
-            </div>
-            <div>
-              <h2 style={{ color: '#FBBF24', fontSize: '20px', marginBottom: '5px' }}>
-                {userProfile?.name || userProfile?.username || 'User'}
-              </h2>
-              <p style={{ color: '#94A3B8', fontSize: '14px' }}>{userProfile?.email || user?.email}</p>
-              <span style={{ 
-                ...styles.badge, 
-                background: '#1E3A8A', 
-                color: '#60A5FA',
-                marginTop: '8px',
-                display: 'inline-block'
-              }}>
-                {userProfile?.role || 'Staff'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Edit Profile Form */}
-        <div style={styles.card}>
-          <h3 style={{ color: '#FBBF24', marginBottom: '20px', fontSize: '18px' }}>✏️ Edit Profile</h3>
-          <form onSubmit={handleSaveProfile}>
-            <div style={styles.formGroup}>
-              <label style={styles.formLabel}>Username</label>
-              <input 
-                style={styles.formInput} 
-                value={profileForm?.username || ''} 
-                onChange={e => setProfileForm(prev => ({ ...prev, username: e.target.value }))}
-              />
-            </div>
-            <div style={styles.formRow}>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>Phone</label>
-                <input 
-                  style={styles.formInput} 
-                  value={profileForm?.phone || ''} 
-                  onChange={e => setProfileForm(prev => ({ ...prev, phone: e.target.value }))}
-                />
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>Address</label>
-                <input 
-                  style={styles.formInput} 
-                  value={profileForm?.address || ''} 
-                  onChange={e => setProfileForm(prev => ({ ...prev, address: e.target.value }))}
-                />
-              </div>
-            </div>
-            <div style={styles.formGroup}>
-              <label style={styles.formLabel}>Avatar URL</label>
-              <input 
-                style={styles.formInput} 
-                value={profileForm?.avatar_url || ''} 
-                onChange={e => setProfileForm(prev => ({ ...prev, avatar_url: e.target.value }))}
-                placeholder="https://..."
-              />
-            </div>
-            <button type="submit" style={{ ...styles.btn, ...styles.btnSuccess, marginTop: '10px', padding: '12px 30px' }}>
-              💾 Save Profile
-            </button>
-          </form>
-        </div>
-
-        {/* Change Password */}
-        <div style={styles.card}>
-          <h3 style={{ color: '#FBBF24', marginBottom: '20px', fontSize: '18px' }}>🔒 {t('changePass', 'Change Password')}</h3>
-          <form onSubmit={handleChangePassword}>
-            <div style={styles.formGroup}>
-              <label style={styles.formLabel}>New Password *</label>
-              <input 
-                type="password"
-                style={styles.formInput} 
-                value={passForm?.newPass || ''} 
-                onChange={e => setPassForm(prev => ({ ...prev, newPass: e.target.value }))}
-                required
-                minLength={6}
-                placeholder="Minimum 6 characters"
-              />
-            </div>
-            <button type="submit" style={{ ...styles.btn, ...styles.btnWarning, marginTop: '10px', padding: '12px 30px' }}>
-              🔑 Update Password
-            </button>
-          </form>
-        </div>
-
-        {/* Logout */}
-        <div style={styles.card}>
-          <button 
-            onClick={handleLogout} 
-            style={{ ...styles.btn, ...styles.btnDanger, padding: '12px 30px', width: '100%' }}
-          >
-            🚪 {t('logout', 'Logout')}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // ═══════════ CONTRACT PAGE ═══════════
-  if (page === 'contract') {
-    const { contractCorpName, setContractCorpName, contractType, setContractType, contractMarkup, setContractMarkup, contractTerms, setContractTerms, handleGenerateContract, getContractHTML, setPreviewHTML } = props;
-
-    return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>📝 {t('contract', 'Corporate Contract')}</h1>
-        </div>
-        <div style={styles.card}>
-          <form onSubmit={handleGenerateContract}>
-            <div style={styles.formGroup}>
-              <label style={styles.formLabel}>Corporate Name *</label>
-              <input 
-                style={styles.formInput} 
-                value={contractCorpName || ''} 
-                onChange={e => setContractCorpName(e.target.value)}
-                required
-                placeholder="Enter corporate name"
-              />
-            </div>
-            <div style={styles.formRow}>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>Contract Type</label>
-                <select 
-                  style={styles.select} 
-                  value={contractType || 'Standard'} 
-                  onChange={e => setContractType(e.target.value)}
-                  style={{ ...styles.formInput }}
-                >
-                  <option value="Standard">Standard</option>
-                  <option value="Premium">Premium</option>
-                  <option value="VIP">VIP</option>
-                </select>
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>Markup %</label>
-                <input 
-                  type="number"
-                  style={styles.formInput} 
-                  value={contractMarkup || '10'} 
-                  onChange={e => setContractMarkup(e.target.value)}
-                  min="0"
-                  max="100"
-                />
-              </div>
-            </div>
-            <div style={styles.formGroup}>
-              <label style={styles.formLabel}>Terms & Conditions</label>
-              <textarea 
-                style={{ ...styles.formInput, minHeight: '150px', resize: 'vertical' }} 
-                value={contractTerms || ''} 
-                onChange={e => setContractTerms(e.target.value)}
-                placeholder="Enter contract terms..."
-              />
-            </div>
-            <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, padding: '12px 30px' }}>
-              📄 Generate Contract
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
-
-  // ═══════════ OFFER PAGE ═══════════
-  if (page === 'offer') {
-    const { contractCorpName, setContractCorpName, contractType, setContractType, contractMarkup, setContractMarkup, contractTerms, setContractTerms, handleGenerateOffer, setPreviewHTML } = props;
-
-    return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>🎁 {t('offer', 'Corporate Offer')}</h1>
-        </div>
-        <div style={styles.card}>
-          <form onSubmit={handleGenerateOffer}>
-            <div style={styles.formGroup}>
-              <label style={styles.formLabel}>Corporate Name *</label>
-              <input 
-                style={styles.formInput} 
-                value={contractCorpName || ''} 
-                onChange={e => setContractCorpName(e.target.value)}
-                required
-                placeholder="Enter corporate name"
-              />
-            </div>
-            <div style={styles.formRow}>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>Offer Type</label>
-                <select 
-                  style={styles.formInput}
-                  value={contractType || 'Standard'} 
-                  onChange={e => setContractType(e.target.value)}
-                >
-                  <option value="Standard">Standard</option>
-                  <option value="Premium">Premium</option>
-                  <option value="VIP">VIP</option>
-                </select>
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>Discount / Markup %</label>
-                <input 
-                  type="number"
-                  style={styles.formInput} 
-                  value={contractMarkup || '10'} 
-                  onChange={e => setContractMarkup(e.target.value)}
-                />
-              </div>
-            </div>
-            <div style={styles.formGroup}>
-              <label style={styles.formLabel}>Offer Details</label>
-              <textarea 
-                style={{ ...styles.formInput, minHeight: '150px', resize: 'vertical' }} 
-                value={contractTerms || ''} 
-                onChange={e => setContractTerms(e.target.value)}
-                placeholder="Enter offer details, inclusions, pricing..."
-              />
-            </div>
-            <button type="submit" style={{ ...styles.btn, ...styles.btnSuccess, padding: '12px 30px' }}>
-              🎁 Generate Offer
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
-
-  // ═══════════ SUPERADMIN PAGE ═══════════
-  if (page === 'superadmin') {
-    if (userProfile?.role !== 'SuperAdmin') {
-      return (
-        <div style={styles.container}>
-          <div style={styles.card}>
-            <div style={styles.emptyState}>
-              <div style={styles.emptyIcon}>🔒</div>
-              <h2 style={{ color: '#FCA5A5', marginBottom: '10px' }}>Access Denied</h2>
-              <p style={{ color: '#94A3B8' }}>You don't have SuperAdmin permissions.</p>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>👑 {t('superadmin', 'SuperAdmin')}</h1>
-        </div>
-        <div style={styles.card}>
-          <div style={styles.emptyState}>
-            <div style={styles.emptyIcon}>👑</div>
-            <h2 style={{ color: '#FBBF24', marginBottom: '15px' }}>SuperAdmin Panel</h2>
-            <p style={{ color: '#94A3B8', maxWidth: '500px', margin: '0 auto', lineHeight: '1.6' }}>
-              SuperAdmin functions are available. Manage tenants, users, and system settings from here.
-            </p>
-            <div style={{ 
-              marginTop: '20px', 
-              padding: '15px', 
-              background: '#0F172A', 
-              borderRadius: '8px',
-              textAlign: 'left',
-              maxWidth: '400px',
-              margin: '20px auto 0'
-            }}>
-              <div style={{ color: '#94A3B8', fontSize: '12px', marginBottom: '8px' }}>Current User</div>
-              <div style={{ color: '#E2E8F0', fontWeight: '600' }}>{userProfile?.email}</div>
-              <div style={{ color: '#60A5FA', fontSize: '13px', marginTop: '4px' }}>Role: {userProfile?.role}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ═══════════ PROFITABILITY PAGE ═══════════
-  if (page === 'profitability') {
-    const invoices = (data.invoices || []).filter(i => !i.invoice_no?.startsWith('REF-'));
-    
-    // By Airline
-    const airlineProfit = {};
-    invoices.forEach(i => {
-      if (i.airline) {
-        if (!airlineProfit[i.airline]) airlineProfit[i.airline] = { revenue: 0, cost: 0, profit: 0, count: 0 };
-        airlineProfit[i.airline].revenue += i.total_sell || 0;
-        airlineProfit[i.airline].cost += i.total_cost || 0;
-        airlineProfit[i.airline].profit += i.profit || 0;
-        airlineProfit[i.airline].count += 1;
+    const getExportData = (type) => {
+      switch(type) {
+        case 'sales': return filterData((data.invoices || []).filter(i => !i.invoice_no?.startsWith('REF-')), 'invoice_date').map(i => ({ Date: i.invoice_date, InvNo: i.invoice_no, Customer: i.customers?.name || i.corporates?.name, Total: i.total, Due: i.due_amount }));
+        case 'portals': return (data.portals || []).map(p => ({ Portal: p.name, Balance: p.current_balance }));
+        case 'vendors': return (data.vendors || []).map(v => ({ Vendor: v.name, Phone: v.phone, Balance: v.balance }));
+        case 'salary': return filterData(data.payroll || [], 'month').map(p => ({ Employee: p.employees?.name, Month: p.month, Amount: p.salary || p.amount, Mode: p.payment_mode }));
+        case 'expenses': return filterData(data.expenses || [], 'expense_date').map(e => ({ Date: e.expense_date, Type: e.expense_type, Description: e.description, Amount: e.amount }));
+        case 'customers': return (data.customers || []).map(c => ({ Name: c.name, Phone: c.phone, Credit: c.store_credit }));
+        case 'creditors': return (data.creditors || []).map(c => ({ Name: c.name, Phone: c.phone, Address: c.address }));
+        case 'credit': return (data.customers || []).filter(c => (c.store_credit || 0) > 0).map(c => ({ Name: c.name, AvailableCredit: c.store_credit }));
+        case 'branches': return (data.branches || []).map(b => ({ Name: b.name, Location: b.location, Manager: b.manager }));
+        case 'cash': return filterData((data.cashbook || []).filter(c => c.type?.includes('Cash')), 'trans_date').map(c => ({ Date: c.trans_date, Description: c.description, Amount: c.amount, Type: c.type }));
+        case 'bank': return filterData((data.cashbook || []).filter(c => c.type?.includes('Bank')), 'trans_date').map(c => ({ Date: c.trans_date, Description: c.description, Amount: c.amount, Type: c.type }));
+        default: return [];
       }
-    });
+    };
 
-    // By Employee
-    const empProfit = {};
-    invoices.forEach(i => {
-      const empName = i.employees?.name || 'Unassigned';
-      if (!empProfit[empName]) empProfit[empName] = { revenue: 0, profit: 0, count: 0 };
-      empProfit[empName].revenue += i.total || 0;
-      empProfit[empName].profit += i.profit || 0;
-      empProfit[empName].count += 1;
-    });
-
-    const totalProfit = invoices.reduce((s, i) => s + (i.profit || 0), 0);
-    const avgMargin = invoices.length > 0 ? (totalProfit / invoices.reduce((s, i) => s + (i.total || 0), 0) * 100) : 0;
+    const renderStatementTable = () => {
+      switch(statementType) {
+        case 'sales': {
+          const items = filterData((data.invoices || []).filter(i => !i.invoice_no?.startsWith('REF-')), 'invoice_date');
+          return (
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
+              <thead><tr><th style={styles.tableHeader}>Date</th><th style={styles.tableHeader}>Inv No</th><th style={styles.tableHeader}>Customer</th><th style={{ ...styles.tableHeader, textAlign: 'right' }}>Total</th><th style={{ ...styles.tableHeader, textAlign: 'right' }}>Due</th></tr></thead>
+              <tbody>{items.map(i => (<tr key={i.id} style={{ borderBottom: '1px solid #1E293B' }}><td style={styles.tableCell}>{i.invoice_date}</td><td style={{...styles.tableCell, color: '#60A5FA'}}>{i.invoice_no}</td><td style={styles.tableCell}>{i.customers?.name || i.corporates?.name || 'N/A'}</td><td style={{...styles.tableCell, textAlign: 'right', color: '#34D399'}}>{(i.total || 0).toFixed(2)}</td><td style={{...styles.tableCell, textAlign: 'right', color: (i.due_amount || 0) > 0 ? '#FCA5A5' : '#34D399', fontWeight: 'bold'}}>{(i.due_amount || 0).toFixed(2)}</td></tr>))}</tbody>
+            </table>
+          );
+        }
+        case 'portals': return (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr><th style={styles.tableHeader}>Portal</th><th style={{ ...styles.tableHeader, textAlign: 'right' }}>Balance (SAR)</th></tr></thead>
+            <tbody>{(data.portals || []).map(p => (<tr key={p.id} style={{ borderBottom: '1px solid #1E293B' }}><td style={styles.tableCell}>{p.name}</td><td style={{...styles.tableCell, textAlign: 'right', fontWeight: 'bold', color: (p.current_balance || 0) < 0 ? '#FCA5A5' : '#34D399'}}>{(p.current_balance || 0).toFixed(2)}</td></tr>))}</tbody>
+          </table>
+        );
+        case 'vendors': return (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr><th style={styles.tableHeader}>Vendor</th><th style={styles.tableHeader}>Phone</th><th style={{ ...styles.tableHeader, textAlign: 'right' }}>Balance</th></tr></thead>
+            <tbody>{(data.vendors || []).map(v => (<tr key={v.id} style={{ borderBottom: '1px solid #1E293B' }}><td style={styles.tableCell}>{v.name}</td><td style={styles.tableCell}>{v.phone}</td><td style={{...styles.tableCell, textAlign: 'right'}}>{(v.balance || 0).toFixed(2)}</td></tr>))}</tbody>
+          </table>
+        );
+        case 'salary': return (
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+            <thead><tr><th style={styles.tableHeader}>Employee</th><th style={styles.tableHeader}>Month</th><th style={{ ...styles.tableHeader, textAlign: 'right' }}>Amount</th><th style={styles.tableHeader}>Mode</th></tr></thead>
+            <tbody>{(data.payroll || []).map(p => (<tr key={p.id} style={{ borderBottom: '1px solid #1E293B' }}><td style={styles.tableCell}>{p.employees?.name || 'N/A'}</td><td style={styles.tableCell}>{p.month}</td><td style={{...styles.tableCell, textAlign: 'right', color: '#34D399'}}>{(p.salary || p.amount || 0).toFixed(2)}</td><td style={styles.tableCell}>{p.payment_mode || 'Cash'}</td></tr>))}</tbody>
+          </table>
+        );
+        case 'expenses': return (
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+            <thead><tr><th style={styles.tableHeader}>Date</th><th style={styles.tableHeader}>Type</th><th style={styles.tableHeader}>Description</th><th style={{ ...styles.tableHeader, textAlign: 'right' }}>Amount</th></tr></thead>
+            <tbody>{(data.expenses || []).map(e => (<tr key={e.id} style={{ borderBottom: '1px solid #1E293B' }}><td style={styles.tableCell}>{e.expense_date}</td><td style={styles.tableCell}>{e.expense_type}</td><td style={styles.tableCell}>{e.description}</td><td style={{...styles.tableCell, textAlign: 'right', color: '#FCA5A5'}}>{(e.amount || 0).toFixed(2)}</td></tr>))}</tbody>
+          </table>
+        );
+        case 'customers': return (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr><th style={styles.tableHeader}>Name</th><th style={styles.tableHeader}>Phone</th><th style={{ ...styles.tableHeader, textAlign: 'right' }}>Credit</th></tr></thead>
+            <tbody>{(data.customers || []).map(c => (<tr key={c.id} style={{ borderBottom: '1px solid #1E293B' }}><td style={styles.tableCell}>{c.name}</td><td style={styles.tableCell}>{c.phone}</td><td style={{...styles.tableCell, textAlign: 'right'}}>{(c.store_credit || 0).toFixed(2)}</td></tr>))}</tbody>
+          </table>
+        );
+        case 'creditors': return (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr><th style={styles.tableHeader}>Name</th><th style={styles.tableHeader}>Phone</th><th style={styles.tableHeader}>Address</th></tr></thead>
+            <tbody>{(data.creditors || []).map(c => (<tr key={c.id} style={{ borderBottom: '1px solid #1E293B' }}><td style={styles.tableCell}>{c.name}</td><td style={styles.tableCell}>{c.phone}</td><td style={styles.tableCell}>{c.address}</td></tr>))}</tbody>
+          </table>
+        );
+        case 'credit': return (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr><th style={styles.tableHeader}>Name</th><th style={{ ...styles.tableHeader, textAlign: 'right' }}>Available Credit</th></tr></thead>
+            <tbody>{(data.customers || []).filter(c => (c.store_credit || 0) > 0).map(c => (<tr key={c.id} style={{ borderBottom: '1px solid #1E293B' }}><td style={styles.tableCell}>{c.name}</td><td style={{...styles.tableCell, textAlign: 'right', color: '#34D399', fontWeight: 'bold'}}>{(c.store_credit || 0).toFixed(2)}</td></tr>))}</tbody>
+          </table>
+        );
+        case 'branches': return (
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+            <thead><tr><th style={styles.tableHeader}>Name</th><th style={styles.tableHeader}>Location</th><th style={styles.tableHeader}>Manager</th></tr></thead>
+            <tbody>{(data.branches || []).map(b => (<tr key={b.id} style={{ borderBottom: '1px solid #1E293B' }}><td style={styles.tableCell}>{b.name}</td><td style={styles.tableCell}>{b.location}</td><td style={styles.tableCell}>{b.manager}</td></tr>))}</tbody>
+          </table>
+        );
+        case 'cash': return (
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+            <thead><tr><th style={styles.tableHeader}>Date</th><th style={styles.tableHeader}>Description</th><th style={{ ...styles.tableHeader, textAlign: 'right' }}>Amount</th></tr></thead>
+            <tbody>{(data.cashbook || []).filter(c => c.type?.includes('Cash')).map(c => (<tr key={c.id} style={{ borderBottom: '1px solid #1E293B' }}><td style={styles.tableCell}>{c.trans_date}</td><td style={styles.tableCell}>{c.description}</td><td style={{...styles.tableCell, textAlign: 'right', color: c.type?.includes('In') ? '#34D399' : '#FCA5A5'}}>{(c.amount || 0).toFixed(2)}</td></tr>))}</tbody>
+          </table>
+        );
+        case 'bank': return (
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+            <thead><tr><th style={styles.tableHeader}>Date</th><th style={styles.tableHeader}>Description</th><th style={{ ...styles.tableHeader, textAlign: 'right' }}>Amount</th></tr></thead>
+            <tbody>{(data.cashbook || []).filter(c => c.type?.includes('Bank')).map(c => (<tr key={c.id} style={{ borderBottom: '1px solid #1E293B' }}><td style={styles.tableCell}>{c.trans_date}</td><td style={styles.tableCell}>{c.description}</td><td style={{...styles.tableCell, textAlign: 'right', color: c.type?.includes('In') ? '#34D399' : '#FCA5A5'}}>{(c.amount || 0).toFixed(2)}</td></tr>))}</tbody>
+          </table>
+        );
+        default: return <p style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>Select a statement type</p>;
+      }
+    };
 
     return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>💰 {t('profitability', 'Profitability')}</h1>
-        </div>
-
-        <div style={styles.statsGrid}>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Total Profit</div>
-            <div style={{ ...styles.statValue, color: '#34D399' }}>{fmt(totalProfit)}</div>
+      <div style={{ padding: '20px', background: '#0F172A', minHeight: '100vh', color: '#E2E8F0' }}>
+        <h2 style={{ color: '#FBBF24', marginBottom: '20px' }}>📑 {tr?.statements || 'Statements'}</h2>
+        
+        {/* Date Filters */}
+        <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', flexWrap: 'wrap', background: '#1E293B', padding: '20px', borderRadius: '12px', border: '1px solid #334155' }}>
+          <div>
+            <label style={styles.label}>From Date</label>
+            <input type="date" value={repDate.from} onChange={e => setRepDate({...repDate, from: e.target.value})} style={{...styles.input, maxWidth: '200px'}} />
           </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Average Margin</div>
-            <div style={{ ...styles.statValue, color: '#FBBF24' }}>{avgMargin.toFixed(2)}%</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Airlines Tracked</div>
-            <div style={styles.statValue}>{Object.keys(airlineProfit).length}</div>
+          <div>
+            <label style={styles.label}>To Date</label>
+            <input type="date" value={repDate.to} onChange={e => setRepDate({...repDate, to: e.target.value})} style={{...styles.input, maxWidth: '200px'}} />
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-          {/* By Airline */}
-          <div style={styles.card}>
-            <h3 style={{ color: '#FBBF24', marginBottom: '15px', fontSize: '16px' }}>✈️ Profit by Airline</h3>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>Airline</th>
-                    <th style={{ ...styles.th, textAlign: 'right' }}>Revenue</th>
-                    <th style={{ ...styles.th, textAlign: 'right' }}>Profit</th>
-                    <th style={{ ...styles.th, textAlign: 'right' }}>Margin</th>
-                    <th style={{ ...styles.th, textAlign: 'center' }}>Count</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(airlineProfit)
-                    .sort((a, b) => b[1].profit - a[1].profit)
-                    .map(([airline, d]) => {
-                      const margin = d.revenue > 0 ? (d.profit / d.revenue * 100) : 0;
-                      return (
-                        <tr key={airline}>
-                          <td style={{ ...styles.td, fontWeight: '600' }}>{airline}</td>
-                          <td style={styles.tdRight}>{fmt(d.revenue)}</td>
-                          <td style={{ ...styles.tdRight, color: d.profit >= 0 ? '#34D399' : '#FCA5A5' }}>{fmt(d.profit)}</td>
-                          <td style={{ ...styles.tdRight, color: margin >= 10 ? '#34D399' : '#FBBF24' }}>{margin.toFixed(1)}%</td>
-                          <td style={styles.tdCenter}>{d.count}</td>
-                        </tr>
-                      );
-                    })}
-                </tbody>
-              </table>
-            </div>
-          </div>
+        {/* Statement Type Tabs */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
+          {tabs.map(t => (
+            <button key={t} onClick={() => setStatementType(t)} style={{...styles.tabBtn, ...(statementType === t && styles.tabBtnActive)}}>
+              {t.charAt(0).toUpperCase() + t.slice(1)}
+            </button>
+          ))}
+        </div>
 
-          {/* By Employee */}
-          <div style={styles.card}>
-            <h3 style={{ color: '#FBBF24', marginBottom: '15px', fontSize: '16px' }}>👨‍💼 Profit by Employee</h3>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>Employee</th>
-                    <th style={{ ...styles.th, textAlign: 'right' }}>Revenue</th>
-                    <th style={{ ...styles.th, textAlign: 'right' }}>Profit</th>
-                    <th style={{ ...styles.th, textAlign: 'center' }}>Invoices</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(empProfit)
-                    .sort((a, b) => b[1].profit - a[1].profit)
-                    .map(([emp, d]) => (
-                      <tr key={emp}>
-                        <td style={{ ...styles.td, fontWeight: '600' }}>{emp}</td>
-                        <td style={styles.tdRight}>{fmt(d.revenue)}</td>
-                        <td style={{ ...styles.tdRight, color: d.profit >= 0 ? '#34D399' : '#FCA5A5' }}>{fmt(d.profit)}</td>
-                        <td style={styles.tdCenter}>{d.count}</td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
+        {/* Statement Content */}
+        <div style={{ background: '#1E293B', borderRadius: '12px', overflow: 'hidden', border: '1px solid #334155' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', borderBottom: '1px solid #334155' }}>
+            <h3 style={{ margin: 0, color: '#FBBF24', textTransform: 'capitalize' }}>{statementType} Statement</h3>
+            <button onClick={() => exportToExcel(getExportData(statementType), `${statementType}Statement`)} style={styles.btnSuccess}>📥 Export CSV</button>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            {renderStatementTable()}
           </div>
         </div>
       </div>
     );
   }
 
-  // ═══════════ FALLBACK ═══════════
+  // ═══════════════════════════════════════════════════════════════
+  // FALLBACK
+  // ═══════════════════════════════════════════════════════════════
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <div style={styles.emptyState}>
-          <div style={styles.emptyIcon}>🚧</div>
-          <h2 style={{ color: '#FBBF24', marginBottom: '10px' }}>Page Under Development</h2>
-          <p style={{ color: '#94A3B8' }}>{page}</p>
-          <button 
-            style={{ ...styles.btn, ...styles.btnPrimary, marginTop: '20px' }} 
-            onClick={() => setPage('dashboard')}
-          >
-            ← Back to Dashboard
-          </button>
-        </div>
+    <div style={{ padding: '20px', background: '#0F172A', minHeight: '100vh', color: '#E2E8F0', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: '80px', marginBottom: '20px' }}>🚧</div>
+        <h2 style={{ color: '#FBBF24', marginBottom: '10px' }}>Page Under Development</h2>
+        <p style={{ color: '#94A3B8', marginBottom: '20px' }}>{page}</p>
+        <button onClick={() => setPage('dashboard')} style={{ ...styles.btnPrimary, width: 'auto', padding: '12px 30px' }}>
+          ← Back to Dashboard
+        </button>
       </div>
     </div>
   );
