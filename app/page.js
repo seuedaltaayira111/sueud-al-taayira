@@ -11,13 +11,11 @@ export default function Home() {
   const forceOpen = useRef(false);
   const t = (key, fallback) => erp.tr?.[key] || fallback || key;
 
-  /* ═══ FORCE OPEN AFTER 5 SEC ═══ */
   useEffect(() => {
     const timer = setTimeout(() => { forceOpen.current = true; }, 5000);
     return () => clearTimeout(timer);
   }, []);
 
-  /* ═══ KEYBOARD SHORTCUTS ═══ */
   useEffect(() => {
     const h = (e) => {
       if (e.altKey && e.key.toLowerCase() === 'n') { e.preventDefault(); erp.setPage?.('create'); }
@@ -28,15 +26,13 @@ export default function Home() {
     return () => window.removeEventListener('keydown', h);
   }, [erp.setPage]);
 
-  /* ═══ PAGE TITLE ═══ */
   useEffect(() => {
-    const pageTitle = erp.menu?.find(m => m.id === erp.page)?.label || 'Dashboard';
-    document.title = pageTitle + ' | SUEUD AL TAAYIRA ERP';
+    const pt = erp.menu?.find(m => m.id === erp.page)?.label || 'Dashboard';
+    document.title = pt + ' | SUEUD AL TAAYIRA ERP';
   }, [erp.page, erp.menu]);
 
-  /* ═══ ONLINE STATUS ═══ */
   useEffect(() => {
-    const u = () => { setIsOnline(navigator.onLine); };
+    const u = () => setIsOnline(navigator.onLine);
     window.addEventListener('online', u);
     window.addEventListener('offline', u);
     return () => { window.removeEventListener('online', u); window.removeEventListener('offline', u); };
@@ -52,14 +48,15 @@ export default function Home() {
           <p style={{ color:'#CBD5E1', fontSize:'14px', lineHeight:'1.8', background:'rgba(255,255,255,0.05)', padding:'20px', borderRadius:'12px', border:'1px solid #334155', wordBreak:'break-word' }}>{erp.initError}</p>
           <div style={{ marginTop:'20px', display:'flex', gap:'10px', justifyContent:'center', flexWrap:'wrap' }}>
             <button onClick={() => window.location.href = '/login'} style={{ padding:'12px 30px', background:'#F59E0B', color:'#0F172A', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'bold', fontSize:'15px' }}>Go to Login →</button>
-            <button onClick={() => window.location.reload()} style={{ padding:'12px 30px', background:'transparent', color:'#94A3B8', border:'1px solid #475569', borderRadius:'8px', cursor:'pointer', fontWeight:'600', fontSize:'15px' }}>🔄 Retry</button>
+            <button onClick={() => { forceOpen.current = true; window.location.reload(); }} style={{ padding:'12px 30px', background:'#2563EB', color:'#fff', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'bold', fontSize:'15px' }}>⚡ Force Open</button>
+            <button onClick={() => { if (window.confirm('Clear cache and reload?')) { localStorage.clear(); window.location.reload(); }} style={{ padding:'12px 30px', background:'transparent', color:'#94A3B8', border:'1px solid #475569', borderRadius:'8px', cursor:'pointer', fontWeight:'600', fontSize:'15px' }}>🔄 Clear Cache & Retry</button>
           </div>
         </div>
       </div>
     );
   }
 
-  /* ═══ LOADING — ONLY check user auth, NOT profile ═══ */
+  /* ═══ LOADING — ONLY auth check, NOT profile ═══ */
   if (!forceOpen.current && !erp.user) {
     return (
       <div style={{ display:'flex', justifyContent:'center', alignItems:'center', height:'100vh', fontFamily:"'Poppins',sans-serif", background:'linear-gradient(135deg,#0F172A,#1E293B)', color:'#F59E0B' }}>
@@ -67,8 +64,8 @@ export default function Home() {
           <style>{'@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}'}</style>
           <div style={{ fontSize:'60px', marginBottom:'20px', animation:'spin 2s linear infinite' }}>✈️</div>
           <h2>Loading ERP System...</h2>
-          <p style={{ color:'#64748B', fontSize:'12px', marginTop:'10px' }}>Preparing your workspace</p>
-          <button onClick={() => { forceOpen.current = true; window.location.reload(); }} style={{ marginTop:'25px', padding:'10px 24px', background:'rgba(255,255,255,0.1)', color:'#94A3B8', border:'1px solid #334155', borderRadius:'8px', cursor:'pointer', fontSize:'13px', fontWeight:'600' }}>Skip Loading ⚡</button>
+          <p style={{ color:'#64748B', fontSize:'12px', marginTop:'10px' }}>Authenticating...</p>
+          <button onClick={() => { forceOpen.current = true; window.location.reload(); }} style={{ marginTop:'25px', padding:'10px 24px', background:'rgba(255,255,255,0.1)', color:'#94A3B8', border:'1px solid #334155', borderRadius:'8px', cursor:'pointer', fontSize:'13px', fontWeight:'600' }}>Skip ⚡</button>
         </div>
       </div>
     );
@@ -128,8 +125,13 @@ export default function Home() {
 
   return (
     <div dir={erp.lang === 'ar' ? 'rtl' : 'ltr'}>
+      {!isOnline && (
+        <div style={{ position:'fixed', top:0, left:0, right:0, background:'#EF4444', color:'white', textAlign:'center', padding:'10px', zIndex:10000, fontWeight:'bold' }}>
+          ⚠️ You are offline. Please check your internet connection.
+        </div>
+      )}
       {erp.toast && (
-        <div style={{ position:'fixed', top:'20px', right:'20px', background:'linear-gradient(135deg,#1E3A8A,#2563EB)', color:'#FBBF24', padding:'15px 25px', borderRadius:'12px', zIndex:10001, boxShadow:'0 5px 15px rgba(0,0,0,0.3)', fontWeight:'600', fontSize:'14px' }}>
+        <div style={{ position:'fixed', top:'20px', right:'20px', background:'linear-gradient(135deg,#1E3A8A,#2563EB)', color:'#FBBF24', padding:'15px 25px', borderRadius:'12px', zIndex:10001, boxShadow:'0 5px 15px rgba(0,0,0,0.3)', fontWeight:'600', fontSize:'14px', cursor:'pointer', onClick:()=>setToast(null) }}>
           {erp.toast}
         </div>
       )}
