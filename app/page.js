@@ -3,12 +3,22 @@
 import useERP from '@/hooks/useERP';
 import ERPLayout from '@/components/ERPLayout';
 import ERPViews from '@/components/ERPViews';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 export default function Home() {
   const erp = useERP();
   const [isOnline, setIsOnline] = useState(true);
+  const forceOpen = useRef(false);
   const t = (key, fallback) => erp.tr?.[key] || fallback || key;
+
+  /* ═══ SAFETY: 6 second baad force open — chahe kuch bhi ho ═══ */
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      forceOpen.current = true;
+      console.warn('[ERP] Safety timeout — forcing open');
+    }, 6000);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -22,7 +32,7 @@ export default function Home() {
 
   useEffect(() => {
     const pageTitle = erp.menu?.find(m => m.id === erp.page)?.label || 'Dashboard';
-    document.title = `${pageTitle} | SUEUD AL TAAYIRA ERP`;
+    document.title = pageTitle + ' | SUEUD AL TAAYIRA ERP';
   }, [erp.page, erp.menu]);
 
   useEffect(() => {
@@ -39,7 +49,7 @@ export default function Home() {
     };
   }, [erp.showToast]);
 
-  // ERROR SCREEN - shows what went wrong instead of white screen
+  /* ═══ ERROR SCREEN ═══ */
   if (erp.initError) {
     return (
       <div style={{ display:'flex', justifyContent:'center', alignItems:'center', height:'100vh', fontFamily:"'Poppins',sans-serif", background:'linear-gradient(135deg,#0F172A,#1E293B)', color:'#fff', padding:'40px' }}>
@@ -47,8 +57,9 @@ export default function Home() {
           <div style={{ fontSize:'60px', marginBottom:'20px' }}>⚠️</div>
           <h2 style={{ color:'#EF4444', marginBottom:'15px' }}>Initialization Error</h2>
           <p style={{ color:'#CBD5E1', fontSize:'14px', lineHeight:'1.8', background:'rgba(255,255,255,0.05)', padding:'20px', borderRadius:'12px', border:'1px solid #334155', wordBreak:'break-word' }}>{erp.initError}</p>
-          <div style={{ marginTop:'20px', display:'flex', gap:'10px', justifyContent:'center' }}>
+          <div style={{ marginTop:'20px', display:'flex', gap:'10px', justifyContent:'center', flexWrap:'wrap' }}>
             <button onClick={() => window.location.href = '/login'} style={{ padding:'12px 30px', background:'#F59E0B', color:'#0F172A', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'bold', fontSize:'15px' }}>Go to Login →</button>
+            <button onClick={() => { forceOpen.current = true; window.location.reload(); }} style={{ padding:'12px 30px', background:'#2563EB', color:'#fff', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'bold', fontSize:'15px' }}>⚡ Force Open</button>
             <button onClick={() => window.location.reload()} style={{ padding:'12px 30px', background:'transparent', color:'#94A3B8', border:'1px solid #475569', borderRadius:'8px', cursor:'pointer', fontWeight:'600', fontSize:'15px' }}>🔄 Retry</button>
           </div>
         </div>
@@ -56,26 +67,31 @@ export default function Home() {
     );
   }
 
-  // LOADING SCREEN
-  if (!erp.user || !erp.userProfile) {
+  /* ═══ LOADING SCREEN — with safety escape ═══ */
+  const isLoading = !forceOpen.current && !erp.user && !erp.userProfile;
+  if (isLoading) {
     return (
       <div style={{ display:'flex', justifyContent:'center', alignItems:'center', height:'100vh', fontFamily:"'Poppins',sans-serif", background:'linear-gradient(135deg,#0F172A,#1E293B)', color:'#F59E0B' }}>
         <div style={{ textAlign:'center' }}>
-          <style>{`@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}`}</style>
+          <style>{'@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}@keyframes pulse{0%,100%{opacity:0.4}50%{opacity:1}}'}</style>
           <div style={{ fontSize:'60px', marginBottom:'20px', animation:'spin 2s linear infinite' }}>✈️</div>
           <h2>Loading ERP System...</h2>
+          <p style={{ color:'#64748B', fontSize:'12px', marginTop:'10px', animation:'pulse 1.5s ease-in-out infinite' }}>Please wait while we prepare your workspace</p>
+          <button onClick={() => { forceOpen.current = true; window.location.reload(); }} style={{ marginTop:'25px', padding:'10px 24px', background:'rgba(255,255,255,0.1)', color:'#94A3B8', border:'1px solid #334155', borderRadius:'8px', cursor:'pointer', fontSize:'13px', fontWeight:'600' }}>Skip Loading ⚡</button>
         </div>
       </div>
     );
   }
 
-  // MAIN ERP
-  const isSuperAdmin = erp.userProfile?.role === 'SuperAdmin';
-  const isAdmin = erp.userProfile?.is_admin;
-  const canAccessHR = isAdmin || erp.userProfile.can_access_hr;
-  const canAccessBank = isAdmin || erp.userProfile.can_access_bank;
-  const canAccessInvoices = isAdmin || erp.userProfile.can_access_invoices;
-  const canAccessReports = isAdmin || erp.userProfile.can_access_reports;
+  /* ═══ MAIN ERP — even without full profile, open with safe defaults ═══ */
+  const profile = erp.userProfile || {};
+  const isSuperAdmin = profile.role === 'SuperAdmin';
+  const isAdmin = profile.is_admin || false;
+  const canAccessHR = isAdmin || profile.can_access_hr || false;
+  const canAccessBank = isAdmin || profile.can_access_bank || false;
+  const canAccessInvoices = isAdmin || profile.can_access_invoices || true;
+  const canAccessReports = isAdmin || profile.can_access_reports || false;
+  const canAccessSettings = isAdmin || profile.can_access_settings || false;
 
   const menu = [
     { id:'dashboard', label:t('dashboard','Dashboard'), show:true, section:'Main' },
@@ -115,7 +131,7 @@ export default function Home() {
     { id:'audit', label:t('audit','Audit Logs'), show:isAdmin, section:'Reports & Audit' },
     { id:'superadmin', label:t('superadmin','SuperAdmin'), show:isSuperAdmin, section:'System Admin' },
     { id:'users', label:t('users','Users'), show:isAdmin, section:'System Admin' },
-    { id:'settings', label:t('settings','Settings'), show:isAdmin || erp.userProfile.can_access_settings, section:'System Admin' },
+    { id:'settings', label:t('settings','Settings'), show:canAccessSettings, section:'System Admin' },
     { id:'profile', label:t('profile','Profile'), show:true, section:'System Admin' },
   ].filter(m => m.show);
 
@@ -126,8 +142,13 @@ export default function Home() {
           ⚠️ You are offline. Please check your internet connection.
         </div>
       )}
+      {!erp.userProfile && (
+        <div style={{ position:'fixed', top: isOnline ? 0 : 40, left:0, right:0, background:'#F59E0B', color:'#0F172A', textAlign:'center', padding:'8px', zIndex:9999, fontWeight:'600', fontSize:'13px' }}>
+          ⚠️ User profile not loaded — some features may be restricted. <span onClick={() => window.location.reload()} style={{ textDecoration:'underline', cursor:'pointer', marginLeft:'10px' }}>Retry</span>
+        </div>
+      )}
       {erp.toast && (
-        <div style={{ position:'fixed', top:'20px', right:'20px', background:'linear-gradient(135deg,#1E3A8A,#2563EB)', color:'#FBBF24', padding:'15px 25px', borderRadius:'12px', zIndex:9999, boxShadow:'0 5px 15px rgba(0,0,0,0.3)', fontWeight:'600', fontSize:'14px' }}>
+        <div style={{ position:'fixed', top: isOnline ? 0 : 40, right:'20px', background:'linear-gradient(135deg,#1E3A8A,#2563EB)', color:'#FBBF24', padding:'15px 25px', borderRadius:'12px', zIndex:10001, boxShadow:'0 5px 15px rgba(0,0,0,0.3)', fontWeight:'600', fontSize:'14px' }}>
           {erp.toast}
         </div>
       )}
