@@ -9,52 +9,38 @@ const translations = {
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   AIRLINE CHECK-IN URL MAPPER
+   AIRLINE CHECK-IN URL MAPPER — 35+ airlines supported
    ═══════════════════════════════════════════════════════════════════════════ */
 const getAirlineCheckInURL = (airline, pnr) => {
   if (!airline || !pnr) return null;
   const a = airline.toLowerCase();
   const urls = {
-    'saudia': `https://www.saudia.com/check-in?pnr=${pnr}`,
-    'sv': `https://www.saudia.com/check-in?pnr=${pnr}`,
-    'flynas': `https://www.flynas.com/en/manage-booking?ref=${pnr}`,
-    'xy': `https://www.flynas.com/en/manage-booking?ref=${pnr}`,
-    'flyadeal': `https://www.flyadeal.com/en/manage-booking?ref=${pnr}`,
-    'f3': `https://www.flyadeal.com/en/manage-booking?ref=${pnr}`,
-    'gulf air': `https://www.gulfair.com/check-in?pnr=${pnr}`,
-    'gf': `https://www.gulfair.com/check-in?pnr=${pnr}`,
-    'emirates': `https://www.emirates.com/manage-booking/retrieve-check-in?pnr=${pnr}`,
-    'ek': `https://www.emirates.com/manage-booking/retrieve-check-in?pnr=${pnr}`,
-    'etihad': `https://www.etihad.com/en-us/manage-booking/check-in?pnr=${pnr}`,
-    'ey': `https://www.etihad.com/en-us/manage-booking/check-in?pnr=${pnr}`,
-    'qatar': `https://www.qatarairways.com/en/check-in.html?pnr=${pnr}`,
-    'qr': `https://www.qatarairways.com/en/check-in.html?pnr=${pnr}`,
-    'egyptair': `https://www.egyptair.com/en/Manage-Booking/Check-In?pnr=${pnr}`,
-    'ms': `https://www.egyptair.com/en/Manage-Booking/Check-In?pnr=${pnr}`,
-    'royal jordanian': `https://www.rj.com/en/manage-booking?pnr=${pnr}`,
-    'rj': `https://www.rj.com/en/manage-booking?pnr=${pnr}`,
-    'middle east': `https://www.meairlines.com/en/ManageBooking?pnr=${pnr}`,
-    'me': `https://www.meairlines.com/en/ManageBooking?pnr=${pnr}`,
-    'pakistan': `https://www.piac.com.pk/manage-booking?pnr=${pnr}`,
-    'pk': `https://www.piac.com.pk/manage-booking?pnr=${pnr}`,
-    'oman air': `https://www.omanair.com/manage-booking?pnr=${pnr}`,
-    'wy': `https://www.omanair.com/manage-booking?pnr=${pnr}`,
-    'kuwait': `https://www.kuwaitairways.com/en/manage-booking?pnr=${pnr}`,
-    'kU': `https://www.kuwaitairways.com/en/manage-booking?pnr=${pnr}`,
-    'air arabia': `https://www.airarabia.com/manage-booking?pnr=${pnr}`,
-    'g9': `https://www.airarabia.com/manage-booking?pnr=${pnr}`,
-    'wizz air': `https://wizzair.com/en-gb/manage-booking?pnr=${pnr}`,
-    'w6': `https://wizzair.com/en-gb/manage-booking?pnr=${pnr}`,
-    'pegasus': `https://www.flypgs.com/en/manage-booking?pnr=${pnr}`,
-    'pc': `https://www.flypgs.com/en/manage-booking?pnr=${pnr}`,
-    'turkish': `https://www.turkishairlines.com/en-us/check-in?pnr=${pnr}`,
-    'tk': `https://www.turkishairlines.com/en-us/check-in?pnr=${pnr}`,
-    'indigo': `https://www.goindigo.in/manage-booking?pnr=${pnr}`,
-    '6e': `https://www.goindigo.in/manage-booking?pnr=${pnr}`,
-    'spicejet': `https://www.spicejet.com/manage-booking?pnr=${pnr}`,
-    'sg': `https://www.spicejet.com/manage-booking?pnr=${pnr}`,
-    'air india': `https://www.airindia.in/manage-booking?pnr=${pnr}`,
-    'ai': `https://www.airindia.in/manage-booking?pnr=${pnr}`,
+    'saudia':`https://www.saudia.com/check-in?pnr=${pnr}`,'sv':`https://www.saudia.com/check-in?pnr=${pnr}`,
+    'flynas':`https://www.flynas.com/en/manage-booking?ref=${pnr}`,'xy':`https://www.flynas.com/en/manage-booking?ref=${pnr}`,
+    'flyadeal':`https://www.flyadeal.com/en/manage-booking?ref=${pnr}`,'f3':`https://www.flyadeal.com/en/manage-booking?ref=${pnr}`,
+    'gulf air':`https://www.gulfair.com/check-in?pnr=${pnr}`,'gf':`https://www.gulfair.com/check-in?pnr=${pnr}`,
+    'emirates':`https://www.emirates.com/manage-booking/retrieve-check-in?pnr=${pnr}`,'ek':`https://www.emirates.com/manage-booking/retrieve-check-in?pnr=${pnr}`,
+    'etihad':`https://www.etihad.com/en-us/manage-booking/check-in?pnr=${pnr}`,'ey':`https://www.etihad.com/en-us/manage-booking/check-in?pnr=${pnr}`,
+    'qatar':`https://www.qatarairways.com/en/check-in.html?pnr=${pnr}`,'qr':`https://www.qatarairways.com/en/check-in.html?pnr=${pnr}`,
+    'egyptair':`https://www.egyptair.com/en/Manage-Booking/Check-In?pnr=${pnr}`,'ms':`https://www.egyptair.com/en/Manage-Booking/Check-In?pnr=${pnr}`,
+    'royal jordanian':`https://www.rj.com/en/manage-booking?pnr=${pnr}`,'rj':`https://www.rj.com/en/manage-booking?pnr=${pnr}`,
+    'middle east':`https://www.meairlines.com/en/ManageBooking?pnr=${pnr}`,'me':`https://www.meairlines.com/en/ManageBooking?pnr=${pnr}`,
+    'pakistan':`https://www.piac.com.pk/manage-booking?pnr=${pnr}`,'pk':`https://www.piac.com.pk/manage-booking?pnr=${pnr}`,
+    'oman air':`https://www.omanair.com/manage-booking?pnr=${pnr}`,'wy':`https://www.omanair.com/manage-booking?pnr=${pnr}`,
+    'kuwait':`https://www.kuwaitairways.com/en/manage-booking?pnr=${pnr}`,
+    'air arabia':`https://www.airarabia.com/manage-booking?pnr=${pnr}`,'g9':`https://www.airarabia.com/manage-booking?pnr=${pnr}`,
+    'wizz air':`https://wizzair.com/en-gb/manage-booking?pnr=${pnr}`,'w6':`https://wizzair.com/en-gb/manage-booking?pnr=${pnr}`,
+    'pegasus':`https://www.flypgs.com/en/manage-booking?pnr=${pnr}`,'pc':`https://www.flypgs.com/en/manage-booking?pnr=${pnr}`,
+    'turkish':`https://www.turkishairlines.com/en-us/check-in?pnr=${pnr}`,'tk':`https://www.turkishairlines.com/en-us/check-in?pnr=${pnr}`,
+    'indigo':`https://www.goindigo.in/manage-booking?pnr=${pnr}`,'6e':`https://www.goindigo.in/manage-booking?pnr=${pnr}`,
+    'spicejet':`https://www.spicejet.com/manage-booking?pnr=${pnr}`,'sg':`https://www.spicejet.com/manage-booking?pnr=${pnr}`,
+    'air india':`https://www.airindia.in/manage-booking?pnr=${pnr}`,'ai':`https://www.airindia.in/manage-booking?pnr=${pnr}`,
+    'air cairo':`https://www.aircairo.com/en/manage-booking?pnr=${pnr}`,
+    'nile air':`https://www.nileair.com/en/manage-booking?pnr=${pnr}`,'np':`https://www.nileair.com/en/manage-booking?pnr=${pnr}`,
+    'salam air':`https://www.salamair.com/manage-booking?pnr=${pnr}`,'ov':`https://www.salamair.com/manage-booking?pnr=${pnr}`,
+    'jazeera':`https://www.jazeeraairways.com/en/manage-booking?ref=${pnr}`,'j9':`https://www.jazeeraairways.com/en/manage-booking?ref=${pnr}`,
+    'flydubai':`https://www.flydubai.com/en/manage-booking?ref=${pnr}`,'fz':`https://www.flydubai.com/en/manage-booking?ref=${pnr}`,
+    '处女星':`https://www.virginatlantic.com/check-in?pnr=${pnr}`,'vs':`https://www.virginatlantic.com/check-in?pnr=${pnr}`,
   };
   for (const [key, url] of Object.entries(urls)) {
     if (a.includes(key)) return url;
@@ -63,7 +49,7 @@ const getAirlineCheckInURL = (airline, pnr) => {
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   AI-GENERATED FOOTER MESSAGES
+   AI-GENERATED FOOTER MESSAGES — 12 unique per invoice
    ═══════════════════════════════════════════════════════════════════════════ */
 const getAIMessage = (inv, lang = 'en') => {
   const messages = [
@@ -86,14 +72,21 @@ const getAIMessage = (inv, lang = 'en') => {
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   MAIN INVOICE HTML — FULL A4, BILINGUAL, COMPLETE DETAILS, AI FOOTER, QR CHECK-IN
+   INVOICE HTML — BARCODE(scan=check-in page) + QR(scan=invoice download page)
    ═══════════════════════════════════════════════════════════════════════════ */
 const getInvoiceHTML = (inv, s, lang = 'en') => {
   const st = s || {};
   const no = inv.invoice_no || 'N/A';
   const checkInURL = getAirlineCheckInURL(inv.airline, inv.pnr);
-  const qrData = checkInURL || `https://sueud-al-taayira.vercel.app/invoice/${no}`;
-  const qr = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrData)}`;
+  const invoicePageURL = `https://sueud-al-taayira.vercel.app/invoice/${no}`;
+
+  // BARCODE = check-in URL directly → scanning opens airline check-in page
+  const barcodeData = checkInURL || `https://www.google.com/search?q=${encodeURIComponent((inv.airline||'')+' check in '+(inv.pnr||''))}`;
+  const barcode = `https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(barcodeData)}&scale=2.5&height=50&barcolor=0c1d3a&backgroundcolor=ffffff&includetext=false`;
+
+  // QR = invoice page URL → scanning opens invoice page for download
+  const qr = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(invoicePageURL)}`;
+
   const ts = inv.total_sell || 0, disc = inv.discount || 0, sub = ts + disc;
   const vr = inv.vat > 0 && ts > 0 ? Math.round((inv.vat / ts) * 100) : 0;
   const vat = inv.vat || 0, tot = inv.total || 0, paid = inv.paid_amount || 0;
@@ -167,77 +160,81 @@ tbody tr:hover{background:#f8fafc}tbody tr:last-child td{border-bottom:none}
 .terms h4{font-size:10px;color:#64748b;margin:0 0 6px;text-transform:uppercase;letter-spacing:1px}
 .terms h4 span{font-family:'Cairo'}
 .terms p{font-size:9px;color:#94a3b8;line-height:1.8;margin:0}
-.ft{padding:16px 30px;background:linear-gradient(135deg,#f8fafc,#f1f5f9);display:flex;justify-content:space-between;align-items:center;border-top:2px solid #e2e8f0;gap:14px;margin-top:auto}
-.qr-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
-.qr img{height:70px;width:70px;border-radius:8px;border:2px solid #e2e8f0;padding:2px;background:#fff}
-.qr-label{font-size:8px;color:#64748b;font-weight:600;text-transform:uppercase;text-align:center;max-width:80px}
-.qr-label span{font-family:'Cairo';display:block}
-.ai-msg{text-align:center;flex:1;padding:10px 20px;background:linear-gradient(135deg,#eff6ff,#dbeafe);border-radius:10px;border:1px solid #93c5fd}
+.ft{padding:16px 30px;background:linear-gradient(135deg,#f8fafc,#f1f5f9);display:flex;justify-content:space-between;align-items:flex-start;border-top:2px solid #e2e8f0;gap:14px;margin-top:auto}
+.code-box{display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px;background:#fff;border:1px solid #e2e8f0;border-radius:8px}
+.code-box img{border-radius:4px}
+.barcode-img{height:48px;width:auto;min-width:240px;border:1px solid #e2e8f0;padding:2px 6px;background:#fff}
+.qr-img{height:60px;width:60px;border:2px solid #e2e8f0;padding:2px;background:#fff}
+.code-label{font-size:7px;font-weight:700;text-transform:uppercase;text-align:center;letter-spacing:0.3px;color:#475569;line-height:1.3;max-width:240px}
+.code-label span{font-family:'Cairo';display:block;font-size:8px;color:#0c1d3a}
+.code-label.checkin{color:#059669}
+.code-label.checkin span{color:#047857}
+.code-label.download{color:#2563eb}
+.code-label.download span{color:#1d4ed8}
+.ft-divider{width:1px;background:linear-gradient(to bottom,transparent,#cbd5e1,transparent);margin:0 6px;align-self:stretch;min-height:110px}
+.ai-msg{text-align:center;flex:1;padding:10px 16px;background:linear-gradient(135deg,#eff6ff,#dbeafe);border-radius:10px;border:1px solid #93c5fd}
 .ai-msg p{font-size:11px;color:#1e3a8a;margin:0;line-height:1.6;font-weight:500}
 .ai-msg p span{font-family:'Cairo';display:block;font-size:12px;margin-top:3px}
 .ai-label{font-size:8px;color:#3b82f6;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:4px}
-.ft-info{width:80px;text-align:center}
+.ft-info{width:90px;text-align:center;padding-top:4px}
 .ft-info p{font-size:8px;color:#94a3b8;margin:2px 0}
 @media print{body{background:#fff;padding:0;margin:0}.inv{border:none;border-radius:0;box-shadow:none}}
 </style></head><body>
 <div class="inv">
 <div class="hdr">
   <div class="cblk">
-    ${st.logo_url ? `<img src="${st.logo_url}" crossorigin="anonymous" class="logo"/>` : '<div class="logo" style="display:flex;align-items:center;justify-content:center;font-size:28px">✈️</div>'}
+    ${st.logo_url?`<img src="${st.logo_url}" crossorigin="anonymous" class="logo"/>`:'<div class="logo" style="display:flex;align-items:center;justify-content:center;font-size:28px">✈️</div>'}
     <div class="ct">
-      <h2>${st.company_name_ar || 'صعود الطائرة للسفر والسياحة'}</h2>
-      <h1>${st.company_name_en || 'SUEUD AL TAAYIRA TRAVEL & TOURISM'}</h1>
-      <p>${st.address_ar || 'Address'}<br/>${st.phone || ''} ${st.website ? '| ' + st.website : ''}</p>
+      <h2>${st.company_name_ar||'صعود الطائرة للسفر والسياحة'}</h2>
+      <h1>${st.company_name_en||'SUEUD AL TAAYIRA TRAVEL & TOURISM'}</h1>
+      <p>${st.address_ar||'Address'}<br/>${st.phone||''} ${st.website?'| '+st.website:''}</p>
     </div>
   </div>
   <div class="im">
     <h3>TAX INVOICE<span>فاتورة ضريبية</span></h3>
     <div class="mr"><span class="l">Inv No / رقم</span><span class="v">${no}</span></div>
-    <div class="mr"><span class="l">Date / التاريخ</span><span class="v">${inv.invoice_date || ''}</span></div>
-    <div class="mr"><span class="l">Booking / الحجز</span><span class="v">${inv.booking_date || ''}</span></div>
-    <div class="sb">${st2 === 'Unpaid' ? 'UNPAID / غير مدفوعة' : 'PAID / مدفوعة'}</div>
+    <div class="mr"><span class="l">Date / التاريخ</span><span class="v">${inv.invoice_date||''}</span></div>
+    <div class="mr"><span class="l">Booking / الحجز</span><span class="v">${inv.booking_date||''}</span></div>
+    <div class="sb">${st2==='Unpaid'?'UNPAID / غير مدفوعة':'PAID / مدفوعة'}</div>
   </div>
 </div>
 <div class="comp-det">
-  <div class="ci"><span class="cl">VAT No / رقم ضريبي</span><span class="cv">${st.vat_no || 'N/A'}</span></div>
-  <div class="ci"><span class="cl">CR No / رقم سجل</span><span class="cv">${st.cr_no || 'N/A'}</span></div>
-  <div class="ci"><span class="cl">License / رقم ترخيص</span><span class="cv">${st.license_no || 'N/A'}</span></div>
-  <div class="ci"><span class="cl">Tourism Lic. / ترخيص سياحة</span><span class="cv">${st.tourism_license_no || 'N/A'}</span></div>
+  <div class="ci"><span class="cl">VAT No / رقم ضريبي</span><span class="cv">${st.vat_no||'N/A'}</span></div>
+  <div class="ci"><span class="cl">CR No / رقم سجل</span><span class="cv">${st.cr_no||'N/A'}</span></div>
+  <div class="ci"><span class="cl">License / رقم ترخيص</span><span class="cv">${st.license_no||'N/A'}</span></div>
+  <div class="ci"><span class="cl">Tourism Lic. / ترخيص سياحة</span><span class="cv">${st.tourism_license_no||'N/A'}</span></div>
 </div>
 <div class="body">
   <div class="dg">
     <div class="ib">
-      <div class="sec-title">BILL TO / فاتورة إلى <span></span></div>
-      <div class="ir"><span class="l">Name / الاسم</span><span class="v">${inv.customers?.name || inv.corporates?.name || 'N/A'}</span></div>
-      <div class="ir"><span class="l">Phone / الهاتف</span><span class="v">${inv.customers?.phone || 'N/A'}</span></div>
-      ${inv.corporates?.vat_no ? `<div class="ir"><span class="l">VAT / ضريبي</span><span class="v">${inv.corporates.vat_no}</span></div>` : ''}
-      <div class="ir"><span class="l">Sales Person / موظف</span><span class="v">${inv.employees?.name || 'N/A'}</span></div>
+      <div class="sec-title">BILL TO / فاتورة إلى<span></span></div>
+      <div class="ir"><span class="l">Name / الاسم</span><span class="v">${inv.customers?.name||inv.corporates?.name||'N/A'}</span></div>
+      <div class="ir"><span class="l">Phone / الهاتف</span><span class="v">${inv.customers?.phone||'N/A'}</span></div>
+      ${inv.corporates?.vat_no?`<div class="ir"><span class="l">VAT / ضريبي</span><span class="v">${inv.corporates.vat_no}</span></div>`:''}
+      <div class="ir"><span class="l">Sales Person / موظف</span><span class="v">${inv.employees?.name||'N/A'}</span></div>
       <div class="ir"><span class="l">Passengers / الركاب</span><span class="v" style="font-size:10px;line-height:1.5">${pax}</span></div>
     </div>
     <div class="ib" style="border-left-color:#f59e0b;${isRTL?'border-left:1px solid #e2e8f0;border-right:4px solid #f59e0b':''}">
-      <div class="sec-title">FLIGHT DETAILS / تفاصيل الرحلة <span></span></div>
-      <div class="ir"><span class="l">Airline / الخطوط</span><span class="v">${inv.airline || 'N/A'}</span></div>
-      <div class="ir"><span class="l">Sector / القطاع</span><span class="v">${inv.flight_sector || 'N/A'}</span></div>
-      <div class="ir"><span class="l">Type / النوع</span><span class="v">${inv.flight_type || 'N/A'}</span></div>
-      <div class="ir"><span class="l">Journey / الرحلة</span><span class="v">${inv.flight_journey || 'N/A'}</span></div>
-      <div class="ir"><span class="l">PNR / رقم الحجز</span><span class="v" style="color:#2563eb;font-weight:700">${inv.pnr || 'N/A'}</span></div>
-      <div class="ir"><span class="l">Ticket No / رقم التذكرة</span><span class="v">${inv.ticket_no || 'N/A'}</span></div>
-      <div class="ir"><span class="l">Refundable / قابلة للاسترجاع</span><span class="v">${inv.refundable_status || 'N/A'}</span></div>
-      <div class="ir"><span class="l">Service / الخدمة</span><span class="v">${inv.service_type || 'N/A'}</span></div>
+      <div class="sec-title">FLIGHT DETAILS / تفاصيل الرحلة<span></span></div>
+      <div class="ir"><span class="l">Airline / الخطوط</span><span class="v">${inv.airline||'N/A'}</span></div>
+      <div class="ir"><span class="l">Sector / القطاع</span><span class="v">${inv.flight_sector||'N/A'}</span></div>
+      <div class="ir"><span class="l">Type / النوع</span><span class="v">${inv.flight_type||'N/A'}</span></div>
+      <div class="ir"><span class="l">Journey / الرحلة</span><span class="v">${inv.flight_journey||'N/A'}</span></div>
+      <div class="ir"><span class="l">PNR / رقم الحجز</span><span class="v" style="color:#2563eb;font-weight:700">${inv.pnr||'N/A'}</span></div>
+      <div class="ir"><span class="l">Ticket No / رقم التذكرة</span><span class="v">${inv.ticket_no||'N/A'}</span></div>
+      <div class="ir"><span class="l">Refundable / قابلة للاسترجاع</span><span class="v">${inv.refundable_status||'N/A'}</span></div>
+      <div class="ir"><span class="l">Service / الخدمة</span><span class="v">${inv.service_type||'N/A'}</span></div>
     </div>
   </div>
-  ${isRe ? `<div class="rb">
-    <div class="rt"><span>⚠️ PREVIOUS BOOKING / الحجز السابق</span><span>تفاصيل</span></div>
-    <div class="rg">
-      <div class="ri"><div class="l">Old Date / التاريخ</div><div class="v">${inv.old_booking_date || 'N/A'}</div></div>
-      <div class="ri"><div class="l">Old Airline / الخطوط</div><div class="v">${inv.old_airline || 'N/A'}</div></div>
-      <div class="ri"><div class="l">Old Sector / القطاع</div><div class="v">${inv.old_sector || 'N/A'}</div></div>
-      <div class="ri"><div class="l">Old PNR / الحجز</div><div class="v">${inv.old_pnr || 'N/A'}</div></div>
-      <div class="ri"><div class="l">Old Ticket / التذكرة</div><div class="v">${inv.old_ticket_no || 'N/A'}</div></div>
-      <div class="ri"><div class="l">Old Type / النوع</div><div class="v">${inv.old_flight_type || 'N/A'}</div></div>
-      <div class="rf"><div class="l">Original Fare / الأجرة الأصلية</div><div class="v">${parseFloat(inv.old_sell_price || 0).toFixed(2)} SAR</div></div>
-    </div>
-  </div>` : ''}
+  ${isRe?`<div class="rb"><div class="rt"><span>⚠️ PREVIOUS BOOKING / الحجز السابق</span><span>تفاصيل</span></div><div class="rg">
+    <div class="ri"><div class="l">Old Date / التاريخ</div><div class="v">${inv.old_booking_date||'N/A'}</div></div>
+    <div class="ri"><div class="l">Old Airline / الخطوط</div><div class="v">${inv.old_airline||'N/A'}</div></div>
+    <div class="ri"><div class="l">Old Sector / القطاع</div><div class="v">${inv.old_sector||'N/A'}</div></div>
+    <div class="ri"><div class="l">Old PNR / الحجز</div><div class="v">${inv.old_pnr||'N/A'}</div></div>
+    <div class="ri"><div class="l">Old Ticket / التذكرة</div><div class="v">${inv.old_ticket_no||'N/A'}</div></div>
+    <div class="ri"><div class="l">Old Type / النوع</div><div class="v">${inv.old_flight_type||'N/A'}</div></div>
+    <div class="rf"><div class="l">Original Fare / الأجرة الأصلية</div><div class="v">${parseFloat(inv.old_sell_price||0).toFixed(2)} SAR</div></div>
+  </div></div>`:''}
   <table>
     <thead><tr>
       <th>Description<br/><span>الوصف</span></th>
@@ -246,61 +243,66 @@ tbody tr:hover{background:#f8fafc}tbody tr:last-child td{border-bottom:none}
       <th class="r">Total<br/><span>الإجمالي</span></th>
     </tr></thead>
     <tbody>
-      <tr><td>${inv.sector || inv.service_type || 'Service'} / خدمة</td><td class="c">${inv.qty || 1}</td><td class="r">${up.toFixed(2)}</td><td class="r">${ts.toFixed(2)}</td></tr>
-      ${disc > 0 ? `<tr style="background:#f0fdf4"><td colspan="3" style="text-align:${isRTL?'left':'right'};color:#059669">Discount / خصم</td><td class="r" style="color:#059669">- ${disc.toFixed(2)}</td></tr>` : ''}
+      <tr><td>${inv.sector||inv.service_type||'Service'} / خدمة</td><td class="c">${inv.qty||1}</td><td class="r">${up.toFixed(2)}</td><td class="r">${ts.toFixed(2)}</td></tr>
+      ${disc>0?`<tr style="background:#f0fdf4"><td colspan="3" style="text-align:${isRTL?'left':'right'};color:#059669">Discount / خصم</td><td class="r" style="color:#059669">- ${disc.toFixed(2)}</td></tr>`:''}
     </tbody>
   </table>
   <div class="bs">
     <div class="pb">
-      <div class="sec-title">PAYMENT BREAKDOWN / تفصيل الدفع <span></span></div>
+      <div class="sec-title">PAYMENT BREAKDOWN / تفصيل الدفع<span></span></div>
       <div class="pr"><span>Subtotal / المجموع الفرعي</span><span style="font-weight:600">${sub.toFixed(2)} SAR</span></div>
-      ${disc > 0 ? `<div class="pr" style="color:#059669"><span>Discount / خصم</span><span>- ${disc.toFixed(2)} SAR</span></div>` : ''}
+      ${disc>0?`<div class="pr" style="color:#059669"><span>Discount / خصم</span><span>- ${disc.toFixed(2)} SAR</span></div>`:''}
       <div class="pr"><span>VAT (${vr}%) / ضريبة</span><span>${vat.toFixed(2)} SAR</span></div>
-      ${uc > 0 ? `<div class="pr" style="color:#7c3aed"><span>Credit Used / رصيد مستخدم</span><span>- ${uc.toFixed(2)} SAR</span></div>` : ''}
-      ${cr > 0 ? `<div class="pr" style="color:#ef4444"><span>Cash Returned / مردود</span><span>- ${cr.toFixed(2)} SAR</span></div>` : ''}
+      ${uc>0?`<div class="pr" style="color:#7c3aed"><span>Credit Used / رصيد مستخدم</span><span>- ${uc.toFixed(2)} SAR</span></div>`:''}
+      ${cr>0?`<div class="pr" style="color:#ef4444"><span>Cash Returned / مردود</span><span>- ${cr.toFixed(2)} SAR</span></div>`:''}
       <div class="pr" style="border-top:2px solid #cbd5e1;margin-top:6px;padding-top:6px;font-weight:700"><span>Paid (${pd}) / مدفوع</span><span style="color:#059669">${cp.toFixed(2)} SAR</span></div>
-      <div class="pr" style="font-weight:700;font-size:13px"><span>Due / المتبقي</span><span style="color:${due > 0 ? '#ef4444' : '#059669'}">${due.toFixed(2)} SAR</span></div>
+      <div class="pr" style="font-weight:700;font-size:13px"><span>Due / المتبقي</span><span style="color:${due>0?'#ef4444':'#059669'}">${due.toFixed(2)} SAR</span></div>
     </div>
     <div class="tb">
       <div class="tr"><span>Subtotal / المجموع الفرعي</span><span>${sub.toFixed(2)}</span></div>
-      ${disc > 0 ? `<div class="tr" style="color:#34d399"><span>Discount / خصم</span><span>- ${disc.toFixed(2)}</span></div>` : ''}
+      ${disc>0?`<div class="tr" style="color:#34d399"><span>Discount / خصم</span><span>- ${disc.toFixed(2)}</span></div>`:''}
       <div class="tr"><span>VAT (${vr}%) / ضريبة</span><span>${vat.toFixed(2)}</span></div>
       <div class="gt"><span>GRAND TOTAL / الإجمالي الكلي</span><span class="v">${tot.toFixed(2)} SAR</span></div>
     </div>
   </div>
   <div class="terms">
-    <h4>Terms & Conditions / الشروط والأحكام <span>الشروط</span></h4>
+    <h4>Terms & Conditions / الشروط والأحكام<span>الشروط</span></h4>
     <p>
       1. All bookings subject to airline/hotel terms. / جميع الحجوزات تخضع لشروط الخطوط/الفنادق.<br/>
       2. Cancellation policies vary by provider. / سياسات الإلغاء تختلف حسب المزود.<br/>
       3. Computer-generated - valid without signature. / مستند آلي - صالح بدون توقيع.<br/>
       4. Prices in SAR including VAT. / الأسعار بالريال شاملة الضريبة.<br/>
-      5. For queries: ${st.phone || 'contact our office'}. / للاستفسارات: ${st.phone || 'تواصل معنا'}.<br/>
+      5. For queries: ${st.phone||'contact our office'}. / للاستفسارات: ${st.phone||'تواصل معنا'}.<br/>
       6. This is an electronic invoice under Fatoorah regulations. / هذه فاتورة إلكترونية بموجب لوائح فاتورة.
     </p>
   </div>
 </div>
 <div class="ft">
-  <div class="qr-wrap">
-    <img src="${qr}" alt="QR" crossorigin="anonymous"/>
-    <div class="qr-label">${checkInURL ? 'SCAN TO CHECK-IN<br/><span>امسح للتسجيل</span>' : 'SCAN FOR DETAILS<br/><span>امسح للتفاصيل</span>'}</div>
+  <!-- BARCODE: scan → opens airline check-in page -->
+  <div class="code-box">
+    <img src="${barcode}" alt="Check-in Barcode" class="barcode-img" crossorigin="anonymous"/>
+    <div class="code-label checkin">SCAN → AIRLINE CHECK-IN<span>امسح → تسجيل الخطوط</span></div>
+    <img src="${qr}" alt="Invoice QR" class="qr-img" crossorigin="anonymous"/>
+    <div class="code-label download">SCAN → DOWNLOAD INVOICE<span>امسح → تحميل الفاتورة</span></div>
   </div>
+  <div class="ft-divider"></div>
   <div class="ai-msg">
     <div class="ai-label">🤖 AI Generated Message</div>
-    <p>${aiMsg}<span>${lang === 'ar' ? '✈️ نتمنى لك رحلة سعيدة!' : 'Have a safe flight!'}</span></p>
+    <p>${aiMsg}<span>${lang==='ar'?'✈️ نتمنى لك رحلة سعيدة!':'Have a safe flight!'}</span></p>
   </div>
+  <div class="ft-divider"></div>
   <div class="ft-info">
-    <p style="font-weight:700;color:#0f172a">${st.company_name_en || 'SUEUD AL TAAYIRA'}</p>
-    <p>${st.phone || ''}</p>
-    <p style="font-family:'Cairo'">${st.company_name_ar || ''}</p>
+    <p style="font-weight:700;color:#0f172a;font-size:9px">${st.company_name_en||'SUEUD AL TAAYIRA'}</p>
+    <p style="font-size:8px">${st.phone||''}</p>
+    <p style="font-family:'Cairo';font-size:9px">${st.company_name_ar||''}</p>
+    <p style="font-size:7px;color:#cbd5e1;margin-top:4px">${st.vat_no?'VAT: '+st.vat_no:''}</p>
   </div>
 </div>
-</div>
-</body></html>`;
+</div></body></html>`;
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   REFUND INVOICE HTML — FULL A4, BILINGUAL
+   REFUND INVOICE HTML
    ═══════════════════════════════════════════════════════════════════════════ */
 const getRefundHTML = (inv, s, lang = 'en') => {
   const st = s || {};
@@ -357,11 +359,12 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
 .cr.total{padding-top:10px;margin-top:8px;border-top:2px solid #dc2626;font-size:18px;font-weight:800;color:#059669;border-bottom:none}
 .pi{padding:14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center}
 .ft{padding:16px 30px;background:linear-gradient(135deg,#fff5f5,#fef2f2);display:flex;justify-content:space-between;align-items:center;border-top:2px solid #fecaca;gap:14px;margin-top:auto}
-.qr-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
-.qr img{height:70px;width:70px;border-radius:8px;border:2px solid #fecaca;padding:2px;background:#fff}
-.qr-label{font-size:8px;color:#991b1b;font-weight:600;text-transform:uppercase;text-align:center}
-.qr-label span{font-family:'Cairo';display:block}
-.ai-msg{text-align:center;flex:1;padding:10px 20px;background:linear-gradient(135deg,#fef2f2,#fee2e2);border-radius:10px;border:1px solid #fca5a5}
+.code-box{display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px;background:#fff;border:1px solid #fecaca;border-radius:8px}
+.qr-img{height:60px;width:60px;border:2px solid #fecaca;padding:2px;background:#fff;border-radius:6px}
+.code-label{font-size:7px;font-weight:700;text-transform:uppercase;text-align:center;color:#991b1b;line-height:1.3}
+.code-label span{font-family:'Cairo';display:block;font-size:8px}
+.ft-divider{width:1px;background:linear-gradient(to bottom,transparent,#fecaca,transparent);margin:0 6px;align-self:stretch;min-height:80px}
+.ai-msg{text-align:center;flex:1;padding:10px 16px;background:linear-gradient(135deg,#fef2f2,#fee2e2);border-radius:10px;border:1px solid #fca5a5}
 .ai-msg p{font-size:11px;color:#7f1d1d;margin:0;line-height:1.6;font-weight:500}
 .ai-msg p span{font-family:'Cairo';display:block;font-size:12px;margin-top:3px}
 .ai-label{font-size:8px;color:#dc2626;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:4px}
@@ -372,70 +375,49 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
 <div class="inv">
 <div class="hdr">
   <div class="cblk">
-    ${st.logo_url ? `<img src="${st.logo_url}" crossorigin="anonymous" class="logo"/>` : '<div class="logo" style="display:flex;align-items:center;justify-content:center;font-size:28px">✈️</div>'}
-    <div class="ct">
-      <h2>${st.company_name_ar || 'صعود الطائرة'}</h2>
-      <h1>${st.company_name_en || 'SUEUD AL TAAYIRA'}</h1>
-      <p>${st.address_ar || ''}<br/>${st.phone || ''}</p>
-    </div>
+    ${st.logo_url?`<img src="${st.logo_url}" crossorigin="anonymous" class="logo"/>`:'<div class="logo" style="display:flex;align-items:center;justify-content:center;font-size:28px">✈️</div>'}
+    <div class="ct"><h2>${st.company_name_ar||'صعود الطائرة'}</h2><h1>${st.company_name_en||'SUEUD AL TAAYIRA'}</h1><p>${st.address_ar||''}<br/>${st.phone||''}</p></div>
   </div>
-  <div class="im">
-    <h3>REFUND<span>استرجاع</span></h3>
-    <div class="ino">No / رقم: <span>${no}</span></div>
-    <div class="ino">Date / التاريخ: <span>${inv.refund_date || inv.invoice_date || ''}</span></div>
-    <div class="sb">PROCESSED / تم الاسترجاع</div>
-  </div>
+  <div class="im"><h3>REFUND<span>استرجاع</span></h3><div class="ino">No / رقم: <span>${no}</span></div><div class="ino">Date / التاريخ: <span>${inv.refund_date||inv.invoice_date||''}</span></div><div class="sb">PROCESSED / تم الاسترجاع</div></div>
 </div>
 <div class="comp-det">
-  <div class="ci"><span class="cl">VAT No / رقم ضريبي</span><span class="cv">${st.vat_no || 'N/A'}</span></div>
-  <div class="ci"><span class="cl">CR No / رقم سجل</span><span class="cv">${st.cr_no || 'N/A'}</span></div>
-  <div class="ci"><span class="cl">License / رقم ترخيص</span><span class="cv">${st.license_no || 'N/A'}</span></div>
-  <div class="ci"><span class="cl">Tourism Lic. / ترخيص سياحة</span><span class="cv">${st.tourism_license_no || 'N/A'}</span></div>
+  <div class="ci"><span class="cl">VAT No / رقم ضريبي</span><span class="cv">${st.vat_no||'N/A'}</span></div>
+  <div class="ci"><span class="cl">CR No / رقم سجل</span><span class="cv">${st.cr_no||'N/A'}</span></div>
+  <div class="ci"><span class="cl">License / رقم ترخيص</span><span class="cv">${st.license_no||'N/A'}</span></div>
+  <div class="ci"><span class="cl">Tourism Lic. / ترخيص سياحة</span><span class="cv">${st.tourism_license_no||'N/A'}</span></div>
 </div>
 <div class="body">
   <div class="ib">
-    <div class="sec-title">BOOKING DETAILS / تفاصيل الحجز <span>التفاصيل</span></div>
+    <div class="sec-title">BOOKING DETAILS / تفاصيل الحجز<span>التفاصيل</span></div>
     <div class="row"><span class="l">Customer / العميل</span><span class="v">${cn}</span></div>
     <div class="row"><span class="l">Phone / الهاتف</span><span class="v">${cp}</span></div>
     <div class="row"><span class="l">Passengers / الركاب</span><span class="v" style="font-size:10px;line-height:1.5">${pax}</span></div>
-    <div class="row"><span class="l">Airline / الخطوط</span><span class="v">${inv.airline || inv.old_airline || 'N/A'}</span></div>
-    <div class="row"><span class="l">Date / التاريخ</span><span class="v">${inv.invoice_date || 'N/A'}</span></div>
-    <div class="row"><span class="l">PNR / رقم الحجز</span><span class="v">${inv.pnr || inv.old_pnr || 'N/A'}</span></div>
-    <div class="row"><span class="l">Reason / السبب</span><span class="v">${inv.refund_reason || 'N/A'}</span></div>
+    <div class="row"><span class="l">Airline / الخطوط</span><span class="v">${inv.airline||inv.old_airline||'N/A'}</span></div>
+    <div class="row"><span class="l">Date / التاريخ</span><span class="v">${inv.invoice_date||'N/A'}</span></div>
+    <div class="row"><span class="l">PNR / رقم الحجز</span><span class="v">${inv.pnr||inv.old_pnr||'N/A'}</span></div>
+    <div class="row"><span class="l">Reason / السبب</span><span class="v">${inv.refund_reason||'N/A'}</span></div>
   </div>
   <div class="cb">
-    <div class="ct2">REFUND CALCULATION / حساب الاسترجاع <span>الحساب</span></div>
+    <div class="ct2">REFUND CALCULATION / حساب الاسترجاع<span>الحساب</span></div>
     <div class="cr"><span>Original Fare / الأجرة الأصلية</span><span style="font-weight:600">${of2.toFixed(2)} SAR</span></div>
     <div class="cr deduct"><span>Less: Airline Fees / خصم رسوم الخطوط</span><span style="font-weight:600">- ${airlineFees.toFixed(2)} SAR</span></div>
     <div class="cr"><span>Refund to Portal / استرجاع للبوابة</span><span style="font-weight:600;color:#2563eb">${compRef.toFixed(2)} SAR</span></div>
     <div class="cr total"><span>Refund to Customer / استرجاع للعميل</span><span>${cRef.toFixed(2)} SAR</span></div>
   </div>
-  <div class="pi">
-    <span style="font-size:11px;font-weight:600;color:#334155">Refund Method / طريقة الاسترجاع</span>
-    <span style="font-weight:600;color:#2563eb">${rm}</span>
-  </div>
+  <div class="pi"><span style="font-size:11px;font-weight:600;color:#334155">Refund Method / طريقة الاسترجاع</span><span style="font-weight:600;color:#2563eb">${rm}</span></div>
 </div>
 <div class="ft">
-  <div class="qr-wrap">
-    <img src="${qr}" alt="QR" crossorigin="anonymous"/>
-    <div class="qr-label">SCAN FOR DETAILS<br/><span>امسح للتفاصيل</span></div>
-  </div>
-  <div class="ai-msg">
-    <div class="ai-label">🤖 AI Message</div>
-    <p>${aiMsg}<span>${lang === 'ar' ? '🔄 تم معالجة الاسترجاع بنجاح' : 'Refund processed successfully!'}</span></p>
-  </div>
-  <div class="ft-info">
-    <p style="font-weight:700;color:#7f1d1d">${st.company_name_en || ''}</p>
-    <p>${st.phone || ''}</p>
-    <p style="font-family:'Cairo'">${st.company_name_ar || ''}</p>
-  </div>
+  <div class="code-box"><img src="${qr}" alt="QR" class="qr-img" crossorigin="anonymous"/><div class="code-label">SCAN → DOWNLOAD<span>امسح → تحميل</span></div></div>
+  <div class="ft-divider"></div>
+  <div class="ai-msg"><div class="ai-label">🤖 AI Message</div><p>${aiMsg}<span>${lang==='ar'?'🔄 تم معالجة الاسترجاع بنجاح':'Refund processed successfully!'}</span></p></div>
+  <div class="ft-divider"></div>
+  <div class="ft-info"><p style="font-weight:700;color:#7f1d1d">${st.company_name_en||''}</p><p>${st.phone||''}</p><p style="font-family:'Cairo'">${st.company_name_ar||''}</p></div>
 </div>
-</div>
-</body></html>`;
+</div></body></html>`;
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   EXPENSE VOUCHER HTML — FULL A4, BILINGUAL
+   EXPENSE VOUCHER HTML
    ═══════════════════════════════════════════════════════════════════════════ */
 const getExpenseHTML = (exp, s, lang = 'en') => {
   const st = s || {};
@@ -445,7 +427,6 @@ const getExpenseHTML = (exp, s, lang = 'en') => {
   const aiMsg = getAIMessage(exp, lang);
   const isRTL = lang === 'ar';
   const dir = isRTL ? 'rtl' : 'ltr';
-
   return `<!DOCTYPE html><html lang="${lang}" dir="${dir}"><head><meta charset="UTF-8"><title>Expense ${eno}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -488,10 +469,8 @@ tbody td.r{text-align:${isRTL?'left':'right'};font-weight:600}
 @media print{body{background:#fff;padding:0;margin:0}.inv{border:none}}
 </style></head><body>
 <div class="inv">
-<div class="hdr">
-  <div class="ci"><h2>${st.company_name_ar||'صعود الطائرة'}</h2><h1>${st.company_name_en||'SUEUD AL TAAYIRA'}</h1></div>
-  <div class="im"><h3>EXPENSE VOUCHER</h3><p>No / رقم: <span>${eno}</span></p><p>Date / التاريخ: <span>${exp.expense_date||''}</span></p></div>
-</div>
+<div class="hdr"><div class="ci"><h2>${st.company_name_ar||'صعود الطائرة'}</h2><h1>${st.company_name_en||'SUEUD AL TAAYIRA'}</h1></div>
+<div class="im"><h3>EXPENSE VOUCHER</h3><p>No / رقم: <span>${eno}</span></p><p>Date / التاريخ: <span>${exp.expense_date||''}</span></p></div></div>
 <div class="comp-det">
   <div class="ci"><span class="cl">VAT No / رقم ضريبي</span><span class="cv">${st.vat_no||'N/A'}</span></div>
   <div class="ci"><span class="cl">CR No / رقم سجل</span><span class="cv">${st.cr_no||'N/A'}</span></div>
@@ -500,18 +479,13 @@ tbody td.r{text-align:${isRTL?'left':'right'};font-weight:600}
 </div>
 <div class="body">
   <div class="ib">
-    <div class="sec-title">DETAILS / التفاصيل <span>التفاصيل</span></div>
+    <div class="sec-title">DETAILS / التفاصيل<span>التفاصيل</span></div>
     <div class="row"><span class="l">Type / النوع</span><span class="v">${exp.expense_type||'N/A'}</span></div>
     <div class="row"><span class="l">Payment / الدفع</span><span class="v">${exp.payment_mode||'Cash / نقداً'}</span></div>
     <div class="row"><span class="l">Description / الوصف</span><span class="v">${exp.description||'N/A'}</span></div>
   </div>
   <table>
-    <thead><tr>
-      <th>Item / البند<br/><span>الوصف</span></th>
-      <th class="r">Qty / الكمية<br/><span>الكمية</span></th>
-      <th class="r">Price / السعر<br/><span>السعر</span></th>
-      <th class="r">Total / الإجمالي<br/><span>المجموع</span></th>
-    </tr></thead>
+    <thead><tr><th>Item / البند<br/><span>الوصف</span></th><th class="r">Qty / الكمية<br/><span>الكمية</span></th><th class="r">Price / السعر<br/><span>السعر</span></th><th class="r">Total / الإجمالي<br/><span>المجموع</span></th></tr></thead>
     <tbody>${items.map(it=>`<tr><td>${it.name||'Item'}</td><td class="r">${it.qty||1}</td><td class="r">${parseFloat(it.price||0).toFixed(2)}</td><td class="r">${((parseFloat(it.qty)||0)*(parseFloat(it.price)||0)).toFixed(2)}</td></tr>`).join('')}</tbody>
   </table>
   <div class="totals"><h3>TOTAL / الإجمالي</h3><p class="amt">${(exp.amount||0).toFixed(2)} SAR</p></div>
@@ -521,12 +495,11 @@ tbody td.r{text-align:${isRTL?'left':'right'};font-weight:600}
   <div class="ai-msg"><div class="ai-label">🤖 AI Message</div><p>${aiMsg}<span>${lang==='ar'?'📝 سند مصروفات معتمد':'Expense voucher approved'}</span></p></div>
   <div style="width:120px"></div>
 </div>
-</div>
-</body></html>`;
+</div></body></html>`;
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   SALARY SLIP HTML — FULL A4, BILINGUAL
+   SALARY SLIP HTML
    ═══════════════════════════════════════════════════════════════════════════ */
 const getSalarySlipHTML = (pay, s, lang = 'en') => {
   const st = s || {};
@@ -536,7 +509,6 @@ const getSalarySlipHTML = (pay, s, lang = 'en') => {
   const aiMsg = getAIMessage(pay, lang);
   const isRTL = lang === 'ar';
   const dir = isRTL ? 'rtl' : 'ltr';
-
   return `<!DOCTYPE html><html lang="${lang}" dir="${dir}"><head><meta charset="UTF-8"><title>Slip ${sno}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -579,10 +551,8 @@ th.r,td.r{text-align:${isRTL?'left':'right'};font-weight:600}
 @media print{body{background:#fff;padding:0;margin:0}.slip{border:none}}
 </style></head><body>
 <div class="slip">
-<div class="hdr">
-  <div><h1>${st.company_name_en||'SUEUD AL TAAYIRA'}</h1></div>
-  <div class="si"><h3>SALARY SLIP<span>قسيمة الراتب</span></h3><p>Slip / رقم: ${sno} | Month / الشهر: ${pay.month}</p></div>
-</div>
+<div class="hdr"><div><h1>${st.company_name_en||'SUEUD AL TAAYIRA'}</h1></div>
+<div class="si"><h3>SALARY SLIP<span>قسيمة الراتب</span></h3><p>Slip / رقم: ${sno} | Month / الشهر: ${pay.month}</p></div></div>
 <div class="comp-det">
   <div class="ci"><span class="cl">VAT No / رقم ضريبي</span><span class="cv">${st.vat_no||'N/A'}</span></div>
   <div class="ci"><span class="cl">CR No / رقم سجل</span><span class="cv">${st.cr_no||'N/A'}</span></div>
@@ -620,12 +590,11 @@ th.r,td.r{text-align:${isRTL?'left':'right'};font-weight:600}
   <div class="ai-msg"><div class="ai-label">🤖 AI Message</div><p>${aiMsg}<span>${lang==='ar'?'💰 راتبك معالج بنجاح':'Salary processed successfully!'}</span></p></div>
   <div style="width:120px"></div>
 </div>
-</div>
-</body></html>`;
+</div></body></html>`;
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   MISTAKE VOUCHER HTML — FULL A4, BILINGUAL
+   MISTAKE VOUCHER HTML
    ═══════════════════════════════════════════════════════════════════════════ */
 const getMistakeHTML = (m, s, lang = 'en') => {
   const st = s || {};
@@ -633,7 +602,6 @@ const getMistakeHTML = (m, s, lang = 'en') => {
   const aiMsg = getAIMessage(m, lang);
   const isRTL = lang === 'ar';
   const dir = isRTL ? 'rtl' : 'ltr';
-
   return `<!DOCTYPE html><html lang="${lang}" dir="${dir}"><head><meta charset="UTF-8"><title>Mistake ${vno}</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -672,10 +640,8 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
 @media print{body{background:#fff;padding:0;margin:0}.v{border:none}}
 </style></head><body>
 <div class="v">
-<div class="hdr">
-  <div><h1>${st.company_name_en||'SUEUD AL TAAYIRA'}</h1></div>
-  <div class="vi"><h3>LOSS VOUCHER<span>سند خسارة</span></h3><p>Voucher / رقم: <span>${vno}</span></p><p>Date / التاريخ: <span>${m.date}</span></p></div>
-</div>
+<div class="hdr"><div><h1>${st.company_name_en||'SUEUD AL TAAYIRA'}</h1></div>
+<div class="vi"><h3>LOSS VOUCHER<span>سند خسارة</span></h3><p>Voucher / رقم: <span>${vno}</span></p><p>Date / التاريخ: <span>${m.date}</span></p></div></div>
 <div class="comp-det">
   <div class="ci"><span class="cl">VAT No / رقم ضريبي</span><span class="cv">${st.vat_no||'N/A'}</span></div>
   <div class="ci"><span class="cl">CR No / رقم سجل</span><span class="cv">${st.cr_no||'N/A'}</span></div>
@@ -688,15 +654,14 @@ body{font-family:'Inter','Cairo',sans-serif;background:#fff;color:#1e293b;font-s
     <div style="text-align:${isRTL?'left':'right'}"><p><span class="l">Old Ticket / التذكرة القديمة:</span> ${m.old_ticket_no||'N/A'}</p><p><span class="l">New Ticket / التذكرة الجديدة:</span> ${m.new_ticket_no||'N/A'}</p></div>
   </div>
   <div class="loss"><h3>TOTAL LOSS<span>إجمالي الخسارة</span></h3><p class="amt">${(m.loss_amount||0).toFixed(2)} SAR</p></div>
-  <div class="note"><strong>Status / الحالة:</strong> ${m.paid_by_employee ? 'Will be deducted from salary / سيتم خصمه من الراتب' : 'Absorbed by company / تتحملها الشركة'}</div>
+  <div class="note"><strong>Status / الحالة:</strong> ${m.paid_by_employee?'Will be deducted from salary / سيتم خصمه من الراتب':'Absorbed by company / تتحملها الشركة'}</div>
 </div>
 <div class="ft">
   <div class="ft-info"><p style="font-weight:700;color:#7f1d1d">${st.company_name_en||''}</p><p>${st.phone||''}</p><p style="font-family:'Cairo'">${st.company_name_ar||''}</p></div>
   <div class="ai-msg"><div class="ai-label">🤖 AI Message</div><p>${aiMsg}<span>${lang==='ar'?'⚠️ تم تسجيل الخسارة':'Loss recorded successfully'}</span></p></div>
   <div style="width:120px"></div>
 </div>
-</div>
-</body></html>`;
+</div></body></html>`;
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -708,10 +673,10 @@ const getContractHTML = (s, name, date, isOffer, type, markup, terms) => {
   const tl = terms ? terms.split('\n').filter(t=>t.trim()).map(t=>`<li style="margin-bottom:10px;font-size:14px;color:#334155">${t.trim()}</li>`).join('') : '<li style="margin-bottom:10px;font-size:14px;color:#334155">Standard terms apply.</li>';
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${dt} - ${name}</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',sans-serif;background:#f0f4f8;padding:30px;color:#1e293b}.doc{max-width:210mm;margin:auto;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,0.1);padding:50px;border-radius:14px;border-top:10px solid #1E3A8A}.hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:35px;border-bottom:2px solid #e2e8f0;padding-bottom:18px}.hdr h1{font-size:28px;font-weight:800;color:#0F172A;text-transform:uppercase;letter-spacing:1px;margin:0}.hdr .lb{text-align:right}.hdr .lb h2{font-size:18px;font-weight:800;color:#1E3A8A;margin:0}.hdr .lb p{font-size:11px;color:#64748b;margin:4px 0 0}.mb{background:#F8FAFC;padding:20px;border-radius:10px;border-left:5px solid #FBBF24;margin-bottom:25px;display:grid;grid-template-columns:1fr 1fr;gap:18px}.mi p{font-size:13px;margin:5px 0}.mi .l{color:#64748b;font-weight:500;display:block;font-size:11px;text-transform:uppercase}.mi .v{color:#0F172A;font-weight:700;font-size:15px}.sec{margin-bottom:35px}.sec h2{font-size:20px;font-weight:700;color:#1E3A8A;margin-bottom:14px;border-left:4px solid #1E3A8A;padding-left:10px}.terms ul{padding-left:22px;list-style-type:square}.sg{display:grid;grid-template-columns:1fr 1fr;gap:35px;margin-top:50px}.sb{text-align:center}.sl{border-top:2px solid #0F172A;margin-bottom:10px;width:75%;margin-left:auto;margin-right:auto}.sl p{font-size:13px;color:#64748b;font-weight:600;margin:0}.ftr{margin-top:40px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:18px}@media print{body{background:#fff;padding:0}.doc{box-shadow:none;margin:0;max-width:100%;border-radius:0;border:none}}</style></head><body><div class="doc"><div class="hdr"><div><h1>${dt}</h1><p style="font-size:13px;color:#64748b;margin:5px 0 0">Date: ${date}</p></div><div class="lb"><h2>${st.company_name_en||'SUEUD AL TAAYIRA'}</h2><p>${st.company_name_ar||'صعود الطائرة'}</p><p>${st.phone||''}</p></div></div><div class="mb"><div class="mi"><span class="l">Client</span><span class="v">${name}</span></div><div class="mi"><span class="l">Service Type</span><span class="v">${type}</span></div><div class="mi"><span class="l">Fee / Markup</span><span class="v">${parseFloat(markup||0).toFixed(2)} SAR</span></div><div class="mi"><span class="l">Validity</span><span class="v">30 Days</span></div></div><div class="sec"><h2>Terms & Conditions</h2><div class="terms"><ul>${tl}</ul></div></div><div class="sg"><div class="sb"><div class="sl"></div><p>Authorized Signatory</p><p style="font-size:11px;color:#94a3b8">${st.company_name_en||'SUEUD AL TAAYIRA'}</p></div><div class="sb"><div class="sl"></div><p>Client Acceptance</p><p style="font-size:11px;color:#94a3b8">${name}</p></div></div><div class="ftr"><p>© ${new Date().getFullYear()} ${st.company_name_en||'SUEUD AL TAAYIRA'}. All rights reserved.</p></div></div></body></html>`;
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',sans-serif;background:#f0f4f8;padding:30px;color:#1e293b}.doc{max-width:210mm;margin:auto;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,0.1);padding:50px;border-radius:14px;border-top:10px solid #1E3A8A}.hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:35px;border-bottom:2px solid #e2e8f0;padding-bottom:18px}.hdr h1{font-size:28px;font-weight:800;color:#0F172A;text-transform:uppercase;letter-spacing:1px;margin:0}.hdr .lb{text-align:right}.hdr .lb h2{font-size:18px;font-weight:800;color:#1E3A8A;margin:0}.hdr .lb p{font-size:11px;color:#64748b;margin:4px 0 0}.mb{background:#F8FAFC;padding:20px;border-radius:10px;border-left:5px solid #FBBF24;margin-bottom:25px;display:grid;grid-template-columns:1fr 1fr;gap:18px}.mi p{font-size:13px;margin:5px 0}.mi .l{color:#64748b;font-weight:500;display:block;font-size:11px;text-transform:uppercase}.mi .v{color:#0F172A;font-weight:700;font-size:15px}.sec{margin-bottom:35px}.sec h2{font-size:20px;font-weight:700;color:#1E3A8A;margin-bottom:14px;border-left:4px solid #1E3A8A;padding-left:10px}.terms ul{padding-left:22px;list-style-type:square}.sg{display:grid;grid-template-columns:1fr 1fr;gap:35px;margin-top:50px}.sb{text-align:center}.sl{border-top:2px solid #0F172A;margin-bottom:10px;width:75%;margin-left:auto;margin-right:auto}.sl p{font-size:13px;color:#64748b;font-weight:600;margin:0}.ftr{margin-top:40px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:18px}@media print{body{background:#fff;padding:0}.doc{box-shadow:none;margin:0;max-width:100%;border-radius:0;border:none}}</style></head><body><div class="doc"><div class="hdr"><div><h1>${dt}</h1><p style="font-size:13px;color:#64748b;margin:5px 0 0">Date: ${date}</p></div><div class="lb"><h2>${st.company_name_en||'SUEUD AL TAAYIRA'}</h2><p>${st.company_name_ar||'صعود الطائرة'}</p><p>${st.phone||''}</p></div></div><div class="mb"><div class="mi"><span class="l">Client</span><span class="v">${name}</span></div><div class="mi"><span class="l">Service Type</span><span class="v">${type}</span></div><div class="mi"><span class="l">Fee / Markup</span><span class="v">${parseFloat(markup||0).toFixed(2)} SAR</span></div><div class="mi"><span class="l">Validity</span><span class="v">30 Days</span></div></div><div class="sec"><h2>Terms & Conditions</h2><div class="terms"><ul>${tl}</ul></div></div><div class="sg"><div class="sb"><div class="sl"></div><p>Authorized Signatory</p><p style="font-size:11px;color:#94a3b8">${st.company_name_en||'SUEUD AL TAAYIRA'}</p></div><div class="sb"><div class="sl"></div><p>Client Acceptance</p><p style="font-size:11px;color:#94a3b8">${name}</p></div></div><div class="ftr"><p>© ${new Date().getFullYear()} ${st.company_name_en||'SUEUD AL TAAYIRA'}. All rights reserved.</p></div></div></div></body></html>`;
 };
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ═════════════════════════════════════════════════════════════════════════════
    UTILITY FUNCTIONS
    ═══════════════════════════════════════════════════════════════════════════ */
 const filterData = (data, dateField, dateRange) => {
@@ -729,16 +694,80 @@ const filterData = (data, dateField, dateRange) => {
 const exportToExcel = (data, filename) => {
   if (!data || data.length === 0) return;
   const headers = Object.keys(data[0]);
-  const csv = [headers.join(','), ...data.map(row => headers.map(h => { let val = row[h] ?? ''; if (typeof val === 'string' && (val.includes(',') || val.includes('"') || val.includes('\n'))) { val = `"${val.replace(/"/g, '""')}"`; } return val; }).join(','))].join('\n');
+  const csv = [headers.join(','), ...data.map(row => headers.map(h => { let val = row[h] ?? ''; if (typeof val === 'string' && (val.includes(',') || val.includes('"') || val.includes('\n'))) { val = `"${val.replace(/"/g, '""')}"`; } return val; }).join(','))].join('\n')].join('\n');
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = `${filename}.csv`; a.click();
   URL.revokeObjectURL(url);
 };
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   MAIN STATE HOOK
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* ═════════════════════════════════════════════════════════════════════════════════════
+   DRAFT MANAGEMENT — Save/Load invoice drafts to localStorage
+   ═════════════════════════════════════════════════════════════════════════════════════ */
+const DRAFT_KEY = 'erp_invoice_drafts';
+
+const saveDraft = (invForm) => {
+  try {
+    const drafts = JSON.parse(localStorage.getItem(DRAFT_KEY) || '[]');
+    const draft = { ...invForm, savedAt: new Date().toISOString(), id: Date.now() };
+    drafts.unshift(draft);
+    if (drafts.length > 10) drafts.length = 10;
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts));
+    return true;
+  } catch (e) { console.warn('Draft save failed:', e); return false; }
+};
+
+const loadDrafts = () => {
+  try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || []; }
+  catch (e) { return []; }
+};
+
+const deleteDraft = (id) => {
+  try {
+    const drafts = loadDrafts().filter(d => d.id !== id);
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts));
+  } catch (e) { console.warn('Draft delete failed:', e); }
+};
+
+/* ═════════════════════════════════════════════════════════════════════════════════════════════════
+   RECENT VIEWS — Track recently viewed invoices
+   ═══════════════════════════════════════════════════════════════════════════════════════════ */
+const RECENT_KEY = 'erp_recent_views';
+
+const addRecentView = (invoice) => {
+  try {
+    const recent = JSON.parse(localStorage.getItem(RECENT_KEY) || [];
+    const entry = { id: invoice.id || invoice.invoice_no, no: invoice.invoice_no, customer: invoice.customers?.name || invoice.corporates?.name, total: invoice.total, date: invoice.invoice_date, viewedAt: new Date().toISOString() };
+    const filtered = recent.filter(r => r.id !== (invoice.id || invoice.invoice_no));
+    filtered.unshift(entry);
+    if (filtered.length > 20) filtered.length = 20;
+    localStorage.setItem(RECENT_KEY, JSON.stringify(filtered));
+  } catch (e) { console.warn('Recent view save failed:', e); }
+};
+
+const loadRecentViews = () => {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY) || []; }
+  catch (e) { return []; }
+};
+
+/* ═════════════════════════════════════════════════════════════════════════════════════════════════════════
+   AUTO-GENERATE INVOICE NUMBER — sequential format INV-0001, INV-0002...
+   ═════════════════════════════════════════════════════════════════════════════════════════════════ */
+const getNextInvoiceNo = (invoices) => {
+  const numList = invoices
+    .filter(i => !i.invoice_no.startsWith('REF-') && i.status !== 'Draft' && i.status !== 'Recurring')
+    .map(i => {
+      const num = parseInt(i.invoice_no.replace(/\D/g, ''));
+      return isNaN(num) ? 0 : num;
+    });
+  const maxNum = numList.length > 0 ? Math.max(...numList) : 0;
+  const next = maxNum + 1;
+  return `INV-${String(next).padStart(5, '0')}`;
+};
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+   MAIN STATE HOOK — with ALL original states + new features
+   ════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
 export default function useERPState() {
   const router = useRouter();
   const today = new Date().toISOString().split('T')[0];
@@ -762,7 +791,7 @@ export default function useERPState() {
   const [repDate, setRepDate] = useState({ from: '', to: '' });
   const [reportTab, setReportTab] = useState('sales');
   const [data, setData] = useState({ invoices:[], customers:[], corporates:[], creditors:[], vendors:[], packages:[], branches:[], portals:[], employees:[], services:[], expenses:[], investments:[], cashbook:[], payroll:[], empAdvances:[], staffMistakes:[], attendance:[], appUsers:[], tenants:[], audits:[], settings:{} });
-  
+
   const [invForm, setInvForm] = useState({ custType:'Individual', custId:'new', custName:'', custPhone:'', corpId:'new', corpName:'', corpVat:'', corpPhone:'', corpAddress:'', passengers:[''], employeeId:'', portalId:'', bookingDate:today, invoiceDate:today, bookingType:'New Booking', linkedInvId:'', oldTicketNo:'', oldPnr:'', oldAirline:'', oldSector:'', oldSellPrice:0, oldBookingDate:'', oldPassengers:'', oldFlightType:'', oldPaymentMethod:'', refundReason:'', service:'Flight Ticket', flightType:'Domestic', flightJourney:'Single', refundable:'Refundable', flightSector:'', airline:'', destination:'', hotelName:'', checkIn:'', checkOut:'', visaType:'Tourist', serviceName:'', pnr:'', ticketNo:'', qty:1, cost:0, sell:0, discount:0, taxRate:'15', payment:'Cash', paid:'', creditDueDate:'', creditorId:'', tabbyNo:'', tamaraNo:'', ticketStatus:'Confirmed', useCredit:0, creditCustId:'', status:'Unpaid' });
   const [editInvId, setEditInvId] = useState(null);
   const [expForm, setExpForm] = useState({ date:today, category:'General', description:'', payment_mode:'Cash', portal_id:'', items:[{ name:'', amount:0, category:'General' }] });
@@ -800,10 +829,52 @@ export default function useERPState() {
   const [contractMarkup, setContractMarkup] = useState(0);
   const [contractTerms, setContractTerms] = useState('');
 
+  // ═══ NEW STATE: Theme, Drafts, Recent Views, Table Settings ═══
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('erp_theme') || 'light';
+    return 'light';
+  });
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('erp_sidebar_collapsed') === 'true';
+    return false;
+  });
+  const [tableDensity, setTableDensity] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('erp_table_density') || 'comfortable';
+    return 'comfortable';
+  });
+  const [fontSize, setFontSize] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('erp_font_size') || '14';
+    return '14';
+  });
+  const [notifSound, setNotifSound] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('erp_notif_sound') !== 'false';
+    return true;
+  });
+
   const t = useMemo(() => translations[lang] || translations.en, [lang]);
 
-  const showToast = useCallback((msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); }, []);
-  const logAction = useCallback(async (action) => { try { if (userProfile?.tenant_id) await supabase.from('audits').insert([{ action, user_id: userProfile.id, tenant_id: userProfile.tenant_id, created_at: new Date().toISOString() }]); } catch (e) { console.warn('Audit:', e.message); } }, [userProfile]);
+  const showToast = useCallback((msg) => {
+    setToast(msg);
+    if (notifSound) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const playBeep = () => {
+          const osc = ctx.createOscillator();
+          osc.type = 'sine';
+          osc.frequency = 800;
+          osc.connect(ctx.destination);
+          osc.start();
+          setTimeout(() => { osc.stop(); }, 120);
+        };
+        playBeep();
+      } catch(e) { /* silent fail */ }
+    }
+    setTimeout(() => setToast(''), 3000);
+  }, [notifSound]);
+
+  const logAction = useCallback(async (action) => {
+    try { if (userProfile?.tenant_id) await supabase.from('audits').insert([{ action, user_id: userProfile.id, tenant_id: userProfile.tenant_id, created_at: new Date().toISOString() }]); } catch (e) { console.warn('Audit:', e.message); }
+  }, [userProfile]);
 
   const fetchAll = useCallback(async (tenantId) => {
     if (!tenantId) return;
@@ -830,6 +901,13 @@ export default function useERPState() {
       setData(prev => ({...prev, invoices:i.data||[], customers:c.data||[], corporates:co.data||[], creditors:cr.data||[], vendors:v.data||[], packages:p.data||[], branches:b.data||[], portals:po.data||[], employees:e.data||[], services:s.data||[], expenses:ex.data||[], cashbook:cb.data||[], payroll:pa.data||[], staffMistakes:ms.data||[], attendance:at.data||[], settings:se.data||{}, empAdvances:ad.data||[]}));
     } catch (err) { console.error('fetchAll:', err); }
   }, []);
+
+  // Persist theme, sidebar, table settings
+  useEffect(() => { localStorage.setItem('erp_theme', theme); }, [theme]);
+  useEffect(() => { localStorage.setItem('erp_sidebar_collapsed', String(sidebarCollapsed)); }, [sidebarCollapsed]);
+  useEffect(() => { localStorage.setItem('erp_table_density', tableDensity); }, [tableDensity]);
+  useEffect(() => { localStorage.setItem('erp_font_size', fontSize); }, [fontSize]);
+  useEffect(() => { localStorage.setItem('erp_notif_sound', String(notifSound)); }, [notifSound]);
 
   useEffect(() => {
     if (initDone.current) return;
@@ -891,6 +969,8 @@ export default function useERPState() {
     contractCorpName, setContractCorpName, contractType, setContractType, contractMarkup, setContractMarkup, contractTerms, setContractTerms,
     filterData, exportToExcel,
     getInvoiceHTML, getRefundHTML, getExpenseHTML, getSalarySlipHTML, getContractHTML, getMistakeHTML,
+    saveDraft, loadDrafts, deleteDraft, addRecentView, loadRecentViews, getNextInvoiceNo,
+    theme, setTheme, sidebarCollapsed, setSidebarCollapsed, tableDensity, setTableDensity, fontSize, setFontSize, notifSound, setNotifSound,
     today
   };
 }
