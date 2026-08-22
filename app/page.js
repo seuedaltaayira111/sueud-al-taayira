@@ -11,28 +11,45 @@ export default function Home() {
   const forceOpen = useRef(false);
   const t = (key, fallback) => erp.tr?.[key] || fallback || key;
 
+  /* ═══ SAFETY: 6 second baad force open — chahe kuch bhi ho ═══ */
   useEffect(() => {
-    const timer = setTimeout(() => { forceOpen.current = true; }, 5000);
+    const timer = setTimeout(() => {
+      forceOpen.current = true;
+      console.warn('[ERP] Safety timeout — forcing open');
+    }, 6000);
     return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    const h = (e) => {
+    const handleKeyDown = (e) => {
       if (e.altKey && e.key.toLowerCase() === 'n') { e.preventDefault(); erp.setPage?.('create'); }
       if (e.altKey && e.key.toLowerCase() === 'l') { e.preventDefault(); erp.setPage?.('list'); }
       if (e.altKey && e.key.toLowerCase() === 'd') { e.preventDefault(); erp.setPage?.('dashboard'); }
     };
-    window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [erp.setPage]);
 
   useEffect(() => {
-    const u = () => setIsOnline(navigator.onLine);
-    window.addEventListener('online', u);
-    return () => { window.removeEventListener('online', u); window.removeEventListener('offline', u); };
-  }, []);
+    const pageTitle = erp.menu?.find(m => m.id === erp.page)?.label || 'Dashboard';
+    document.title = pageTitle + ' | SUEUD AL TAAYIRA ERP';
+  }, [erp.page, erp.menu]);
 
-  /* ERROR */
+  useEffect(() => {
+    const updateOnlineStatus = () => {
+      setIsOnline(navigator.onLine);
+      if (!navigator.onLine) erp.showToast?.('⚠️ You are offline.');
+      else erp.showToast?.('✅ Back online!');
+    };
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    return () => {
+      window.removeEventListener('online', updateOnlineStatus);
+      window.removeEventListener('offline', updateOnlineStatus);
+    };
+  }, [erp.showToast]);
+
+  /* ═══ ERROR SCREEN ═══ */
   if (erp.initError) {
     return (
       <div style={{ display:'flex', justifyContent:'center', alignItems:'center', height:'100vh', fontFamily:"'Poppins',sans-serif", background:'linear-gradient(135deg,#0F172A,#1E293B)', color:'#fff', padding:'40px' }}>
@@ -42,37 +59,39 @@ export default function Home() {
           <p style={{ color:'#CBD5E1', fontSize:'14px', lineHeight:'1.8', background:'rgba(255,255,255,0.05)', padding:'20px', borderRadius:'12px', border:'1px solid #334155', wordBreak:'break-word' }}>{erp.initError}</p>
           <div style={{ marginTop:'20px', display:'flex', gap:'10px', justifyContent:'center', flexWrap:'wrap' }}>
             <button onClick={() => window.location.href = '/login'} style={{ padding:'12px 30px', background:'#F59E0B', color:'#0F172A', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'bold', fontSize:'15px' }}>Go to Login →</button>
-            <button onClick={() => { if (window.confirm('Clear cache and reload?')) { localStorage.clear(); window.location.reload(); }} style={{ padding:'12px 30px', background:'#2563EB', color:'#fff', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'600', fontSize:'15px' }}>🔄 Clear Cache & Retry</button>
+            <button onClick={() => { forceOpen.current = true; window.location.reload(); }} style={{ padding:'12px 30px', background:'#2563EB', color:'#fff', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'bold', fontSize:'15px' }}>⚡ Force Open</button>
+            <button onClick={() => window.location.reload()} style={{ padding:'12px 30px', background:'transparent', color:'#94A3B8', border:'1px solid #475569', borderRadius:'8px', cursor:'pointer', fontWeight:'600', fontSize:'15px' }}>🔄 Retry</button>
           </div>
         </div>
       </div>
     );
   }
 
-  /* LOADING — auth only */
-  if (!forceOpen.current && !erp.user) {
+  /* ═══ LOADING SCREEN — with safety escape ═══ */
+  const isLoading = !forceOpen.current && !erp.user && !erp.userProfile;
+  if (isLoading) {
     return (
       <div style={{ display:'flex', justifyContent:'center', alignItems:'center', height:'100vh', fontFamily:"'Poppins',sans-serif", background:'linear-gradient(135deg,#0F172A,#1E293B)', color:'#F59E0B' }}>
         <div style={{ textAlign:'center' }}>
-          <style>{'@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg}}'}</style>
+          <style>{'@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}@keyframes pulse{0%,100%{opacity:0.4}50%{opacity:1}}'}</style>
           <div style={{ fontSize:'60px', marginBottom:'20px', animation:'spin 2s linear infinite' }}>✈️</div>
           <h2>Loading ERP System...</h2>
-          <p style={{ color:'#64748B', fontSize:'12px', marginTop:'10px' }}>Authenticating...</p>
-          <button onClick={() => { forceOpen.current = true; window.location.reload(); }} style={{ marginTop:'25px', padding:'10px 24px', background:'rgba(255,255,255,0.1)', color:'#94A3B8', border:'1px solid #334155', borderRadius:'8px', cursor:'pointer', fontSize:'13px', fontWeight:'600' }}>Skip ⚡</button>
+          <p style={{ color:'#64748B', fontSize:'12px', marginTop:'10px', animation:'pulse 1.5s ease-in-out infinite' }}>Please wait while we prepare your workspace</p>
+          <button onClick={() => { forceOpen.current = true; window.location.reload(); }} style={{ marginTop:'25px', padding:'10px 24px', background:'rgba(255,255,255,0.1)', color:'#94A3B8', border:'1px solid #334155', borderRadius:'8px', cursor:'pointer', fontSize:'13px', fontWeight:'600' }}>Skip Loading ⚡</button>
         </div>
       </div>
     );
   }
 
-  /* MAIN ERP */
+  /* ═══ MAIN ERP — even without full profile, open with safe defaults ═══ */
   const profile = erp.userProfile || {};
   const isSuperAdmin = profile.role === 'SuperAdmin';
-  const isAdmin = profile.is_admin === true;
-  const canAccessHR = isAdmin || profile.can_access_hr === true;
-  const canAccessBank = isAdmin || profile.can_access_bank === true;
-  const canAccessInvoices = isAdmin || profile.can_access_invoices !== false;
-  const canAccessReports = isAdmin || profile.can_access_reports === true;
-  const canAccessSettings = isAdmin || profile.can_access_settings === true;
+  const isAdmin = profile.is_admin || false;
+  const canAccessHR = isAdmin || profile.can_access_hr || false;
+  const canAccessBank = isAdmin || profile.can_access_bank || false;
+  const canAccessInvoices = isAdmin || profile.can_access_invoices || true;
+  const canAccessReports = isAdmin || profile.can_access_reports || false;
+  const canAccessSettings = isAdmin || profile.can_access_settings || false;
 
   const menu = [
     { id:'dashboard', label:t('dashboard','Dashboard'), show:true, section:'Main' },
@@ -115,11 +134,27 @@ export default function Home() {
     { id:'settings', label:t('settings','Settings'), show:canAccessSettings, section:'System Admin' },
     { id:'profile', label:t('profile','Profile'), show:true, section:'System Admin' },
   ].filter(m => m.show);
+
   return (
     <div dir={erp.lang === 'ar' ? 'rtl' : 'ltr'}>
-      {!isOnline && <div style={{ position:'fixed', top:0, left:0, right:0, background:'#EF4444', color:'white', textAlign:'center', padding:'10px', zIndex:10000, fontWeight:'bold', fontSize:'15px' }}>⚠️ Offline</div>}
-      {erp.toast && <div style={{ position:'fixed', top:'20px', right:'20px', background:'linear-gradient(135deg,#1E3A8A,#2563EB)', color:'#FBBF24', padding:'15px 25px', borderRadius:'12px', zIndex:10001, boxShadow:'0 5px 15px rgba(0,0,0.3)', fontWeight:'600', fontSize:'14px', cursor:'pointer', onClick:()=>setToast(null) }}>{erp.toast}</div>}
-      <ERPLayout {...erp} menu={menu}><ERPViews {...erp} /></ERPLayout>
+      {!isOnline && (
+        <div style={{ position:'fixed', top:0, left:0, right:0, background:'#EF4444', color:'white', textAlign:'center', padding:'10px', zIndex:10000, fontWeight:'bold' }}>
+          ⚠️ You are offline. Please check your internet connection.
+        </div>
+      )}
+      {!erp.userProfile && (
+        <div style={{ position:'fixed', top: isOnline ? 0 : 40, left:0, right:0, background:'#F59E0B', color:'#0F172A', textAlign:'center', padding:'8px', zIndex:9999, fontWeight:'600', fontSize:'13px' }}>
+          ⚠️ User profile not loaded — some features may be restricted. <span onClick={() => window.location.reload()} style={{ textDecoration:'underline', cursor:'pointer', marginLeft:'10px' }}>Retry</span>
+        </div>
+      )}
+      {erp.toast && (
+        <div style={{ position:'fixed', top: isOnline ? 0 : 40, right:'20px', background:'linear-gradient(135deg,#1E3A8A,#2563EB)', color:'#FBBF24', padding:'15px 25px', borderRadius:'12px', zIndex:10001, boxShadow:'0 5px 15px rgba(0,0,0,0.3)', fontWeight:'600', fontSize:'14px' }}>
+          {erp.toast}
+        </div>
+      )}
+      <ERPLayout {...erp} menu={menu}>
+        <ERPViews {...erp} />
+      </ERPLayout>
     </div>
   );
 }
