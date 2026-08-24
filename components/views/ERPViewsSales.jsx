@@ -10,7 +10,7 @@ export default function ERPViewsSales(props) {
     handleEditPkg, handleEditBrn, handleEditEmp, handleEditExp,
     handleDeletePayroll, handleGenerateSlip, handlePreviewMistake, handleDeleteMistake,
     handleAddEditUser, handleEditUser, handleDeleteUser, userForm, setUserForm,
-    editUserId, setEditUserId
+    editUserId, setEditUserId, handleTransfer, transferForm, setTransferForm
   } = props;
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -730,6 +730,8 @@ export default function ERPViewsSales(props) {
     const cashOut = (data.cashbook || []).filter(c => c.type === 'Cash-Out').reduce((s, c) => s + (c.amount || 0), 0);
     const bankIn = (data.cashbook || []).filter(c => c.type === 'Bank-In').reduce((s, c) => s + (c.amount || 0), 0);
     const bankOut = (data.cashbook || []).filter(c => c.type === 'Bank-Out').reduce((s, c) => s + (c.amount || 0), 0);
+    const investIn = (data.cashbook || []).filter(c => c.type === 'Investor-In').reduce((s, c) => s + (c.amount || 0), 0);
+    const investOut = (data.cashbook || []).filter(c => c.type === 'Investor-Out').reduce((s, c) => s + (c.amount || 0), 0);
 
     return (
       <div style={styles.container}>
@@ -744,6 +746,8 @@ export default function ERPViewsSales(props) {
               <option value="Cash-Out">Cash-Out</option>
               <option value="Bank-In">Bank-In</option>
               <option value="Bank-Out">Bank-Out</option>
+              <option value="Investor-In">Investor-In</option>
+              <option value="Investor-Out">Investor-Out</option>
             </select>
           </div>
         </div>
@@ -757,6 +761,10 @@ export default function ERPViewsSales(props) {
             <div style={{ ...styles.statValue, color: '#60A5FA' }}>{fmt(bankIn - bankOut)}</div>
           </div>
           <div style={styles.statCard}>
+            <div style={styles.statLabel}>Investor Net</div>
+            <div style={{ ...styles.statValue, color: '#A78BFA' }}>{fmt(investIn - investOut)}</div>
+          </div>
+          <div style={styles.statCard}>
             <div style={styles.statLabel}>Cash In</div>
             <div style={{ ...styles.statValue, color: '#34D399' }}>{fmt(cashIn)}</div>
           </div>
@@ -765,6 +773,40 @@ export default function ERPViewsSales(props) {
             <div style={{ ...styles.statValue, color: '#FCA5A5' }}>{fmt(cashOut)}</div>
           </div>
         </div>
+
+        <div style={styles.card}>
+          <h3 style={{ marginTop: 0, color: '#FBBF24' }}>🔁 Fund Transfer</h3>
+          <form onSubmit={handleTransfer} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '15px' }}>
+            <div>
+              <label style={styles.formLabel}>From</label>
+              <select style={styles.select} value={transferForm.from} onChange={e => setTransferForm(p => ({ ...p, from: e.target.value }))}>
+                <option>Cash</option><option>Bank</option><option>Investor</option>
+              </select>
+            </div>
+            <div>
+              <label style={styles.formLabel}>To</label>
+              <select style={styles.select} value={transferForm.to} onChange={e => setTransferForm(p => ({ ...p, to: e.target.value }))}>
+                <option>Cash</option><option>Bank</option><option>Investor</option>
+              </select>
+            </div>
+            <div>
+              <label style={styles.formLabel}>Amount (SAR)</label>
+              <input type="number" step="0.01" style={styles.input} value={transferForm.amount} onChange={e => setTransferForm(p => ({ ...p, amount: e.target.value }))} required />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Date</label>
+              <input type="date" style={styles.input} value={transferForm.date} onChange={e => setTransferForm(p => ({ ...p, date: e.target.value }))} />
+            </div>
+            <div style={{ gridColumn: 'span 2' }}>
+              <label style={styles.formLabel}>Note</label>
+              <input style={styles.input} value={transferForm.description || ''} onChange={e => setTransferForm(p => ({ ...p, description: e.target.value }))} placeholder="e.g. deposited daily cash sales to bank" />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+              <button type="submit" style={{ ...styles.btn, ...styles.btnSuccess, width: '100%' }}>Transfer</button>
+            </div>
+          </form>
+        </div>
+
         <div style={styles.card}>
           <table style={styles.table}>
             <thead>
