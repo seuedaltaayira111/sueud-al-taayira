@@ -418,7 +418,7 @@ export default function useERPActions(state) {
       const { data: newM, error } = await supabase.from('staff_mistakes').insert([{
         employee_id: fd.emp.value, old_ticket_no: fd.old_tkt.value,
         new_ticket_no: fd.new_tkt.value, loss_amount: parseFloat(fd.loss_amt.value) || 0,
-        paid_by_employee: fd.paid_by_emp?.checked || false,
+        paid_by_employee: fd.paid_by_emp?.checked || false, reason: fd.reason?.value || '',
         date: today, tenant_id: userProfile.tenant_id
       }]).select('*, employees(name)').single();
       if (error) throw error;
@@ -873,7 +873,13 @@ export default function useERPActions(state) {
   };
 
   // ===================== CRUD: EMPLOYEES =====================
-  const handleEditEmp = (c) => { setEditEmpId(c.id); setEmpForm({ name: c.name, role: c.role, salary: c.salary || 0, phone: c.phone || '', commission_rate: c.commission_rate || 0, iqama_no: c.iqama_no || '', iqama_expiry: c.iqama_expiry || '' }); };
+  const handleEditEmp = (c) => { setEditEmpId(c.id); setEmpForm({
+    name: c.name, role: c.role, salary: c.salary || 0, phone: c.phone || '',
+    commission_rate: c.commission_rate || 0, iqama_no: c.iqama_no || '', iqama_expiry: c.iqama_expiry || '',
+    nationality: c.nationality || '', job_title: c.job_title || '', national_id: c.national_id || '',
+    join_date: c.join_date || '', bank_name: c.bank_name || '', bank_account: c.bank_account || '',
+    labor_office_expiry: c.labor_office_expiry || ''
+  }); };
   const handleAddEditEmp = async (e) => {
     e.preventDefault();
     const pl = { ...empForm, salary: parseFloat(empForm.salary) || 0, commission_rate: parseFloat(empForm.commission_rate) || 0, tenant_id: userProfile.tenant_id };
@@ -889,7 +895,10 @@ export default function useERPActions(state) {
         setData(prev => ({ ...prev, employees: [...prev.employees, nItem] }));
         showToast('Added!');
       }
-      setEmpForm({ name: '', role: 'Sales', salary: 0, phone: '', commission_rate: 0, iqama_no: '', iqama_expiry: '' });
+      setEmpForm({
+        name: '', role: 'Sales', salary: 0, phone: '', commission_rate: 0, iqama_no: '', iqama_expiry: '',
+        nationality: '', job_title: '', national_id: '', join_date: '', bank_name: '', bank_account: '', labor_office_expiry: ''
+      });
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
@@ -1076,14 +1085,17 @@ export default function useERPActions(state) {
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
-  // ===================== TRANSFERS (Bank ↔ Cash) =====================
+  // ===================== TRANSFERS (Cash ↔ Bank ↔ Investor) =====================
   const handleTransfer = async (e) => {
     e.preventDefault();
     try {
       const amt = parseFloat(transferForm.amount) || 0;
       if (amt <= 0) throw new Error('Enter a valid amount!');
-      const fromType = transferForm.from === 'Cash' ? 'Cash-Out' : 'Bank-Out';
-      const toType = transferForm.to === 'Cash' ? 'Cash-In' : 'Bank-In';
+      if (transferForm.from === transferForm.to) throw new Error('From and To must be different!');
+      const outType = (acc) => acc === 'Cash' ? 'Cash-Out' : acc === 'Bank' ? 'Bank-Out' : 'Investor-Out';
+      const inType = (acc) => acc === 'Cash' ? 'Cash-In' : acc === 'Bank' ? 'Bank-In' : 'Investor-In';
+      const fromType = outType(transferForm.from);
+      const toType = inType(transferForm.to);
       const { data: cbFrom } = await supabase.from('cashbook').insert([{
         trans_date: transferForm.date || today, type: fromType,
         description: `Transfer to ${transferForm.to}: ${transferForm.description || ''}`,
@@ -1233,7 +1245,7 @@ export default function useERPActions(state) {
       // ✅ FIX: Added the missing dot here - supabase.from instead of supabase from
       const { data: newPay, error } = await supabase.from('payroll').insert([{
         employee_id: empId, month, base_salary: base, commission: commissionAmt,
-        overtime: overtimeAmt, gift, advance_deduction: advance,
+        overtime, gift, advance_deduction: advance,
         mistakes_deduction: mistakesDed, other_deduction: otherDed,
         gross_salary: gross, total_deductions: totalDed, amount: netPay,
         payment_mode: payForm.payment_mode || 'Cash', payment_date: payForm.payment_date || today,
@@ -1265,6 +1277,43 @@ export default function useERPActions(state) {
         mistakes_deduction: 0, other_deduction: 0,
         payment_mode: 'Cash', payment_date: today, notes: ''
       });
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+
+  // ===================== EMPLOYEE ADVANCES / LOANS =====================
+  const handleAddAdvance = async (e) => {
+    e.preventDefault();
+    try {
+      if (!advForm.employee_id) throw new Error('Select an employee!');
+      const amount = parseFloat(advForm.amount) || 0;
+      if (amount <= 0) throw new Error('Enter a valid amount');
+      const { data: newAdv, error } = await supabase.from('emp_advances').insert([{
+        employee_id: advForm.employee_id, amount, date: advForm.date || today,
+        status: advForm.status || 'Pending', tenant_id: userProfile.tenant_id
+      }]).select('*, employees(name)').single();
+      if (error) throw new Error(error.message);
+      setData(prev => ({ ...prev, empAdvances: [newAdv, ...(prev.empAdvances || [])] }));
+      const emp = data.employees.find(em => em.id === advForm.employee_id);
+      await logAction(`Advance of ${amount.toFixed(2)} SAR to ${emp?.name || ''}`);
+      showToast('✅ Advance recorded');
+      setAdvForm({ employee_id: '', amount: '', date: today, status: 'Pending' });
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+
+  const handleUpdateAdvanceStatus = async (adv, status) => {
+    try {
+      await supabase.from('emp_advances').update({ status }).eq('id', adv.id);
+      setData(prev => ({ ...prev, empAdvances: prev.empAdvances.map(a => a.id === adv.id ? { ...a, status } : a) }));
+      showToast('Advance updated');
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+
+  const handleDeleteAdvance = async (adv) => {
+    if (!confirm('Delete this advance record?')) return;
+    try {
+      await supabase.from('emp_advances').delete().eq('id', adv.id);
+      setData(prev => ({ ...prev, empAdvances: prev.empAdvances.filter(a => a.id !== adv.id) }));
+      showToast('Advance deleted');
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
@@ -1452,6 +1501,7 @@ export default function useERPActions(state) {
     handleAddEditInvestor, handleDeleteInvestor,
     handleAddEditUser, handleEditUser, handleDeleteUser,
     handleProcessPayroll,
+    handleAddAdvance, handleUpdateAdvanceStatus, handleDeleteAdvance,
     handleBulkDeleteInvoices, handleBulkSettle,
     handleExportCSV, handleCloneInvoice, getQuickStats
   };
