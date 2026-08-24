@@ -31,6 +31,8 @@ const PAGE_COMPONENT = {
   dashboard: ERPViewsMisc,
   create: ERPViewsMisc,
   my_attendance: ERPViewsMisc,
+  hr: ERPViewsMisc,
+  hr_advanced: ERPViewsMisc,
 
   // Sales & Invoices, CRM, Finance, HR listing, Reports & Audit, System Admin
   // basics — all already fully implemented, just needed to be reachable.
@@ -43,8 +45,6 @@ const PAGE_COMPONENT = {
   portals: ERPViewsSales,
   packages: ERPViewsSales,
   branches: ERPViewsSales,
-  hr: ERPViewsSales,
-  hr_advanced: ERPViewsSales,
   expenses: ERPViewsSales,
   bank: ERPViewsSales,
   audit: ERPViewsSales,
