@@ -215,6 +215,55 @@ export default function ERPViewsMisc(props) {
             )}
           </div>
 
+          {/* PREVIOUS BOOKING / CREDIT CHAIN — for customers rebooking after a refund */}
+          {f.custType === 'Individual' && f.custId && f.custId !== 'new' && (() => {
+            const cust = data.customers?.find(c => c.id === f.custId);
+            const custRefunds = (data.invoices || []).filter(i => i.customer_id === f.custId && i.invoice_no?.startsWith('REF-'));
+            const linkedRefund = custRefunds.find(r => r.invoice_no === f.linkedInvId);
+            return (
+              <div style={{ ...s.card, border: '1px solid #F59E0B' }}>
+                <h3 style={{ ...s.sectionTitle, color: '#F59E0B' }}>🔗 Previous Booking / Store Credit</h3>
+                <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap' }}>
+                  <div style={{ background: '#0F172A', padding: '10px 16px', borderRadius: '8px' }}>
+                    <div style={s.statLabel}>Available Store Credit</div>
+                    <div style={{ fontWeight: 700, color: '#34D399', fontSize: '16px' }}>{fmt(cust?.store_credit || 0)}</div>
+                  </div>
+                </div>
+
+                {custRefunds.length > 0 && (
+                  <div style={s.formGroup}>
+                    <label style={s.formLabel}>Link a previous refund (shows old booking + refund on this invoice)</label>
+                    <select style={s.select} value={f.linkedInvId} onChange={e => {
+                      const r = custRefunds.find(x => x.invoice_no === e.target.value);
+                      if (!r) { set({ linkedInvId: '' }); return; }
+                      set({
+                        linkedInvId: r.invoice_no,
+                        oldTicketNo: r.old_ticket_no || '', oldPnr: r.old_pnr || '',
+                        oldAirline: r.old_airline || '', oldSector: r.old_sector || '',
+                        oldSellPrice: r.old_sell_price || 0, oldBookingDate: r.old_booking_date || '',
+                        oldPassengers: r.old_passengers || '', oldFlightType: r.old_flight_type || '',
+                        oldPaymentMethod: r.old_payment_method || '', refundReason: r.refund_reason || '',
+                        bookingType: 'Reissue',
+                      });
+                    }}>
+                      <option value="">— No linked booking —</option>
+                      {custRefunds.map(r => <option key={r.id} value={r.invoice_no}>{r.invoice_no} — refunded {fmt(r.refund_customer)} on {r.refund_date || r.invoice_date}</option>)}
+                    </select>
+                  </div>
+                )}
+
+                {linkedRefund && (
+                  <div style={{ background: '#0F172A', padding: '12px 16px', borderRadius: '8px', fontSize: '13px', color: '#94A3B8', lineHeight: 1.8 }}>
+                    <div>Old ticket: <b style={{ color: '#CBD5E1' }}>{f.oldTicketNo || '-'}</b> ({f.oldAirline || '-'}, {f.oldSector || '-'})</div>
+                    <div>Original price: <b style={{ color: '#CBD5E1' }}>{fmt(f.oldSellPrice)}</b></div>
+                    <div>Refunded to customer: <b style={{ color: '#FBBF24' }}>{fmt(linkedRefund.refund_customer)}</b> (company kept {fmt(linkedRefund.refund_company)})</div>
+                    <div>Reason: {f.refundReason || '-'}</div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {/* BOOKING */}
           <div style={s.card}>
             <h3 style={s.sectionTitle}>📅 Booking Info</h3>
@@ -357,9 +406,21 @@ export default function ERPViewsMisc(props) {
                 </div>
               </>)}
 
-              {f.payment === 'Credit Balance' && (
-                <div style={s.formGroup}><label style={s.formLabel}>Use Credit (SAR)</label><input type="number" step="0.01" style={s.input} value={f.useCredit} onChange={e => set({ useCredit: e.target.value })} /></div>
-              )}
+              {f.payment === 'Credit Balance' && (() => {
+                const cust = data.customers?.find(c => c.id === f.custId);
+                const available = cust?.store_credit || 0;
+                const over = (parseFloat(f.useCredit) || 0) > available;
+                return (
+                  <div style={s.formGroup}>
+                    <label style={s.formLabel}>Use Credit (SAR) — available {fmt(available)}</label>
+                    <input type="number" step="0.01" max={available} style={{ ...s.input, borderColor: over ? '#DC2626' : '#475569' }}
+                      value={f.useCredit} onChange={e => set({ useCredit: e.target.value })} />
+                    {over && <div style={{ color: '#FCA5A5', fontSize: '12px', marginTop: '4px' }}>⚠️ Exceeds available credit balance</div>}
+                    <button type="button" style={{ ...s.btn, ...s.btnGhost, marginTop: '6px', fontSize: '11px', padding: '6px 10px' }}
+                      onClick={() => set({ useCredit: Math.min(available, grandTotal) })}>Use max available</button>
+                  </div>
+                );
+              })()}
               {f.payment === 'Tabby' && (
                 <div style={s.formGroup}><label style={s.formLabel}>Tabby Order No.</label><input style={s.input} value={f.tabbyNo} onChange={e => set({ tabbyNo: e.target.value })} /></div>
               )}
@@ -523,5 +584,244 @@ export default function ERPViewsMisc(props) {
     );
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  // HR — complete employee 360: directory, advances, mistakes, payroll
+  // ═══════════════════════════════════════════════════════════════
+  if (page === 'hr' || page === 'hr_advanced') {
+    const {
+      empForm, setEmpForm, editEmpId, setEditEmpId, handleAddEditEmp, handleEditEmp, handleDelete,
+      advForm, setAdvForm, handleAddAdvance, handleUpdateAdvanceStatus, handleDeleteAdvance,
+      handleAddMistake, handlePreviewMistake, handleDeleteMistake,
+      payForm, setPayForm, handleProcessPayroll, handleGenerateSlip, handleDeletePayroll,
+    } = props;
+    const [tab, setTab] = useState('directory');
+    const daysLeft = (d) => d ? Math.ceil((new Date(d) - new Date(today)) / 86400000) : null;
+
+    const TabBtn = ({ id, label }) => (
+      <button style={{ ...s.btn, ...(tab === id ? s.btnPrimary : s.btnGhost) }} onClick={() => setTab(id)}>{label}</button>
+    );
+
+    return (
+      <div style={s.container}>
+        <div style={s.header}><h1 style={s.title}>👨‍💼 {t('hr_advanced', 'HR & Payroll')}</h1></div>
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          <TabBtn id="directory" label="👤 Directory" />
+          <TabBtn id="advances" label="💵 Advances" />
+          <TabBtn id="mistakes" label="⚠️ Mistakes/Deductions" />
+          <TabBtn id="payroll" label="🧾 Payroll & Slips" />
+        </div>
+
+        {tab === 'directory' && (
+          <>
+            <div style={s.card}>
+              <h3 style={s.sectionTitle}>{editEmpId ? 'Edit Employee' : '+ Add Employee'}</h3>
+              <form onSubmit={handleAddEditEmp} style={s.formRow}>
+                <div style={s.formGroup}><label style={s.formLabel}>Full Name</label><input style={s.input} value={empForm.name} onChange={e => setEmpForm(p => ({ ...p, name: e.target.value }))} required /></div>
+                <div style={s.formGroup}><label style={s.formLabel}>Job Title</label><input style={s.input} value={empForm.job_title} onChange={e => setEmpForm(p => ({ ...p, job_title: e.target.value }))} /></div>
+                <div style={s.formGroup}><label style={s.formLabel}>Role</label>
+                  <select style={s.select} value={empForm.role} onChange={e => setEmpForm(p => ({ ...p, role: e.target.value }))}>
+                    <option>Sales</option><option>Accountant</option><option>Manager</option><option>HR</option><option>Admin</option><option>Support</option>
+                  </select>
+                </div>
+                <div style={s.formGroup}><label style={s.formLabel}>Phone</label><input style={s.input} value={empForm.phone} onChange={e => setEmpForm(p => ({ ...p, phone: e.target.value }))} /></div>
+                <div style={s.formGroup}><label style={s.formLabel}>Nationality</label><input style={s.input} value={empForm.nationality} onChange={e => setEmpForm(p => ({ ...p, nationality: e.target.value }))} /></div>
+                <div style={s.formGroup}><label style={s.formLabel}>National ID / Iqama No.</label><input style={s.input} value={empForm.iqama_no} onChange={e => setEmpForm(p => ({ ...p, iqama_no: e.target.value }))} /></div>
+                <div style={s.formGroup}><label style={s.formLabel}>Iqama Expiry</label><input type="date" style={s.input} value={empForm.iqama_expiry} onChange={e => setEmpForm(p => ({ ...p, iqama_expiry: e.target.value }))} /></div>
+                <div style={s.formGroup}><label style={s.formLabel}>Labor Office (Maktab Amal) Renewal Date</label><input type="date" style={s.input} value={empForm.labor_office_expiry} onChange={e => setEmpForm(p => ({ ...p, labor_office_expiry: e.target.value }))} /></div>
+                <div style={s.formGroup}><label style={s.formLabel}>Join Date</label><input type="date" style={s.input} value={empForm.join_date} onChange={e => setEmpForm(p => ({ ...p, join_date: e.target.value }))} /></div>
+                <div style={s.formGroup}><label style={s.formLabel}>Salary (SAR)</label><input type="number" style={s.input} value={empForm.salary} onChange={e => setEmpForm(p => ({ ...p, salary: e.target.value }))} /></div>
+                <div style={s.formGroup}><label style={s.formLabel}>Commission %</label><input type="number" style={s.input} value={empForm.commission_rate} onChange={e => setEmpForm(p => ({ ...p, commission_rate: e.target.value }))} /></div>
+                <div style={s.formGroup}><label style={s.formLabel}>Bank Name</label><input style={s.input} value={empForm.bank_name} onChange={e => setEmpForm(p => ({ ...p, bank_name: e.target.value }))} /></div>
+                <div style={s.formGroup}><label style={s.formLabel}>Bank Account / IBAN</label><input style={s.input} value={empForm.bank_account} onChange={e => setEmpForm(p => ({ ...p, bank_account: e.target.value }))} /></div>
+                <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px' }}>
+                  <button type="submit" style={{ ...s.btn, ...s.btnSuccess }}>{editEmpId ? 'Save Changes' : 'Add Employee'}</button>
+                  {editEmpId && <button type="button" style={{ ...s.btn, ...s.btnGhost }} onClick={() => setEditEmpId(null)}>Cancel</button>}
+                </div>
+              </form>
+            </div>
+
+            <div style={s.card}>
+              <table style={s.table}>
+                <thead><tr>
+                  <th style={s.th}>Name</th><th style={s.th}>Title</th><th style={s.th}>Phone</th>
+                  <th style={{ ...s.th, textAlign: 'right' }}>Salary</th><th style={s.th}>Iqama Expiry</th>
+                  <th style={s.th}>Maktab Amal</th><th style={{ ...s.th, textAlign: 'center' }}>Actions</th>
+                </tr></thead>
+                <tbody>
+                  {(data.employees || []).map(emp => {
+                    const iqDays = daysLeft(emp.iqama_expiry);
+                    const laDays = daysLeft(emp.labor_office_expiry);
+                    return (
+                      <tr key={emp.id}>
+                        <td style={{ ...s.td, fontWeight: 700 }}>{emp.name}</td>
+                        <td style={s.td}>{emp.job_title || emp.role || '-'}</td>
+                        <td style={s.td}>{emp.phone || '-'}</td>
+                        <td style={s.tdRight}>{fmt(emp.salary)}</td>
+                        <td style={s.td}>
+                          {emp.iqama_expiry || '-'}
+                          {iqDays !== null && iqDays <= 30 && <span style={{ ...s.badge, ...(iqDays < 0 ? s.badgeUnpaid : s.badgeUnpaid), marginLeft: 6 }}>{iqDays < 0 ? 'EXPIRED' : iqDays + 'd left'}</span>}
+                        </td>
+                        <td style={s.td}>
+                          {emp.labor_office_expiry || '-'}
+                          {laDays !== null && laDays <= 30 && <span style={{ ...s.badge, ...s.badgeUnpaid, marginLeft: 6 }}>{laDays < 0 ? 'EXPIRED' : laDays + 'd left'}</span>}
+                        </td>
+                        <td style={s.tdCenter}>
+                          <button style={{ ...s.btn, ...s.btnGhost, padding: '6px 10px', marginRight: 6 }} onClick={() => handleEditEmp(emp)}>✏️</button>
+                          <button style={{ ...s.btn, ...s.btnDanger, padding: '6px 10px' }} onClick={() => handleDelete('employees', emp.id)}>🗑</button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {tab === 'advances' && (
+          <>
+            <div style={s.card}>
+              <h3 style={s.sectionTitle}>+ New Advance / Loan</h3>
+              <form onSubmit={handleAddAdvance} style={s.formRow}>
+                <div style={s.formGroup}>
+                  <label style={s.formLabel}>Employee</label>
+                  <select style={s.select} value={advForm.employee_id} onChange={e => setAdvForm(p => ({ ...p, employee_id: e.target.value }))} required>
+                    <option value="">— Select —</option>
+                    {(data.employees || []).map(emp => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
+                  </select>
+                </div>
+                <div style={s.formGroup}><label style={s.formLabel}>Amount (SAR)</label><input type="number" step="0.01" style={s.input} value={advForm.amount} onChange={e => setAdvForm(p => ({ ...p, amount: e.target.value }))} required /></div>
+                <div style={s.formGroup}><label style={s.formLabel}>Date</label><input type="date" style={s.input} value={advForm.date} onChange={e => setAdvForm(p => ({ ...p, date: e.target.value }))} /></div>
+                <div style={s.formGroup}><label style={s.formLabel}>Status</label>
+                  <select style={s.select} value={advForm.status} onChange={e => setAdvForm(p => ({ ...p, status: e.target.value }))}>
+                    <option>Pending</option><option>Repaid</option><option>Deducted from Salary</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-end' }}><button type="submit" style={{ ...s.btn, ...s.btnSuccess, width: '100%' }}>Add Advance</button></div>
+              </form>
+            </div>
+            <div style={s.card}>
+              <table style={s.table}>
+                <thead><tr><th style={s.th}>Employee</th><th style={s.th}>Date</th><th style={{ ...s.th, textAlign: 'right' }}>Amount</th><th style={s.th}>Status</th><th style={{ ...s.th, textAlign: 'center' }}>Actions</th></tr></thead>
+                <tbody>
+                  {(data.empAdvances || []).map(a => (
+                    <tr key={a.id}>
+                      <td style={s.td}>{a.employees?.name || '-'}</td>
+                      <td style={s.td}>{a.date}</td>
+                      <td style={s.tdRight}>{fmt(a.amount)}</td>
+                      <td style={s.td}>
+                        <select style={{ ...s.select, padding: '4px 8px', fontSize: '12px' }} value={a.status} onChange={e => handleUpdateAdvanceStatus(a, e.target.value)}>
+                          <option>Pending</option><option>Repaid</option><option>Deducted from Salary</option>
+                        </select>
+                      </td>
+                      <td style={s.tdCenter}><button style={{ ...s.btn, ...s.btnDanger, padding: '6px 10px' }} onClick={() => handleDeleteAdvance(a)}>🗑</button></td>
+                    </tr>
+                  ))}
+                  {(data.empAdvances || []).length === 0 && <tr><td colSpan={5} style={{ ...s.td, textAlign: 'center', padding: 30 }}>No advances yet.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {tab === 'mistakes' && (
+          <>
+            <div style={s.card}>
+              <h3 style={s.sectionTitle}>+ Log a Mistake / Loss</h3>
+              <form onSubmit={handleAddMistake} style={s.formRow}>
+                <div style={s.formGroup}>
+                  <label style={s.formLabel}>Employee</label>
+                  <select name="emp" style={s.select} required>
+                    <option value="">— Select —</option>
+                    {(data.employees || []).map(emp => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
+                  </select>
+                </div>
+                <div style={s.formGroup}><label style={s.formLabel}>What happened (reason)</label><input name="reason" style={s.input} placeholder="e.g. wrong date entered on ticket" /></div>
+                <div style={s.formGroup}><label style={s.formLabel}>Old Ticket No.</label><input name="old_tkt" style={s.input} /></div>
+                <div style={s.formGroup}><label style={s.formLabel}>New/Corrected Ticket No.</label><input name="new_tkt" style={s.input} /></div>
+                <div style={s.formGroup}><label style={s.formLabel}>Loss Amount (SAR)</label><input name="loss_amt" type="number" step="0.01" style={s.input} /></div>
+                <div style={{ ...s.formGroup, display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#CBD5E1', fontSize: 13 }}><input type="checkbox" name="paid_by_emp" /> Deduct from employee's salary</label>
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}><button type="submit" style={{ ...s.btn, ...s.btnWarning }}>Log Mistake</button></div>
+              </form>
+            </div>
+            <div style={s.card}>
+              <table style={s.table}>
+                <thead><tr><th style={s.th}>Employee</th><th style={s.th}>Reason</th><th style={{ ...s.th, textAlign: 'right' }}>Loss</th><th style={s.th}>Deducted?</th><th style={{ ...s.th, textAlign: 'center' }}>Actions</th></tr></thead>
+                <tbody>
+                  {(data.staffMistakes || []).map(m => (
+                    <tr key={m.id}>
+                      <td style={s.td}>{m.employees?.name || '-'}</td>
+                      <td style={s.td}>{m.reason || '-'}</td>
+                      <td style={s.tdRight}>{fmt(m.loss_amount)}</td>
+                      <td style={s.td}>{m.paid_by_employee ? 'Yes' : 'No'}</td>
+                      <td style={s.tdCenter}>
+                        <button style={{ ...s.btn, ...s.btnGhost, padding: '6px 10px', marginRight: 6 }} onClick={() => handlePreviewMistake(m)}>👁</button>
+                        <button style={{ ...s.btn, ...s.btnDanger, padding: '6px 10px' }} onClick={() => handleDeleteMistake(m)}>🗑</button>
+                      </td>
+                    </tr>
+                  ))}
+                  {(data.staffMistakes || []).length === 0 && <tr><td colSpan={5} style={{ ...s.td, textAlign: 'center', padding: 30 }}>No mistakes logged.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {tab === 'payroll' && (
+          <>
+            <div style={s.card}>
+              <h3 style={s.sectionTitle}>Process Salary</h3>
+              <form onSubmit={handleProcessPayroll} style={s.formRow}>
+                <div style={s.formGroup}>
+                  <label style={s.formLabel}>Employee</label>
+                  <select style={s.select} value={payForm.employee_id} onChange={e => setPayForm(p => ({ ...p, employee_id: e.target.value }))} required>
+                    <option value="">— Select —</option>
+                    {(data.employees || []).map(emp => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
+                  </select>
+                </div>
+                <div style={s.formGroup}><label style={s.formLabel}>Month</label><input type="month" style={s.input} value={payForm.month} onChange={e => setPayForm(p => ({ ...p, month: e.target.value }))} /></div>
+                <div style={s.formGroup}><label style={s.formLabel}>Overtime (SAR)</label><input type="number" style={s.input} value={payForm.overtime} onChange={e => setPayForm(p => ({ ...p, overtime: e.target.value }))} /></div>
+                <div style={s.formGroup}><label style={s.formLabel}>Gift/Bonus (SAR)</label><input type="number" style={s.input} value={payForm.gift} onChange={e => setPayForm(p => ({ ...p, gift: e.target.value }))} /></div>
+                <div style={s.formGroup}><label style={s.formLabel}>Advance Deduction (SAR)</label><input type="number" style={s.input} value={payForm.advance} onChange={e => setPayForm(p => ({ ...p, advance: e.target.value }))} /></div>
+                <div style={s.formGroup}><label style={s.formLabel}>Mistakes Deduction (SAR)</label><input type="number" style={s.input} value={payForm.mistakes_deduction} onChange={e => setPayForm(p => ({ ...p, mistakes_deduction: e.target.value }))} /></div>
+                <div style={s.formGroup}><label style={s.formLabel}>Other Deduction (SAR)</label><input type="number" style={s.input} value={payForm.other_deduction} onChange={e => setPayForm(p => ({ ...p, other_deduction: e.target.value }))} /></div>
+                <div style={s.formGroup}><label style={s.formLabel}>Payment Mode</label>
+                  <select style={s.select} value={payForm.payment_mode} onChange={e => setPayForm(p => ({ ...p, payment_mode: e.target.value }))}><option>Cash</option><option>Bank Transfer</option></select>
+                </div>
+                <div style={s.formGroup}><label style={s.formLabel}>Payment Date</label><input type="date" style={s.input} value={payForm.payment_date} onChange={e => setPayForm(p => ({ ...p, payment_date: e.target.value }))} /></div>
+                <div style={{ gridColumn: '1 / -1' }}><button type="submit" style={{ ...s.btn, ...s.btnSuccess }}>Process Salary</button></div>
+              </form>
+              <p style={{ color: '#64748B', fontSize: 12, marginTop: 10 }}>Commission is calculated automatically from that employee's invoices for the selected month.</p>
+            </div>
+            <div style={s.card}>
+              <table style={s.table}>
+                <thead><tr><th style={s.th}>Employee</th><th style={s.th}>Month</th><th style={{ ...s.th, textAlign: 'right' }}>Gross</th><th style={{ ...s.th, textAlign: 'right' }}>Deductions</th><th style={{ ...s.th, textAlign: 'right' }}>Net Pay</th><th style={{ ...s.th, textAlign: 'center' }}>Actions</th></tr></thead>
+                <tbody>
+                  {(data.payroll || []).map(p => (
+                    <tr key={p.id}>
+                      <td style={s.td}>{p.employees?.name || '-'}</td>
+                      <td style={s.td}>{p.month}</td>
+                      <td style={s.tdRight}>{fmt(p.gross_salary)}</td>
+                      <td style={s.tdRight}>{fmt(p.total_deductions)}</td>
+                      <td style={{ ...s.tdRight, color: '#34D399' }}>{fmt(p.amount)}</td>
+                      <td style={s.tdCenter}>
+                        <button style={{ ...s.btn, ...s.btnGhost, padding: '6px 10px', marginRight: 6 }} onClick={() => handleGenerateSlip(p)}>🧾</button>
+                        <button style={{ ...s.btn, ...s.btnDanger, padding: '6px 10px' }} onClick={() => handleDeletePayroll(p)}>🗑</button>
+                      </td>
+                    </tr>
+                  ))}
+                  {(data.payroll || []).length === 0 && <tr><td colSpan={6} style={{ ...s.td, textAlign: 'center', padding: 30 }}>No salary slips yet.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
   return null;
 }
+
