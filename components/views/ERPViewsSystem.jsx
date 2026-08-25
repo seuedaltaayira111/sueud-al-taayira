@@ -173,15 +173,15 @@ export default function ERPViewsSystem(props) {
             </div>
             <div>
               <label style={styles.label}>Username</label>
-              <input value={profileForm?.username || ''} onChange={e => setProfileForm(prev => ({...prev, username: e.target.value }))} style={styles.input} required />
+              <input value={profileForm?.username || ''} onChange={e => setProfileForm(prev => ({...prev, username: e.target.value}))} style={styles.input} required />
             </div>
             <div>
               <label style={styles.label}>Phone Number</label>
-              <input value={profileForm?.phone || ''} onChange={e => setProfileForm(prev => ({...prev, phone: e.target.value }))} style={styles.input} />
+              <input value={profileForm?.phone || ''} onChange={e => setProfileForm(prev => ({...prev, phone: e.target.value}))} style={styles.input} />
             </div>
             <div>
               <label style={styles.label}>Address</label>
-              <input value={profileForm?.address || ''} onChange={e => setProfileForm(prev => ({...prev, address: e.target.value }))} style={styles.input} />
+              <input value={profileForm?.address || ''} onChange={e => setProfileForm(prev => ({...prev, address: e.target.value}))} style={styles.input} />
             </div>
             <button type="submit" style={styles.btnPrimary}>💾 Save Profile Changes</button>
           </form>
@@ -243,14 +243,14 @@ export default function ERPViewsSystem(props) {
         <div style={styles.card}>
           <h3 style={{marginTop: 0, color: '#FBBF24' }}>➕ Add New Travel Agency</h3>
           <form onSubmit={handleAddTenant} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
-            <div><label style={styles.label}>Agency Name (English) *</label><input value={tenantForm?.agency_name || ''} onChange={e => setTenantForm(prev => ({...prev, agency_name: e.target.value })) style={styles.input} required /></div>
-            <div><label style={styles.label}>Company Name (Arabic)</label><input value={tenantForm?.company_name_ar || ''} onChange={e => setTenantForm(prev => ({...prev, company_name_ar: e.target.value })) style={styles.input} /></div>
-            <div><label style={styles.label}>Owner Email *</label><input type="email" value={tenantForm?.owner_email || ''} onChange={e => setTenantForm(prev => ({...prev, owner_email: e.target.value })) style={styles.input} required /></div>
-            <div><label style={styles.label}>Subscription End Date *</label><input type="date" value={tenantForm?.subscription_end_date || ''} onChange={e => setTenantForm(prev => ({...prev, subscription_end_date: e.target.value })) style={styles.input} required /></div>
-            <div><label style={styles.label}>VAT Number</label><input value={tenantForm?.vat_no || ''} onChange={e => setTenantForm(prev => ({...prev, vat_no: e.target.value })) style={styles.input} /></div>
-            <div><label style={styles.label}>CR Number</label><input value={tenantForm?.cr_no || ''} onChange={e => setTenantForm(prev => ({...prev, cr_no: e.target.value })) style={styles.input} /></div>
-            <div><label style={styles.label}>Phone</label><input value={tenantForm?.phone || ''} onChange={e => setTenantForm(prev => ({...prev, phone: e.target.value })) style={styles.input} /></div>
-            <div><label style={styles.label}>Address</label><input value={tenantForm?.address_ar || ''} onChange={e => setTenantForm(prev => ({...prev, address_ar: e.target.value })) style={styles.input} /></div>
+            <div><label style={styles.label}>Agency Name (English) *</label><input value={tenantForm?.agency_name || ''} onChange={e => setTenantForm(prev => ({...prev, agency_name: e.target.value}))} style={styles.input} required /></div>
+            <div><label style={styles.label}>Company Name (Arabic)</label><input value={tenantForm?.company_name_ar || ''} onChange={e => setTenantForm(prev => ({...prev, company_name_ar: e.target.value}))} style={styles.input} /></div>
+            <div><label style={styles.label}>Owner Email *</label><input type="email" value={tenantForm?.owner_email || ''} onChange={e => setTenantForm(prev => ({...prev, owner_email: e.target.value}))} style={styles.input} required /></div>
+            <div><label style={styles.label}>Subscription End Date *</label><input type="date" value={tenantForm?.subscription_end_date || ''} onChange={e => setTenantForm(prev => ({...prev, subscription_end_date: e.target.value}))} style={styles.input} required /></div>
+            <div><label style={styles.label}>VAT Number</label><input value={tenantForm?.vat_no || ''} onChange={e => setTenantForm(prev => ({...prev, vat_no: e.target.value}))} style={styles.input} /></div>
+            <div><label style={styles.label}>CR Number</label><input value={tenantForm?.cr_no || ''} onChange={e => setTenantForm(prev => ({...prev, cr_no: e.target.value}))} style={styles.input} /></div>
+            <div><label style={styles.label}>Phone</label><input value={tenantForm?.phone || ''} onChange={e => setTenantForm(prev => ({...prev, phone: e.target.value}))} style={styles.input} /></div>
+            <div><label style={styles.label}>Address</label><input value={tenantForm?.address_ar || ''} onChange={e => setTenantForm(prev => ({...prev, address_ar: e.target.value}))} style={styles.input} /></div>
             <button type="submit" style={{ ...styles.btnPrimary, gridColumn: '1 / -1', marginTop: '10px' }}>🚀 Create Agency & Generate Password</button>
           </form>
         </div>
@@ -298,7 +298,6 @@ export default function ERPViewsSystem(props) {
           <p style={{ margin: '5px 0 0', opacity: 0.9 }}>View bank, cash, credit, branches and customer data.</p>
         </div>
 
-        {/* TAB BUTTONS */}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
           {tabs.map(tab => (
             <button
@@ -312,7 +311,6 @@ export default function ERPViewsSystem(props) {
         </div>
 
         <div style={styles.card}>
-          {/* BANK TAB */}
           {statementType === 'bank' && (
             <div>
               <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', padding: '30px', borderRadius: '12px', textAlign: 'center', border: '2px solid #FBBF24', marginBottom: '15px' }}>
@@ -356,7 +354,6 @@ export default function ERPViewsSystem(props) {
             </div>
           )}
 
-          {/* CASH TAB */}
           {statementType === 'cash' && (
             <div>
               <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', padding: '30px', borderRadius: '12px', textAlign: 'center', border: '2px solid #FBBF24', marginBottom: '15px' }}>
@@ -400,7 +397,6 @@ export default function ERPViewsSystem(props) {
             </div>
           )}
 
-          {/* CREDIT TAB */}
           {statementType === 'credit' && (
             <div>
               <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', padding: '30px', borderRadius: '12px', textAlign: 'center', border: '2px solid #FBBF24', marginBottom: '15px' }}>
@@ -431,7 +427,6 @@ export default function ERPViewsSystem(props) {
             </div>
           )}
 
-          {/* BRANCHES TAB */}
           {statementType === 'branches' && (
             <div>
               <div style={{ overflowX: 'auto' }}>
@@ -460,7 +455,6 @@ export default function ERPViewsSystem(props) {
             </div>
           )}
 
-          {/* CUSTOMERS TAB */}
           {statementType === 'customers' && (
             <div>
               <div style={{ overflowX: 'auto' }}>
@@ -493,8 +487,5 @@ export default function ERPViewsSystem(props) {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════════
-  // DEFAULT: return null for unhandled pages
-  // ═══════════════════════════════════════════════════════════════════════════════
   return null;
 }
