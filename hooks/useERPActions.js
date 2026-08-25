@@ -800,39 +800,52 @@ export default function useERPActions(state) {
   // ═══════════════════════════════════════════════════════════════
   // CRUD: BRANCHES (COMPLETE)
   // ═══════════════════════════════════════════════════════════════
-  const handleEditBrn = (c) => { setEditBrnId(c.id); setBrnForm({ name: c.name, location: c.location || '', phone: c.phone || '', manager: c.manager || '', email: c.email || '', timing: c.timing || '', status: c.status || 'Active' }); };
+  const handleEditBrn = (c) => {
+    setEditBrnId(c.id);
+    setBrnForm({
+      name: c.name, location: c.location || '', phone: c.phone || '', manager: c.manager || '',
+      email: c.email || '', timing: c.timing || '', status: c.status || 'Active'
+    });
+  };
+
   const handleAddEditBrn = async (e) => {
     e.preventDefault();
-    const pl = { ...brnForm, tenant_id: userProfile.tenant_id };
+    const pl = {
+      name: brnForm.name, location: brnForm.location, phone: brnForm.phone, manager: brnForm.manager,
+      email: brnForm.email, timing: brnForm.timing, status: brnForm.status || 'Active',
+      tenant_id: userProfile.tenant_id
+    };
     try {
       if (editBrnId) {
         const { data: up, error } = await supabase.from('branches').update(pl).eq('id', editBrnId).select().single();
         if (error) throw error;
         setData(prev => ({ ...prev, branches: prev.branches.map(c => c.id === editBrnId ? up : c) }));
-        showToast('Updated!'); setEditBrnId(null);
+        showToast('Branch Updated!');
+        setEditBrnId(null);
       } else {
         const { data: nItem, error } = await supabase.from('branches').insert([pl]).select().single();
         if (error) throw error;
         setData(prev => ({ ...prev, branches: [...prev.branches, nItem] }));
-        showToast('Added!');
+        showToast('Branch Added!');
       }
       setBrnForm({ name: '', location: '', phone: '', manager: '', email: '', timing: '', status: 'Active' });
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
   // ═══════════════════════════════════════════════════════════════
-  // CRUD: EMPLOYEES
+  // CRUD: EMPLOYEES (COMPLETE)
   // ═══════════════════════════════════════════════════════════════
-  const handleEditEmp = (e) => {
-    setEditEmpId(e.id);
+  const handleEditEmp = (c) => {
+    setEditEmpId(c.id);
     setEmpForm({
-      name: e.name || '', phone: e.phone || '', iqama_no: e.iqama_no || '', iqama_expiry: e.iqama_expiry || '',
-      role: e.role || 'Sales', salary: e.salary || 0, commission_rate: e.commission_rate || 0,
-      nationality: e.nationality || '', job_title: e.job_title || '', national_id: e.national_id || '',
-      join_date: e.join_date || '', bank_name: e.bank_name || '', bank_account: e.bank_account || '',
-      labor_office_expiry: e.labor_office_expiry || ''
+      name: c.name, phone: c.phone || '', iqama_no: c.iqama_no || '', iqama_expiry: c.iqama_expiry || '',
+      role: c.role || 'Sales', salary: c.salary || 0, commission_rate: c.commission_rate || 0,
+      nationality: c.nationality || '', job_title: c.job_title || '', national_id: c.national_id || '',
+      join_date: c.join_date || '', bank_name: c.bank_name || '', bank_account: c.bank_account || '',
+      labor_office_expiry: c.labor_office_expiry || ''
     });
   };
+
   const handleAddEditEmp = async (e) => {
     e.preventDefault();
     const pl = {
@@ -840,14 +853,16 @@ export default function useERPActions(state) {
       role: empForm.role, salary: parseFloat(empForm.salary) || 0, commission_rate: parseFloat(empForm.commission_rate) || 0,
       nationality: empForm.nationality, job_title: empForm.job_title, national_id: empForm.national_id,
       join_date: empForm.join_date, bank_name: empForm.bank_name, bank_account: empForm.bank_account,
-      labor_office_expiry: empForm.labor_office_expiry, tenant_id: userProfile.tenant_id
+      labor_office_expiry: empForm.labor_office_expiry,
+      tenant_id: userProfile.tenant_id
     };
     try {
       if (editEmpId) {
         const { data: up, error } = await supabase.from('employees').update(pl).eq('id', editEmpId).select().single();
         if (error) throw error;
-        setData(prev => ({ ...prev, employees: prev.employees.map(e => e.id === editEmpId ? up : e) }));
-        showToast('Employee Updated!'); setEditEmpId(null);
+        setData(prev => ({ ...prev, employees: prev.employees.map(c => c.id === editEmpId ? up : c) }));
+        showToast('Employee Updated!');
+        setEditEmpId(null);
       } else {
         const { data: nItem, error } = await supabase.from('employees').insert([pl]).select().single();
         if (error) throw error;
@@ -861,7 +876,8 @@ export default function useERPActions(state) {
   // ═══════════════════════════════════════════════════════════════
   // CRUD: SERVICES
   // ═══════════════════════════════════════════════════════════════
-  const handleEditSrv = (s) => { setEditSrvId(s.id); setSrvForm({ name: s.name || '' }); };
+  const handleEditSrv = (c) => { setEditSrvId(c.id); setSrvForm({ name: c.name }); };
+
   const handleAddEditSrv = async (e) => {
     e.preventDefault();
     const pl = { name: srvForm.name, tenant_id: userProfile.tenant_id };
@@ -869,143 +885,50 @@ export default function useERPActions(state) {
       if (editSrvId) {
         const { data: up, error } = await supabase.from('services').update(pl).eq('id', editSrvId).select().single();
         if (error) throw error;
-        setData(prev => ({ ...prev, services: prev.services.map(s => s.id === editSrvId ? up : s) }));
-        showToast('Updated!'); setEditSrvId(null);
+        setData(prev => ({ ...prev, services: prev.services.map(c => c.id === editSrvId ? up : c) }));
+        showToast('Service Updated!');
+        setEditSrvId(null);
       } else {
         const { data: nItem, error } = await supabase.from('services').insert([pl]).select().single();
         if (error) throw error;
         setData(prev => ({ ...prev, services: [...prev.services, nItem] }));
-        showToast('Added!');
+        showToast('Service Added!');
       }
       setSrvForm({ name: '' });
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
   // ═══════════════════════════════════════════════════════════════
-  // CRUD: PORTALS
+  // PORTALS
   // ═══════════════════════════════════════════════════════════════
   const handleAddPortal = async (e) => {
     e.preventDefault();
     try {
-      const pl = { name: portalForm.name, current_balance: parseFloat(portalForm.balance) || 0, tenant_id: userProfile.tenant_id };
+      const pl = {
+        name: portalForm.name, current_balance: parseFloat(portalForm.balance) || 0,
+        tenant_id: userProfile.tenant_id
+      };
       const { data: nItem, error } = await supabase.from('portals').insert([pl]).select().single();
       if (error) throw error;
       setData(prev => ({ ...prev, portals: [...prev.portals, nItem] }));
-      showToast('Portal Added!');
       setPortalForm({ name: '', balance: 0 });
+      showToast('Portal Added!');
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
-  const handleRecharge = async (e) => {
-    e.preventDefault();
+  const handleRecharge = async (portalId, amount) => {
     try {
-      const fd = e.target;
-      const portalId = fd.portal.value;
-      const amount = parseFloat(fd.amt.value) || 0;
-      const date = fd.date.value;
-      const desc = fd.desc.value || `Recharge for ${data.portals.find(p => p.id === portalId)?.name || 'Portal'}`;
-      const mode = fd.mode.value;
-      const { data: upP, error } = await supabase.from('portals').update({ current_balance: (data.portals.find(p => p.id === portalId)?.current_balance || 0) + amount }).eq('id', portalId).select().single();
+      const portal = data.portals.find(p => p.id === portalId);
+      if (!portal) throw new Error('Portal not found');
+      const newBal = (portal.current_balance || 0) + (parseFloat(amount) || 0);
+      const { error } = await supabase.from('portals').update({ current_balance: newBal }).eq('id', portalId);
       if (error) throw error;
-      const cbType = mode === 'Cash' ? 'Cash-In' : 'Bank-In';
-      const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: date, type: cbType, description: desc, amount, tenant_id: userProfile.tenant_id, reference_id: portalId }]).select().single();
-      setData(prev => ({ ...prev, portals: prev.portals.map(p => p.id === portalId ? upP : p), cashbook: nC ? [nC, ...prev.cashbook] : prev.cashbook }));
-      await logAction(`Recharged portal ${upP.name} with ${amount} SAR`);
-      showToast('Portal Recharged!');
-      fd.reset();
-    } catch (err) { showToast('Error: ' + err.message); }
-  };
-
-  // ═══════════════════════════════════════════════════════════════
-  // CRUD: EXPENSES (with items)
-  // ═══════════════════════════════════════════════════════════════
-  const handleAddExpItem = () => setExpForm(prev => ({ ...prev, items: [...(prev.items || [{ name: '', qty: 1, price: 0 }]), { name: '', qty: 1, price: 0 }] }));
-  const handleRemoveExpItem = (idx) => setExpForm(prev => ({ ...prev, items: prev.items.filter((_, i) => i !== idx) }));
-  const handleExpItemChange = (idx, field, val) => setExpForm(prev => {
-    const items = [...prev.items];
-    items[idx] = { ...items[idx], [field]: field === 'qty' ? parseInt(val) || 0 : parseFloat(val) || 0 };
-    return { ...prev, items };
-  });
-
-  const handleEditExpense = (exp) => {
-    setEditExpId(exp.id);
-    setExpForm({
-      expense_type: exp.expense_type || '', payment_mode: exp.payment_mode || 'Cash', description: exp.description || '',
-      expense_date: exp.expense_date || today, vendor_name: exp.vendor_name || '', taxRate: String(exp.tax_rate || 0),
-      items: exp.items && exp.items.length > 0 ? exp.items : [{ name: exp.item_name || 'Item', qty: 1, price: exp.amount || 0 }],
-      approval_status: exp.approval_status || 'Approved'
-    });
-  };
-
-  const handleAddExpense = async (e) => {
-    e.preventDefault();
-    try {
-      const items = expForm.items || [{ name: '', qty: 1, price: 0 }];
-      const subtotal = items.reduce((s, it) => s + ((parseFloat(it.qty) || 0) * (parseFloat(it.price) || 0)), 0);
-      const taxAmt = subtotal * ((parseFloat(expForm.taxRate) || 0) / 100);
-      const totalAmt = subtotal + taxAmt;
-      const pl = {
-        expense_type: expForm.expense_type, payment_mode: expForm.payment_mode, description: expForm.description,
-        expense_date: expForm.expense_date, vendor_name: expForm.vendor_name,
-        tax_rate: parseFloat(expForm.taxRate) || 0, amount: totalAmt, items,
-        approval_status: expForm.approval_status, tenant_id: userProfile.tenant_id
-      };
-      if (editExpId) {
-        const { data: up, error } = await supabase.from('expenses').update(pl).eq('id', editExpId).select().single();
-        if (error) throw error;
-        setData(prev => ({ ...prev, expenses: prev.expenses.map(ex => ex.id === editExpId ? up : ex) }));
-        showToast('Expense Updated!'); setEditExpId(null);
-      } else {
-        const { data: nItem, error } = await supabase.from('expenses').insert([pl]).select().single();
-        if (error) throw error;
-        if (expForm.approval_status === 'Approved') {
-          const cbType = expForm.payment_mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
-          const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: expForm.expense_date, type: cbType, description: `Expense: ${expForm.expense_type} - ${expForm.description}`, amount: totalAmt, tenant_id: userProfile.tenant_id, reference_id: nItem.id }]).select().single();
-          setData(prev => ({ ...prev, expenses: [nItem, ...prev.expenses], cashbook: nC ? [nC, ...prev.cashbook] : prev.cashbook }));
-        } else {
-          setData(prev => ({ ...prev, expenses: [nItem, ...prev.expenses] }));
-        }
-        showToast('Expense Added!');
-      }
-      setExpForm({ expense_type: '', payment_mode: 'Cash', description: '', expense_date: today, vendor_name: '', taxRate: '0', items: [{ name: '', qty: 1, price: 0 }], approval_status: 'Approved' });
-    } catch (err) { showToast('Error: ' + err.message); }
-  };
-
-  const handleDeleteExpense = async (exp) => {
-    if (!confirm('Delete this expense?')) return;
-    try {
-      const cbs = data.cashbook.filter(c => c.reference_id === exp.id);
-      for (const cb of cbs) await supabase.from('cashbook').delete().eq('id', cb.id);
-      await supabase.from('expenses').delete().eq('id', exp.id);
-      setData(prev => ({ ...prev, expenses: prev.expenses.filter(x => x.id !== exp.id), cashbook: prev.cashbook.filter(c => !cbs.find(x => x.id === c.id)) }));
-      showToast('Expense Deleted!');
-    } catch (err) { showToast('Error: ' + err.message); }
-  };
-
-  const handlePreviewExpense = (exp) => {
-    const s = { ...data.settings, items: exp.items };
-    setPreviewHTML(getExpenseHTML(exp, s, lang));
-    setModal({ type: 'preview', data: exp });
-  };
-
-  // ═══════════════════════════════════════════════════════════════
-  // BANK TRANSFERS
-  // ═══════════════════════════════════════════════════════════════
-  const handleTransfer = async (e) => {
-    e.preventDefault();
-    try {
-      const amount = parseFloat(transferForm.amount) || 0;
-      if (amount <= 0) throw new Error('Amount must be greater than 0');
-      if (transferForm.from === transferForm.to) throw new Error('From and To cannot be same');
-      const outType = `${transferForm.from}-Out`;
-      const inType = `${transferForm.to}-In`;
-      const desc = transferForm.description || `Transfer from ${transferForm.from} to ${transferForm.to}`;
-      const { data: outCb } = await supabase.from('cashbook').insert([{ trans_date: transferForm.date, type: outType, description: desc, amount, tenant_id: userProfile.tenant_id }]).select().single();
-      const { data: inCb } = await supabase.from('cashbook').insert([{ trans_date: transferForm.date, type: inType, description: desc, amount, tenant_id: userProfile.tenant_id }]).select().single();
-      setData(prev => ({ ...prev, cashbook: [outCb, inCb, ...prev.cashbook] }));
-      await logAction(`Transferred ${amount} SAR from ${transferForm.from} to ${transferForm.to}`);
-      showToast(`Transferred ${amount.toFixed(2)} SAR!`);
-      setTransferForm({ from: 'Cash', to: 'Bank', amount: '', date: today, description: '' });
+      await supabase.from('cashbook').insert([{
+        trans_date: today, type: 'Cash-In', description: `Recharge for ${portal.name || portalId}`,
+        amount: parseFloat(amount) || 0, tenant_id: userProfile.tenant_id, reference_id: portalId
+      }]).select().single();
+      setData(prev => ({ ...prev, portals: prev.portals.map(p => p.id === portalId ? { ...p, current_balance: newBal } : p) }));
+      showToast(`Recharged ${(parseFloat(amount) || 0).toFixed(2)} SAR to ${portal.name || portalId}`);
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
@@ -1015,223 +938,487 @@ export default function useERPActions(state) {
   const handleAddInvestment = async (e) => {
     e.preventDefault();
     try {
-      const amount = parseFloat(investForm.amount) || 0;
-      const reason = investForm.reason === 'Other' ? investForm.otherReason : investForm.reason;
-      const desc = investForm.desc || `Investment from ${investForm.name}`;
-      const pl = { investor_name: investForm.name, amount, invest_date: investForm.date, mode: investForm.mode, reason, description: desc, tenant_id: userProfile.tenant_id };
+      const pl = {
+        name: investForm.name, amount: parseFloat(investForm.amount) || 0, date: investForm.date || today,
+        mode: investForm.mode || 'Cash', reason: investForm.reason || 'Other',
+        otherReason: investForm.otherReason || '', description: investForm.desc || '',
+        tenant_id: userProfile.tenant_id
+      };
       const { data: nItem, error } = await supabase.from('investments').insert([pl]).select().single();
       if (error) throw error;
-      const cbType = investForm.mode === 'Cash' ? 'Investor-In' : 'Investor-In';
-      const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: investForm.date, type: cbType, description: desc, amount, tenant_id: userProfile.tenant_id }]).select().single();
-      setData(prev => ({ ...prev, investments: [nItem, ...prev.investments], cashbook: nC ? [nC, ...prev.cashbook] : prev.cashbook }));
-      await logAction(`Investment of ${amount} SAR from ${investForm.name}`);
-      showToast(`Investment of ${amount.toFixed(2)} SAR recorded!`);
+      if (parseFloat(investForm.amount) > 0) {
+        const cbType = investForm.mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
+        await supabase.from('cashbook').insert([{
+          trans_date: investForm.date || today, type: cbType, description: `Investment: ${investForm.reason}`,
+          amount: parseFloat(investForm.amount), tenant_id: userProfile.tenant_id, reference_id: nItem.id
+        }]).select().single();
+      }
+      setData(prev => ({ ...prev, investments: [...prev.investments, nItem] }));
       setInvestForm({ name: '', amount: '', date: today, mode: 'Cash', reason: 'Other', otherReason: '', desc: '' });
+      showToast('Investment Added!');
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
   // ═══════════════════════════════════════════════════════════════
-  // PAYROLL / SALARY
+  // FUND TRANSFER
   // ═══════════════════════════════════════════════════════════════
+  const handleTransfer = async (e) => {
+    e.preventDefault();
+    try {
+      const fromType = transferForm.from;
+      const toType = transferForm.to;
+      const amount = parseFloat(transferForm.amount) || 0;
+      if (amount <= 0) throw new Error('Enter valid amount');
+      if (fromType === toType) throw new Error('Cannot transfer to same account');
+      
+      let fromBal = 0, toBal = 0;
+      if (fromType === 'Cash') {
+        fromBal = (data.cashbook || []).filter(c => c.type?.includes('Cash')).reduce((s, c) => s + (c.amount || 0), 0);
+      } else {
+        fromBal = (data.cashbook || []).filter(c => c.type?.includes('Bank')).reduce((s, c) => s + (c.amount || 0), 0);
+      }
+      if (toType === 'Cash') {
+        toBal = (data.cashbook || []).filter(c => c.type?.includes('Cash')).reduce((s, c) => s + (c.amount || 0), 0);
+      } else {
+        toBal = (data.cashbook || []).filter(c => c.type?.includes('Bank')).reduce((s, c) => s + (c.amount || 0), 0);
+      }
+      
+      if (fromBal < amount) throw new(`Insufficient ${fromType} balance: ${fromBal.toFixed(2)} SAR`);
+      
+      const cbFrom = fromType === 'Cash' ? 'Cash-Out' : 'Bank-Out';
+      const cbTo = toType === 'Cash' ? 'Cash-In' : 'Bank-In';
+      
+      const { data: cbOut } = await supabase.from('cashbook').insert([{
+        trans_date: transferForm.date, type: cbFrom, description: `Transfer to ${toType}`,
+        amount, tenant_id: userProfile.tenant_id
+      }]).select().single();
+      
+      const { data: cbIn } = await supabase.from('cashbook').insert([{
+        trans_date: transferForm.date, type: cbTo, description: `Transfer from ${fromType}`,
+        amount, tenant_id: userProfile.tenant_id
+      }]).select().single();
+      
+      setData(prev => ({ ...prev, cashbook: [cbOut, cbIn, ...prev.cashbook] }));
+      showToast(`Transferred ${amount.toFixed(2)} SAR from ${fromType} to ${toType}`);
+      setTransferForm({ from: 'Cash', to: 'Bank', amount: '', date: today });
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+
+  // ═══════════════════════════════════════════════════════════════
+  // EXPENSES (COMPLETE)
+  // ═══════════════════════════════════════════════════════════════
+  const handleAddExpense = async (e) => {
+    e.preventDefault();
+    try {
+      const items = expForm.items || [];
+      const totalAmt = items.reduce((sum, it) => sum + ((parseFloat(it.qty) || 0) * (parseFloat(it.price) || 0)), 0);
+      const pl = {
+        expense_type: expForm.expense_type, payment_mode: expForm.payment_mode, description: expForm.description,
+        expense_date: expForm.expense_date, vendor_name: expForm.vendor_name,
+        taxRate: parseFloat(expForm.taxRate) || 0, amount: totalAmt,
+        items: items.filter(it => it.name), approval_status: expForm.approval_status || 'Approved',
+        tenant_id: userProfile.tenant_id
+      };
+      let newExp;
+      if (editExpId) {
+        const { data: up, error } = await supabase.from('expenses').update(pl).eq('id', editExpId).select().single();
+        if (error) throw error;
+        newExp = up;
+        setEditExpId(null);
+      } else {
+        const { data: nItem, error } = await supabase.from('expenses').insert([pl]).select().single();
+        if (error) throw error;
+        newExp = nItem;
+        if (totalAmt > 0) {
+          const cbType = expForm.payment_mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
+          const { data: nC } = await supabase.from('cashbook').insert([{
+            trans_date: expForm.expense_date, type: cbType, description: `Expense: ${expForm.expense_type} - ${expForm.description}`,
+            amount: totalAmt, tenant_id: userProfile.tenant_id, reference_id: newExp.id
+          }]).select().single();
+          if (nC) {
+            newExp = { ...newExp, cashbook_id: nC.id };
+          }
+        }
+      }
+      setData(prev => ({ ...prev, expenses: editExpId ? prev.expenses.map(ex => ex.id === editExpId ? newExp : ex) : [newExp, ...prev.expenses] }));
+      showToast(editExpId ? 'Expense Updated!' : 'Expense Added!');
+      setExpForm({ expense_type: '', payment_mode: 'Cash', description: '', expense_date: today, vendor_name: '', taxRate: '0', items: [{ name: '', qty: 1, price: 0 }], approval_status: 'Approved' });
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+
+  const handleEditExpense = (exp) => {
+    setEditExpId(exp.id);
+    setExpForm({
+      expense_type: exp.expense_type || '', payment_mode: exp.payment_mode || 'Cash', description: exp.description || '',
+      expense_date: exp.expense_date || today, vendor_name: exp.vendor_name || '', taxRate: exp.taxRate?.toString() || '0',
+      items: (exp.items && exp.items.length > 0) ? exp.items : [{ name: exp.item_name || '', qty: 1, price: exp.amount || 0 }],
+      approval_status: exp.approval_status || 'Approved'
+    });
+  };
+
+  const handleDeleteExpense = async (exp) => {
+    if (!confirm('Delete this expense?')) return;
+    try {
+      if (exp.cashbook_id) await supabase.from('cashbook').delete().eq('id', exp.cashbook_id);
+      await supabase.from('expenses').delete().eq('id', exp.id);
+      setData(prev => ({ ...prev, expenses: prev.expenses.filter(ex => ex.id !== exp.id), cashbook: prev.cashbook.filter(c => c.id !== exp.cashbook_id) }));
+      showToast('Expense Deleted!');
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+
+  const handlePreviewExpense = (exp) => {
+    setPreviewHTML(getExpenseHTML(exp, data.settings, lang));
+    setModal({ type: 'preview', data: exp });
+  };
+
+  const handleAddExpItem = () => {
+    setExpForm(prev => ({ ...prev, items: [...prev.items, { name: '', qty: 1, price: 0 }] }));
+  };
+
+  const handleRemoveExpItem = (index) => {
+    setExpForm(prev => ({ ...prev, items: prev.items.filter((_, i) => i !== index) }));
+  };
+
+  const handleExpItemChange = (index, field, value) => {
+    setExpForm(prev => {
+      const items = [...prev.items];
+      items[index] = { ...items[index], [field]: value };
+      return { ...prev, items };
+    });
+  };
+
+  // ═══════════════════════════════════════════════════════════════
+  // PAYROLL & SALARY (COMPLETE)
+  // ═════════════════════════════════════════════════════════════
   const handlePaySalary = async (e) => {
     e.preventDefault();
     try {
       const fd = e.target;
-      const empId = fd.emp.value;
-      const base = parseFloat(fd.base.value) || 0;
-      const comm = parseFloat(fd.comm.value) || 0;
-      const advDed = parseFloat(fd.adv_ded.value) || 0;
-      const gift = parseFloat(fd.gift.value) || 0;
-      const month = fd.month.value;
-      const mode = fd.mode.value;
+      const empId = fd.emp?.value;
+      if (!empId) throw new Error('Select Employee');
+      
       const emp = data.employees.find(em => em.id === empId);
-      if (!emp) throw new Error('Select an employee');
+      if (!emp) throw new Error('Employee not found');
+      
+      const base = parseFloat(fd.base) || emp.salary || 0;
+      const commRate = parseFloat(fd.comm) || emp.commission_rate || 0;
+      const overtime = parseFloat(fd.overtime) || 0;
+      const gift = parseFloat(fd.gift) || 0;
+      const advDed = parseFloat(fd.adv_ded) || 0;
+      
       // Calculate commission from sales
-      const empSales = data.invoices.filter(i => i.employee_id === empId && !i.invoice_no?.startsWith('REF-') && i.status !== 'Draft');
-      const salesTotal = empSales.reduce((s, i) => s + (i.total_sell || 0), 0);
-      const commAmount = salesTotal * (emp.commission_rate || 0) / 100;
-      const gross = base + commAmount + gift;
-      const totalDed = advDed;
-      const net = gross - totalDed;
-      const pl = {
-        employee_id: empId, month, salary: base, commission_amount: commAmount, overtime: 0, gift,
-        advance_deduction: advDed, other_deduction: 0, mistakes_deduction: 0,
-        amount: net, payment_mode: mode, payment_date: today, notes: '',
+      const empSales = (data.invoices || []).filter(i => i.employee_id === empId && !i.invoice_no?.startsWith('REF-'));
+      const totalSales = empSales.reduce((s, i) => s + (i.total_sell || 0), 0);
+      const commission = totalSales * (commRate / 100);
+      
+      const gross = base + commission + overtime + gift;
+      const net = gross - advDed;
+      
+      if (net < 0) throw new Error('Net salary cannot be negative!');
+      
+      const month = fd.month || today.slice(0, 7);
+      const mode = fd.mode || 'Cash';
+      const paymentDate = fd.payment_date || today;
+      
+      const { data: newPay, error } = await supabase.from('payroll').insert([{
+        employee_id: empId, month, base_salary: base, commission, overtime, gift,
+        advance_deduction: advDed, gross, net, amount: net,
+        payment_mode: mode, payment_date: paymentDate,
         tenant_id: userProfile.tenant_id
-      };
-      const { data: nPay, error } = await supabase.from('payroll').insert([pl]).select('*, employees(name)').single();
+      }]).select('*, employees(name)').single();
+      
       if (error) throw error;
-      // Deduct advance
-      if (advDed > 0) {
-        const pending = (data.empAdvances || []).filter(a => a.employee_id === empId && a.status === 'Pending');
-        let remaining = advDed;
-        for (const adv of pending) {
-          if (remaining <= 0) break;
-          const deductAmt = Math.min(remaining, adv.amount);
-          await supabase.from('emp_advances').update({ status: 'Deducted from Salary', amount: adv.amount - deductAmt }).eq('id', adv.id);
-          remaining -= deductAmt;
-        }
-        setData(prev => ({ ...prev, empAdvances: prev.empAdvances.map(a => { const isAffected = pending.some(p => p.id === a.id); return isAffected ? { ...a, status: 'Deducted from Salary', amount: a.amount - (pending.find(p => p.id === a.id)?.amount || 0) } : a; }) }));
+      
+      // Add cashbook entry
+      let newCb = null;
+      if (net > 0) {
+        const cbType = mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
+        const { data: nC } = await supabase.from('cashbook').insert([{
+          trans_date: paymentDate, type: cbType, description: `Salary for ${emp.name} - ${month}`,
+          amount: net, tenant_id: userProfile.tenant_id, reference_id: newPay.id
+        }]).select().single();
+        newCb = nC;
       }
-      const cbType = mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
-      const { data: nC } = await supabase.from('cashbook').insert([{ trans_date: today, type: cbType, description: `Salary for ${emp.name} - ${month}`, amount: net, tenant_id: userProfile.tenant_id, reference_id: nPay.id }]).select().single();
-      setData(prev => ({ ...prev, payroll: [nPay, ...prev.payroll], cashbook: nC ? [nC, ...prev.cashbook] : prev.cashbook }));
+      
+      setData(prev => ({ ...prev, payroll: [newPay, ...prev.payroll], cashbook: newCb ? [newCb, ...prev.cashbook] : prev.cashbook }));
       await logAction(`Paid salary ${net.toFixed(2)} SAR to ${emp.name} for ${month}`);
-      showToast(`Salary ${net.toFixed(2)} SAR paid to ${emp.name}!`);
-      fd.reset();
+      showToast(`Salary Paid: ${net.toFixed(2)} SAR to ${emp.name}`);
+      
+      // Reset form
+      if (fd.reset) fd.reset();
+      setPayForm({ employee_id: '', month: today.slice(0, 7), overtime: 0, gift: 0, advance: 0, mistakes_deduction: 0, other_deduction: 0, payment_mode: 'Cash', payment_date: today, notes: '' });
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+
+  const handleProcessPayroll = async (e) => {
+    e.preventDefault();
+    try {
+      const fd = e.target;
+      const empId = fd.emp?.value;
+      if (!empId) throw new Error('Select Employee');
+      
+      const emp = data.employees.find(em => em.id === empId);
+      if (!emp) throw new Error('Employee not found');
+      
+      const month = fd.month || today.slice(0, 7);
+      
+      // Get attendance for the month
+      const monthAttendance = (data.attendance || []).filter(a => 
+        a.employee_id === empId && a.date?.startsWith(month)
+      );
+      const presentDays = monthAttendance.filter(a => a.status === 'Present').length;
+      const leaveDays = monthAttendance.filter(a => a.status === 'Leave').length;
+      const absentDays = monthAttendance.filter(a => a.status === 'Absent').length;
+      const overtimeHrs = monthAttendance.reduce((s, a) => s + (a.overtime || 0), 0);
+      
+      const base = parseFloat(emp.salary) || 0;
+      const commRate = parseFloat(emp.commission_rate) || 0;
+      const overtime = overtimeHrs * (base / 30); // Assuming 8hr day, so hourly = base/30
+      const gift = parseFloat(fd.gift) || 0;
+      const advDed = parseFloat(fd.adv_ded) || 0;
+      
+      const gross = base + overtime + gift;
+      const net = gross - advDed;
+      
+      const { data: newPay, error } = await supabase.from('payroll').insert([{
+        employee_id: empId, month, base_salary: base, commission: 0, overtime, gift,
+        advance_deduction: advDed, gross, net, amount: net,
+        payment_mode: fd.mode || 'Cash', payment_date: fd.date || today,
+        tenant_id: userProfile.tenant_id
+      }]).select('*, employees(name)').single();
+      
+      if (error) throw error;
+      
+      setData(prev => ({ ...prev, payroll: [newPay, ...prev.payroll] }));
+      showToast(`Payroll Processed for ${emp.name} for ${month} - Net: ${net.toFixed(2)} SAR`);
+      if (fd.reset) fd.reset();
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
   // ═══════════════════════════════════════════════════════════════
-  // EMPLOYEE ADVANCES
+  // EMPLOYEE ADVANCES (COMPLETE)
   // ═══════════════════════════════════════════════════════════════
   const handleAddAdvance = async (e) => {
     e.preventDefault();
     try {
-      const fd = e.target;
-      const pl = { employee_id: fd.emp.value, amount: parseFloat(fd.amt.value) || 0, date: fd.date.value, status: 'Pending', tenant_id: userProfile.tenant_id };
-      const { data: nAdv, error } = await supabase.from('emp_advances').insert([pl]).select('*, employees(name)').single();
+      const pl = {
+        employee_id: advForm.employee_id, amount: parseFloat(advForm.amount) || 0, date: advForm.date || today,
+        status: advForm.status || 'Pending', reason: advForm.reason || '',
+        tenant_id: userProfile.tenant_id
+      };
+      if (!pl.employee_id) throw new Error('Select Employee');
+      const { data: nItem, error } = await supabase.from('emp_advances').insert([pl]).select('*, employees(name)').single();
       if (error) throw error;
-      setData(prev => ({ ...prev, empAdvances: [nAdv, ...(prev.empAdvances || [])] }));
-      await logAction(`Advance of ${pl.amount} SAR given to ${data.employees.find(e => e.id === pl.employee_id)?.name || 'Employee'}`);
-      showToast(`Advance ${pl.amount.toFixed(2)} SAR recorded!`);
-      fd.reset();
+      
+      // If status is 'Paid', add to expense
+      if (pl.status === 'Paid') {
+        const emp = data.employees.find(em => em.id === pl.employee_id);
+        const { data: expItem } = await supabase.from('expenses').insert([{
+          expense_type: 'Salary Advance Return', payment_mode: 'Cash', description: `Advance return for ${emp?.name || 'Employee'}`,
+          expense_date: pl.date, vendor_name: pl.employee_id, amount: pl.amount, approval_status: 'Approved',
+          tenant_id: userProfile.tenant_id
+        }]).select().single();
+        
+        if (expItem) {
+          await supabase.from('cashbook').insert([{
+            trans_date: pl.date, type: 'Cash-In', description: `Advance return from ${emp?.name || 'Employee'}`,
+            amount: pl.amount, tenant_id: userProfile.tenant_id, reference_id: expItem.id
+          }]).select().single();
+        }
+      }
+      
+      setData(prev => ({ ...prev, empAdvances: [...prev.empAdvances, nItem] }));
+      setAdvForm({ employee_id: '', amount: '', date: today, status: 'Pending', reason: '' });
+      showToast(`Advance ${pl.status === 'Paid' ? 'Returned & Added to Expense' : 'Advance Added'}: ${pl.amount} SAR`);
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
-  const handleReturnAdvance = async (adv) => {
+  const handleReturnAdvance = async (id) => {
     if (!confirm('Mark this advance as returned?')) return;
     try {
-      const { error } = await supabase.from('emp_advances').update({ status: 'Repaid' }).eq('id', adv.id);
-      if (error) throw error;
-      setData(prev => ({ ...prev, empAdvances: prev.empAdvances.map(a => a.id === adv.id ? { ...a, status: 'Repaid' } : a) }));
-      showToast('Advance marked as returned!');
+      const adv = data.empAdvances.find(a => a.id === id);
+      if (!adv) throw new Error('Advance not found');
+      
+      if (adv.status === 'Pending') {
+        const { error } = await supabase.from('emp_advances').update({ status: 'Returned', date: today }).eq('id', id);
+        if (error) throw error;
+        setData(prev => ({ ...prev, empAdvances: prev.empAdvances.map(a => a.id === id ? { ...a, status: 'Returned', date: today } : a) }));
+        showToast('Advance Marked as Returned!');
+      } else if (adv.status === 'Returned') {
+        const { error } = await supabase.from('emp_advances').update({ status: 'Pending' }).eq('id', id);
+        if (error) throw error;
+        setData(prev => ({ ...prev, empAdvances: prev.empAdvances.map(a => a.id === id ? { ...a, status: 'Pending' } : a) }));
+        showToast('Advance Marked as Pending!');
+      }
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
-  const handleUpdateAdvanceStatus = async (adv, newStatus) => {
+  const handleUpdateAdvanceStatus = async (id, newStatus) => {
     try {
-      const { error } = await supabase.from('emp_advances').update({ status: newStatus }).eq('id', adv.id);
+      const { error } = await supabase.from('emp_advances').update({ status: newStatus, date: today }).eq('id', id);
       if (error) throw error;
-      setData(prev => ({ ...prev, empAdvances: prev.empAdvances.map(a => a.id === adv.id ? { ...a, status: newStatus } : a) }));
-      showToast(`Advance status: ${newStatus}`);
+      setData(prev => ({ ...prev, empAdvances: prev.empAdvances.map(a => a.id === id ? { ...a, status: newStatus, date: today } : a) }));
+      showToast(`Advance status updated to: ${newStatus}`);
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
   // ═══════════════════════════════════════════════════════════════
-  // CRUD: USERS
+  // USERS (COMPLETE)
   // ═══════════════════════════════════════════════════════════════
   const handleAddEditUser = async (e) => {
     e.preventDefault();
     try {
+      const pl = {
+        email: userForm.email, username: userForm.username, role: userForm.role || 'Staff',
+        is_admin: userForm.is_admin || false, can_access_invoices: userForm.can_access_invoices !== false,
+        can_access_bank: userForm.can_access_bank || false, can_access_hr: userForm.can_access_hr || false,
+        can_access_reports: userForm.can_access_reports || false, can_access_settings: userForm.can_access_settings || false,
+        employee_id: userForm.employee_id || null, tenant_id: userProfile.tenant_id
+      };
+      
+      if (!pl.email) throw new Error('Email is required!');
+      
+      let result;
       if (editUserId) {
-        const pl = { username: userForm.username, role: userForm.role || 'Staff', is_admin: userForm.is_admin, can_access_invoices: userForm.can_access_invoices, can_access_bank: userForm.can_access_bank, can_access_hr: userForm.can_access_hr, can_access_reports: userForm.can_access_reports, can_access_settings: userForm.can_access_settings, employee_id: userForm.employee_id || null };
-        const { error } = await supabase.from('app_users').update(pl).eq('id', editUserId);
-        if (error) throw error;
-        showToast('User Updated!');
+        result = await supabase.from('app_users').update(pl).eq('id', editUserId).select().single();
         setEditUserId(null);
-        setUserForm({ email: '', username: '', role: 'Staff', is_admin: false, can_access_invoices: true, can_access_bank: false, can_access_hr: false, can_access_reports: false, can_access_settings: false, employee_id: '' });
       } else {
-        const tempPass = Math.random().toString(36).slice(-8) + 'A1!';
-        const res = await fetch('/api/create-user', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...userForm, tenant_id: userProfile.tenant_id, temp_password: tempPass })
-        });
-        const resData = await res.json();
-        if (resData.error) throw new Error(resData.error);
-        showToast(`User created! Pass: ${resData.temp_password}`);
-        setUserForm({ email: '', username: '', role: 'Staff', is_admin: false, can_access_invoices: true, can_access_bank: false, can_access_hr: false, can_access_reports: false, can_access_settings: false, employee_id: '' });
+        // Check if email already exists
+        const { data: existing } = await supabase.from('app_users').select('id').eq('email', pl.email).maybeSingle();
+        if (existing) throw new Error('User with this email already exists!');
+        result = await supabase.from('app_users').insert([pl]).select().single();
       }
-      fetchAll();
+      
+      if (result.error) throw new Error(result.error.message);
+      
+      setData(prev => ({ ...prev, appUsers: editUserId ? prev.appUsers.map(u => u.id === editUserId ? result : u) : [...prev.appUsers, result] }));
+      showToast(editUserId ? 'User Updated!' : 'User Created!');
+      setUserForm({ email: '', username: '', role: 'Staff', is_admin: false, can_access_invoices: true, can_access_bank: false, can_access_hr: false, can_access_reports: false, can_access_settings: false, employee_id: '' });
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
   const handleEditUser = (u) => {
     setEditUserId(u.id);
     setUserForm({
-      email: u.email || '', username: u.username || '', role: u.role || 'Staff', is_admin: u.is_admin || false,
-      can_access_invoices: u.can_access_invoices || false, can_access_bank: u.can_access_bank || false,
-      can_access_hr: u.can_access_hr || false, can_access_reports: u.can_access_reports || false,
-      can_access_settings: u.can_access_settings || false, employee_id: u.employee_id || ''
+      email: u.email, username: u.username || '', role: u.role || 'Staff',
+      is_admin: u.is_admin || false, can_access_invoices: u.can_access_invoices !== false,
+      can_access_bank: u.can_access_bank || false, can_access_hr: u.can_access_hr || false,
+      can_access_reports: u.can_access_reports || false, can_access_settings: u.can_access_settings || false,
+      employee_id: u.employee_id || ''
     });
   };
 
-  const handleDeleteUser = async (u) => {
-    if (!confirm(`Delete user ${u.email}? This will NOT delete their auth account.`)) return;
+  const handleDeleteUser = async (id) => {
+    if (!confirm('Delete this user permanently?')) return;
     try {
-      const { error } = await supabase.from('app_users').delete().eq('id', u.id);
-      if (error) throw error;
-      setData(prev => ({ ...prev, appUsers: prev.appUsers.filter(au => au.id !== u.id) }));
-      showToast('User deleted from this tenant!');
-      fetchAll();
+      // Check if trying to delete yourself
+      if (id === userProfile.id) throw new Error('Cannot delete your own account!');
+      await supabase.from('app_users').delete().eq('id', id);
+      setData(prev => ({ ...prev, appUsers: prev.appUsers.filter(u => u.id !== id) }));
+      showToast('User Deleted!');
+      await logAction(`Deleted user ${id}`);
     } catch (err) { showToast('Error: ' + err.message); }
   };
 
   // ═══════════════════════════════════════════════════════════════
-  // RETURN ALL
-  // ═══════════════════════════════════════════════════════════════
+  // RETURN ALL FUNCTIONS
+  // ═════════════════════════════════════════════════════════════
   return {
+    // Export
+    exportToExcel,
+
     // Auth
     handleLogout, handleChangePassword,
+
     // Chat
     handleSendMessage,
+
     // Custom Fields
     handleAddCustomField, handleRemoveCustomField, handleCustomFieldChange,
+
     // Profile
     handleProfilePicUpload, handleSaveProfile,
-    // Logo & Settings
+
+    // Settings
     handleLogoUpload, handleSaveSettings,
+
     // Tenant
     handleAddTenant, handleToggleSubscription, handleDeleteTenant,
+
     // PDF & Print
     downloadPDF, handleDownloadPDF, printInvoice,
+
     // Share
     shareWhatsApp, shareEmail,
-    // Contract/Offer
+
+    // Contract / Offer
     handleGenerateContract, handleGenerateOffer,
-    // Preview & Modals
+
+    // Preview & Modal
     openPreview, openRefundModal, openSettleModal, handleQuickSettle,
-    // Settle
+
+    // Settle Payment
     handleSettlePayment,
+
     // Refund
     handleRefund,
-    // Mistakes
+
+    // Staff Mistakes
     handleAddMistake, handlePreviewMistake, handleDeleteMistake,
+
     // Salary Slip
     handleGenerateSlip, handleDeletePayroll,
-    // Invoice CRUD
+
+    // Invoice
     handleEditInvoice, handleCreateInvoice, handleDeleteInvoice,
-    // Generic
-    handleDelete, exportToExcel,
-    // Customer
+
+    // Generic Delete
+    handleDelete,
+
+    // CRUD: Customers
     handleEditCust, handleAddEditCust,
-    // Corporate
+
+    // CRUD: Corporates
     handleEditCorp, handleAddEditCorp,
-    // Creditor
+
+    // CRUD: Creditors
     handleEditCred, handleAddEditCred,
-    // Vendor
+
+    // CRUD: Vendors
     handleEditVend, handleAddEditVend,
-    // Package
+
+    // CRUD: Packages
     handleEditPkg, handleAddEditPkg,
-    // Branch
+
+    // CRUD: Branches
     handleEditBrn, handleAddEditBrn,
-    // Employee
+
+    // CRUD: Employees
     handleEditEmp, handleAddEditEmp,
-    // Service
+
+    // CRUD: Services
     handleEditSrv, handleAddEditSrv,
-    // Portal
+
+    // Portals
     handleAddPortal, handleRecharge,
-    // Expense
-    handleAddExpItem, handleRemoveExpItem, handleExpItemChange, handleEditExpense, handleAddExpense, handleDeleteExpense, handlePreviewExpense,
-    // Transfer
-    handleTransfer,
-    // Investment
+
+    // Investments
     handleAddInvestment,
-    // Payroll
-    handlePaySalary,
-    // Advance
+
+    // Fund Transfer
+    handleTransfer,
+
+    // Expenses
+    handleAddExpense, handleEditExpense, handleDeleteExpense, handlePreviewExpense,
+    handleAddExpItem, handleRemoveExpItem, handleExpItemChange,
+
+    // Payroll & Salary
+    handlePaySalary, handleProcessPayroll,
+
+    // Employee Advances
     handleAddAdvance, handleReturnAdvance, handleUpdateAdvanceStatus,
-    // User
-    handleAddEditUser, handleEditUser, handleDeleteUser,
+
+    // Users
+    handleAddEditUser, handleEditUser, handleDeleteUser
   };
-}
+};
