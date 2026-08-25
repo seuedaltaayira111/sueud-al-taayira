@@ -33,7 +33,7 @@ export default function ERPViewsSystem(props) {
     setModal, setPage, showToast
   } = props;
   
-  const [statementType, setStatementType] = useState('sales');
+  const [statementType, setStatementType] = useState('bank');
   const [reportTab, setReportTab] = useState('sales');
   const [repDate, setRepDate] = useState({ from: '', to: '' });
 
@@ -71,9 +71,9 @@ export default function ERPViewsSystem(props) {
 
   const currentSetForm = setForm || {};
 
-  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════════
   // 1. PROFITABILITY ANALYZER
-  // ═════════════════════════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════════
   if (page === 'profitability') {
     const activeInvoices = (data.invoices || []).filter(i => !i.invoice_no?.startsWith('REF-'));
     const airlineProfits = {};
@@ -135,9 +135,9 @@ export default function ERPViewsSystem(props) {
     );
   }
 
-  // ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════════
   // 2. PROFILE PAGE
-  // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════════
   if (page === 'profile') {
     return (
       <div style={{ padding: '20px', background: '#0F172A', minHeight: '100vh', color: '#E2E8F0' }}>
@@ -181,7 +181,7 @@ export default function ERPViewsSystem(props) {
             </div>
             <div>
               <label style={styles.label}>Address</label>
-              <input value={profileForm?.address || ''} onChange={e => setProfileForm(prev => ({...prev, address: e.target.value })) style={styles.input} />
+              <input value={profileForm?.address || ''} onChange={e => setProfileForm(prev => ({...prev, address: e.target.value }))} style={styles.input} />
             </div>
             <button type="submit" style={styles.btnPrimary}>💾 Save Profile Changes</button>
           </form>
@@ -215,9 +215,9 @@ export default function ERPViewsSystem(props) {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════════
   // 3. SUPERADMIN PANEL
-  // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════════
   if (page === 'superadmin') {
     if (userProfile?.role !== 'SuperAdmin') {
       return (
@@ -283,155 +283,218 @@ export default function ERPViewsSystem(props) {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-  }; /* THIS IS THE BANK TAB - START OF THE CUT */
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
-                <thead><tr><th style={styles.tableHeader}>Date</th><th style={styles.tableHeader}>Description</th><th style={{ ...styles.tableHeader, textAlign: 'right' }}>Amount</th></tr></thead>
-                <tbody>{(data.cashbook || []).filter(c => c.type?.includes('Bank')).map(c => (
-                  <tr key={c.id} style={{ borderBottom: '1px solid #1E293B' }}>
-                    <td style={{...styles.tableCell, fontFamily: 'monospace', fontSize: '12px', color: '#94A3B8' }}>{c.trans_date}</td>
-                    <td style={{...styles.tableCell, color: c.type?.includes('In') ? '#059669' : '#FCA5A5' }}>{c.description}</td>
-                    <td style={{...styles.tableCell, textAlign: 'right', color: c.type?.includes('Out') ? '#FCA5A5' : '#34D399' }}>{(c.amount || 0).toFixed(2)}</td></tr>
-                ))}</tbody>
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // 4. STATEMENTS PAGE
+  // ═══════════════════════════════════════════════════════════════════════════════
+  if (page === 'statements') {
+    const tabs = ['bank', 'cash', 'credit', 'branches', 'customers'];
+    const bankTotal = (data.cashbook || []).filter(c => c.type?.includes('Bank')).reduce((s, c) => s + (c.amount || 0), 0);
+    const cashTotal = (data.cashbook || []).filter(c => c.type?.includes('Cash')).reduce((s, c) => s + (c.amount || 0), 0);
+
+    return (
+      <div style={{ padding: '20px', background: '#0F172A', minHeight: '100vh', color: '#E2E8F0' }}>
+        <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', padding: '30px', borderRadius: '16px', marginBottom: '20px' }}>
+          <h2 style={{ margin: 0, fontSize: '24px', color: '#FBBF24' }}>📋 Statements & Reports</h2>
+          <p style={{ margin: '5px 0 0', opacity: 0.9 }}>View bank, cash, credit, branches and customer data.</p>
+        </div>
+
+        {/* TAB BUTTONS */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          {tabs.map(tab => (
+            <button
+              key={tab}
+              onClick={() => setStatementType(tab)}
+              style={statementType === tab ? { ...styles.tabBtn, ...styles.tabBtnActive } : styles.tabBtn}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        <div style={styles.card}>
+          {/* BANK TAB */}
+          {statementType === 'bank' && (
+            <div>
+              <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', padding: '30px', borderRadius: '12px', textAlign: 'center', border: '2px solid #FBBF24', marginBottom: '15px' }}>
+                <h3 style={{ margin: '0 0 5px', color: '#FBBF24', fontSize: '20px' }}>Bank Summary</h3>
+                <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#FBBF24', margin: 0 }}>{bankTotal.toFixed(2)} SAR</p>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+                  <thead>
+                    <tr>
+                      <th style={styles.tableHeader}>Date</th>
+                      <th style={styles.tableHeader}>Description</th>
+                      <th style={{ ...styles.tableHeader, textAlign: 'right' }}>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(data.cashbook || []).filter(c => c.type?.includes('Bank')).map(c => (
+                      <tr key={c.id} style={{ borderBottom: '1px solid #1E293B' }}>
+                        <td style={{...styles.tableCell, fontFamily: 'monospace', fontSize: '12px', color: '#94A3B8' }}>{c.trans_date}</td>
+                        <td style={{...styles.tableCell, color: c.type?.includes('In') ? '#059669' : '#FCA5A5' }}>{c.description}</td>
+                        <td style={{...styles.tableCell, textAlign: 'right', color: c.type?.includes('Out') ? '#FCA5A5' : '#34D399' }}>{(c.amount || 0).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                    {(data.cashbook || []).filter(c => c.type?.includes('Bank')).length === 0 && (
+                      <tr><td colSpan="3" style={{ padding: '30px', textAlign: 'center', color: '#64748B' }}>No bank transactions found.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ marginTop: '15px' }}>
+                <button
+                  onClick={() => exportToExcel(
+                    (data.cashbook || []).filter(c => c.type?.includes('Bank')).map(c => ({ Date: c.trans_date, Description: c.description, Amount: c.amount, Type: c.type })),
+                    'BankStatement'
+                  )}
+                  style={{ ...styles.btnSuccess, width: 'auto', padding: '8px 12px' }}
+                >
+                  📥 Export Bank Statement
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* CASH TAB */}
+          {statementType === 'cash' && (
+            <div>
+              <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', padding: '30px', borderRadius: '12px', textAlign: 'center', border: '2px solid #FBBF24', marginBottom: '15px' }}>
+                <h3 style={{ margin: '0 0 5px', color: '#FBBF24', fontSize: '20px' }}>Cash Summary</h3>
+                <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#FBBF24', margin: 0 }}>{cashTotal.toFixed(2)} SAR</p>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+                  <thead>
+                    <tr>
+                      <th style={styles.tableHeader}>Date</th>
+                      <th style={styles.tableHeader}>Description</th>
+                      <th style={{ ...styles.tableHeader, textAlign: 'right' }}>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(data.cashbook || []).filter(c => c.type?.includes('Cash')).map(c => (
+                      <tr key={c.id} style={{ borderBottom: '1px solid #1E293B' }}>
+                        <td style={{...styles.tableCell, fontFamily: 'monospace', fontSize: '12px', color: '#94A3B8' }}>{c.trans_date}</td>
+                        <td style={{...styles.tableCell, color: c.type?.includes('In') ? '#059669' : '#FCA5A5' }}>{c.description}</td>
+                        <td style={{...styles.tableCell, textAlign: 'right', color: c.type?.includes('Out') ? '#FCA5A5' : '#34D399' }}>{(c.amount || 0).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                    {(data.cashbook || []).filter(c => c.type?.includes('Cash')).length === 0 && (
+                      <tr><td colSpan="3" style={{ padding: '30px', textAlign: 'center', color: '#64748B' }}>No cash transactions found.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ marginTop: '15px' }}>
+                <button
+                  onClick={() => exportToExcel(
+                    (data.cashbook || []).filter(c => c.type?.includes('Cash')).map(c => ({ Date: c.trans_date, Description: c.description, Amount: c.amount, Type: c.type })),
+                    'CashStatement'
+                  )}
+                  style={{ ...styles.btnSuccess, width: 'auto', padding: '8px 12px' }}
+                >
+                  📥 Export Cash Statement
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* CREDIT TAB */}
+          {statementType === 'credit' && (
+            <div>
+              <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', padding: '30px', borderRadius: '12px', textAlign: 'center', border: '2px solid #FBBF24', marginBottom: '15px' }}>
+                <h3 style={{ margin: '0 0 5px', color: '#FBBF24', fontSize: '20px' }}>Store Credit Summary</h3>
+                <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#FBBF24', margin: 0 }}>
+                  {(data.customers || []).reduce((s, c) => s + (c.store_credit || 0), 0).toFixed(2)} SAR
+                </p>
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    <th style={styles.tableHeader}>Name</th>
+                    <th style={{ ...styles.tableHeader, textAlign: 'right' }}>Available Credit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(data.customers || []).filter(c => (c.store_credit || 0) > 0).map(c => (
+                    <tr key={c.id} style={{ borderBottom: '1px solid #1E293B' }}>
+                      <td style={styles.tableCell}>{c.name}</td>
+                      <td style={{...styles.tableCell, textAlign: 'right', color: '#34D399', fontWeight: 'bold' }}>{(c.store_credit || 0).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                  {(data.customers || []).filter(c => (c.store_credit || 0) > 0).length === 0 && (
+                    <tr><td colSpan="2" style={{ padding: '30px', textAlign: 'center', color: '#64748B' }}>No customers with store credit.</td></tr>
+                  )}
+                </tbody>
               </table>
             </div>
-          </div>
-          ); // BANK TAB - END
+          )}
 
-          <div style={{ marginTop: '15px' }}>
-            <button onClick={() => exportToExcel(
-              (data.cashbook || []).filter(c => c.type?.includes('Bank')).map(c => ({ 
-                Date: c.trans_date, Description: c.description, Amount: c.amount, Type: c.type
-              })), 'BankStatement'
-            )} style={{ ...styles.btnSuccess, width: 'auto', padding: '8px 12px', marginTop: '6px' }}>📥 Export Bank Statement</button>
-          </div>
-          {/* CASH TAB */}
-          <div style={{ marginTop: '15px' }}>
-            <div style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', color: 'white', padding: '40px', borderRadius: '12px', textAlign: 'center', border: '2px solid #FBBF24', marginBottom: '10px' }}>
-              <h3 style={{ margin: '0 0 0 5px', color: '#FBBF24', fontSize: '24px' }}>Cash Summary</h3>
-              <p style={{ fontSize: '20px', fontWeight: 'bold', color: '#FBBF24' }}>{(data.cashbook || []).filter(c => c.type?.includes('Cash')).reduce((s, c) => s + (c.amount || 0), 0).toFixed(2)} SAR</p>
-            </p>
-          </div>
-          </div>
+          {/* BRANCHES TAB */}
+          {statementType === 'branches' && (
+            <div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+                  <thead>
+                    <tr>
+                      <th style={styles.tableHeader}>Name</th>
+                      <th style={styles.tableHeader}>Location</th>
+                      <th style={styles.tableHeader}>Manager</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(data.branches || []).map(b => (
+                      <tr key={b.id} style={{ borderBottom: '1px solid #1E293B' }}>
+                        <td style={styles.tableCell}>{b.name}</td>
+                        <td style={styles.tableCell}>{b.location || '-'}</td>
+                        <td style={styles.tableCell}>{b.manager || '-'}</td>
+                      </tr>
+                    ))}
+                    {(data.branches || []).length === 0 && (
+                      <tr><td colSpan="3" style={{ padding: '30px', textAlign: 'center', color: '#64748B' }}>No branches found.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* CUSTOMERS TAB */}
+          {statementType === 'customers' && (
+            <div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+                  <thead>
+                    <tr>
+                      <th style={styles.tableHeader}>Name</th>
+                      <th style={styles.tableHeader}>Phone</th>
+                      <th style={{ ...styles.tableHeader, textAlign: 'right' }}>Store Credit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(data.customers || []).map(c => (
+                      <tr key={c.id} style={{ borderBottom: '1px solid #1E293B' }}>
+                        <td style={styles.tableCell}>{c.name}</td>
+                        <td style={styles.tableCell}>{c.phone}</td>
+                        <td style={{...styles.tableCell, textAlign: 'right' }}>{(c.store_credit || 0).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                    {(data.customers || []).length === 0 && (
+                      <tr><td colSpan="3" style={{ padding: '30px', textAlign: 'center', color: '#64748B' }}>No customers found.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
-  /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-      }; /* CREDIT TAB */
-      <div style={{ marginTop: '15px' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead><tr><th style={styles.tableHeader}>Name</th><th style={{ ...styles.tableHeader, textAlign: 'right' }}>Available Credit</th></tr></thead>
-          <tbody>{(data.customers || []).filter(c => (c.store_credit || 0) > 0).map(c => (
-            <tr key={c.id} style={{ borderBottom: '1px solid #1E293B' }}>
-              <td style={styles.tableCell}>{c.name}</td>
-              <td style={{...styles.tableCell, textAlign: 'right', color: '#34D399', fontWeight: 'bold' }}>{(c.store_credit || 0).toFixed(2)}</td>
-            </tr>
-          ))}
-          </tbody>
-        </table>
-      </div>
-      </div>
-      
-      {/* BRANCHES TAB */}
-      <div style={{ marginTop: '15px' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
-          <thead><tr><th style={styles.tableHeader}>Name</th><th style={styles.tableHeader}>Location</th><th style={styles.tableHeader}>Manager</th></tr></thead>
-          <tbody>{(data.branches || []).map(b => (
-            <tr key={b.id} style={{ borderBottom: '1px solid #1E293B' }}>
-              <td style={styles.tableCell}>{b.name}</td>
-              <td style={styles.tableCell}>{b.location || '-'}</td>
-              <td style={styles.tableCell}>{b.manager || '-'}</td>
-            </tr>
-          ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* CUSTOMERS TAB */}
-      <div style={{ marginTop: '15px' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead><tr><th style={styles.tableHeader}>Name</th><th style={styles.tableHeader}>Phone</th></tr></thead>
-          <tbody>{(data.customers || []).map(c => (
-            <tr key={c.id} style={{ borderBottom: '1px solid #1E293B' }}>
-              <td style={styles.tableCell}>{c.name}</td>
-              <td style={styles.tableCell}>{c.phone}</td>
-              <td style={{...styles.tableCell, textAlign: 'right' }}>{(c.store_credit || 0).toFixed(2)}</td>
-            </tr>
-          ))}
-        </tbody>
-        </table>
-      </div>
-
-      {/* CREDIT TAB */}
-      <div style={{ marginTop: '15px' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead><tr><th style={styles.tableHeader}>Name</th><th style={{ ...styles.tableHeader, textAlign: 'right' }}>Available Credit</th></tr></thead>
-          <tbody>{(data.customers || []).filter(c => (c.store_credit || 0) > 0).map(c => (
-            <tr key={c.id} style={{ borderBottom: '1px solid #1E293B' }}>
-              <td style={styles.tableCell}>{c.name}</td>
-              <td style={{...styles.tableCell, textAlign: 'right', color: '#34D399', fontWeight: 'bold' }}>{(c.store_credit || 0).toFixed(2)}</td>
-            </tr>
-          ))}
-        </tbody>
-        </table>
-      </div>
-
-      {/* BRANCHES TAB */}
-      <div style={{ marginTop: '15px' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
-          <thead><tr><th style={styles.tableHeader}>Name</th><th style={styles.tableHeader}>Location</th><th style={styles.tableHeader}>Manager</th></tr></thead>
-          <tbody>{(data.branches || []).map(b => (
-            <tr key={b.id} style={{ borderBottom: '1px solid #1E293B' }}>
-              <td style={styles.tableCell}>{b.name}</td>
-              <td style={styles.tableCell}>{b.location || '-'}</td>
-              <td style={styles.tableCell}>{b.manager || '-'}</td>
-            </tr>
-          ))}
-        </tbody>
-        </table>
-      </div>
-
-      {/* CASH TAB */}
-      <div style={{ marginTop: '15px' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
-          <thead><tr><th style={styles.tableHeader}>Date</th><th style={styles.tableHeader}>Description</th><th style={{ ...styles.tableHeader, textAlign: 'right' }}>Amount</th></tr></thead>
-          <tbody>{(data.cashbook || []).filter(c => c.type?.includes('Cash')).map(c => (
-            <tr key={c.id} style={{ borderBottom: '1px solid #1E293B' }}>
-              <td style={{...styles.tableCell, fontFamily: 'monospace', fontSize: '12px', color: '#94A3B8' }}>{c.trans_date}</td>
-              <td style={{...styles.tableCell, color: c.type?.includes('In') ? '#059669' : '#FCA5A5' }}>{c.description}</td>
-              <td style={{...styles.tableCell, textAlign: 'right', color: c.type?.includes('Out') ? '#FCA5A5' : '#34D399' }}>{(c.amount || 0).toFixed(2)}</td></tr>
-          ))}
-        </tbody>
-        </table>
-      </div>
-
-      {/* BANK TAB */}
-      <div style={{ marginTop: '15px' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
-          <thead><tr><th style={styles.tableHeader}>Date</th><th style={styles.tableHeader}>Description</th style={{ ...styles.tableHeader, textAlign: 'right' }}>Amount</th></tr></thead>
-          <tbody>{(data.cashbook || []).filter(c => c.type?.includes('Bank')).map(c => (
-            <tr key={c.id} style={{ borderBottom: '1px solid #1E293B' }}>
-              <td style={{...styles.tableCell, fontFamily: 'monospace', fontSize: '12px', color: '#94A3B8' }}>{c.trans_date}</td>
-              <td style={{...styles.tableCell, color: c.type?.includes('In') ? '#059669' : '#FCA5A5' }}>{c.description}</td>
-              <td style={{...styles.tableCell, textAlign: 'right', color: c.type?.includes('Out') ? '#FCA5A5' : '#34D399' }}>{(c.amount || 0).toFixed(2)}</td></tr>
-          ))}
-        </tbody>
-        </table>
-      </div>
-
-      </div>
-    );
-  }
-
-  // ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-  }; /* STATEMENTS PAGE CLOSE */
-  </div>
-
-  // ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-  }; /* CLOSE COMPONENT */
-};
-
-export default ERPViewsSystem;
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // DEFAULT: return null for unhandled pages
+  // ═══════════════════════════════════════════════════════════════════════════════
+  return null;
+}
