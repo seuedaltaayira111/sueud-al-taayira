@@ -603,7 +603,8 @@ const ar = {
   returnedBtn:'مسترجع',
   deductFromSalary:'خصم من الراتب',
   suspendBtn:'⏸ تعليق', activateBtn:'▶ تفعيل',
-  deleteBtnShort:'حذف', createAgencyBtn:'🚀 إنشاء وكالة وإنشاء كلمة مرور',
+  deleteBtnShort:'حذف',
+  createAgencyBtn:'🚀 إنشاء وكالة وإنشاء كلمة مرور',
   createQuoteBtn:'إنشاء عرض سعر',
   payBtn:'دفع', logLossBtn:'تسجيل الخسارة',
   rechargeBtn:'إعادة الشحن', createRecurringBtn:'إنشاء',
@@ -688,7 +689,8 @@ const ar = {
   emergencyRole:'طوارئ', unpaidLeaveRole:'بدون راتب',
   advanceStatusRole:'حالة السلفة', pendingRole:'معلق',
   repaidRole:'مسدد', deductedFromSalaryRole:'خصم من الراتب',
-  expenseApprovalRole:'اعتماد المصروفات', approvalStatusRole:'حالة الاعتماد',
+  expenseApprovalRole:'اعتماد المصروفات',
+  approvalStatusRole:'حالة الاعتماد',
   approvedRole:'موافق عليه', rejectedRole:'مرفوض',
   activeRole:'نشط', suspendedRole:'معلق',
   paidRole:'مدفوع', unpaidRole:'غير مدفوع',
@@ -698,7 +700,8 @@ const ar = {
   customerRole:'العميل', amountRole:'المبلغ (ريال)',
   intervalRole:'الفترة', profilePicRole:'تحديث صورة الملف الشخصي',
   usernameRole:'اسم المستخدم', phoneNumberRole:'رقم الهاتف',
-  addressFieldRole:'العنوان', saveProfileBtn:'💾 حفظ تغييرات الملف الشخصي',
+  addressFieldRole:'العنوان',
+  saveProfileBtn:'💾 حفظ تغييرات الملف الشخصي',
   changePasswordTitle:'🔒 الأمان', newPasswordRole:'كلمة المرور الجديدة',
   changePassBtn:'🔑 تغيير كلمة المرور',
   logoutBtn:'🚪 تسجيل خروج',
@@ -717,7 +720,8 @@ const ar = {
   profitabilityDesc:'تحليل أي الخطوط أو الخدمات التي تولد أكبر ربح.',
   airlineServiceCol:'الخط / الخدمة', ticketsSoldCol:'التذاكر المباعة',
   totalRevCol:'إجمالي الإيرادات', totalCostCol:'إجمالي التكلفة',
-  netProfitCol:'صافي الربح', noInvoiceData:'لا توجد بيانات فواتير.',
+  netProfitCol:'صافي الربح',
+  noInvoiceData:'لا توجد بيانات فواتير.',
   refundStatementTitle:'📊 كشف الاسترجاع والأرباح',
   refundStatementDesc:'تتبع الاسترجاعات من شركات الطيران واحسب هامش المكتب.',
   portalWiseBreakdown:'تفصيل الاسترجاع حسب البوابة',
@@ -727,15 +731,17 @@ const ar = {
   customerStatementTitle:'📊 كشف عميل',
   selectCustomerLabel:'اختر عميل لعرض الكشف',
   selectCustomerPlaceholder:'اختر العميل',
-  transactionHistory:'سجل المعاملات', txnDateCol:'التاريخ',
-  txnInvNoCol:'رقم الفاتورة', txnDebitCol:'مدين (الفاتورة)',
-  txnCreditCol:'ائتمان (مدفوع)', txnBalanceCol:'الرصيد',
+  transactionHistory:'سجل المعاملات',
+  txnDateCol:'التاريخ', txnInvNoCol:'رقم الفاتورة',
+  txnDebitCol:'مدين (الفاتورة)', txnCreditCol:'ائتمان (مدفوع)',
+  txnBalanceCol:'الرصيد',
   downloadStatementBtn:'تحميل الكشف', noTxnFound:'لا توجد معاملات.',
   recurringInvoicesTitle:'🔁 الفواتير المتكررة',
-  setupRecurringTitle:'إعداد ملف متكرر', customerLabel:'العميل',
-  amountLabel:'المبلغ (ريال)', intervalLabel:'الفترة',
-  createBtn:'إنشاء', profileIdCol:'معرف الملف',
-  intervalCol:'الفترة', amountCol:'المبلغ',
+  setupRecurringTitle:'إعداد ملف متكرر',
+  customerLabel:'العميل', amountLabel:'المبلغ (ريال)',
+  intervalLabel:'الفترة', createBtn:'إنشاء',
+  profileIdCol:'معرف الملف', intervalCol:'الفترة',
+  amountCol:'المبلغ',
   noRecurringProfiles:'لا توجد ملفات متكررة.',
   expenseApprovalTitle:'🛡 نظام اعتماد المصروفات',
   expenseApprovalDesc:'المصروفات التي ينشئها الموظفون ستظهر هنا للموافقة من قبل المدير.',
@@ -757,12 +763,17 @@ const ar = {
   staffMistakesTitle:'⚠️ تتبع أخطاء الموظفين والخسائر',
   staffMistakesDesc:'إذا هدرت تذكرة بسبب خطأ موظف، سجلها هنا. سيتم خصم مبلغ الخسارة من الراتب تلقائياً إذا تم تحديد "خصم من الراتب".',
   logNewMistakeTitle:'تسجيل خطأ / خسارة جديد',
-  selectEmployeeLabel:'الموظف', oldTicketNoLabel:'رقم التذكرة القديمة',
-  newTicketNoLabel:'رقم التذكرة الجديدة', lossAmountLabel:'مبلغ الخسارة (ريال)',
-  deductFromSalaryLabel:'خصم من الراتب', logLossBtn:'تسجيل الخسارة',
-  mistakeHistoryTitle:'سجل الأخطاء', dateCol:'التاريخ',
-  employeeCol:'الموظف', oldTicketCol:'التذكرة القديمة',
-  newTicketCol:'التذكرة الجديدة', lossAmountCol:'مبلغ الخسارة',
+  selectEmployeeLabel:'الموظف',
+  oldTicketNoLabel:'رقم التذكرة القديمة',
+  newTicketNoLabel:'رقم التذكرة الجديدة',
+  lossAmountLabel:'مبلغ الخسارة (ريال)',
+  deductFromSalaryLabel:'خصم من الراتب',
+  logLossBtn:'تسجيل الخسارة',
+  mistakeHistoryTitle:'سجل الأخطاء',
+  dateCol:'التاريخ', employeeCol:'الموظف',
+  oldTicketCol:'التذكرة القديمة',
+  newTicketCol:'التذكرة الجديدة',
+  lossAmountCol:'مبلغ الخسارة',
   salaryDeductedCol:'خصم من الراتب',
   yesLabel:'نعم', noLabel:'لا',
   aiDashboardTitle:'🤖 مساعد ERP الذكي',
@@ -789,7 +800,8 @@ const ar = {
   editBtn2:'تعديل',
   dailyAttendanceTitle:'📅 الحضور اليومي بالوقت والإجازة',
   attendanceDesc:'سجل وقت الحضور والانصراف. سيحسب النظام تلقائياً الوقت الإضافي (>9 ساعات) وخصم الراتب (<8 ساعات).',
-  markAttendanceTitle:'تسجيل الحضور', otNote:'الوقت الإضافي بعد 9 ساعات',
+  markAttendanceTitle:'تسجيل الحضور',
+  otNote:'الوقت الإضافي بعد 9 ساعات',
   deductionNote:'خصم الراتب إذا أقل من 8 ساعات',
   attendanceHistoryTitle:'سجل الحضور',
   checkInCol:'تسجيل الحضور', checkOutCol:'تسجيل الانصراف',
@@ -851,84 +863,119 @@ const ar = {
 
 const translations = { en, ar };
 
-// ERROR FIX: Removed the unterminated "/* ═══..." comment from here.
-
 export default function useERPState() {
   const router = useRouter();
   const today = new Date().toISOString().split('T')[0];
 
-  // --- 🌟 ADVANCED FEATURES ADDED 🌟 ---
-  const [theme, setTheme] = useState('light'); // 'light' or 'dark'
+  const [theme, setTheme] = useState('light');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState({
     dateFrom: '', dateTo: '', status: '', airline: '', portal: ''
   });
-  const [invoiceDesign, setInvoiceDesign] = useState('modern'); // 'modern', 'classic', 'minimal'
-  // --- 🌟 END ADVANCED FEATURES 🌟 ---
+  const [invoiceDesign, setInvoiceDesign] = useState('modern');
 
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
-  const [lang, setLang] = useState('en');
-  const [initError, setInitError] = useState(null);
-  const [toast, setToast] = useState(null);
-  const [page, setPage] = useState('dashboard');
-  const [modal, setModal] = useState({ type: null, data: null });
-  const [chatOpen, setChatOpen] = useState(false);
-  const [previewHTML, setPreviewHTML] = useState('');
+  const [initError, setInitError] = useState('');
 
+  const [page, setPage] = useState('dashboard');
+  const [lang, setLang] = useState('en');
   const [data, setData] = useState({
     invoices: [], customers: [], corporates: [], creditors: [], vendors: [],
     packages: [], branches: [], portals: [], employees: [], expenses: [],
-    cashbook: [], payroll: [], staffMistakes: [], auditLogs: [], settings: {},
-    tenants: [], investments: [], empAdvances: [], services: [], attendance: [], appUsers: []
+    cashbook: [], auditLogs: [], appUsers: [], staffMistakes: [], payroll: [],
+    settings: {}, quotations: [], recurring_invoices: []
   });
 
+  const [toast, setToast] = useState('');
+  const showToast = useCallback((msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 3000);
+  }, []);
+
+  const [modal, setModal] = useState({ type: null, data: null });
+
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatInput, setChatInput] = useState('');
+  const [chatMessages, setChatMessages] = useState([{
+    sender: 'bot',
+    text: '👋 Hello! Type "help" to see what I can do.'
+  }]);
+
+  const [previewHTML, setPreviewHTML] = useState('');
+
+  const [contractCorpName, setContractCorpName] = useState('');
+  const [contractType, setContractType] = useState('umrah');
+  const [contractMarkup, setContractMarkup] = useState(10);
+  const [contractTerms, setContractTerms] = useState('');
+
   const [invForm, setInvForm] = useState({
-    custType:'Individual', custId:'new', custName:'', custPhone:'',
-    corpId:'new', corpName:'', corpVat:'', corpPhone:'', corpAddress:'',
-    passengers:[''], employeeId:'', portalId:'',
-    bookingDate:today, invoiceDate:today, bookingType:'New Booking',
-    linkedInvId:'', oldTicketNo:'', oldPnr:'', oldAirline:'', oldSector:'',
-    oldSellPrice:0, oldBookingDate:'', oldPassengers:'', oldFlightType:'',
-    oldPaymentMethod:'', refundReason:'',
-    service:'Flight Ticket', flightType:'Domestic', flightJourney:'Single',
-    refundable:'Refundable', flightSector:'', airline:'', destination:'',
-    hotelName:'', checkIn:'', checkOut:'', visaType:'Tourist', serviceName:'',
-    pnr:'', ticketNo:'', qty:1, cost:0, sell:0, discount:0,
-    taxRate:'15', payment:'Cash', paid:'', creditDueDate:'', creditorId:'',
-    tabbyNo:'', tamaraNo:'', ticketStatus:'Confirmed',
-    useCredit:0, creditCustId:'', status:'Unpaid'
+    custType: 'Individual', custId: 'new', custName: '', custPhone: '',
+    corpId: 'new', corpName: '', corpVat: '', corpPhone: '', corpAddress: '',
+    passengers: [''], employeeId: '', portalId: '', bookingDate: '', invoiceDate: '',
+    bookingType: 'New Booking', linkedInvId: '', oldTicketNo: '', oldPnr: '',
+    oldAirline: '', oldSector: '', oldSellPrice: 0, oldBookingDate: '', oldPassengers: '',
+    oldFlightType: '', oldPaymentMethod: '', refundReason: '', service: 'Flight Ticket',
+    flightType: 'Domestic', flightJourney: 'Single', refundable: 'Refundable',
+    flightSector: '', airline: '', destination: '', hotelName: '', checkIn: '', checkOut: '',
+    visaType: 'Tourist', serviceName: '', pnr: '', ticketNo: '', qty: 1, cost: 0, sell: 0,
+    discount: 0, taxRate: '15', payment: 'Cash', paid: '', creditDueDate: '',
+    creditorId: '', tabbyNo: '', tamaraNo: '', ticketStatus: 'Confirmed',
+    useCredit: 0, creditCustId: '', status: 'Unpaid'
   });
 
   const [expForm, setExpForm] = useState({
-    expense_type:'', payment_mode:'Cash', description:'', expense_date:today,
-    vendor_name:'', taxRate:'0', items:[{name:'',qty:1,price:0}], approval_status:'Approved'
+    expense_type: '', description: '', amount: '', payment_mode: 'Cash', expense_date: ''
   });
-
-  const [corpForm, setCorpForm] = useState({ name:'', vat_no:'', phone:'', address:'' });
-  const [creditorForm, setCreditorForm] = useState({ name:'', phone:'', address:'' });
-  const [custForm, setCustForm] = useState({ name:'', phone:'', store_credit:0 });
-  const [vendorForm, setVendorForm] = useState({ name:'', phone:'', balance:0 });
-  const [pkgForm, setPkgForm] = useState({ name:'', price:'', desc:'', duration:'', inclusions:'' });
-  const [brnForm, setBrnForm] = useState({ name:'', location:'', phone:'', manager:'', email:'', timing:'', status:'Active' });
+  const [corpForm, setCorpForm] = useState({ name: '', vat_no: '', phone: '', address: '' });
+  const [creditorForm, setCreditorForm] = useState({ name: '', phone: '', address: '' });
+  const [custForm, setCustForm] = useState({ name: '', phone: '', store_credit: 0 });
+  const [vendorForm, setVendorForm] = useState({ name: '', phone: '', balance: 0 });
+  const [pkgForm, setPkgForm] = useState({ name: '', price: '', desc: '', duration: '', inclusions: '' });
+  const [brnForm, setBrnForm] = useState({ name: '', location: '', phone: '', manager: '', email: '', timing: '' });
   const [empForm, setEmpForm] = useState({
-    name:'', phone:'', iqama_no:'', iqama_expiry:'', role:'Sales', salary:0, commission_rate:0,
-    nationality:'', job_title:'', national_id:'', join_date:'', bank_name:'', bank_account:'', labor_office_expiry:''
+    name: '', role: '', phone: '', salary: '', commission_rate: 0, nationality: '',
+    national_id: '', iqama_expiry: '', maktab_amal: '', join_date: '',
+    bank_name: '', bank_account: ''
   });
-  const [srvForm, setSrvForm] = useState({ name:'' });
-  const [investForm, setInvestForm] = useState({ name:'', amount:'', date:today, mode:'Cash', reason:'Other', otherReason:'', desc:'' });
-  const [settleForm, setSettleForm] = useState({ id:'', date:today, mode:'Cash' });
-  const [refundForm, setRefundForm] = useState({ id:'', date:today, compRefund:0, custRefund:0, mode:'Cash', reason:'', portalId:'', creditBalance:0 });
-  const [transferForm, setTransferForm] = useState({ from:'Cash', to:'Bank', amount:'', date:today });
-  const [setForm, setSetForm] = useState({});
-  const [userForm, setUserForm] = useState({ email:'', username:'', role:'Staff', is_admin:false, can_access_invoices:true, can_access_bank:false, can_access_hr:false, can_access_reports:false, can_access_settings:false, employee_id:'' });
-  const [portalForm, setPortalForm] = useState({ name:'', balance:0 });
-  const [tenantForm, setTenantForm] = useState({ agency_name:'', owner_email:'', subscription_end_date:'', company_name_ar:'', vat_no:'', cr_no:'', phone:'', address_ar:'' });
-  const [profileForm, setProfileForm] = useState({ username:'', avatar_url:'', phone:'', address:'' });
-  const [passForm, setPassForm] = useState({ newPass:'' });
+  const [srvForm, setSrvForm] = useState({});
+  const [investForm, setInvestForm] = useState({
+    type: 'Investor-In', amount: '', description: '', trans_date: ''
+  });
+  const [settleForm, setSettleForm] = useState({ id: '', date: '', mode: 'Cash' });
+  const [refundForm, setRefundForm] = useState({
+    id: '', date: '', compRefund: 0, custRefund: 0, mode: 'Cash',
+    reason: '', portalId: '', creditBalance: 0
+  });
+  const [transferForm, setTransferForm] = useState({
+    from: 'Cash', to: 'Bank', amount: '', date: '', description: ''
+  });
+  const [setForm, setSetForm] = useState({
+    company_name: '', company_name_ar: '', vat_no: '', cr_no: '', phone: '',
+    address: '', logo_url: '', invoice_design: 'modern'
+  });
+  const [userForm, setUserForm] = useState({
+    email: '', username: '', is_admin: false, can_access_hr: false,
+    can_access_bank: false, can_access_invoices: true, can_access_reports: false,
+    can_access_settings: false, employee_id: ''
+  });
+  const [portalForm, setPortalForm] = useState({
+    name: '', portal_type: '', current_balance: 0
+  });
+  const [tenantForm, setTenantForm] = useState({
+    agency_name: '', owner_email: '', subscription_end_date: '',
+    company_name_ar: '', vat_no: '', cr_no: '', phone: '', address_ar: ''
+  });
+  const [profileForm, setProfileForm] = useState({
+    username: '', avatar_url: '', phone: '', address: ''
+  });
+  const [passForm, setPassForm] = useState({ newPass: '' });
   const [payForm, setPayForm] = useState({
-    employee_id:'', month: today.slice(0,7), overtime:0, gift:0, advance:0,
-    mistakes_deduction:0, other_deduction:0, payment_mode:'Cash', payment_date: today, notes:''
+    employee_id: '', month: '', base_salary: 0, advance_deduction: 0, gift: 0,
+    overtime: 0, commission: 0, net_pay: 0, mode: 'Cash'
+  });
+  const [advForm, setAdvForm] = useState({
+    employee_id: '', amount: '', month: ''
   });
 
   const [editInvId, setEditInvId] = useState(null);
@@ -940,229 +987,125 @@ export default function useERPState() {
   const [editPkgId, setEditPkgId] = useState(null);
   const [editBrnId, setEditBrnId] = useState(null);
   const [editEmpId, setEditEmpId] = useState(null);
-  const [advForm, setAdvForm] = useState({ employee_id:'', amount:'', date:today, status:'Pending' });
   const [editSrvId, setEditSrvId] = useState(null);
   const [editUserId, setEditUserId] = useState(null);
 
-  const [chatInput, setChatInput] = useState('');
-  const [chatMessages, setChatMessages] = useState([
-    { sender:'bot', text:'👋 Hello! I am your AI ERP Assistant. Type "help" to see what I can do.' }
-  ]);
-
-  const [contractCorpName, setContractCorpName] = useState('');
-  const [contractType, setContractType] = useState('Flight Tickets');
-  const [contractMarkup, setContractMarkup] = useState('10');
-  const [contractTerms, setContractTerms] = useState('');
-
   const tr = translations[lang] || translations.en;
 
-  const showToast = useCallback((msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3500);
-  }, []);
-
   const logAction = useCallback(async (action) => {
+    if (!userProfile?.tenant_id) return;
     try {
-      if (userProfile?.tenant_id) {
-        await supabase.from('audit_logs').insert([{
-          user_email: user?.email || 'Unknown',
-          action,
-          tenant_id: userProfile.tenant_id
-        }]);
-      }
+      await supabase.from('audit_logs').insert([{
+        action,
+        user_email: user?.email || 'unknown',
+        tenant_id: userProfile.tenant_id
+      }]);
     } catch (e) {
-      console.error('Audit log error:', e);
+      console.warn('Audit log failed:', e);
     }
-  }, [user?.email, userProfile?.tenant_id]);
+  }, [user, userProfile]);
 
   const fetchAll = useCallback(async () => {
     if (!userProfile?.tenant_id) return;
     const tid = userProfile.tenant_id;
-
     try {
-      const [
-        invRes, custRes, corpRes, credRes, vendRes, pkgRes, brnRes,
-        portRes, empRes, expRes, cashRes, payRes, mistRes, auditRes,
-        setRes, srvRes, advRes, investRes, attRes, appUsersRes
-      ] = await Promise.all([
+      const [i, c, co, cr, v, p, b, po, e, ex, cb, au, u, m, pay, s, q, r] = await Promise.all([
         supabase.from('invoices').select('*, customers(name,phone), corporates(name,vat_no,phone), employees(name,phone)').eq('tenant_id', tid).order('created_at', { ascending: false }),
-        supabase.from('customers').select('*').eq('tenant_id', tid),
-        supabase.from('corporates').select('*').eq('tenant_id', tid),
-        supabase.from('creditors').select('*').eq('tenant_id', tid),
-        supabase.from('vendors').select('*').eq('tenant_id', tid),
+        supabase.from('customers').select('*').eq('tenant_id', tid).order('name'),
+        supabase.from('corporates').select('*').eq('tenant_id', tid).order('name'),
+        supabase.from('creditors').select('*').eq('tenant_id', tid).order('name'),
+        supabase.from('vendors').select('*').eq('tenant_id', tid).order('name'),
         supabase.from('packages').select('*').eq('tenant_id', tid),
         supabase.from('branches').select('*').eq('tenant_id', tid),
         supabase.from('portals').select('*').eq('tenant_id', tid),
-        supabase.from('employees').select('*').eq('tenant_id', tid),
-        supabase.from('expenses').select('*').eq('tenant_id', tid).order('created_at', { ascending: false }),
-        supabase.from('cashbook').select('*').eq('tenant_id', tid).order('created_at', { ascending: false }),
-        supabase.from('payroll').select('*, employees(name)').eq('tenant_id', tid).order('created_at', { ascending: false }),
-        supabase.from('staff_mistakes').select('*, employees(name)').eq('tenant_id', tid).order('created_at', { ascending: false }),
+        supabase.from('employees').select('*').eq('tenant_id', tid).order('name'),
+        supabase.from('expenses').select('*').eq('tenant_id', tid).order('expense_date', { ascending: false }),
+        supabase.from('cashbook').select('*').eq('tenant_id', tid).order('trans_date', { ascending: false }),
         supabase.from('audit_logs').select('*').eq('tenant_id', tid).order('created_at', { ascending: false }).limit(200),
+        supabase.from('app_users').select('*').eq('tenant_id', tid),
+        supabase.from('staff_mistakes').select('*, employees(name)').eq('tenant_id', tid).order('date', { ascending: false }),
+        supabase.from('payroll').select('*, employees(name)').eq('tenant_id', tid).order('created_at', { ascending: false }),
         supabase.from('settings').select('*').eq('tenant_id', tid).maybeSingle(),
-        supabase.from('services').select('*').eq('tenant_id', tid),
-        supabase.from('emp_advances').select('*, employees(name)').eq('tenant_id', tid),
-        supabase.from('investments').select('*').eq('tenant_id', tid).order('created_at', { ascending: false }),
-        supabase.from('attendance').select('*, employees(name)').eq('tenant_id', tid).order('date', { ascending: false }),
-        supabase.from('app_users').select('*').eq('tenant_id', tid)
+        supabase.from('quotations').select('*').eq('tenant_id', tid).order('created_at', { ascending: false }),
+        supabase.from('recurring_invoices').select('*').eq('tenant_id', tid),
       ]);
-
       setData({
-        invoices: invRes.data || [],
-        customers: custRes.data || [],
-        corporates: corpRes.data || [],
-        creditors: credRes.data || [],
-        vendors: vendRes.data || [],
-        packages: pkgRes.data || [],
-        branches: brnRes.data || [],
-        portals: portRes.data || [],
-        employees: empRes.data || [],
-        expenses: expRes.data || [],
-        cashbook: cashRes.data || [],
-        payroll: payRes.data || [],
-        staffMistakes: mistRes.data || [],
-        auditLogs: auditRes.data || [],
-        settings: setRes.data || {},
-        services: srvRes.data || [],
-        empAdvances: advRes.data || [],
-        investments: investRes.data || [],
-        attendance: attRes.data || [],
-        appUsers: appUsersRes.data || []
+        invoices: i.data || [],
+        customers: c.data || [],
+        corporates: co.data || [],
+        creditors: cr.data || [],
+        vendors: v.data || [],
+        packages: p.data || [],
+        branches: b.data || [],
+        portals: po.data || [],
+        employees: e.data || [],
+        expenses: ex.data || [],
+        cashbook: cb.data || [],
+        auditLogs: au.data || [],
+        appUsers: u.data || [],
+        staffMistakes: m.data || [],
+        payroll: pay.data || [],
+        settings: s.data || {},
+        quotations: q.data || [],
+        recurring_invoices: r.data || []
       });
     } catch (err) {
-      console.error('Fetch all error:', err);
+      console.error('Fetch error:', err);
+      showToast('Data fetch error');
     }
-  }, [userProfile?.tenant_id]);
+  }, [userProfile, showToast]);
 
   useEffect(() => {
-    if (userProfile?.tenant_id) {
-      fetchAll();
-    }
-  }, [userProfile?.tenant_id, fetchAll]);
-
-  useEffect(() => {
-    let mounted = true;
-    const init = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) {
-          if (mounted) router.push('/login');
-          return;
-        }
-        if (mounted) setUser(session.user);
-
-        const { data: profile, error: profErr } = await supabase
-          .from('app_users')
-          .select('*')
-          .eq('id', session.user.id)
-          .maybeSingle();
-
-        if (profErr) {
-          if (mounted) setInitError('Profile error: ' + profErr.message);
-          return;
-        }
-        if (!profile) {
-          if (mounted) setInitError('User profile not found. Contact admin.');
-          return;
-        }
-
-        if (profile.role !== 'SuperAdmin' && profile.tenant_id) {
-          const { data: tenant } = await supabase
-            .from('tenants')
-            .select('is_paid, subscription_end_date')
-            .eq('id', profile.tenant_id)
-            .maybeSingle();
-
-          if (tenant && (!tenant.is_paid || new Date(tenant.subscription_end_date) < new Date())) {
-            if (mounted) router.push('/subscription');
-            return;
-          }
-
-          const { data: settings } = await supabase
-            .from('settings')
-            .select('id')
-            .eq('tenant_id', profile.tenant_id)
-            .maybeSingle();
-
-          if (!settings) {
-            if (mounted) router.push('/setup');
-            return;
-          }
-
-          const { data: sData } = await supabase
-            .from('settings')
-            .select('*')
-            .eq('tenant_id', profile.tenant_id)
-            .maybeSingle();
-          if (sData && mounted) setSetForm(sData);
-        }
-
-        if (mounted) {
-          setUserProfile(profile);
-          setProfileForm({
-            username: profile.username || '',
-            avatar_url: profile.avatar_url || '',
-            phone: profile.phone || '',
-            address: profile.address || ''
-          });
-        }
-      } catch (err) {
-        if (mounted) setInitError('Init failed: ' + err.message);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        router.push('/login');
+        return;
       }
-    };
-
-    init();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!mounted) return;
-      if (event === 'SIGNED_OUT') router.push('/login');
-      if (session?.user) setUser(session.user);
+      setUser(session.user);
+      supabase.from('app_users').select('*').eq('id', session.user.id).maybeSingle().then(({ data: profile }) => {
+        if (profile) {
+          setUserProfile(profile);
+        } else {
+          setInitError('User profile not found. Contact admin.');
+        }
+      }).catch(err => {
+        setInitError('Profile load error: ' + err.message);
+      });
+    }).catch(err => {
+      setInitError('Auth error: ' + err.message);
     });
+  }, []);
 
-    return () => {
-      mounted = false;
-      subscription?.unsubscribe();
-    };
-  }, [router]);
+  useEffect(() => {
+    if (userProfile) fetchAll();
+  }, [userProfile, fetchAll]);
 
   return {
-    user, setUser, userProfile, initError, lang, setLang,
-    toast, page, setPage, modal, setModal, chatOpen, setChatOpen,
-    previewHTML, setPreviewHTML, tr, today, router,
-    data, setData, showToast, logAction, fetchAll,
-    invForm, setInvForm, editInvId, setEditInvId,
-    expForm, setExpForm, editExpId, setEditExpId,
-    corpForm, setCorpForm, editCorpId, setEditCorpId,
-    creditorForm, setCreditorForm, editCredId, setEditCredId,
-    custForm, setCustForm, editCustId, setEditCustId,
-    vendorForm, setVendorForm, editVendId, setEditVendId,
-    pkgForm, setPkgForm, editPkgId, setEditPkgId,
-    brnForm, setBrnForm, editBrnId, setEditBrnId,
-    empForm, setEmpForm, editEmpId, setEditEmpId,
-    srvForm, setSrvForm, editSrvId, setEditSrvId,
-    investForm, setInvestForm,
-    settleForm, setSettleForm,
-    refundForm, setRefundForm,
-    transferForm, setTransferForm,
-    setForm, setSetForm,
-    userForm, setUserForm, editUserId, setEditUserId,
-    portalForm, setPortalForm,
-    tenantForm, setTenantForm,
-    profileForm, setProfileForm,
-    passForm, setPassForm,
-    payForm, setPayForm,
-    advForm, setAdvForm,
-    chatInput, setChatInput, chatMessages, setChatMessages,
-    contractCorpName, setContractCorpName,
-    contractType, setContractType,
-    contractMarkup, setContractMarkup,
-    contractTerms, setContractTerms,
-    getInvoiceHTML, getRefundHTML, getExpenseHTML,
-    getSalarySlipHTML, getContractHTML, getMistakeHTML,
-    // --- 🌟 ADVANCED FEATURES RETURNED 🌟 ---
-    theme, setTheme,
-    sidebarCollapsed, setSidebarCollapsed,
-    advancedFilters, setAdvancedFilters,
-    invoiceDesign, setInvoiceDesign
+    user, setUser, userProfile, setUserProfile, initError, setInitError,
+    page, setPage, lang, setLang, tr, data, setData,
+    theme, setTheme, sidebarCollapsed, setSidebarCollapsed,
+    advancedFilters, setAdvancedFilters, invoiceDesign, setInvoiceDesign,
+    toast, showToast, modal, setModal,
+    chatOpen, setChatOpen, chatInput, setChatInput, chatMessages, setChatMessages,
+    previewHTML, setPreviewHTML,
+    contractCorpName, setContractCorpName, contractType, setContractType,
+    contractMarkup, setContractMarkup, contractTerms, setContractTerms,
+    invForm, setInvForm, expForm, setExpForm, corpForm, setCorpForm,
+    creditorForm, setCreditorForm, custForm, setCustForm,
+    vendorForm, setVendorForm, pkgForm, setPkgForm, brnForm, setBrnForm,
+    empForm, setEmpForm, srvForm, setSrvForm, investForm, setInvestForm,
+    settleForm, setSettleForm, refundForm, setRefundForm,
+    transferForm, setTransferForm, setForm, setSetForm,
+    userForm, setUserForm, portalForm, setPortalForm,
+    tenantForm, setTenantForm, profileForm, setProfileForm,
+    passForm, setPassForm, payForm, setPayForm, advForm, setAdvForm,
+    editInvId, setEditInvId, editExpId, setEditExpId,
+    editCorpId, setEditCorpId, editCredId, setEditCredId,
+    editCustId, setEditCustId, editVendId, setEditVendId,
+    editPkgId, setEditPkgId, editBrnId, setEditBrnId,
+    editEmpId, setEditEmpId, editSrvId, setEditSrvId,
+    editUserId, setEditUserId,
+    logAction, fetchAll, today, router,
+    getInvoiceHTML, getRefundHTML, getExpenseHTML, getSalarySlipHTML, getContractHTML, getMistakeHTML
   };
 }
