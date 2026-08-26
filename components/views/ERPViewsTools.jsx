@@ -1,23 +1,18 @@
 'use client';
+
 import React, { useState } from 'react';
 
 const styles = { 
-  container: { padding: '24px', background: '#0A0F1C', minHeight: '100vh', color: '#E2E8F0' },
-  card: { background: '#1E293B', padding: '28px', borderRadius: '16px', marginBottom: '20px', border: '1px solid #334155' },
-  headerGradient: { background: 'linear-gradient(135deg, #7C3AED, #6D28D9)', color: 'white', padding: '30px', borderRadius: '16px', marginBottom: '24px', boxShadow: '0 10px 30px rgba(124, 58, 237, 0.2)' },
-  input: { width: '100%', padding: '14px 18px', margin: '8px 0', background: '#0F172A', border: '1px solid #475569', borderRadius: '10px', outline: 'none', boxSizing: 'border-box', fontSize: '15px', color: '#E2E8F0', ':focus': { borderColor: '#A78BFA' } }, 
-  label: { fontSize: '12px', fontWeight: '700', color: '#94A3B8', marginBottom: '8px', display: 'block', marginTop: '16px', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  resultBox: { background: '#0F172A', padding: '24px', borderRadius: '12px', border: '1px solid #334155', marginTop: '24px' },
-  resultRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #1E293B' },
-  resultLabel: { color: '#94A3B8', fontSize: '14px' },
-  resultValue: { fontSize: '18px', fontWeight: '700' }
+  input: { width: '100%', padding: '10px', margin: '5px 0', border: '1px solid #cbd5e1', borderRadius: '6px', outline: 'none', boxSizing: 'border-box' }, 
+  btnPrimary: { padding: '10px 15px', background: '#1E3A8A', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }, 
+  card: { background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '20px', border: '1px solid #e2e8f0' }, 
+  label: { fontSize: '14px', fontWeight: 'bold', color: '#333', marginBottom: '5px', display: 'block', marginTop: '10px' } 
 };
 
 export default function ERPViewsTools(props) {
-  const { page, tr, lang } = props;
-  const t = (key, fallback) => tr?.[key] || fallback || key;
+  const { tr } = props;
   const [cost, setCost] = useState(0);
-  const [margin, setMargin] = useState(15);
+  const [margin, setMargin] = useState(15); // Default 15% margin
   const [vatRate, setVatRate] = useState(15);
 
   const calculatePricing = () => {
@@ -35,53 +30,39 @@ export default function ERPViewsTools(props) {
 
   const { suggestedSell, profit, vatAmount, finalTotal } = calculatePricing();
 
-  if (page === 'ai_pricing') {
+  // 1. AI PRICING CALCULATOR
+  if (props.page === 'ai_pricing') {
     return (
-      <div style={styles.container}>
-        <div style={styles.headerGradient}>
-          <h2 style={{ margin: 0, fontSize: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '28px' }}>🤖</span>
-            {t('aiPricing', 'AI Pricing Calculator')}
-          </h2>
-          <p style={{ margin: '8px 0 0', opacity: 0.9, fontSize: '14px' }}>{t('aiPricingDesc', 'Enter your cost price and desired margin. The AI will suggest the optimal selling price.')}</p>
-        </div>
-        
+      <div>
+        <h2 style={{ color: '#1E3A8A' }}>🤖 AI Pricing Calculator</h2>
         <div style={styles.card}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+          <p style={{ color: '#64748b', marginBottom: '15px' }}>Enter your cost price and desired margin. The AI will suggest the optimal selling price to maximize profit while remaining competitive.</p>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
             <div>
-              <label style={styles.label}>{t('costPrice', 'Cost Price (SAR)')}</label>
+              <label style={styles.label}>Cost Price (SAR)</label>
               <input type="number" step="0.01" value={cost} onChange={e => setCost(e.target.value)} style={styles.input} />
             </div>
             <div>
-              <label style={styles.label}>{t('desiredMargin', 'Desired Margin (%)')}</label>
+              <label style={styles.label}>Desired Margin (%)</label>
               <input type="number" step="1" value={margin} onChange={e => setMargin(e.target.value)} style={styles.input} />
             </div>
             <div>
-              <label style={styles.label}>{t('vatRatePct', 'VAT Rate (%)')}</label>
+              <label style={styles.label}>VAT Rate (%)</label>
               <input type="number" step="1" value={vatRate} onChange={e => setVatRate(e.target.value)} style={styles.input} />
             </div>
           </div>
           
-          <div style={styles.resultBox}>
-            <h4 style={{ margin: '0 0 16px', color: '#A78BFA', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-              {t('suggestedStrategy', 'Suggested Pricing Strategy')}
-            </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div style={{...styles.resultRow, borderBottom: 'none' }}>
-                <span style={styles.resultLabel}>{t('suggestedSellPrice', 'Suggested Sell Price')}</span>
-                <span style={{ ...styles.resultValue, color: '#34D399', fontSize: '24px' }}>{suggestedSell.toFixed(2)} SAR</span>
+          <div style={{ marginTop: '20px', background: '#f8fafc', padding: '20px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+            <h4 style={{ margin: '0 0 15px', color: '#1E3A8A' }}>Suggested Pricing Strategy</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div>
+                <p style={{ margin: '5px 0', fontSize: '16px' }}><strong>Suggested Sell Price:</strong> <span style={{ color: '#059669', fontWeight: 'bold', fontSize: '20px' }}>{suggestedSell.toFixed(2)} SAR</span></p>
+                <p style={{ margin: '5px 0', fontSize: '14px' }}><strong>Expected Profit:</strong> <span style={{ color: '#059669' }}>{profit.toFixed(2)} SAR</span></p>
               </div>
-              <div style={{...styles.resultRow, borderBottom: 'none' }}>
-                <span style={styles.resultLabel}>{t('expectedProfit', 'Expected Profit')}</span>
-                <span style={{ ...styles.resultValue, color: '#34D399' }}>{profit.toFixed(2)} SAR</span>
-              </div>
-              <div style={styles.resultRow}>
-                <span style={styles.resultLabel}>{t('vatAmount', 'VAT Amount')}</span>
-                <span style={{ ...styles.resultValue, color: '#FCA5A5' }}>{vatAmount.toFixed(2)} SAR</span>
-              </div>
-              <div style={styles.resultRow}>
-                <span style={styles.resultLabel}>{t('finalInvoiceTotal', 'Final Invoice Total')}</span>
-                <span style={{ ...styles.resultValue, color: '#A78BFA', fontSize: '20px' }}>{finalTotal.toFixed(2)} SAR</span>
+              <div>
+                <p style={{ margin: '5px 0', fontSize: '14px' }}><strong>VAT Amount:</strong> <span style={{ color: '#EF4444' }}>{vatAmount.toFixed(2)} SAR</span></p>
+                <p style={{ margin: '5px 0', fontSize: '16px' }}><strong>Final Invoice Total:</strong> <span style={{ color: '#1E3A8A', fontWeight: 'bold', fontSize: '20px' }}>{finalTotal.toFixed(2)} SAR</span></p>
               </div>
             </div>
           </div>
