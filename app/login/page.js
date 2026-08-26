@@ -63,8 +63,7 @@ export default function Login() {
       <div style={styles.loginCard}>
         <div style={styles.logoBox}>
           <div style={styles.logoContainer}>
-            {/* User Provided Logo */}
-            <img src="https://z-cdn-media.chatglm.cn/files/9ac36e95-5359-46d9-bdfc-624cf3aac5dd.jpeg" alt="Company Logo" style={styles.logo} onError={(e) => e.target.style.display='none'} />
+            <div style={styles.logoMark}>✈️</div>
           </div>
           <h1 style={styles.titleEn}>SUEUD AL TAIYYARAH</h1>
           <h2 style={styles.titleAr}>صعود الطائرة للسفر و السياحة</h2>
@@ -76,7 +75,7 @@ export default function Login() {
             <span style={styles.inputIcon}>📧</span>
             <input 
               type="email" 
-              placeholder="Enter your Email" 
+              placeholder="Email / البريد الإلكتروني" 
               value={email} 
               onChange={(e) => setEmail(e.target.value)} 
               required 
@@ -90,7 +89,7 @@ export default function Login() {
               <span style={styles.inputIcon}>🔒</span>
               <input 
                 type="password" 
-                placeholder="Enter your Password" 
+                placeholder="Password / كلمة المرور" 
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
                 required 
@@ -101,19 +100,19 @@ export default function Login() {
           )}
 
           <button type="submit" style={styles.btn} disabled={loading}>
-            {loading ? '⏳ Authenticating...' : (mode === 'login' ? 'Secure Login →' : 'Send Magic Link ✨')}
+            {loading ? '⏳ Authenticating... / جارِ الدخول' : (mode === 'login' ? 'Secure Login / دخول آمن →' : 'Send Magic Link / إرسال رابط ✨')}
           </button>
         </form>
 
         {msg && <p style={{...styles.msg, color: msg.includes('✨') ? '#059669' : '#EF4444'}}>{msg}</p>}
         
         <button onClick={() => { setMode(mode === 'login' ? 'forgot' : 'login'); setMsg(''); }} style={styles.linkBtn}>
-          {mode === 'login' ? '🔒 Forgot Password?' : '← Back to Login'}
+          {mode === 'login' ? '🔒 Forgot Password? / نسيت كلمة المرور؟' : '← Back to Login / رجوع لتسجيل الدخول'}
         </button>
 
         <div style={styles.footerText}>
-          <p>🔒 Protected by Enterprise Security</p>
-          <p>© 2024 Sueud Al Taayira ERP. All rights reserved.</p>
+          <p>🔒 Protected by Enterprise Security / محمي بأمان مؤسسي</p>
+          <p>© {new Date().getFullYear()} Sueud Al Taayira ERP. All rights reserved.</p>
         </div>
       </div>
     </div>
@@ -199,6 +198,18 @@ const styles = {
     borderRadius: '50%', 
     display: 'block', 
     background: 'white'
+  },
+  logoMark: {
+    width: '100px',
+    height: '100px',
+    borderRadius: '50%',
+    background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '48px',
+    boxShadow: '0 8px 24px rgba(245,158,11,0.4)',
+    border: '3px solid rgba(255,255,255,0.2)'
   },
   titleEn: { 
     margin: 0, 
