@@ -851,173 +851,20 @@ const ar = {
 
 const translations = { en, ar };
 
-/* ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-      paymentMode:'Cash', bankTransfer:'Bank Transfer', card:'Card', credit:'Credit',
-      creditBalance:'Credit Balance', tabby:'Tabby', tamara:'Tamara', ticketStatus:'Confirmed',
-      refundable:'Refundable', nonRefundable:'Non-Refundable',
-      visaType:'Tourist', business:'Business', work:'Work', transit:'Transit',
-      leaveType:'Annual', sick:'Sick', emergency:'Emergency', unpaidLeave:'Unpaid',
-      advanceStatus:'Pending', repaid:'Repaid', deductedFromSalary:'Deducted from Salary',
-      expenseApproval:'Expense Approval', approvalStatus:'Approval Status',
-      approvedRole:'Approved', rejectedRole:'Rejected',
-      activeRole:'Active', suspendedRole:'Suspended',
-      paidRole:'Paid', unpaidRole:'Unpaid',
-      draftRole:'Draft', recurringRole:'Recurring',
-      recurringIntervalRole:'Interval', monthlyRole:'Monthly',
-      yearlyRole:'Yearly', weeklyRole:'Weekly',
-      customerRole:'Customer', amountRole:'Amount (SAR)',
-      intervalRole:'Interval', profilePicRole:'Update Profile Picture',
-      usernameRole:'Username', phoneNumberRole:'Phone Number',
-      addressFieldRole:'Address', saveProfileBtn:'💾 Save Profile Changes',
-      changePasswordTitle:'🔒 Security', newPasswordRole:'New Password',
-      changePassBtn:'🔑 Change Password', logoutBtn:'🚪 Logout',
-      superAdminTitle:'👑 SuperAdmin Panel - Manage Agencies',
-      superAdminDesc:'Create new travel agencies and manage their subscriptions.',
-      addAgencyTitle:'➕ Add New Travel Agency',
-      agencyNameLabel:'Agency Name (English) *',
-      companyNameArLabel:'Company Name (Arabic)',
-      ownerEmailLabel:'Owner Email *',
-      subEndDateLabel:'Subscription End Date *',
-      vatNoLabel:'VAT Number',
-      crNoLabel:'CR Number', phoneLabel:'Phone',
-      addressLabel:'Address', activeStatus:'✅ Active',
-      suspendedStatus:'❌ Suspended',
-      profitabilityTitle:'📊 Ticket Profitability Analyzer',
-      profitabilityDesc:'Analyze which airlines or services are generating the most profit.',
-      airlineServiceCol:'Airline / Service', ticketsSoldCol:'Tickets Sold',
-      totalRevCol:'Total Revenue', totalCostCol:'Total Cost',
-      netProfitCol:'Net Profit', noInvoiceData:'No invoice data available.',
-      refundStatementTitle:'📊 Refund Statement & Earnings',
-      refundStatementDesc:'Track refunds from airlines and calculate office profit margins.',
-      portalWiseBreakdown:'Portal-wise Refund Breakdown',
-      noRefundsRecorded:'No refunds recorded yet.',
-      companyRefund:'Company Refund',
-      customerRefundCol:'Customer Refund', officeEarned:'Office Earned',
-      customerStatementTitle:'📊 Customer Statement',
-      selectCustomerLabel:'Select Customer to View Statement',
-      selectCustomerPlaceholder:'Select Customer',
-      transactionHistory:'Transaction History', txnDateCol:'Date',
-      txnInvNoCol:'Invoice No', txnDebitCol:'Debit (Inv)',
-      txnCreditCol:'Credit (Paid)', txnBalanceCol:'Balance',
-      downloadStatementBtn:'Download Statement', noTxnFound:'No transactions found.',
-      recurringInvoicesTitle:'🔁 Recurring Invoices',
-      setupRecurringTitle:'Setup Recurring Profile', customerLabel:'Customer',
-      amountLabel:'Amount (SAR)', intervalLabel:'Interval',
-      createBtn:'Create', profileIdCol:'Profile ID',
-      intervalCol:'Interval', amountCol:'Amount',
-      noRecurringProfiles:'No recurring profiles found.',
-      expenseApprovalTitle:'🛡 Expense Approval System',
-      expenseApprovalDesc:'Expenses created by staff will appear here for Admin approval.',
-      pendingExpenses:'Pending expenses for approval.',
-      vendorCol:'Vendor', expenseAmountCol:'Amount',
-      statusCol:'Status',
-      approveAction:'Approve', rejectAction:'Reject',
-      noPendingExpenses:'No pending expenses for approval.',
-      notificationsTitle:'🔔 Notifications & Alerts Center',
-      pendingInvoicesAlert:'Pending Invoices',
-      pendingInvoicesMsg:'has a due amount of',
-      expenseApprovalAlert:'Expense Approvals',
-      expenseApprovalMsg:'needs approval.',
-      lowPortalBalancesAlert:'Low Portal Balances',
-      lowPortalBalancesMsg:'balance is low:',
-      noPendingInvoices:'No pending invoices.',
-      noExpenseApprovals:'No expenses pending.',
-      allPortalsHealthy:'All portals are healthy.',
-      staffMistakesTitle:'⚠️ Staff Mistakes & Loss Tracking',
-      staffMistakesDesc:'If a ticket is wasted due to an employee's mistake, log it here. The loss amount will be automatically deducted from their salary if marked as "Paid by Employee".',
-      logNewMistakeTitle:'Log New Mistake / Loss',
-      selectEmployeeLabel:'Employee', oldTicketNoLabel:'Old Ticket No',
-      newTicketNoLabel:'New Ticket No', lossAmountLabel:'Loss Amount (SAR)',
-      deductFromSalaryLabel:'Deduct from Salary', logLossBtn:'Log Loss',
-      mistakeHistoryTitle:'Mistake History', dateCol:'Date',
-      employeeCol:'Employee', oldTicketCol:'Old Ticket',
-      newTicketCol:'New Ticket', lossAmountCol:'Loss Amount',
-      salaryDeductedCol:'Salary Deducted', yesLabel:'Yes',
-      noLabel:'No',
-      aiDashboardTitle:'🤖 AI ERP Assistant',
-      aiDashboardDesc:'Real-time business insights based on your data.',
-      monthlySales:'Monthly Sales', netProfit:'Net Profit',
-      pendingDues:'Pending Dues',
-      aiInsightsTitle:'🧠 AI Insights & Action Items',
-      noAlerts:'No critical alerts. Business is running smoothly!',
-      quotationTitle:'📄 Quotation Management',
-      quotationDesc:'Create draft quotes and convert them to invoices when confirmed.',
-      createQuotationTitle:'Create New Quotation',
-      customerNameLabel:'Customer Name',
-      serviceTypeLabel:'Service Type',
-      estimatedPriceLabel:'Estimated Price (SAR)',
-      validUntilLabel:'Valid Until',
-      recentQuotationsTitle:'Recent Quotations (Drafts)',
-      quoteNoCol:'Quote No', quoteServiceCol:'Service',
-      quoteAmountCol:'Amount', quoteActionCol:'Action',
-      convertToInvoiceBtn:'Convert to Invoice',
-      noQuotations:'No quotations found.',
-      hrAdvancedTitle:'🎯 Employee Targets & Performance',
-      targetCol:'Target (SAR)', achievedCol:'Achieved (SAR)',
-      percentageCol:'Percentage', saveBtn:'Save',
-      editBtn2:'Edit',
-      dailyAttendanceTitle:'📅 Daily Time-Based Attendance & Leave',
-      attendanceDesc:'Mark Check-in and Check-out time...',
-      markAttendanceTitle:'Mark Attendance', otNote:'Overtime after 9 hours',
-      deductionNote:'Deduction if less than 8 hours',
-      attendanceHistoryTitle:'Attendance History', checkInCol:'Check-In',
-      checkOutCol:'Check-Out', overtimeCol:'Overtime',
-      deductionCol:'Deduction', noAttendanceHistory:'No attendance marked yet.',
-      paySalaryTitle:'💰 Pay Salary',
-      paySalaryDesc:'Select Employee to Auto-Fill...',
-      baseCol:'Base', advDedCol:'Adv. Deduct',
-      giftCol:'Gift', monthCol:'Month',
-      modeCol:'Mode', payBtn:'Pay',
-      salarySlipTitle:'📋 Generate Salary Slip',
-      employeeCol:'Employee', monthCol:'Month',
-      netPaidCol:'Net Paid', actionCol:'Action',
-      downloadSlipBtn:'Download Slip', noSalaryPaid:'No salary paid yet.',
-      corporateContractTitle:'📄 Corporate Contract',
-      corporateOfferTitle:'📋 Corporate Offer',
-      settingsTitle:'⚙️ Settings',
-      reportsTitle:'📊 Reports',
-      statementsTitle:'📑 Statements',
-      bankTitle:'🏦 Bank & Cash',
-      investTitle:'🏦 Investors',
-      usersTitle:'👥 Users',
-      auditTitle:'📜 Audit Logs',
-      creditTitle:'💳 Credit Balances',
-      profitabilityTitle:'📊 Profitability',
-      profileTitle:'👤 Profile',
-      superadminTitle:'👑 SuperAdmin',
-      notificationsTitle:'🔔 Notifications',
-      aiDashboardTitle:'🤖 AI Dashboard',
-      quotationsTitle:'📄 Quotations',
-      hrAdvancedTitle:'🎯 HR & Payroll',
-      aiPricingTitle:'🤖 AI Pricing',
-      myAttendanceTitle:'⏰ My Attendance',
-      creditLimitsTitle:'💳 Credit Limits',
-      customerStatementTitle:'📊 Customer Statement',
-      refundStatementTitle:'🔄 Refund Statement',
-      supplierStatementTitle:'📦 Supplier Statement',
-      multiBranchTitle:'🏢 Multi-Branch',
-      recurringInvoicesTitle:'🔁 Recurring Invoices',
-      expenseApprovalTitle:'🛡 Expense Approval',
-      staffMistakesTitle:'⚠️ Staff Mistakes',
-      expensesTitle:'💸 Expenses',
-      reportsTitle:'📊 Reports',
-      aiPricingTitle:'🤖 AI Pricing',
-      invoiceNumber:'رقم الفاتورة',
-      customerInfo:'معلومات العميل',
-      supplierInfo:'معلومات المورد',
-      ticketDetails:'تفاصيل التذكرة',
-      paymentDetails:'تفاصيل الدفع',
-      totalDetails:'تفاصيل الإجمالي',
-      vatDetails:'تفاصيل الضريبة',
-      footerDetails:'تفاصيل التذييل',
-      printDate:'تاريخ الطباعة',
-      sar:'ريال',
-      thankYou:'شكراً لتعاملك معنا!'
-};
+// ERROR FIX: Removed the unterminated "/* ═══..." comment from here.
 
 export default function useERPState() {
   const router = useRouter();
   const today = new Date().toISOString().split('T')[0];
+
+  // --- 🌟 ADVANCED FEATURES ADDED 🌟 ---
+  const [theme, setTheme] = useState('light'); // 'light' or 'dark'
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState({
+    dateFrom: '', dateTo: '', status: '', airline: '', portal: ''
+  });
+  const [invoiceDesign, setInvoiceDesign] = useState('modern'); // 'modern', 'classic', 'minimal'
+  // --- 🌟 END ADVANCED FEATURES 🌟 ---
 
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
@@ -1033,7 +880,7 @@ export default function useERPState() {
     invoices: [], customers: [], corporates: [], creditors: [], vendors: [],
     packages: [], branches: [], portals: [], employees: [], expenses: [],
     cashbook: [], payroll: [], staffMistakes: [], auditLogs: [], settings: {},
-    tenants: [], investments: [], empAdvances: [], services: []
+    tenants: [], investments: [], empAdvances: [], services: [], attendance: [], appUsers: []
   });
 
   const [invForm, setInvForm] = useState({
@@ -1278,12 +1125,6 @@ export default function useERPState() {
     };
   }, [router]);
 
-  useEffect(() => {
-    if (userProfile?.tenant_id) {
-      fetchAll();
-    }
-  }, [userProfile?.tenant_id, fetchAll]);
-
   return {
     user, setUser, userProfile, initError, lang, setLang,
     toast, page, setPage, modal, setModal, chatOpen, setChatOpen,
@@ -1317,6 +1158,11 @@ export default function useERPState() {
     contractMarkup, setContractMarkup,
     contractTerms, setContractTerms,
     getInvoiceHTML, getRefundHTML, getExpenseHTML,
-    getSalarySlipHTML, getContractHTML, getMistakeHTML
+    getSalarySlipHTML, getContractHTML, getMistakeHTML,
+    // --- 🌟 ADVANCED FEATURES RETURNED 🌟 ---
+    theme, setTheme,
+    sidebarCollapsed, setSidebarCollapsed,
+    advancedFilters, setAdvancedFilters,
+    invoiceDesign, setInvoiceDesign
   };
 }
