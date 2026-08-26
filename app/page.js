@@ -11,6 +11,17 @@ export default function Home() {
   const forceOpen = useRef(false);
   const t = (key, fallback) => erp.tr?.[key] || fallback || key;
 
+  /* ═══ ADVANCED: Dark Mode Body Injection ═══ */
+  useEffect(() => {
+    if (erp.theme === 'dark') {
+      document.body.style.background = '#0F172A';
+      document.body.style.color = '#E2E8F0';
+    } else {
+      document.body.style.background = '#F8FAFC';
+      document.body.style.color = '#1E293B';
+    }
+  }, [erp.theme]);
+
   /* ═══ SAFETY: 6 second baad force open — chahe kuch bhi ho ═══ */
   useEffect(() => {
     const timer = setTimeout(() => {
