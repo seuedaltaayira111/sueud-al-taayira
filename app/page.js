@@ -11,7 +11,7 @@ export default function Home() {
   const forceOpen = useRef(false);
   const t = (key, fallback) => erp.tr?.[key] || fallback || key;
 
-  /* ═══ ADVANCED: Dark Mode Body Injection ═══ */
+  /* ═══ Dark Mode Body Injection ═══ */
   useEffect(() => {
     if (erp.theme === 'dark') {
       document.body.style.background = '#0F172A';
