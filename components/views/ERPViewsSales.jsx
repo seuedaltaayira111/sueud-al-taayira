@@ -61,41 +61,41 @@ export default function ERPViewsSales(props) {
 
   const totalPages = (list) => Math.ceil((list?.length || 0) / rowsPerPage);
 
-  // ═══ STYLES ═══
+  // ═══ STYLES (COLORFUL & MODERN) ═══
   const styles = {
-    container: { padding: '20px', background: '#0F172A', minHeight: '100vh', color: '#E2E8F0' },
-    card: { background: '#1E293B', borderRadius: '12px', padding: '20px', marginBottom: '20px', border: '1px solid #334155' },
-    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' },
-    title: { fontSize: '24px', fontWeight: '700', color: '#FBBF24', display: 'flex', alignItems: 'center', gap: '10px' },
+    container: { padding: '24px', background: 'linear-gradient(135deg, #EFF6FF 0%, #F0FDF4 50%, #FFFBEB 100%)', minHeight: '100vh' },
+    card: { background: '#FFFFFF', borderRadius: '16px', padding: '24px', marginBottom: '24px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)', border: '1px solid #F3F4F6' },
+    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' },
+    title: { fontSize: '26px', fontWeight: '800', color: '#1E40AF', display: 'flex', alignItems: 'center', gap: '12px' },
     searchBox: { display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' },
-    input: { padding: '10px 15px', background: '#0F172A', border: '1px solid #475569', borderRadius: '8px', color: '#E2E8F0', fontSize: '14px', outline: 'none', minWidth: '200px' },
-    select: { padding: '10px 15px', background: '#0F172A', border: '1px solid #475569', borderRadius: '8px', color: '#E2E8F0', fontSize: '14px', outline: 'none' },
-    formLabel: { display: 'block', marginBottom: '5px', color: '#94A3B8', fontSize: '13px', fontWeight: '600' },
-    btn: { padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '13px', transition: 'all 0.2s' },
-    btnPrimary: { background: 'linear-gradient(135deg, #2563EB, #1D4ED8)', color: '#fff' },
-    btnSuccess: { background: 'linear-gradient(135deg, #059669, #047857)', color: '#fff' },
-    btnDanger: { background: 'linear-gradient(135deg, #DC2626, #B91C1C)', color: '#fff' },
-    btnWarning: { background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#0F172A' },
-    btnGhost: { background: 'transparent', border: '1px solid #475569', color: '#94A3B8' },
-    table: { width: '100%', borderCollapse: 'collapse', fontSize: '13px' },
-    th: { padding: '12px', background: '#0F172A', color: '#FBBF24', textAlign: 'left', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '2px solid #334155' },
-    td: { padding: '12px', borderBottom: '1px solid #1E293B', color: '#CBD5E1' },
-    tdRight: { padding: '12px', borderBottom: '1px solid #1E293B', color: '#CBD5E1', textAlign: 'right', fontWeight: '600' },
-    tdCenter: { padding: '12px', borderBottom: '1px solid #1E293B', color: '#CBD5E1', textAlign: 'center' },
-    badge: { padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600' },
-    badgePaid: { background: '#065F46', color: '#34D399' },
-    badgeUnpaid: { background: '#78350F', color: '#FBBF24' },
-    badgeRefunded: { background: '#7F1D1D', color: '#FCA5A5' },
-    statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '20px' },
-    statCard: { background: 'linear-gradient(135deg, #1E293B, #0F172A)', padding: '20px', borderRadius: '12px', border: '1px solid #334155' },
-    statLabel: { fontSize: '12px', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' },
-    statValue: { fontSize: '24px', fontWeight: '700', color: '#FBBF24', marginTop: '5px' },
-    pagination: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px', padding: '10px 0' },
-    pageBtn: { padding: '8px 15px', background: '#1E293B', border: '1px solid #475569', borderRadius: '6px', color: '#E2E8F0', cursor: 'pointer' },
-    emptyState: { textAlign: 'center', padding: '60px 20px', color: '#64748B' },
+    input: { padding: '10px 16px', background: '#FFFFFF', border: '1px solid #D1D5DB', borderRadius: '10px', color: '#111827', fontSize: '14px', outline: 'none', minWidth: '200px', transition: 'all 0.2s', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' },
+    select: { padding: '10px 16px', background: '#FFFFFF', border: '1px solid #D1D5DB', borderRadius: '10px', color: '#111827', fontSize: '14px', outline: 'none' },
+    formLabel: { display: 'block', marginBottom: '6px', color: '#374151', fontSize: '13px', fontWeight: '600' },
+    btn: { padding: '10px 20px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '13px', transition: 'all 0.2s', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' },
+    btnPrimary: { background: 'linear-gradient(135deg, #3B82F6, #2563EB)', color: '#fff' },
+    btnSuccess: { background: 'linear-gradient(135deg, #10B981, #059669)', color: '#fff' },
+    btnDanger: { background: 'linear-gradient(135deg, #EF4444, #DC2626)', color: '#fff' },
+    btnWarning: { background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' },
+    btnGhost: { background: '#FFFFFF', border: '1px solid #D1D5DB', color: '#4B5563', boxShadow: 'none' },
+    table: { width: '100%', borderCollapse: 'collapse', fontSize: '13px', background: '#FFFFFF', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)' },
+    th: { padding: '14px 16px', background: '#F9FAFB', color: '#6B7280', textAlign: 'left', fontWeight: '700', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '2px solid #E5E7EB' },
+    td: { padding: '14px 16px', borderBottom: '1px solid #F3F4F6', color: '#374151' },
+    tdRight: { padding: '14px 16px', borderBottom: '1px solid #F3F4F6', color: '#374151', textAlign: 'right', fontWeight: '600' },
+    tdCenter: { padding: '14px 16px', borderBottom: '1px solid #F3F4F6', color: '#374151', textAlign: 'center' },
+    badge: { padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' },
+    badgePaid: { background: '#D1FAE5', color: '#065F46' },
+    badgeUnpaid: { background: '#FEF3C7', color: '#92400E' },
+    badgeRefunded: { background: '#FEE2E2', color: '#991B1B' },
+    statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' },
+    statCard: { background: '#FFFFFF', padding: '20px', borderRadius: '16px', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)', border: '1px solid #F3F4F6' },
+    statLabel: { fontSize: '12px', color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' },
+    statValue: { fontSize: '24px', fontWeight: '800', color: '#111827', marginTop: '5px' },
+    pagination: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', padding: '10px 0' },
+    pageBtn: { padding: '8px 16px', background: '#FFFFFF', border: '1px solid #D1D5DB', borderRadius: '8px', color: '#374151', cursor: 'pointer', fontWeight: '600', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' },
+    emptyState: { textAlign: 'center', padding: '60px 20px', color: '#6B7280' },
     emptyIcon: { fontSize: '60px', marginBottom: '15px' },
-    actionsCell: { display: 'flex', gap: '5px', flexWrap: 'wrap' },
-    actionBtn: { padding: '6px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: '600' }
+    actionsCell: { display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' },
+    actionBtn: { padding: '6px 10px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '600', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }
   };
 
   // ═══ FORMAT CURRENCY ═══
@@ -130,25 +130,25 @@ export default function ERPViewsSales(props) {
         </div>
 
         <div style={styles.statsGrid}>
-          <div style={styles.statCard}>
+          <div style={{ ...styles.statCard, borderLeft: '4px solid #3B82F6' }}>
             <div style={styles.statLabel}>Total Invoices</div>
             <div style={styles.statValue}>{filteredInvoices.length}</div>
           </div>
-          <div style={styles.statCard}>
+          <div style={{ ...styles.statCard, borderLeft: '4px solid #10B981' }}>
             <div style={styles.statLabel}>Total Revenue</div>
-            <div style={{ ...styles.statValue, color: '#34D399' }}>{fmt(totalRevenue)}</div>
+            <div style={{ ...styles.statValue, color: '#059669' }}>{fmt(totalRevenue)}</div>
           </div>
-          <div style={styles.statCard}>
+          <div style={{ ...styles.statCard, borderLeft: '4px solid #10B981' }}>
             <div style={styles.statLabel}>Paid</div>
-            <div style={{ ...styles.statValue, color: '#34D399' }}>{fmt(totalPaid)}</div>
+            <div style={{ ...styles.statValue, color: '#059669' }}>{fmt(totalPaid)}</div>
           </div>
-          <div style={styles.statCard}>
+          <div style={{ ...styles.statCard, borderLeft: totalDue > 0 ? '4px solid #EF4444' : '4px solid #10B981' }}>
             <div style={styles.statLabel}>Due</div>
-            <div style={{ ...styles.statValue, color: totalDue > 0 ? '#FCA5A5' : '#34D399' }}>{fmt(totalDue)}</div>
+            <div style={{ ...styles.statValue, color: totalDue > 0 ? '#EF4444' : '#059669' }}>{fmt(totalDue)}</div>
           </div>
-          <div style={styles.statCard}>
+          <div style={{ ...styles.statCard, borderLeft: '4px solid #F59E0B' }}>
             <div style={styles.statLabel}>Profit</div>
-            <div style={{ ...styles.statValue, color: '#FBBF24' }}>{fmt(totalProfit)}</div>
+            <div style={{ ...styles.statValue, color: '#D97706' }}>{fmt(totalProfit)}</div>
           </div>
         </div>
 
@@ -156,7 +156,7 @@ export default function ERPViewsSales(props) {
           {paginate(filteredInvoices).length === 0 ? (
             <div style={styles.emptyState}>
               <div style={styles.emptyIcon}>📄</div>
-              <h3>No Invoices Found</h3>
+              <h3 style={{color:'#374151'}}>No Invoices Found</h3>
               <p>Create an invoice to get started!</p>
               <button style={{ ...styles.btn, ...styles.btnPrimary, marginTop: '15px' }} onClick={() => setPage('create')}>+ Create Invoice</button>
             </div>
@@ -179,15 +179,15 @@ export default function ERPViewsSales(props) {
                 </thead>
                 <tbody>
                   {paginate(filteredInvoices).map(inv => (
-                    <tr key={inv.id} style={{ background: inv.status === 'Unpaid' ? 'rgba(251,191,36,0.03)' : 'transparent' }}>
-                      <td style={{ ...styles.td, fontWeight: '700', color: '#60A5FA' }}>{inv.invoice_no}</td>
+                    <tr key={inv.id} style={{ background: inv.status === 'Unpaid' ? '#FFFBEB' : 'transparent' }}>
+                      <td style={{ ...styles.td, fontWeight: '700', color: '#2563EB' }}>{inv.invoice_no}</td>
                       <td style={styles.td}>{inv.invoice_date}</td>
                       <td style={styles.td}>{inv.customers?.name || inv.corporates?.name || 'N/A'}</td>
                       <td style={styles.td}>{inv.airline || '-'}</td>
-                      <td style={{ ...styles.td, color: '#60A5FA', fontWeight: '600' }}>{inv.pnr || '-'}</td>
+                      <td style={{ ...styles.td, color: '#2563EB', fontWeight: '600' }}>{inv.pnr || '-'}</td>
                       <td style={styles.td}>{inv.service_type || '-'}</td>
                       <td style={styles.tdRight}>{fmt(inv.total)}</td>
-                      <td style={{ ...styles.tdRight, color: inv.due_amount > 0 ? '#FCA5A5' : '#34D399' }}>{fmt(inv.due_amount)}</td>
+                      <td style={{ ...styles.tdRight, color: inv.due_amount > 0 ? '#EF4444' : '#059669' }}>{fmt(inv.due_amount)}</td>
                       <td style={styles.tdCenter}>
                         <span style={{ ...styles.badge, ...(inv.status === 'Paid' ? styles.badgePaid : styles.badgeUnpaid) }}>
                           {inv.status}
@@ -195,14 +195,14 @@ export default function ERPViewsSales(props) {
                       </td>
                       <td style={styles.tdCenter}>
                         <div style={styles.actionsCell}>
-                          <button style={{ ...styles.actionBtn, background: '#1E3A8A', color: '#93C5FD' }} onClick={() => openPreview(inv)} title="Preview">👁</button>
-                          <button style={{ ...styles.actionBtn, background: '#065F46', color: '#34D399' }} onClick={() => handleEditInvoice(inv)} title="Edit">✏️</button>
-                          <button style={{ ...styles.actionBtn, background: '#7F1D1D', color: '#FCA5A5' }} onClick={() => openRefundModal(inv)} title="Refund">🔄</button>
+                          <button style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }} onClick={() => openPreview(inv)} title="Preview">👁</button>
+                          <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleEditInvoice(inv)} title="Edit">✏️</button>
+                          <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => openRefundModal(inv)} title="Refund">🔄</button>
                           {inv.due_amount > 0 && (
-                            <button style={{ ...styles.actionBtn, background: '#78350F', color: '#FBBF24' }} onClick={() => handleQuickSettle(inv)} title="Settle">💰</button>
+                            <button style={{ ...styles.actionBtn, background: '#FEF3C7', color: '#92400E' }} onClick={() => handleQuickSettle(inv)} title="Settle">💰</button>
                           )}
-                          <button style={{ ...styles.actionBtn, background: '#4338CA', color: '#A5B4FC' }} onClick={() => printInvoice(inv)} title="Print">🖨</button>
-                          <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDeleteInvoice(inv)} title="Delete">🗑</button>
+                          <button style={{ ...styles.actionBtn, background: '#EDE9FE', color: '#5B21B6' }} onClick={() => printInvoice(inv)} title="Print">🖨</button>
+                          <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDeleteInvoice(inv)} title="Delete">🗑</button>
                         </div>
                       </td>
                     </tr>
@@ -214,13 +214,13 @@ export default function ERPViewsSales(props) {
         </div>
 
         <div style={styles.pagination}>
-          <div style={{ color: '#94A3B8', fontSize: '13px' }}>
+          <div style={{ color: '#6B7280', fontSize: '13px', fontWeight: '500' }}>
             Showing {Math.min((currentPage - 1) * rowsPerPage + 1, filteredInvoices.length)} - {Math.min(currentPage * rowsPerPage, filteredInvoices.length)} of {filteredInvoices.length}
           </div>
-          <div style={{ display: 'flex', gap: '5px' }}>
-            <button style={styles.pageBtn} disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>← Prev</button>
-            <span style={{ padding: '8px 15px', background: '#2563EB', borderRadius: '6px', color: '#fff', fontWeight: '600' }}>{currentPage}</span>
-            <button style={styles.pageBtn} disabled={currentPage >= totalPages(filteredInvoices)} onClick={() => setCurrentPage(p => p + 1)}>Next →</button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button style={{ ...styles.pageBtn, opacity: currentPage === 1 ? 0.5 : 1 }} disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>← Prev</button>
+            <span style={{ padding: '8px 16px', background: 'linear-gradient(135deg, #3B82F6, #2563EB)', borderRadius: '8px', color: '#fff', fontWeight: '700', boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)' }}>{currentPage}</span>
+            <button style={{ ...styles.pageBtn, opacity: currentPage >= totalPages(filteredInvoices) ? 0.5 : 1 }} disabled={currentPage >= totalPages(filteredInvoices)} onClick={() => setCurrentPage(p => p + 1)}>Next →</button>
           </div>
         </div>
       </div>
@@ -235,7 +235,7 @@ export default function ERPViewsSales(props) {
     return (
       <div style={styles.container}>
         <div style={styles.header}>
-          <h1 style={styles.title}>🔄 {t('refunds', 'Refunds')}</h1>
+          <h1 style={{ ...styles.title, color: '#DC2626' }}>🔄 {t('refunds', 'Refunds')}</h1>
           <div style={styles.searchBox}>
             <input style={styles.input} placeholder="Search refunds..." value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }} />
             <select style={styles.select} value={rowsPerPage} onChange={e => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
@@ -247,17 +247,17 @@ export default function ERPViewsSales(props) {
         </div>
 
         <div style={styles.statsGrid}>
-          <div style={styles.statCard}>
+          <div style={{ ...styles.statCard, borderLeft: '4px solid #6B7280' }}>
             <div style={styles.statLabel}>Total Refunds</div>
             <div style={styles.statValue}>{filteredRefunds.length}</div>
           </div>
-          <div style={styles.statCard}>
+          <div style={{ ...styles.statCard, borderLeft: '4px solid #EF4444' }}>
             <div style={styles.statLabel}>Refunded to Customers</div>
-            <div style={{ ...styles.statValue, color: '#FCA5A5' }}>{fmt(totalRefundAmt)}</div>
+            <div style={{ ...styles.statValue, color: '#DC2626' }}>{fmt(totalRefundAmt)}</div>
           </div>
-          <div style={styles.statCard}>
+          <div style={{ ...styles.statCard, borderLeft: '4px solid #3B82F6' }}>
             <div style={styles.statLabel}>Refunded to Portals</div>
-            <div style={{ ...styles.statValue, color: '#60A5FA' }}>{fmt(totalCompRefund)}</div>
+            <div style={{ ...styles.statValue, color: '#2563EB' }}>{fmt(totalCompRefund)}</div>
           </div>
         </div>
 
@@ -265,7 +265,7 @@ export default function ERPViewsSales(props) {
           {paginate(filteredRefunds).length === 0 ? (
             <div style={styles.emptyState}>
               <div style={styles.emptyIcon}>🔄</div>
-              <h3>No Refunds Found</h3>
+              <h3 style={{color:'#374151'}}>No Refunds Found</h3>
               <p>Click the refund button on any invoice to create one!</p>
             </div>
           ) : (
@@ -288,20 +288,20 @@ export default function ERPViewsSales(props) {
                 <tbody>
                   {paginate(filteredRefunds).map(ref => (
                     <tr key={ref.id}>
-                      <td style={{ ...styles.td, fontWeight: '700', color: '#FCA5A5' }}>{ref.invoice_no}</td>
+                      <td style={{ ...styles.td, fontWeight: '700', color: '#DC2626' }}>{ref.invoice_no}</td>
                       <td style={styles.td}>{ref.refund_date || ref.invoice_date}</td>
                       <td style={styles.td}>{ref.old_customer_name || ref.customers?.name || 'N/A'}</td>
                       <td style={styles.td}>{ref.airline || ref.old_airline || '-'}</td>
-                      <td style={{ ...styles.td, color: '#60A5FA' }}>{ref.pnr || ref.old_pnr || '-'}</td>
+                      <td style={{ ...styles.td, color: '#2563EB', fontWeight: '600' }}>{ref.pnr || ref.old_pnr || '-'}</td>
                       <td style={styles.td}>{ref.refund_reason || '-'}</td>
-                      <td style={{ ...styles.tdRight, color: '#FCA5A5' }}>{fmt(ref.refund_customer)}</td>
-                      <td style={{ ...styles.tdRight, color: '#60A5FA' }}>{fmt(ref.refund_company)}</td>
-                      <td style={{ ...styles.tdRight }}>{fmt(ref.old_sell_price)}</td>
+                      <td style={{ ...styles.tdRight, color: '#DC2626' }}>{fmt(ref.refund_customer)}</td>
+                      <td style={{ ...styles.tdRight, color: '#2563EB' }}>{fmt(ref.refund_company)}</td>
+                      <td style={styles.tdRight}>{fmt(ref.old_sell_price)}</td>
                       <td style={styles.tdCenter}>
                         <div style={styles.actionsCell}>
-                          <button style={{ ...styles.actionBtn, background: '#1E3A8A', color: '#93C5FD' }} onClick={() => openPreview(ref)}>👁</button>
-                          <button style={{ ...styles.actionBtn, background: '#4338CA', color: '#A5B4FC' }} onClick={() => printInvoice(ref)}>🖨</button>
-                          <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDeleteInvoice(ref)}>🗑</button>
+                          <button style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }} onClick={() => openPreview(ref)}>👁</button>
+                          <button style={{ ...styles.actionBtn, background: '#EDE9FE', color: '#5B21B6' }} onClick={() => printInvoice(ref)}>🖨</button>
+                          <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDeleteInvoice(ref)}>🗑</button>
                         </div>
                       </td>
                     </tr>
@@ -320,39 +320,32 @@ export default function ERPViewsSales(props) {
     const filtered = (data.customers || []).filter(c => 
       !searchTerm || c.name?.toLowerCase().includes(searchTerm.toLowerCase()) || c.phone?.includes(searchTerm)
     );
-
     return (
       <div style={styles.container}>
         <div style={styles.header}>
-          <h1 style={styles.title}>👥 {t('customers', 'Customers')}</h1>
-          <div style={styles.searchBox}>
-            <input style={styles.input} placeholder="Search customers..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-          </div>
+          <h1 style={{ ...styles.title, color: '#7C3AED' }}>👥 {t('customers', 'Customers')}</h1>
+          <input style={{ ...styles.input, maxWidth: '300px' }} placeholder="Search customers..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
         <div style={styles.card}>
           <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Name</th>
-                <th style={styles.th}>Phone</th>
-                <th style={styles.th}>Type</th>
-                <th style={{ ...styles.th, textAlign: 'right' }}>Credit Balance</th>
-                <th style={{ ...styles.th, textAlign: 'right' }}>Credit Limit</th>
-                <th style={{ ...styles.th, textAlign: 'center' }}>{t('actions', 'Actions')}</th>
-              </tr>
-            </thead>
+            <thead><tr>
+              <th style={styles.th}>Name</th><th style={styles.th}>Phone</th><th style={styles.th}>Type</th>
+              <th style={{ ...styles.th, textAlign: 'right' }}>Credit Balance</th>
+              <th style={{ ...styles.th, textAlign: 'right' }}>Credit Limit</th>
+              <th style={{ ...styles.th, textAlign: 'center' }}>{t('actions', 'Actions')}</th>
+            </tr></thead>
             <tbody>
               {filtered.map(c => (
                 <tr key={c.id}>
                   <td style={{ ...styles.td, fontWeight: '600' }}>{c.name}</td>
                   <td style={styles.td}>{c.phone || '-'}</td>
                   <td style={styles.td}>{c.type || 'Individual'}</td>
-                  <td style={{ ...styles.tdRight, color: '#A78BFA' }}>{fmt(c.store_credit)}</td>
-                  <td style={{ ...styles.tdRight, color: '#60A5FA' }}>{fmt(c.credit_limit)}</td>
+                  <td style={{ ...styles.tdRight, color: '#7C3AED' }}>{fmt(c.store_credit)}</td>
+                  <td style={{ ...styles.tdRight, color: '#2563EB' }}>{fmt(c.credit_limit)}</td>
                   <td style={styles.tdCenter}>
                     <div style={styles.actionsCell}>
-                      <button style={{ ...styles.actionBtn, background: '#065F46', color: '#34D399' }} onClick={() => handleEditCust(c)}>✏️</button>
-                      <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDelete('customers', c.id)}>🗑</button>
+                      <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleEditCust(c)}>✏️</button>
+                      <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDelete('customers', c.id)}>🗑</button>
                     </div>
                   </td>
                 </tr>
@@ -366,27 +359,19 @@ export default function ERPViewsSales(props) {
 
   // ═══ CORPORATES ═══
   if (page === 'corporates') {
-    const filtered = (data.corporates || []).filter(c => 
-      !searchTerm || c.name?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
+    const filtered = (data.corporates || []).filter(c => !searchTerm || c.name?.toLowerCase().includes(searchTerm.toLowerCase()));
     return (
       <div style={styles.container}>
         <div style={styles.header}>
-          <h1 style={styles.title}>🏢 {t('corporates', 'Corporates')}</h1>
-          <input style={styles.input} placeholder="Search corporates..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <h1 style={{ ...styles.title, color: '#0891B2' }}>🏢 {t('corporates', 'Corporates')}</h1>
+          <input style={{ ...styles.input, maxWidth: '300px' }} placeholder="Search corporates..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
         <div style={styles.card}>
           <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Name</th>
-                <th style={styles.th}>VAT No</th>
-                <th style={styles.th}>Phone</th>
-                <th style={styles.th}>Address</th>
-                <th style={{ ...styles.th, textAlign: 'center' }}>{t('actions', 'Actions')}</th>
-              </tr>
-            </thead>
+            <thead><tr>
+              <th style={styles.th}>Name</th><th style={styles.th}>VAT No</th><th style={styles.th}>Phone</th><th style={styles.th}>Address</th>
+              <th style={{ ...styles.th, textAlign: 'center' }}>{t('actions', 'Actions')}</th>
+            </tr></thead>
             <tbody>
               {filtered.map(c => (
                 <tr key={c.id}>
@@ -396,8 +381,8 @@ export default function ERPViewsSales(props) {
                   <td style={styles.td}>{c.address || '-'}</td>
                   <td style={styles.tdCenter}>
                     <div style={styles.actionsCell}>
-                      <button style={{ ...styles.actionBtn, background: '#065F46', color: '#34D399' }} onClick={() => handleEditCorp(c)}>✏️</button>
-                      <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDelete('corporates', c.id)}>🗑</button>
+                      <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleEditCorp(c)}>✏️</button>
+                      <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDelete('corporates', c.id)}>🗑</button>
                     </div>
                   </td>
                 </tr>
@@ -414,19 +399,16 @@ export default function ERPViewsSales(props) {
     return (
       <div style={styles.container}>
         <div style={styles.header}>
-          <h1 style={styles.title}>🚚 {t('vendors', 'Vendors')}</h1>
-          <input style={styles.input} placeholder="Search vendors..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <h1 style={{ ...styles.title, color: '#D97706' }}>🚚 {t('vendors', 'Vendors')}</h1>
+          <input style={{ ...styles.input, maxWidth: '300px' }} placeholder="Search vendors..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
         <div style={styles.card}>
           <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Name</th>
-                <th style={styles.th}>Phone</th>
-                <th style={{ ...styles.th, textAlign: 'right' }}>Balance</th>
-                <th style={{ ...styles.th, textAlign: 'center' }}>{t('actions', 'Actions')}</th>
-              </tr>
-            </thead>
+            <thead><tr>
+              <th style={styles.th}>Name</th><th style={styles.th}>Phone</th>
+              <th style={{ ...styles.th, textAlign: 'right' }}>Balance</th>
+              <th style={{ ...styles.th, textAlign: 'center' }}>{t('actions', 'Actions')}</th>
+            </tr></thead>
             <tbody>
               {(data.vendors || []).filter(v => !searchTerm || v.name?.toLowerCase().includes(searchTerm.toLowerCase())).map(v => (
                 <tr key={v.id}>
@@ -435,8 +417,8 @@ export default function ERPViewsSales(props) {
                   <td style={styles.tdRight}>{fmt(v.balance)}</td>
                   <td style={styles.tdCenter}>
                     <div style={styles.actionsCell}>
-                      <button style={{ ...styles.actionBtn, background: '#065F46', color: '#34D399' }} onClick={() => handleEditVend(v)}>✏️</button>
-                      <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDelete('vendors', v.id)}>🗑</button>
+                      <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleEditVend(v)}>✏️</button>
+                      <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDelete('vendors', v.id)}>🗑</button>
                     </div>
                   </td>
                 </tr>
@@ -453,19 +435,15 @@ export default function ERPViewsSales(props) {
     return (
       <div style={styles.container}>
         <div style={styles.header}>
-          <h1 style={styles.title}>💳 {t('creditors', 'Creditors')}</h1>
-          <input style={styles.input} placeholder="Search..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <h1 style={{ ...styles.title, color: '#6B7280' }}>💳 {t('creditors', 'Creditors')}</h1>
+          <input style={{ ...styles.input, maxWidth: '300px' }} placeholder="Search..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
         <div style={styles.card}>
           <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Name</th>
-                <th style={styles.th}>Phone</th>
-                <th style={styles.th}>Address</th>
-                <th style={{ ...styles.th, textAlign: 'center' }}>{t('actions', 'Actions')}</th>
-              </tr>
-            </thead>
+            <thead><tr>
+              <th style={styles.th}>Name</th><th style={styles.th}>Phone</th><th style={styles.th}>Address</th>
+              <th style={{ ...styles.th, textAlign: 'center' }}>{t('actions', 'Actions')}</th>
+            </tr></thead>
             <tbody>
               {(data.creditors || []).filter(c => !searchTerm || c.name?.toLowerCase().includes(searchTerm.toLowerCase())).map(c => (
                 <tr key={c.id}>
@@ -474,8 +452,8 @@ export default function ERPViewsSales(props) {
                   <td style={styles.td}>{c.address || '-'}</td>
                   <td style={styles.tdCenter}>
                     <div style={styles.actionsCell}>
-                      <button style={{ ...styles.actionBtn, background: '#065F46', color: '#34D399' }} onClick={() => handleEditCred(c)}>✏️</button>
-                      <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDelete('creditors', c.id)}>🗑</button>
+                      <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleEditCred(c)}>✏️</button>
+                      <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDelete('creditors', c.id)}>🗑</button>
                     </div>
                   </td>
                 </tr>
@@ -493,36 +471,33 @@ export default function ERPViewsSales(props) {
     return (
       <div style={styles.container}>
         <div style={styles.header}>
-          <h1 style={styles.title}>🛫 {t('portals', 'Portals')}</h1>
+          <h1 style={{ ...styles.title, color: '#2563EB' }}>🛫 {t('portals', 'Portals')}</h1>
         </div>
         <div style={styles.statsGrid}>
-          <div style={styles.statCard}>
+          <div style={{ ...styles.statCard, borderLeft: '4px solid #3B82F6' }}>
             <div style={styles.statLabel}>Total Portals</div>
             <div style={styles.statValue}>{data.portals?.length || 0}</div>
           </div>
-          <div style={styles.statCard}>
+          <div style={{ ...styles.statCard, borderLeft: '4px solid #10B981' }}>
             <div style={styles.statLabel}>Total Balance</div>
-            <div style={{ ...styles.statValue, color: '#34D399' }}>{fmt(totalBalance)}</div>
+            <div style={{ ...styles.statValue, color: '#059669' }}>{fmt(totalBalance)}</div>
           </div>
         </div>
         <div style={styles.card}>
           <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Name</th>
-                <th style={styles.th}>Type</th>
-                <th style={{ ...styles.th, textAlign: 'right' }}>Balance</th>
-                <th style={{ ...styles.th, textAlign: 'center' }}>{t('actions', 'Actions')}</th>
-              </tr>
-            </thead>
+            <thead><tr>
+              <th style={styles.th}>Name</th><th style={styles.th}>Type</th>
+              <th style={{ ...styles.th, textAlign: 'right' }}>Balance</th>
+              <th style={{ ...styles.th, textAlign: 'center' }}>{t('actions', 'Actions')}</th>
+            </tr></thead>
             <tbody>
               {(data.portals || []).map(p => (
                 <tr key={p.id}>
                   <td style={{ ...styles.td, fontWeight: '600' }}>{p.name}</td>
                   <td style={styles.td}>{p.portal_type || '-'}</td>
-                  <td style={{ ...styles.tdRight, color: (p.current_balance || 0) < 1000 ? '#FCA5A5' : '#34D399' }}>{fmt(p.current_balance)}</td>
+                  <td style={{ ...styles.tdRight, color: (p.current_balance || 0) < 1000 ? '#EF4444' : '#059669' }}>{fmt(p.current_balance)}</td>
                   <td style={styles.tdCenter}>
-                    <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDelete('portals', p.id)}>🗑</button>
+                    <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDelete('portals', p.id)}>🗑</button>
                   </td>
                 </tr>
               ))}
@@ -538,20 +513,15 @@ export default function ERPViewsSales(props) {
     return (
       <div style={styles.container}>
         <div style={styles.header}>
-          <h1 style={styles.title}>📦 {t('packages', 'Packages')}</h1>
-          <input style={styles.input} placeholder="Search..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <h1 style={{ ...styles.title, color: '#059669' }}>📦 {t('packages', 'Packages')}</h1>
+          <input style={{ ...styles.input, maxWidth: '300px' }} placeholder="Search..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
         <div style={styles.card}>
           <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Name</th>
-                <th style={{ ...styles.th, textAlign: 'right' }}>Price</th>
-                <th style={styles.th}>Duration</th>
-                <th style={styles.th}>Inclusions</th>
-                <th style={{ ...styles.th, textAlign: 'center' }}>{t('actions', 'Actions')}</th>
-              </tr>
-            </thead>
+            <thead><tr>
+              <th style={styles.th}>Name</th><th style={{ ...styles.th, textAlign: 'right' }}>Price</th><th style={styles.th}>Duration</th><th style={styles.th}>Inclusions</th>
+              <th style={{ ...styles.th, textAlign: 'center' }}>{t('actions', 'Actions')}</th>
+            </tr></thead>
             <tbody>
               {(data.packages || []).filter(p => !searchTerm || p.name?.toLowerCase().includes(searchTerm.toLowerCase())).map(p => (
                 <tr key={p.id}>
@@ -561,8 +531,8 @@ export default function ERPViewsSales(props) {
                   <td style={styles.td}>{p.inclusions || '-'}</td>
                   <td style={styles.tdCenter}>
                     <div style={styles.actionsCell}>
-                      <button style={{ ...styles.actionBtn, background: '#065F46', color: '#34D399' }} onClick={() => handleEditPkg(p)}>✏️</button>
-                      <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDelete('packages', p.id)}>🗑</button>
+                      <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleEditPkg(p)}>✏️</button>
+                      <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDelete('packages', p.id)}>🗑</button>
                     </div>
                   </td>
                 </tr>
@@ -579,22 +549,15 @@ export default function ERPViewsSales(props) {
     return (
       <div style={styles.container}>
         <div style={styles.header}>
-          <h1 style={styles.title}>🏢 {t('branches', 'Branches')}</h1>
-          <input style={styles.input} placeholder="Search..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <h1 style={{ ...styles.title, color: '#7C3AED' }}>🏢 {t('branches', 'Branches')}</h1>
+          <input style={{ ...styles.input, maxWidth: '300px' }} placeholder="Search..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
         <div style={styles.card}>
           <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Name</th>
-                <th style={styles.th}>Location</th>
-                <th style={styles.th}>Phone</th>
-                <th style={styles.th}>Manager</th>
-                <th style={styles.th}>Email</th>
-                <th style={styles.th}>Timing</th>
-                <th style={{ ...styles.th, textAlign: 'center' }}>{t('actions', 'Actions')}</th>
-              </tr>
-            </thead>
+            <thead><tr>
+              <th style={styles.th}>Name</th><th style={styles.th}>Location</th><th style={styles.th}>Phone</th><th style={styles.th}>Manager</th><th style={styles.th}>Email</th><th style={styles.th}>Timing</th>
+              <th style={{ ...styles.th, textAlign: 'center' }}>{t('actions', 'Actions')}</th>
+            </tr></thead>
             <tbody>
               {(data.branches || []).filter(b => !searchTerm || b.name?.toLowerCase().includes(searchTerm.toLowerCase())).map(b => (
                 <tr key={b.id}>
@@ -606,8 +569,8 @@ export default function ERPViewsSales(props) {
                   <td style={styles.td}>{b.timing || '-'}</td>
                   <td style={styles.tdCenter}>
                     <div style={styles.actionsCell}>
-                      <button style={{ ...styles.actionBtn, background: '#065F46', color: '#34D399' }} onClick={() => handleEditBrn(b)}>✏️</button>
-                      <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDelete('branches', b.id)}>🗑</button>
+                      <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleEditBrn(b)}>✏️</button>
+                      <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDelete('branches', b.id)}>🗑</button>
                     </div>
                   </td>
                 </tr>
@@ -624,22 +587,16 @@ export default function ERPViewsSales(props) {
     return (
       <div style={styles.container}>
         <div style={styles.header}>
-          <h1 style={styles.title}>👨‍💼 {page === 'hr_advanced' ? t('hr_advanced', 'HR & Payroll') : t('hr', 'Human Resources')}</h1>
-          <input style={styles.input} placeholder="Search employees..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <h1 style={{ ...styles.title, color: '#0369A1' }}>👨‍💼 {page === 'hr_advanced' ? t('hr_advanced', 'HR & Payroll') : t('hr', 'Human Resources')}</h1>
+          <input style={{ ...styles.input, maxWidth: '300px' }} placeholder="Search employees..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
         <div style={styles.card}>
           <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Name</th>
-                <th style={styles.th}>Role</th>
-                <th style={styles.th}>Phone</th>
-                <th style={{ ...styles.th, textAlign: 'right' }}>Salary</th>
-                <th style={{ ...styles.th, textAlign: 'right' }}>Commission %</th>
-                <th style={styles.th}>IQAMA</th>
-                <th style={{ ...styles.th, textAlign: 'center' }}>{t('actions', 'Actions')}</th>
-              </tr>
-            </thead>
+            <thead><tr>
+              <th style={styles.th}>Name</th><th style={styles.th}>Role</th><th style={styles.th}>Phone</th>
+              <th style={{ ...styles.th, textAlign: 'right' }}>Salary</th><th style={{ ...styles.th, textAlign: 'right' }}>Commission %</th><th style={styles.th}>IQAMA</th>
+              <th style={{ ...styles.th, textAlign: 'center' }}>{t('actions', 'Actions')}</th>
+            </tr></thead>
             <tbody>
               {(data.employees || []).filter(e => !searchTerm || e.name?.toLowerCase().includes(searchTerm.toLowerCase())).map(e => (
                 <tr key={e.id}>
@@ -651,8 +608,8 @@ export default function ERPViewsSales(props) {
                   <td style={styles.td}>{e.iqama_no || '-'}</td>
                   <td style={styles.tdCenter}>
                     <div style={styles.actionsCell}>
-                      <button style={{ ...styles.actionBtn, background: '#065F46', color: '#34D399' }} onClick={() => handleEditEmp(e)}>✏️</button>
-                      <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDelete('employees', e.id)}>🗑</button>
+                      <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleEditEmp(e)}>✏️</button>
+                      <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDelete('employees', e.id)}>🗑</button>
                     </div>
                   </td>
                 </tr>
@@ -670,34 +627,29 @@ export default function ERPViewsSales(props) {
     return (
       <div style={styles.container}>
         <div style={styles.header}>
-          <h1 style={styles.title}>💸 {t('expenses', 'Expenses')}</h1>
+          <h1 style={{ ...styles.title, color: '#DC2626' }}>💸 {t('expenses', 'Expenses')}</h1>
           <div style={styles.searchBox}>
             <input style={styles.input} placeholder="Search expenses..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             <input type="date" style={styles.input} value={dateFilter} onChange={e => setDateFilter(e.target.value)} />
           </div>
         </div>
         <div style={styles.statsGrid}>
-          <div style={styles.statCard}>
+          <div style={{ ...styles.statCard, borderLeft: '4px solid #DC2626' }}>
             <div style={styles.statLabel}>Total Expenses</div>
-            <div style={{ ...styles.statValue, color: '#FCA5A5' }}>{fmt(totalExp)}</div>
+            <div style={{ ...styles.statValue, color: '#DC2626' }}>{fmt(totalExp)}</div>
           </div>
-          <div style={styles.statCard}>
+          <div style={{ ...styles.statCard, borderLeft: '4px solid #6B7280' }}>
             <div style={styles.statLabel}>Count</div>
             <div style={styles.statValue}>{data.expenses?.length || 0}</div>
           </div>
         </div>
         <div style={styles.card}>
           <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Date</th>
-                <th style={styles.th}>Type</th>
-                <th style={styles.th}>Description</th>
-                <th style={styles.th}>Payment</th>
-                <th style={{ ...styles.th, textAlign: 'right' }}>Amount</th>
-                <th style={{ ...styles.th, textAlign: 'center' }}>{t('actions', 'Actions')}</th>
-              </tr>
-            </thead>
+            <thead><tr>
+              <th style={styles.th}>Date</th><th style={styles.th}>Type</th><th style={styles.th}>Description</th><th style={styles.th}>Payment</th>
+              <th style={{ ...styles.th, textAlign: 'right' }}>Amount</th>
+              <th style={{ ...styles.th, textAlign: 'center' }}>{t('actions', 'Actions')}</th>
+            </tr></thead>
             <tbody>
               {(data.expenses || [])
                 .filter(e => !searchTerm || e.description?.toLowerCase().includes(searchTerm.toLowerCase()) || e.expense_type?.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -708,11 +660,11 @@ export default function ERPViewsSales(props) {
                   <td style={styles.td}>{e.expense_type || '-'}</td>
                   <td style={styles.td}>{e.description || '-'}</td>
                   <td style={styles.td}>{e.payment_mode || 'Cash'}</td>
-                  <td style={{ ...styles.tdRight, color: '#FCA5A5' }}>{fmt(e.amount)}</td>
+                  <td style={{ ...styles.tdRight, color: '#DC2626' }}>{fmt(e.amount)}</td>
                   <td style={styles.tdCenter}>
                     <div style={styles.actionsCell}>
-                      <button style={{ ...styles.actionBtn, background: '#065F46', color: '#34D399' }} onClick={() => handleEditExp(e)}>✏️</button>
-                      <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDelete('expenses', e.id)}>🗑</button>
+                      <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleEditExp(e)}>✏️</button>
+                      <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDelete('expenses', e.id)}>🗑</button>
                     </div>
                   </td>
                 </tr>
@@ -736,87 +688,42 @@ export default function ERPViewsSales(props) {
     return (
       <div style={styles.container}>
         <div style={styles.header}>
-          <h1 style={styles.title}>🏦 {t('bank', 'Bank & Cash')}</h1>
+          <h1 style={{ ...styles.title, color: '#059669' }}>🏦 {t('bank', 'Bank & Cash')}</h1>
           <div style={styles.searchBox}>
             <input style={styles.input} placeholder="Search transactions..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             <input type="date" style={styles.input} value={dateFilter} onChange={e => setDateFilter(e.target.value)} />
             <select style={styles.select} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
               <option value="">All Types</option>
-              <option value="Cash-In">Cash-In</option>
-              <option value="Cash-Out">Cash-Out</option>
-              <option value="Bank-In">Bank-In</option>
-              <option value="Bank-Out">Bank-Out</option>
-              <option value="Investor-In">Investor-In</option>
-              <option value="Investor-Out">Investor-Out</option>
+              <option value="Cash-In">Cash-In</option><option value="Cash-Out">Cash-Out</option>
+              <option value="Bank-In">Bank-In</option><option value="Bank-Out">Bank-Out</option>
+              <option value="Investor-In">Investor-In</option><option value="Investor-Out">Investor-Out</option>
             </select>
           </div>
         </div>
+        
         <div style={styles.statsGrid}>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Cash Balance</div>
-            <div style={{ ...styles.statValue, color: '#34D399' }}>{fmt(cashIn - cashOut)}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Bank Balance</div>
-            <div style={{ ...styles.statValue, color: '#60A5FA' }}>{fmt(bankIn - bankOut)}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Investor Net</div>
-            <div style={{ ...styles.statValue, color: '#A78BFA' }}>{fmt(investIn - investOut)}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Cash In</div>
-            <div style={{ ...styles.statValue, color: '#34D399' }}>{fmt(cashIn)}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Cash Out</div>
-            <div style={{ ...styles.statValue, color: '#FCA5A5' }}>{fmt(cashOut)}</div>
-          </div>
+          <div style={{ ...styles.statCard, borderLeft: '4px solid #059669' }}><div style={styles.statLabel}>Cash Balance</div><div style={{ ...styles.statValue, color: '#059669' }}>{fmt(cashIn - cashOut)}</div></div>
+          <div style={{ ...styles.statCard, borderLeft: '4px solid #2563EB' }}><div style={styles.statLabel}>Bank Balance</div><div style={{ ...styles.statValue, color: '#2563EB' }}>{fmt(bankIn - bankOut)}</div></div>
+          <div style={{ ...styles.statCard, borderLeft: '4px solid #7C3AED' }}><div style={styles.statLabel}>Investor Net</div><div style={{ ...styles.statValue, color: '#7C3AED' }}>{fmt(investIn - investOut)}</div></div>
+          <div style={{ ...styles.statCard, borderLeft: '4px solid #10B981' }}><div style={styles.statLabel}>Cash In</div><div style={{ ...styles.statValue, color: '#10B981' }}>{fmt(cashIn)}</div></div>
+          <div style={{ ...styles.statCard, borderLeft: '4px solid #EF4444' }}><div style={styles.statLabel}>Cash Out</div><div style={{ ...styles.statValue, color: '#EF4444' }}>{fmt(cashOut)}</div></div>
         </div>
 
         <div style={styles.card}>
-          <h3 style={{ marginTop: 0, color: '#FBBF24' }}>🔁 Fund Transfer</h3>
-          <form onSubmit={handleTransfer} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '15px' }}>
-            <div>
-              <label style={styles.formLabel}>From</label>
-              <select style={styles.select} value={transferForm.from} onChange={e => setTransferForm(p => ({ ...p, from: e.target.value }))}>
-                <option>Cash</option><option>Bank</option><option>Investor</option>
-              </select>
-            </div>
-            <div>
-              <label style={styles.formLabel}>To</label>
-              <select style={styles.select} value={transferForm.to} onChange={e => setTransferForm(p => ({ ...p, to: e.target.value }))}>
-                <option>Cash</option><option>Bank</option><option>Investor</option>
-              </select>
-            </div>
-            <div>
-              <label style={styles.formLabel}>Amount (SAR)</label>
-              <input type="number" step="0.01" style={styles.input} value={transferForm.amount} onChange={e => setTransferForm(p => ({ ...p, amount: e.target.value }))} required />
-            </div>
-            <div>
-              <label style={styles.formLabel}>Date</label>
-              <input type="date" style={styles.input} value={transferForm.date} onChange={e => setTransferForm(p => ({ ...p, date: e.target.value }))} />
-            </div>
-            <div style={{ gridColumn: 'span 2' }}>
-              <label style={styles.formLabel}>Note</label>
-              <input style={styles.input} value={transferForm.description || ''} onChange={e => setTransferForm(p => ({ ...p, description: e.target.value }))} placeholder="e.g. deposited daily cash sales to bank" />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-              <button type="submit" style={{ ...styles.btn, ...styles.btnSuccess, width: '100%' }}>Transfer</button>
-            </div>
+          <h3 style={{ margin: '0 0 16px 0', color: '#374151', borderBottom: '1px solid #E5E7EB', paddingBottom: '12px' }}>🔁 Fund Transfer</h3>
+          <form onSubmit={handleTransfer} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px' }}>
+            <div><label style={styles.formLabel}>From</label><select style={styles.select} value={transferForm.from} onChange={e => setTransferForm(p => ({ ...p, from: e.target.value }))}><option>Cash</option><option>Bank</option><option>Investor</option></select></div>
+            <div><label style={styles.formLabel}>To</label><select style={styles.select} value={transferForm.to} onChange={e => setTransferForm(p => ({ ...p, to: e.target.value }))}><option>Cash</option><option>Bank</option><option>Investor</option></select></div>
+            <div><label style={styles.formLabel}>Amount (SAR)</label><input type="number" step="0.01" style={styles.input} value={transferForm.amount} onChange={e => setTransferForm(p => ({ ...p, amount: e.target.value }))} required /></div>
+            <div><label style={styles.formLabel}>Date</label><input type="date" style={styles.input} value={transferForm.date} onChange={e => setTransferForm(p => ({ ...p, date: e.target.value }))} /></div>
+            <div style={{ gridColumn: 'span 2' }}><label style={styles.formLabel}>Note</label><input style={styles.input} value={transferForm.description || ''} onChange={e => setTransferForm(p => ({ ...p, description: e.target.value }))} placeholder="e.g. deposited daily cash sales to bank" /></div>
+            <div style={{ display: 'flex', alignItems: 'flex-end' }}><button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, width: '100%' }}>Transfer</button></div>
           </form>
         </div>
 
         <div style={styles.card}>
           <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Date</th>
-                <th style={styles.th}>Type</th>
-                <th style={styles.th}>Description</th>
-                <th style={{ ...styles.th, textAlign: 'right' }}>Amount</th>
-              </tr>
-            </thead>
+            <thead><tr><th style={styles.th}>Date</th><th style={styles.th}>Type</th><th style={styles.th}>Description</th><th style={{ ...styles.th, textAlign: 'right' }}>Amount</th></tr></thead>
             <tbody>
               {(data.cashbook || [])
                 .filter(c => !searchTerm || c.description?.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -827,12 +734,10 @@ export default function ERPViewsSales(props) {
                 <tr key={c.id}>
                   <td style={styles.td}>{c.trans_date}</td>
                   <td style={styles.tdCenter}>
-                    <span style={{ ...styles.badge, background: c.type?.includes('In') ? '#065F46' : '#7F1D1D', color: c.type?.includes('In') ? '#34D399' : '#FCA5A5' }}>
-                      {c.type}
-                    </span>
+                    <span style={{ ...styles.badge, background: c.type?.includes('In') ? '#D1FAE5' : '#FEE2E2', color: c.type?.includes('In') ? '#065F46' : '#991B1B' }}>{c.type}</span>
                   </td>
                   <td style={styles.td}>{c.description}</td>
-                  <td style={{ ...styles.tdRight, color: c.type?.includes('In') ? '#34D399' : '#FCA5A5' }}>
+                  <td style={{ ...styles.tdRight, color: c.type?.includes('In') ? '#059669' : '#DC2626', fontWeight: '600' }}>
                     {c.type?.includes('In') ? '+' : '-'}{fmt(c.amount)}
                   </td>
                 </tr>
@@ -849,7 +754,7 @@ export default function ERPViewsSales(props) {
     return (
       <div style={styles.container}>
         <div style={styles.header}>
-          <h1 style={styles.title}>📜 {t('audit', 'Audit Logs')}</h1>
+          <h1 style={{ ...styles.title, color: '#6B7280' }}>📜 {t('audit', 'Audit Logs')}</h1>
           <div style={styles.searchBox}>
             <input style={styles.input} placeholder="Search logs..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             <input type="date" style={styles.input} value={dateFilter} onChange={e => setDateFilter(e.target.value)} />
@@ -857,13 +762,7 @@ export default function ERPViewsSales(props) {
         </div>
         <div style={styles.card}>
           <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Date/Time</th>
-                <th style={styles.th}>User</th>
-                <th style={styles.th}>Action</th>
-              </tr>
-            </thead>
+            <thead><tr><th style={styles.th}>Date/Time</th><th style={styles.th}>User</th><th style={styles.th}>Action</th></tr></thead>
             <tbody>
               {(data.auditLogs || [])
                 .filter(l => !searchTerm || l.action?.toLowerCase().includes(searchTerm.toLowerCase()) || l.user_email?.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -871,8 +770,8 @@ export default function ERPViewsSales(props) {
                 .slice(0, 200)
                 .map(l => (
                 <tr key={l.id}>
-                  <td style={{ ...styles.td, fontSize: '12px', color: '#94A3B8' }}>{new Date(l.created_at).toLocaleString()}</td>
-                  <td style={{ ...styles.td, fontWeight: '600', color: '#60A5FA' }}>{l.user_email || 'Unknown'}</td>
+                  <td style={{ ...styles.td, fontSize: '12px', color: '#6B7280' }}>{new Date(l.created_at).toLocaleString()}</td>
+                  <td style={{ ...styles.td, fontWeight: '600', color: '#2563EB' }}>{l.user_email || 'Unknown'}</td>
                   <td style={styles.td}>{l.action}</td>
                 </tr>
               ))}
@@ -890,15 +789,15 @@ export default function ERPViewsSales(props) {
     return (
       <div style={styles.container}>
         <div style={styles.header}>
-          <h1 style={styles.title}>👥 {t('users', 'Users')}</h1>
+          <h1 style={{ ...styles.title, color: '#4B5563' }}>👥 {t('users', 'Users')}</h1>
         </div>
 
         <div style={styles.card}>
-          <h3 style={{ marginTop: 0, color: '#FBBF24' }}>{editUserId ? 'Edit User' : '+ Add User'}</h3>
+          <h3 style={{ margin: '0 0 16px 0', color: '#374151', borderBottom: '1px solid #E5E7EB', paddingBottom: '12px' }}>{editUserId ? 'Edit User' : '+ Add User'}</h3>
           <form onSubmit={handleAddEditUser} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px' }}>
             <div>
               <label style={styles.formLabel}>Email {editUserId && '(cannot change)'}</label>
-              <input type="email" style={styles.input} value={userForm?.email || ''} disabled={!!editUserId}
+              <input type="email" style={{ ...styles.input, background: editUserId ? '#F3F4F6' : '#FFFFFF' }} value={userForm?.email || ''} disabled={!!editUserId}
                 onChange={e => setUserForm(prev => ({ ...prev, email: e.target.value }))} required />
             </div>
             <div>
@@ -914,16 +813,16 @@ export default function ERPViewsSales(props) {
                 {(data.employees || []).map(emp => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
               </select>
             </div>
-            <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+            <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center', padding: '10px 0', background: '#F9FAFB', borderRadius: '10px', border: '1px dashed #D1D5DB' }}>
               {perms.map(p => (
-                <label key={p} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#CBD5E1', fontSize: '13px' }}>
-                  <input type="checkbox" checked={!!userForm?.[p]} onChange={e => setUserForm(prev => ({ ...prev, [p]: e.target.checked }))} />
+                <label key={p} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#374151', fontSize: '14px', cursor: 'pointer' }}>
+                  <input type="checkbox" style={{ width: '18px', height: '18px', accentColor: '#3B82F6' }} checked={!!userForm?.[p]} onChange={e => setUserForm(prev => ({ ...prev, [p]: e.target.checked }))} />
                   {permLabels[p]}
                 </label>
               ))}
             </div>
             <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px' }}>
-              <button type="submit" style={{ ...styles.btn, ...styles.btnSuccess }}>{editUserId ? 'Save Changes' : 'Create User'}</button>
+              <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary }}>{editUserId ? 'Save Changes' : 'Create User'}</button>
               {editUserId && <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setEditUserId(null); setUserForm({ email: '', username: '', is_admin: false, can_access_hr: false, can_access_bank: false, can_access_invoices: true, can_access_reports: false, can_access_settings: false, employee_id: '' }); }}>Cancel</button>}
             </div>
           </form>
@@ -931,179 +830,30 @@ export default function ERPViewsSales(props) {
 
         <div style={styles.card}>
           <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Email</th><th style={styles.th}>Username</th><th style={styles.th}>Linked Employee</th>
-                <th style={styles.th}>Permissions</th><th style={{ ...styles.th, textAlign: 'center' }}>{t('actions', 'Actions')}</th>
-              </tr>
-            </thead>
+            <thead><tr>
+              <th style={styles.th}>Email</th><th style={styles.th}>Username</th><th style={styles.th}>Linked Employee</th>
+              <th style={styles.th}>Permissions</th><th style={{ ...styles.th, textAlign: 'center' }}>{t('actions', 'Actions')}</th>
+            </tr></thead>
             <tbody>
               {(data.appUsers || []).map(u => (
                 <tr key={u.id}>
-                  <td style={{ ...styles.td, fontWeight: '600' }}>{u.email}</td>
+                  <td style={{ ...styles.td, fontWeight: '600', color: '#2563EB' }}>{u.email}</td>
                   <td style={styles.td}>{u.username || '-'}</td>
-                  <td style={styles.td}>{data.employees?.find(e => e.id === u.employee_id)?.name || '-'}</td>
-                  <td style={styles.td}>{perms.filter(p => u[p]).map(p => permLabels[p]).join(', ') || '-'}</td>
-                  <td style={styles.tdCenter}>
-                    <div style={styles.actionsCell}>
-                      <button style={{ ...styles.actionBtn, background: '#065F46', color: '#34D399' }} onClick={() => handleEditUser(u)}>✏️</button>
-                      <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDeleteUser(u)}>🗑</button>
+                  <td style={styles.td}>{u.employee_id ? (data.employees?.find(e => e.id === u.employee_id)?.name || 'Linked') : '-'}</td>
+                  <td style={styles.td}>
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                      {u.is_admin && <span style={{ ...styles.badge, background: '#DBEAFE', color: '#1D4ED8' }}>Admin</span>}
+                      {u.can_access_invoices && <span style={{ ...styles.badge, background: '#D1FAE5', color: '#065F46' }}>Inv</span>}
+                      {u.can_access_bank && <span style={{ ...styles.badge, background: '#EDE9FE', color: '#5B21B6' }}>Bank</span>}
+                      {u.can_access_hr && <span style={{ ...styles.badge, background: '#FEF3C7', color: '#92400E' }}>HR</span>}
+                      {u.can_access_reports && <span style={{ ...styles.badge, background: '#FEE2E2', color: '#991B1B' }}>Reports</span>}
+                      {u.can_access_settings && <span style={{ ...styles.badge, background: '#FCE7F3', color: '#9D174D' }}>Settings</span>}
                     </div>
                   </td>
-                </tr>
-              ))}
-              {(data.appUsers || []).length === 0 && (
-                <tr><td colSpan={5} style={{ ...styles.td, textAlign: 'center', padding: '30px' }}>No users yet.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
-  }
-
-  // ═══ REPORTS ═══
-  if (page === 'reports') {
-    const totalRev = (data.invoices || []).filter(i => !i.invoice_no?.startsWith('REF-')).reduce((s, i) => s + (i.total || 0), 0);
-    const totalExp = (data.expenses || []).reduce((s, e) => s + (e.amount || 0), 0);
-    const totalProfit = (data.invoices || []).filter(i => !i.invoice_no?.startsWith('REF-')).reduce((s, i) => s + (i.profit || 0), 0);
-    const netProfit = totalProfit - totalExp;
-
-    return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>📊 {t('reports', 'Reports')}</h1>
-        </div>
-        <div style={styles.statsGrid}>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Total Revenue</div>
-            <div style={{ ...styles.statValue, color: '#34D399' }}>{fmt(totalRev)}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Total Expenses</div>
-            <div style={{ ...styles.statValue, color: '#FCA5A5' }}>{fmt(totalExp)}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Invoice Profit</div>
-            <div style={{ ...styles.statValue, color: '#FBBF24' }}>{fmt(totalProfit)}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Net Profit</div>
-            <div style={{ ...styles.statValue, color: netProfit >= 0 ? '#34D399' : '#FCA5A5' }}>{fmt(netProfit)}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Invoices</div>
-            <div style={styles.statValue}>{data.invoices?.filter(i => !i.invoice_no?.startsWith('REF-')).length || 0}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Refunds</div>
-            <div style={styles.statValue}>{data.invoices?.filter(i => i.invoice_no?.startsWith('REF-')).length || 0}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Customers</div>
-            <div style={styles.statValue}>{data.customers?.length || 0}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Employees</div>
-            <div style={styles.statValue}>{data.employees?.length || 0}</div>
-          </div>
-        </div>
-
-        <div style={styles.card}>
-          <h3 style={{ color: '#FBBF24', marginBottom: '15px' }}>📈 Revenue by Service Type</h3>
-          {(() => {
-            const byService = {};
-            (data.invoices || []).filter(i => !i.invoice_no?.startsWith('REF-')).forEach(i => {
-              const svc = i.service_type || 'Other';
-              byService[svc] = (byService[svc] || 0) + (i.total || 0);
-            });
-            return Object.entries(byService).sort((a, b) => b[1] - a[1]).map(([svc, amt]) => (
-              <div key={svc} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #1E293B' }}>
-                <span style={{ color: '#CBD5E1' }}>{svc}</span>
-                <span style={{ color: '#34D399', fontWeight: '600' }}>{fmt(amt)}</span>
-              </div>
-            ));
-          })()}
-        </div>
-      </div>
-    );
-  }
-
-  // ═══ STATEMENTS ═══
-  if (page === 'statements') {
-    return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>📑 {t('statements', 'Statements')}</h1>
-        </div>
-        <div style={styles.card}>
-          <div style={styles.emptyState}>
-            <div style={styles.emptyIcon}>📑</div>
-            <h3>Statements</h3>
-            <p style={{ color: '#94A3B8', maxWidth: '400px', margin: '10px auto', lineHeight: '1.6' }}>
-              Use Customer Statement or Supplier Statement for detailed account statements.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ═══ STAFF MISTAKES ═══
-  if (page === 'staff_mistakes') {
-    const totalLoss = (data.staffMistakes || []).reduce((s, m) => s + (m.loss_amount || 0), 0);
-    const paidByEmp = (data.staffMistakes || []).filter(m => m.paid_by_employee).reduce((s, m) => s + (m.loss_amount || 0), 0);
-
-    return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>⚠️ {t('staff_mistakes', 'Staff Mistakes')}</h1>
-          <input style={styles.input} placeholder="Search..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-        </div>
-        <div style={styles.statsGrid}>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Total Mistakes</div>
-            <div style={styles.statValue}>{data.staffMistakes?.length || 0}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Total Loss</div>
-            <div style={{ ...styles.statValue, color: '#FCA5A5' }}>{fmt(totalLoss)}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Paid by Employee</div>
-            <div style={{ ...styles.statValue, color: '#FBBF24' }}>{fmt(paidByEmp)}</div>
-          </div>
-        </div>
-        <div style={styles.card}>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Date</th>
-                <th style={styles.th}>Employee</th>
-                <th style={styles.th}>Old Ticket</th>
-                <th style={styles.th}>New Ticket</th>
-                <th style={{ ...styles.th, textAlign: 'right' }}>Loss</th>
-                <th style={styles.th}>Paid by Emp?</th>
-                <th style={{ ...styles.th, textAlign: 'center' }}>{t('actions', 'Actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(data.staffMistakes || []).filter(m => !searchTerm || m.employees?.name?.toLowerCase().includes(searchTerm.toLowerCase())).map(m => (
-                <tr key={m.id}>
-                  <td style={styles.td}>{m.date || '-'}</td>
-                  <td style={{ ...styles.td, fontWeight: '600' }}>{m.employees?.name || 'N/A'}</td>
-                  <td style={styles.td}>{m.old_ticket_no || '-'}</td>
-                  <td style={styles.td}>{m.new_ticket_no || '-'}</td>
-                  <td style={{ ...styles.tdRight, color: '#FCA5A5' }}>{fmt(m.loss_amount)}</td>
-                  <td style={styles.tdCenter}>
-                    <span style={{ ...styles.badge, background: m.paid_by_employee ? '#065F46' : '#7F1D1D', color: m.paid_by_employee ? '#34D399' : '#FCA5A5' }}>
-                      {m.paid_by_employee ? 'Yes' : 'No'}
-                    </span>
-                  </td>
                   <td style={styles.tdCenter}>
                     <div style={styles.actionsCell}>
-                      <button style={{ ...styles.actionBtn, background: '#1E3A8A', color: '#93C5FD' }} onClick={() => handlePreviewMistake(m)}>👁</button>
-                      <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDeleteMistake(m)}>🗑</button>
+                      <button style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }} onClick={() => handleEditUser(u)}>✏️</button>
+                      <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDeleteUser(u)}>🗑</button>
                     </div>
                   </td>
                 </tr>
@@ -1115,43 +865,32 @@ export default function ERPViewsSales(props) {
     );
   }
 
-  // ═══ CREDIT BALANCES ═══
+  // ═══ CREDIT BALANCES LIST ═══
   if (page === 'credit') {
-    const withCredit = (data.customers || []).filter(c => (c.store_credit || 0) > 0);
-    const totalCredit = withCredit.reduce((s, c) => s + (c.store_credit || 0), 0);
-
     return (
       <div style={styles.container}>
         <div style={styles.header}>
-          <h1 style={styles.title}>💳 {t('credit', 'Credit Balances')}</h1>
-        </div>
-        <div style={styles.statsGrid}>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Customers with Credit</div>
-            <div style={styles.statValue}>{withCredit.length}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>Total Credit</div>
-            <div style={{ ...styles.statValue, color: '#A78BFA' }}>{fmt(totalCredit)}</div>
-          </div>
+          <h1 style={{ ...styles.title, color: '#7C3AED' }}>💳 {t('credit', 'Credit Balances')}</h1>
+          <input style={{ ...styles.input, maxWidth: '300px' }} placeholder="Search..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
         <div style={styles.card}>
           <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Customer</th>
-                <th style={styles.th}>Phone</th>
-                <th style={{ ...styles.th, textAlign: 'right' }}>Credit Balance</th>
-                <th style={{ ...styles.th, textAlign: 'right' }}>Credit Limit</th>
-              </tr>
-            </thead>
+            <thead><tr>
+              <th style={styles.th}>Customer</th><th style={styles.th}>Phone</th>
+              <th style={{ ...styles.th, textAlign: 'right' }}>Used Credit</th>
+              <th style={{ ...styles.th, textAlign: 'right' }}>Store Credit</th>
+              <th style={{ ...styles.th, textAlign: 'right' }}>Credit Limit</th>
+            </tr></thead>
             <tbody>
-              {withCredit.map(c => (
+              {(data.customers || [])
+                .filter(c => (c.store_credit > 0 || c.credit_limit > 0) && (!searchTerm || c.name?.toLowerCase().includes(searchTerm.toLowerCase()))
+                .map(c => (
                 <tr key={c.id}>
                   <td style={{ ...styles.td, fontWeight: '600' }}>{c.name}</td>
                   <td style={styles.td}>{c.phone || '-'}</td>
-                  <td style={{ ...styles.tdRight, color: '#A78BFA', fontWeight: '700' }}>{fmt(c.store_credit)}</td>
-                  <td style={styles.tdRight}>{fmt(c.credit_limit)}</td>
+                  <td style={{ ...styles.tdRight, color: '#EF4444' }}>{fmt(c.store_credit)}</td>
+                  <td style={{ ...styles.tdRight, color: '#7C3AED' }}>{fmt(c.store_credit)}</td>
+                  <td style={{ ...styles.tdRight, color: '#2563EB' }}>{fmt(c.credit_limit)}</td>
                 </tr>
               ))}
             </tbody>
@@ -1161,42 +900,16 @@ export default function ERPViewsSales(props) {
     );
   }
 
-  // ═══ CREDIT LIMITS ═══
-  if (page === 'credit_limits') {
-    return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>📊 {t('credit_limits', 'Credit Limits')}</h1>
-        </div>
-        <div style={styles.card}>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Customer</th>
-                <th style={{ ...styles.th, textAlign: 'right' }}>Credit Limit</th>
-                <th style={{ ...styles.th, textAlign: 'right' }}>Used</th>
-                <th style={{ ...styles.th, textAlign: 'right' }}>Available</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(data.creditLimits || []).map(c => {
-                const used = c.store_credit || 0;
-                const available = (c.credit_limit || 0) - used;
-                return (
-                  <tr key={c.id}>
-                    <td style={{ ...styles.td, fontWeight: '600' }}>{c.name}</td>
-                    <td style={styles.tdRight}>{fmt(c.credit_limit)}</td>
-                    <td style={{ ...styles.tdRight, color: '#FBBF24' }}>{fmt(used)}</td>
-                    <td style={{ ...styles.tdRight, color: available > 0 ? '#34D399' : '#FCA5A5' }}>{fmt(available)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+  // ═══ DEFAULT FALLBACK ═══
+  return (
+    <div style={styles.container}>
+      <div style={styles.card}>
+        <div style={styles.emptyState}>
+          <div style={styles.emptyIcon}>🚧</div>
+          <h3 style={{color:'#374151', fontSize:'18px'}}>View Implementation Pending</h3>
+          <p style={{color:'#6B7280'}}>The UI for "{page}" is located in another file. Routing handled by ERPViews.jsx.</p>
         </div>
       </div>
-    );
-  }
-
-  return null;
+    </div>
+  );
 }
