@@ -2,7 +2,7 @@
 import React from 'react';
 import ERPModals from './ERPModals';
 
-export default function ERPLayout({ children, tr, lang, setLang, page, setPage, modal, setModal, passForm, setPassForm, handleChangePassword, handleLogout, handleSendMessage, chatOpen, setChatOpen, chatMessages, chatInput, setChatInput, userProfile, menu, settleForm, setSettleForm, handleSettlePayment, refundForm, setRefundForm, handleRefund, previewHTML, downloadPDF }) {
+export default function ERPLayout({ children, tr, lang, setLang, theme, setTheme, page, setPage, modal, setModal, passForm, setPassForm, handleChangePassword, handleLogout, handleSendMessage, chatOpen, setChatOpen, chatMessages, chatInput, setChatInput, userProfile, menu, settleForm, setSettleForm, handleSettlePayment, refundForm, setRefundForm, handleRefund, previewHTML, downloadPDF }) {
   const isAr = lang === 'ar';
   const t = (key, fallback) => tr?.[key] || fallback || key;
 
@@ -93,6 +93,27 @@ export default function ERPLayout({ children, tr, lang, setLang, page, setPage, 
         >
           <span style={{ fontSize: '16px' }}>🌐</span>
           {isAr ? 'English' : 'العربية'}
+        </button>
+
+        {/* Dark Mode Toggle */}
+        <button
+          onClick={() => setTheme?.(theme === 'dark' ? 'light' : 'dark')}
+          style={{
+            padding: '10px 16px',
+            background: theme === 'dark' ? 'linear-gradient(135deg, #1E293B, #0F172A)' : 'linear-gradient(135deg, #FEF3C7, #FDE68A)',
+            color: theme === 'dark' ? '#FBBF24' : '#92400E',
+            border: theme === 'dark' ? '1px solid #334155' : '1px solid #FDE68A',
+            borderRadius: '12px',
+            cursor: 'pointer',
+            fontWeight: '700',
+            marginBottom: '20px',
+            fontSize: '13px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+            transition: 'all 0.2s'
+          }}
+        >
+          <span style={{ fontSize: '16px' }}>{theme === 'dark' ? '☀️' : '🌙'}</span>
+          {theme === 'dark' ? (isAr ? 'الوضع الفاتح' : 'Light Mode') : (isAr ? 'الوضع الداكن' : 'Dark Mode')}
         </button>
 
         {/* Menu Items */}
