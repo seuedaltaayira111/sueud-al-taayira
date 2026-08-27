@@ -430,21 +430,18 @@ export default function ERPModals({
                 📄 {isAr ? 'معاينة المستند' : 'Document Preview'}
               </h3>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                {/* ===== PRINT BUTTON ===== */}
                 <button
                   onClick={handlePrintPreview}
                   style={{ ...styles.btnInfo, width: 'auto', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
                   🖨️ {isAr ? 'طباعة' : 'Print'}
                 </button>
-                {/* ===== DOWNLOAD BUTTON ===== */}
                 <button
                   onClick={handleDownloadPDF}
                   style={{ ...styles.btnSuccess, width: 'auto', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
                   ⬇️ {isAr ? 'تحميل PDF' : 'Download PDF'}
                 </button>
-                {/* ===== CLOSE BUTTON ===== */}
                 <button
                   onClick={() => setModal({ type: null, data: null })}
                   style={{ ...styles.btnDanger, width: 'auto', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}
