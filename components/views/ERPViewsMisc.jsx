@@ -185,7 +185,7 @@ export default function ERPViewsMisc(props) {
                     set({ custId: e.target.value, custName: c?.name || '', custPhone: c?.phone || '' });
                   }}>
                     <option value="new">+ New Customer</option>
-                    {(data.customers || []).map(c => <option key={c.id} value={c.id}>{c.name} — {c.phone}</option>)}
+                    {(data.customers || []).map(c => <option key={c.id} value={c.id}>{c.name} — {c.phone}{(c.store_credit || 0) > 0 ? ` (💰 ${(c.store_credit || 0).toFixed(2)} SAR credit available)` : ''}</option>)}
                   </select>
                 </div>
                 {f.custId === 'new' && (<>
@@ -594,6 +594,7 @@ export default function ERPViewsMisc(props) {
       handleAddMistake, handlePreviewMistake, handleDeleteMistake,
       payForm, setPayForm, handleProcessPayroll, handleGenerateSlip, handleDeletePayroll,
     } = props;
+    const isBasicHR = page === 'hr';
     const [tab, setTab] = useState('directory');
     const daysLeft = (d) => d ? Math.ceil((new Date(d) - new Date(today)) / 86400000) : null;
 
@@ -603,15 +604,17 @@ export default function ERPViewsMisc(props) {
 
     return (
       <div style={s.container}>
-        <div style={s.header}><h1 style={s.title}>👨‍💼 {t('hr_advanced', 'HR & Payroll')}</h1></div>
+        <div style={s.header}><h1 style={s.title}>{isBasicHR ? '👤 ' + t('hr', 'HR Directory') : '👨‍💼 ' + t('hr_advanced', 'HR & Payroll')}</h1></div>
+        {!isBasicHR && (
         <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
           <TabBtn id="directory" label="👤 Directory" />
           <TabBtn id="advances" label="💵 Advances" />
           <TabBtn id="mistakes" label="⚠️ Mistakes/Deductions" />
           <TabBtn id="payroll" label="🧾 Payroll & Slips" />
         </div>
+        )}
 
-        {tab === 'directory' && (
+        {(isBasicHR || tab === 'directory') && (
           <>
             <div style={s.card}>
               <h3 style={s.sectionTitle}>{editEmpId ? 'Edit Employee' : '+ Add Employee'}</h3>
