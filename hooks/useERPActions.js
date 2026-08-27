@@ -211,231 +211,6 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
-  // PDF DOWNLOAD - FIXED
-  // ============================================================
-  const downloadPDF = async (htmlContent, filename = 'document.pdf') => {
-    try {
-      let html2canvas, jsPDF;
-      
-      try {
-        const html2canvasModule = await import('html2canvas');
-        html2canvas = html2canvasModule.default || html2canvasModule;
-      } catch (e) {
-        console.error('html2canvas import error:', e);
-        showToast(isAr ? '⚠️ html2canvas लोड नहीं हुआ' : '⚠️ html2canvas not loaded');
-        const win = window.open('', '_blank');
-        if (win) {
-          win.document.write(htmlContent);
-          win.document.close();
-          setTimeout(() => { win.focus(); win.print(); }, 500);
-        }
-        return;
-      }
-
-      try {
-        const jsPDFModule = await import('jspdf');
-        jsPDF = jsPDFModule.default || jsPDFModule.jsPDF || jsPDFModule;
-      } catch (e) {
-        console.error('jspdf import error:', e);
-        showToast(isAr ? '⚠️ jspdf लोड नहीं हुआ' : '⚠️ jspdf not loaded');
-        return;
-      }
-
-      const div = document.createElement('div');
-      const A4_PX_W = 794;
-      div.style.cssText = `position:absolute;left:-9999px;top:0;width:${A4_PX_W}px;background:white;padding:20px;`;
-
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(htmlContent, 'text/html');
-
-      const imgs = doc.querySelectorAll('img[src*="api.qrserver.com"], img[src*="bwipjs-api"]');
-      await Promise.all(Array.from(imgs).map(async (img) => {
-        try {
-          const resp = await fetch(img.src);
-          const blob = await resp.blob();
-          const b64 = await new Promise(r => {
-            const fr = new FileReader();
-            fr.onloadend = () => r(fr.result);
-            fr.readAsDataURL(blob);
-          });
-          img.src = b64;
-        } catch (e) {
-          console.warn('Image fetch skipped:', e.message);
-        }
-      }));
-
-      div.innerHTML = doc.body.innerHTML;
-      document.body.appendChild(div);
-
-      await new Promise(r => setTimeout(r, 300));
-
-      const canvas = await html2canvas(div, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        windowWidth: A4_PX_W,
-        windowHeight: Math.max(1123, div.scrollHeight),
-        logging: false
-      });
-
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const w = 210, ph = 297, h = (canvas.height * w) / canvas.width;
-
-      let left = h - ph, pos = 0;
-      pdf.addImage(imgData, 'PNG', 0, pos, w, h);
-      left -= ph;
-      while (left >= 0) {
-        pos = left - h;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, pos, w, h);
-        left -= ph;
-      }
-
-      pdf.save(filename);
-      document.body.removeChild(div);
-      showToast(isAr ? '✅ PDF डाउनलोड हो गया!' : '✅ PDF Downloaded!');
-    } catch (err) {
-      console.error('PDF Error:', err);
-      showToast(isAr ? '❌ PDF एरर: ' + err.message : '❌ PDF Error: ' + err.message);
-      try {
-        const win = window.open('', '_blank');
-        if (win) {
-          win.document.write(htmlContent);
-          win.document.close();
-          setTimeout(() => { win.focus(); win.print(); }, 500);
-        }
-      } catch (e) {
-        console.error('Fallback print error:', e);
-      }
-    }
-  };
-
-  // ============================================================
-  // INVOICE DOWNLOAD - FIXED
-  // ============================================================
-  const handleDownloadPDF = async (inv) => {
-    try {
-      const s = data.settings || {};
-      const html = inv.invoice_no?.startsWith('REF-')
-        ? getRefundHTML(inv, s, lang)
-        : getInvoiceHTML(inv, s, lang);
-      await downloadPDF(html, `${inv.invoice_no}.pdf`);
-    } catch (e) {
-      console.error('Download error:', e);
-      showToast(isAr ? '❌ डाउनलोड एरर' : '❌ Download error');
-    }
-  };
-
-  // ============================================================
-  // PRINT INVOICE - FIXED
-  // ============================================================
-  const printInvoice = (inv) => {
-    try {
-      const s = data.settings || {};
-      const html = inv.invoice_no?.startsWith('REF-')
-        ? getRefundHTML(inv, s, lang)
-        : getInvoiceHTML(inv, s, lang);
-      
-      const win = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
-      if (!win) {
-        showToast(isAr ? '⚠️ पॉपअप ब्लॉक हो गया! कृपया अनुमति दें।' : '⚠️ Popup blocked! Please allow popups.');
-        return;
-      }
-      
-      win.document.write(html);
-      win.document.close();
-      win.focus();
-      setTimeout(() => {
-        win.print();
-      }, 1000);
-    } catch (e) {
-      console.error('Print error:', e);
-      showToast(isAr ? '❌ प्रिंट एरर' : '❌ Print error');
-    }
-  };
-
-  // ============================================================
-  // OPEN PREVIEW - FIXED
-  // ============================================================
-  const openPreview = (inv) => {
-    try {
-      const s = data.settings || {};
-      let html = inv.invoice_no?.startsWith('REF-')
-        ? getRefundHTML(inv, s, lang)
-        : getInvoiceHTML(inv, s, lang);
-
-      if (!inv.invoice_no?.startsWith('REF-') && inv.linked_inv_id &&
-        (inv.booking_type === 'Previous Booking' || inv.booking_type === 'Reissue')) {
-        const linked = data.invoices?.find(i => i.invoice_no === inv.linked_inv_id);
-        if (linked) {
-          html += `<div style="margin-top:30px;border-top:2px dashed #cbd5e1;padding-top:20px;">
-            <h1 style="color:#7f1d1d;text-align:center;font-size:18px;margin-bottom:15px;">
-              ${isAr ? 'الاسترجاع المرتبط' : 'Linked Refund'}
-            </h1>
-            ${getRefundHTML(linked, s, lang)}
-          </div>`;
-        }
-      }
-      
-      setPreviewHTML(html);
-      setModal({ type: 'preview', data: inv });
-    } catch (e) {
-      console.error('Preview error:', e);
-      showToast(isAr ? '❌ प्रीव्यू एरर' : '❌ Preview error');
-    }
-  };
-
-  // ============================================================
-  // SHARE - WhatsApp & Email
-  // ============================================================
-  const shareWhatsApp = (inv) => {
-    try {
-      if (inv.invoice_no?.startsWith('REF-')) {
-        return showToast(isAr ? '⚠️ रिफंड इनवॉइस WhatsApp पर शेयर नहीं हो सकती' : '⚠️ Refund invoices cannot be shared via WhatsApp');
-      }
-      const phone = inv.customers?.phone || '';
-      const cleanPhone = phone.replace(/[^0-9]/g, '');
-      const msg = `Hello ${inv.customers?.name || ''},%0A
-Here is your invoice from ${data.settings?.company_name_en || 'SUEUD AL TAAYIRA'}:%0A
-Invoice: ${inv.invoice_no}%0A
-Total: ${(inv.total || 0).toFixed(2)} SAR%0A
-Due: ${(inv.due_amount || 0).toFixed(2)} SAR`;
-      const url = `https://wa.me/${cleanPhone}?text=${msg}`;
-      window.open(url, '_blank');
-    } catch (e) {
-      console.error('WhatsApp error:', e);
-      showToast(isAr ? '❌ व्हाट्सएप एरर' : '❌ WhatsApp error');
-    }
-  };
-
-  const shareEmail = (inv) => {
-    try {
-      if (inv.invoice_no?.startsWith('REF-')) {
-        return showToast(isAr ? '⚠️ रिफंड इनवॉइस Email पर शेयर नहीं हो सकती' : '⚠️ Refund invoices cannot be shared via Email');
-      }
-      const email = inv.customers?.email || inv.corporates?.email || '';
-      const subject = `Invoice ${inv.invoice_no}`;
-      const body = `Hello ${inv.customers?.name || inv.corporates?.name || ''},
-
-Please find your invoice details below:
-
-Invoice No: ${inv.invoice_no}
-Date: ${inv.invoice_date}
-Total: ${(inv.total || 0).toFixed(2)} SAR
-Due: ${(inv.due_amount || 0).toFixed(2)} SAR
-
-Thank you for choosing us!`;
-      const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      window.open(mailtoUrl, '_self');
-    } catch (e) {
-      console.error('Email error:', e);
-      showToast(isAr ? '❌ ईमेल एरर' : '❌ Email error');
-    }
-  };
-
-  // ============================================================
   // GENERIC DELETE
   // ============================================================
   const handleDelete = async (table, id) => {
@@ -1097,6 +872,310 @@ Thank you for choosing us!`;
   };
 
   // ============================================================
+  // PDF DOWNLOAD - FIXED
+  // ============================================================
+  const downloadPDF = async (htmlContent, filename = 'document.pdf') => {
+    try {
+      console.log('📥 downloadPDF called, filename:', filename);
+
+      let html2canvas, jsPDF;
+
+      try {
+        const html2canvasModule = await import('html2canvas');
+        html2canvas = html2canvasModule.default || html2canvasModule;
+        console.log('✅ html2canvas loaded');
+      } catch (e) {
+        console.error('❌ html2canvas import error:', e);
+        showToast(isAr ? '⚠️ PDF जनरेटर लोड नहीं हुआ' : '⚠️ PDF generator not loaded');
+        const win = window.open('', '_blank');
+        if (win) {
+          win.document.write(htmlContent);
+          win.document.close();
+          setTimeout(() => { win.focus(); win.print(); }, 500);
+        }
+        return;
+      }
+
+      try {
+        const jsPDFModule = await import('jspdf');
+        jsPDF = jsPDFModule.default || jsPDFModule.jsPDF || jsPDFModule;
+        console.log('✅ jspdf loaded');
+      } catch (e) {
+        console.error('❌ jspdf import error:', e);
+        showToast(isAr ? '⚠️ PDF लाइब्रेरी लोड नहीं हुई' : '⚠️ PDF library not loaded');
+        return;
+      }
+
+      const div = document.createElement('div');
+      const A4_PX_W = 794;
+      div.style.cssText = `position:absolute;left:-9999px;top:0;width:${A4_PX_W}px;background:white;padding:20px;`;
+
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlContent, 'text/html');
+
+      const imgs = doc.querySelectorAll('img[src*="api.qrserver.com"], img[src*="bwipjs-api"]');
+      await Promise.all(Array.from(imgs).map(async (img) => {
+        try {
+          const resp = await fetch(img.src);
+          const blob = await resp.blob();
+          const b64 = await new Promise(r => {
+            const fr = new FileReader();
+            fr.onloadend = () => r(fr.result);
+            fr.readAsDataURL(blob);
+          });
+          img.src = b64;
+        } catch (e) {
+          console.warn('Image fetch skipped:', e.message);
+        }
+      }));
+
+      div.innerHTML = doc.body.innerHTML;
+      document.body.appendChild(div);
+
+      await new Promise(r => setTimeout(r, 300));
+
+      const canvas = await html2canvas(div, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        windowWidth: A4_PX_W,
+        windowHeight: Math.max(1123, div.scrollHeight),
+        logging: false
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const w = 210, ph = 297, h = (canvas.height * w) / canvas.width;
+
+      let left = h - ph, pos = 0;
+      pdf.addImage(imgData, 'PNG', 0, pos, w, h);
+      left -= ph;
+      while (left >= 0) {
+        pos = left - h;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, pos, w, h);
+        left -= ph;
+      }
+
+      pdf.save(filename);
+      document.body.removeChild(div);
+      showToast(isAr ? '✅ PDF डाउनलोड हो गया!' : '✅ PDF Downloaded!');
+    } catch (err) {
+      console.error('❌ PDF Error:', err);
+      showToast(isAr ? '❌ PDF एरर: ' + err.message : '❌ PDF Error: ' + err.message);
+      try {
+        const win = window.open('', '_blank');
+        if (win) {
+          win.document.write(htmlContent);
+          win.document.close();
+          setTimeout(() => { win.focus(); win.print(); }, 500);
+        }
+      } catch (e) {
+        console.error('Fallback print error:', e);
+      }
+    }
+  };
+
+  // ============================================================
+  // INVOICE DOWNLOAD - FIXED
+  // ============================================================
+  const handleDownloadPDF = async (inv) => {
+    try {
+      console.log('📥 handleDownloadPDF called for:', inv?.invoice_no);
+
+      const s = data.settings || {};
+      let html = '';
+
+      if (inv.invoice_no?.startsWith('REF-')) {
+        if (typeof getRefundHTML === 'function') {
+          html = getRefundHTML(inv, s, lang);
+        } else {
+          showToast(isAr ? '❌ रिफंड HTML जनरेटर नहीं मिला' : '❌ Refund HTML generator not found');
+          return;
+        }
+      } else {
+        if (typeof getInvoiceHTML === 'function') {
+          html = getInvoiceHTML(inv, s, lang);
+        } else {
+          showToast(isAr ? '❌ इनवॉइस HTML जनरेटर नहीं मिला' : '❌ Invoice HTML generator not found');
+          return;
+        }
+      }
+
+      if (!html) {
+        showToast(isAr ? '❌ HTML जेनरेट नहीं हुआ' : '❌ HTML not generated');
+        return;
+      }
+
+      await downloadPDF(html, `${inv.invoice_no}.pdf`);
+    } catch (e) {
+      console.error('Download error:', e);
+      showToast(isAr ? '❌ डाउनलोड एरर' : '❌ Download error');
+    }
+  };
+
+  // ============================================================
+  // PRINT INVOICE - FIXED
+  // ============================================================
+  const printInvoice = (inv) => {
+    try {
+      console.log('🖨️ printInvoice called for:', inv?.invoice_no);
+
+      const s = data.settings || {};
+      let html = '';
+
+      if (inv.invoice_no?.startsWith('REF-')) {
+        if (typeof getRefundHTML === 'function') {
+          html = getRefundHTML(inv, s, lang);
+        } else {
+          showToast(isAr ? '❌ रिफंड HTML जनरेटर नहीं मिला' : '❌ Refund HTML generator not found');
+          return;
+        }
+      } else {
+        if (typeof getInvoiceHTML === 'function') {
+          html = getInvoiceHTML(inv, s, lang);
+        } else {
+          showToast(isAr ? '❌ इनवॉइस HTML जनरेटर नहीं मिला' : '❌ Invoice HTML generator not found');
+          return;
+        }
+      }
+
+      if (!html) {
+        showToast(isAr ? '❌ HTML जेनरेट नहीं हुआ' : '❌ HTML not generated');
+        return;
+      }
+
+      const win = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
+      if (!win) {
+        showToast(isAr ? '⚠️ पॉपअप ब्लॉक हो गया! कृपया अनुमति दें।' : '⚠️ Popup blocked! Please allow popups.');
+        return;
+      }
+
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      setTimeout(() => {
+        win.print();
+      }, 1000);
+    } catch (e) {
+      console.error('Print error:', e);
+      showToast(isAr ? '❌ प्रिंट एरर' : '❌ Print error');
+    }
+  };
+
+  // ============================================================
+  // OPEN PREVIEW - FIXED
+  // ============================================================
+  const openPreview = (inv) => {
+    try {
+      console.log('👁️ openPreview called for:', inv?.invoice_no);
+      console.log('📄 getInvoiceHTML type:', typeof getInvoiceHTML);
+      console.log('📄 getRefundHTML type:', typeof getRefundHTML);
+
+      if (typeof getInvoiceHTML !== 'function' && typeof getRefundHTML !== 'function') {
+        console.error('❌ HTML generator functions not available!');
+        showToast(isAr ? '❌ प्रीव्यू फंक्शन उपलब्ध नहीं' : '❌ Preview function not available');
+        return;
+      }
+
+      const s = data.settings || {};
+      let html = '';
+
+      if (inv.invoice_no?.startsWith('REF-')) {
+        if (typeof getRefundHTML === 'function') {
+          html = getRefundHTML(inv, s, lang);
+        } else {
+          console.error('❌ getRefundHTML is not a function');
+          showToast(isAr ? '❌ रिफंड HTML जनरेटर नहीं मिला' : '❌ Refund HTML generator not found');
+          return;
+        }
+      } else {
+        if (typeof getInvoiceHTML === 'function') {
+          html = getInvoiceHTML(inv, s, lang);
+        } else {
+          console.error('❌ getInvoiceHTML is not a function');
+          showToast(isAr ? '❌ इनवॉइस HTML जनरेटर नहीं मिला' : '❌ Invoice HTML generator not found');
+          return;
+        }
+      }
+
+      if (!inv.invoice_no?.startsWith('REF-') && inv.linked_inv_id &&
+        (inv.booking_type === 'Previous Booking' || inv.booking_type === 'Reissue')) {
+        const linked = data.invoices?.find(i => i.invoice_no === inv.linked_inv_id);
+        if (linked && typeof getRefundHTML === 'function') {
+          html += `<div style="margin-top:30px;border-top:2px dashed #cbd5e1;padding-top:20px;">
+            <h1 style="color:#7f1d1d;text-align:center;font-size:18px;margin-bottom:15px;">
+              ${isAr ? 'الاسترجاع المرتبط' : 'Linked Refund'}
+            </h1>
+            ${getRefundHTML(linked, s, lang)}
+          </div>`;
+        }
+      }
+
+      if (!html) {
+        showToast(isAr ? '❌ HTML जेनरेट नहीं हुआ' : '❌ HTML not generated');
+        return;
+      }
+
+      console.log('✅ HTML generated, length:', html.length);
+      setPreviewHTML(html);
+      setModal({ type: 'preview', data: inv });
+    } catch (e) {
+      console.error('❌ Preview error:', e);
+      showToast(isAr ? '❌ प्रीव्यू एरर: ' + e.message : '❌ Preview error: ' + e.message);
+    }
+  };
+
+  // ============================================================
+  // SHARE - WhatsApp & Email
+  // ============================================================
+  const shareWhatsApp = (inv) => {
+    try {
+      if (inv.invoice_no?.startsWith('REF-')) {
+        return showToast(isAr ? '⚠️ रिफंड इनवॉइस WhatsApp पर शेयर नहीं हो सकती' : '⚠️ Refund invoices cannot be shared via WhatsApp');
+      }
+      const phone = inv.customers?.phone || '';
+      const cleanPhone = phone.replace(/[^0-9]/g, '');
+      const msg = `Hello ${inv.customers?.name || ''},%0A
+Here is your invoice from ${data.settings?.company_name_en || 'SUEUD AL TAAYIRA'}:%0A
+Invoice: ${inv.invoice_no}%0A
+Total: ${(inv.total || 0).toFixed(2)} SAR%0A
+Due: ${(inv.due_amount || 0).toFixed(2)} SAR`;
+      const url = `https://wa.me/${cleanPhone}?text=${msg}`;
+      window.open(url, '_blank');
+    } catch (e) {
+      console.error('WhatsApp error:', e);
+      showToast(isAr ? '❌ व्हाट्सएप एरर' : '❌ WhatsApp error');
+    }
+  };
+
+  const shareEmail = (inv) => {
+    try {
+      if (inv.invoice_no?.startsWith('REF-')) {
+        return showToast(isAr ? '⚠️ रिफंड इनवॉइस Email पर शेयर नहीं हो सकती' : '⚠️ Refund invoices cannot be shared via Email');
+      }
+      const email = inv.customers?.email || inv.corporates?.email || '';
+      const subject = `Invoice ${inv.invoice_no}`;
+      const body = `Hello ${inv.customers?.name || inv.corporates?.name || ''},
+
+Please find your invoice details below:
+
+Invoice No: ${inv.invoice_no}
+Date: ${inv.invoice_date}
+Total: ${(inv.total || 0).toFixed(2)} SAR
+Due: ${(inv.due_amount || 0).toFixed(2)} SAR
+
+Thank you for choosing us!`;
+      const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.open(mailtoUrl, '_self');
+    } catch (e) {
+      console.error('Email error:', e);
+      showToast(isAr ? '❌ ईमेल एरर' : '❌ Email error');
+    }
+  };
+
+  // ============================================================
   // OPEN REFUND MODAL
   // ============================================================
   const openRefundModal = (inv) => {
@@ -1357,7 +1436,7 @@ Thank you for choosing us!`;
         c.description?.includes('Cash returned to customer for ' + inv.invoice_no) ||
         c.description?.includes('Credit Balance used for ' + inv.invoice_no)
       ) || [];
-      
+
       for (const cb of cbs) await supabase.from('cashbook').delete().eq('id', cb.id);
       await supabase.from('invoices').delete().eq('id', inv.id);
 
@@ -2153,6 +2232,9 @@ Thank you for choosing us!`;
     handleRemoveCustomField,
     handleCustomFieldChange,
 
+    // Generic Delete
+    handleDelete,
+
     // PDF & Print
     downloadPDF,
     handleDownloadPDF,
@@ -2172,9 +2254,6 @@ Thank you for choosing us!`;
     handleEditInvoice,
     handleCreateInvoice,
     handleDeleteInvoice,
-
-    // Generic Delete
-    handleDelete,
 
     // CRUD
     handleEditCust,
