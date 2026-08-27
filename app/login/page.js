@@ -7,10 +7,11 @@ import { useRouter } from 'next/navigation';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [mode, setMode] = useState('login');
+  const [mode, setMode] = useState('login'); // 'login' or 'forgot'
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [lang, setLang] = useState('en');
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const isAr = lang === 'ar';
@@ -57,21 +58,30 @@ export default function Login() {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-10px); }
         }
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
         .login-input:focus {
           border-color: #F59E0B !important;
           box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15) !important;
         }
+        .login-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4) !important;
+        }
       `}</style>
 
-      {/* Flying Airplanes */}
-      <div style={{ ...styles.aircraft, top: '15%', animationDelay: '0s' }}>✈️</div>
-      <div style={{ ...styles.aircraft, top: '55%', animationDelay: '-5s', fontSize: '40px' }}>🛫</div>
-      <div style={{ ...styles.aircraft, top: '80%', animationDelay: '-10s', fontSize: '35px' }}>🛬</div>
+      {/* ===== FLYING AIRPLANES ===== */}
+      <div style={{ ...styles.aircraft, top: '12%', animationDelay: '0s', fontSize: '55px' }}>✈️</div>
+      <div style={{ ...styles.aircraft, top: '45%', animationDelay: '-5s', fontSize: '40px' }}>🛫</div>
+      <div style={{ ...styles.aircraft, top: '78%', animationDelay: '-10s', fontSize: '35px' }}>🛬</div>
 
-      {/* Background Orbs */}
+      {/* ===== BACKGROUND ORBS ===== */}
       <div style={styles.orbTop}></div>
       <div style={styles.orbBottom}></div>
 
+      {/* ===== LOGIN CARD ===== */}
       <div style={styles.loginCard}>
         {/* Language Toggle */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
@@ -85,13 +95,15 @@ export default function Login() {
               borderRadius: '20px',
               cursor: 'pointer',
               fontSize: '12px',
-              fontWeight: '600'
+              fontWeight: '600',
+              transition: 'all 0.2s'
             }}
           >
-            {isAr ? 'English' : 'العربية'}
+            {isAr ? '🌐 English' : '🌐 العربية'}
           </button>
         </div>
 
+        {/* Logo */}
         <div style={styles.logoBox}>
           <div style={styles.logoContainer}>
             <div style={styles.logoMark}>✈️</div>
@@ -101,6 +113,7 @@ export default function Login() {
           <div style={styles.divider}></div>
         </div>
 
+        {/* Form */}
         <form onSubmit={handleAuth} style={styles.form}>
           <div style={styles.inputGroup}>
             <span style={styles.inputIcon}>📧</span>
@@ -119,7 +132,7 @@ export default function Login() {
             <div style={styles.inputGroup}>
               <span style={styles.inputIcon}>🔒</span>
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder={isAr ? 'كلمة المرور / Password' : 'Password / كلمة المرور'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -127,10 +140,30 @@ export default function Login() {
                 style={styles.input}
                 className="login-input"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '15px',
+                  background: 'none',
+                  border: 'none',
+                  color: '#94A3B8',
+                  cursor: 'pointer',
+                  fontSize: '16px'
+                }}
+              >
+                {showPassword ? '👁️' : '👁️‍🗨️'}
+              </button>
             </div>
           )}
 
-          <button type="submit" style={styles.btn} disabled={loading}>
+          <button
+            type="submit"
+            style={styles.btn}
+            className="login-btn"
+            disabled={loading}
+          >
             {loading
               ? (isAr ? '⏳ جارِ تسجيل الدخول...' : '⏳ Authenticating...')
               : (mode === 'login'
@@ -139,6 +172,7 @@ export default function Login() {
           </button>
         </form>
 
+        {/* Message */}
         {msg && (
           <p style={{
             ...styles.msg,
@@ -148,6 +182,7 @@ export default function Login() {
           </p>
         )}
 
+        {/* Forgot Password Link */}
         <button
           onClick={() => { setMode(mode === 'login' ? 'forgot' : 'login'); setMsg(''); }}
           style={styles.linkBtn}
@@ -157,11 +192,15 @@ export default function Login() {
             : (isAr ? '← رجوع لتسجيل الدخول' : '← Back to Login')}
         </button>
 
+        {/* Footer */}
         <div style={styles.footerText}>
           <p style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
             🔒 {isAr ? 'محمي بأمان مؤسسي' : 'Protected by Enterprise Security'}
           </p>
           <p>© {new Date().getFullYear()} Sueud Al Taayira ERP. {isAr ? 'جميع الحقوق محفوظة.' : 'All rights reserved.'}</p>
+          <p style={{ fontSize: '10px', color: '#475569', marginTop: '5px' }}>
+            {isAr ? 'الإصدار 2.0.0' : 'Version 2.0.0'}
+          </p>
         </div>
       </div>
     </div>
@@ -185,9 +224,10 @@ const styles = {
     animation: 'fly 15s linear infinite',
     left: '-200px',
     color: '#F59E0B',
-    opacity: 0.6,
+    opacity: 0.5,
     zIndex: 1,
-    filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.3))'
+    filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.3))',
+    pointerEvents: 'none'
   },
   orbTop: {
     position: 'absolute',
@@ -195,7 +235,7 @@ const styles = {
     right: '-10%',
     width: '500px',
     height: '500px',
-    background: 'radial-gradient(circle, rgba(245,158,11,0.12) 0%, rgba(0,0,0,0) 70%)',
+    background: 'radial-gradient(circle, rgba(245,158,11,0.08) 0%, rgba(0,0,0,0) 70%)',
     borderRadius: '50%',
     zIndex: 0
   },
@@ -205,7 +245,7 @@ const styles = {
     left: '-10%',
     width: '600px',
     height: '600px',
-    background: 'radial-gradient(circle, rgba(30,58,138,0.2) 0%, rgba(0,0,0,0) 70%)',
+    background: 'radial-gradient(circle, rgba(30,58,138,0.12) 0%, rgba(0,0,0,0) 70%)',
     borderRadius: '50%',
     zIndex: 0
   },
@@ -215,14 +255,17 @@ const styles = {
     borderRadius: '24px',
     boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
     width: '440px',
+    maxWidth: '95vw',
     textAlign: 'center',
     backdropFilter: 'blur(20px)',
     zIndex: 10,
-    border: '1px solid #334155',
+    border: '1px solid rgba(255,255,255,0.06)',
     animation: 'fadeInUp 0.6s ease-out forwards',
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    maxHeight: '95vh',
+    overflowY: 'auto'
   },
   logoBox: {
     marginBottom: '24px'
@@ -249,7 +292,7 @@ const styles = {
     justifyContent: 'center',
     fontSize: '42px',
     boxShadow: '0 8px 24px rgba(245,158,11,0.4)',
-    border: '3px solid rgba(255,255,255,0.15)'
+    border: '3px solid rgba(255,255,255,0.1)'
   },
   titleEn: {
     margin: 0,
