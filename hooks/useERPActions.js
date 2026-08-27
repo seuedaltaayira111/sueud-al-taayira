@@ -1725,4 +1725,447 @@ Thank you for choosing us!`;
   // PAYROLL
   // ============================================================
   const handleGenerateSlip = (pay) => {
-    setPreviewHTML(getSalarySl
+    setPreviewHTML(getSalarySlipHTML(pay, data.settings, lang));
+    setModal({ type: 'preview', data: pay });
+  };
+
+  const handleDeletePayroll = async (pay) => {
+    if (!confirm('Delete this salary slip permanently?')) return;
+    try {
+      const cbs = data.cashbook.filter(c => c.reference_id === pay.id);
+      for (const cb of cbs) await supabase.from('cashbook').delete().eq('id', cb.id);
+      await supabase.from('payroll').delete().eq('id', pay.id);
+      setData(prev => ({
+        ...prev,
+        payroll: prev.payroll.filter(p => p.id !== pay.id),
+        cashbook: prev.cashbook.filter(c => !cbs.find(x => x.id === c.id))
+      }));
+      showToast('Salary Slip Deleted!');
+    } catch (err) {
+      showToast('Error: ' + err.message);
+    }
+  };
+
+  const handleProcessPayroll = async (e) => {
+    e.preventDefault();
+    try {
+      const empId = payForm.employee_id;
+      if (!empId) throw new Error('Select an employee!');
+      const emp = data.employees.find(em => em.id === empId);
+      if (!emp) throw new Error('Employee not found!');
+
+      const month = payForm.month || today.slice(0, 7);
+      const base = parseFloat(emp.salary) || 0;
+
+      // Calculate commission from paid invoices this month
+      const monthInvoices = data.invoices?.filter(i =>
+        i.employee_id === empId &&
+        i.invoice_date?.startsWith(month) &&
+        i.status !== 'refunded'
+      ) || [];
+
+      const commissionBase = monthInvoices.reduce((s, i) => s + (i.total_sell || 0), 0);
+      const commissionRate = parseFloat(emp.commission_rate) || 0;
+      const commissionAmt = commissionBase * (commissionRate / 100);
+
+      const overtime = parseFloat(payForm.overtime) || 0;
+      const gift = parseFloat(payForm.gift) || 0;
+      const advance = parseFloat(payForm.advance) || 0;
+      const mistakesDed = parseFloat(payForm.mistakes_deduction) || 0;
+      const otherDed = parseFloat(payForm.other_deduction) || 0;
+      const totalDed = advance + mistakesDed + otherDed;
+      const gross = base + commissionAmt + overtime + gift;
+      const netPay = gross - totalDed;
+
+      const { data: newPay, error } = await supabase
+        .from('payroll')
+        .insert([{
+          employee_id: empId,
+          month,
+          base_salary: base,
+          commission: commissionAmt,
+          overtime,
+          gift,
+          advance_deduction: advance,
+          mistakes_deduction: mistakesDed,
+          other_deduction: otherDed,
+          gross_salary: gross,
+          total_deductions: totalDed,
+          amount: netPay,
+          payment_mode: payForm.payment_mode || 'Cash',
+          payment_date: payForm.payment_date || today,
+          notes: payForm.notes || '',
+          tenant_id: userProfile.tenant_id
+        }])
+        .select('*, employees(name, role)')
+        .single();
+
+      if (error) throw new Error('Payroll failed: ' + error.message);
+
+      // Cashbook entry
+      const cbType = payForm.payment_mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
+      const { data: nCb } = await supabase.from('cashbook').insert([{
+        trans_date: payForm.payment_date || today,
+        type: cbType,
+        description: `Salary - ${emp.name} (${month})`,
+        amount: netPay,
+        tenant_id: userProfile.tenant_id,
+        reference_id: newPay.id
+      }]).select().single();
+
+      setData(prev => ({
+        ...prev,
+        payroll: [newPay, ...(prev.payroll || [])],
+        cashbook: nCb ? [nCb, ...prev.cashbook] : prev.cashbook
+      }));
+
+      await logAction(`Payroll: ${emp.name} - ${netPay.toFixed(2)} SAR (${month})`);
+      showToast(`Salary Processed: ${emp.name} - ${netPay.toFixed(2)} SAR`);
+
+      setPayForm({
+        employee_id: '',
+        month: today.slice(0, 7),
+        overtime: 0,
+        gift: 0,
+        advance: 0,
+        mistakes_deduction: 0,
+        other_deduction: 0,
+        payment_mode: 'Cash',
+        payment_date: today,
+        notes: ''
+      });
+    } catch (err) {
+      showToast('Error: ' + err.message);
+    }
+  };
+
+  // ============================================================
+  // EMPLOYEE ADVANCES
+  // ============================================================
+  const handleAddAdvance = async (e) => {
+    e.preventDefault();
+    try {
+      if (!advForm.employee_id) throw new Error('Select an employee!');
+      const amount = parseFloat(advForm.amount) || 0;
+      if (amount <= 0) throw new Error('Enter a valid amount');
+
+      const { data: newAdv, error } = await supabase
+        .from('emp_advances')
+        .insert([{
+          employee_id: advForm.employee_id,
+          amount,
+          date: advForm.date || today,
+          status: advForm.status || 'Pending',
+          tenant_id: userProfile.tenant_id
+        }])
+        .select('*, employees(name)')
+        .single();
+
+      if (error) throw new Error(error.message);
+
+      setData(prev => ({
+        ...prev,
+        empAdvances: [newAdv, ...(prev.empAdvances || [])]
+      }));
+
+      const emp = data.employees.find(em => em.id === advForm.employee_id);
+      await logAction(`Advance of ${amount.toFixed(2)} SAR to ${emp?.name || ''}`);
+      showToast('✅ Advance recorded');
+
+      setAdvForm({ employee_id: '', amount: '', date: today, status: 'Pending' });
+    } catch (err) {
+      showToast('Error: ' + err.message);
+    }
+  };
+
+  const handleUpdateAdvanceStatus = async (adv, status) => {
+    try {
+      await supabase.from('emp_advances').update({ status }).eq('id', adv.id);
+      setData(prev => ({
+        ...prev,
+        empAdvances: prev.empAdvances.map(a => a.id === adv.id ? { ...a, status } : a)
+      }));
+      showToast('Advance updated');
+    } catch (err) {
+      showToast('Error: ' + err.message);
+    }
+  };
+
+  const handleDeleteAdvance = async (adv) => {
+    if (!confirm('Delete this advance record?')) return;
+    try {
+      await supabase.from('emp_advances').delete().eq('id', adv.id);
+      setData(prev => ({
+        ...prev,
+        empAdvances: prev.empAdvances.filter(a => a.id !== adv.id)
+      }));
+      showToast('Advance deleted');
+    } catch (err) {
+      showToast('Error: ' + err.message);
+    }
+  };
+
+  // ============================================================
+  // CONTRACT / OFFER
+  // ============================================================
+  const handleGenerateContract = (e) => {
+    e.preventDefault();
+    if (!contractCorpName) return showToast('Enter Corporate Name');
+    const html = getContractHTML(
+      data.settings,
+      contractCorpName,
+      today,
+      false,
+      contractType,
+      contractMarkup,
+      contractTerms
+    );
+    setPreviewHTML(html);
+    setModal({ type: 'preview', data: null });
+  };
+
+  const handleGenerateOffer = (e) => {
+    e.preventDefault();
+    if (!contractCorpName) return showToast('Enter Corporate Name');
+    const html = getContractHTML(
+      data.settings,
+      contractCorpName,
+      today,
+      true,
+      contractType,
+      contractMarkup,
+      contractTerms
+    );
+    setPreviewHTML(html);
+    setModal({ type: 'preview', data: null });
+  };
+
+  // ============================================================
+  // SUPERADMIN - TENANT
+  // ============================================================
+  const handleAddTenant = async (e) => {
+    e.preventDefault();
+    try {
+      const tempPass = Math.random().toString(36).slice(-8) + 'A1!';
+      const res = await fetch('/api/create-tenant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...tenantForm, temp_password: tempPass })
+      });
+      const resData = await res.json();
+      if (resData.error) throw new Error(resData.error);
+      showToast(`Agency Created! Email: ${tenantForm.owner_email} | Pass: ${tempPass}`);
+      setTenantForm({
+        agency_name: '',
+        owner_email: '',
+        subscription_end_date: '',
+        company_name_ar: '',
+        vat_no: '',
+        cr_no: '',
+        phone: '',
+        address_ar: ''
+      });
+      fetchAll();
+    } catch (err) {
+      showToast('Error: ' + err.message);
+    }
+  };
+
+  const handleToggleSubscription = async (tenant) => {
+    try {
+      const { error } = await supabase
+        .from('tenants')
+        .update({ is_paid: !tenant.is_paid })
+        .eq('id', tenant.id);
+      if (error) throw error;
+      showToast('Subscription Updated!');
+      fetchAll();
+    } catch (err) {
+      showToast('Error: ' + err.message);
+    }
+  };
+
+  const handleDeleteTenant = async (id) => {
+    if (!confirm('Delete this Agency permanently?')) return;
+    try {
+      await supabase.from('tenants').delete().eq('id', id);
+      showToast('Agency Deleted!');
+      fetchAll();
+    } catch (err) {
+      showToast('Error: ' + err.message);
+    }
+  };
+
+  // ============================================================
+  // EXPORT DATA (CSV)
+  // ============================================================
+  const handleExportCSV = (dataType) => {
+    try {
+      let csvContent = '';
+      let filename = '';
+
+      switch (dataType) {
+        case 'invoices':
+          csvContent = 'Invoice No,Date,Customer,Airline,Total,Status,Payment\n';
+          data.invoices?.forEach(inv => {
+            csvContent += `${inv.invoice_no},${inv.invoice_date},${inv.customers?.name || inv.old_customer_name || ''},${inv.airline || ''},${inv.total || 0},${inv.status},${inv.payment_method}\n`;
+          });
+          filename = 'invoices.csv';
+          break;
+        case 'customers':
+          csvContent = 'Name,Phone,Credit Balance\n';
+          data.customers?.forEach(c => {
+            csvContent += `${c.name},${c.phone || ''},${c.store_credit || 0}\n`;
+          });
+          filename = 'customers.csv';
+          break;
+        case 'expenses':
+          csvContent = 'Date,Category,Description,Amount,Payment Mode\n';
+          data.expenses?.forEach(ex => {
+            csvContent += `${ex.expense_date},${ex.expense_type},${ex.description || ''},${ex.amount || 0},${ex.payment_mode}\n`;
+          });
+          filename = 'expenses.csv';
+          break;
+        case 'cashbook':
+          csvContent = 'Date,Type,Description,Amount\n';
+          data.cashbook?.forEach(cb => {
+            csvContent += `${cb.trans_date},${cb.type},${cb.description || ''},${cb.amount || 0}\n`;
+          });
+          filename = 'cashbook.csv';
+          break;
+        default:
+          return showToast('Invalid export type!');
+      }
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      showToast(`${filename} exported!`);
+    } catch (err) {
+      showToast('Export Error: ' + err.message);
+    }
+  };
+
+  // ============================================================
+  // RETURN ALL ACTIONS
+  // ============================================================
+  return {
+    // Auth
+    handleLogout,
+    handleChangePassword,
+
+    // Chat
+    handleSendMessage,
+
+    // Profile & Settings
+    handleProfilePicUpload,
+    handleSaveProfile,
+    handleLogoUpload,
+    handleSaveSettings,
+    handleAddCustomField,
+    handleRemoveCustomField,
+    handleCustomFieldChange,
+
+    // Generic
+    handleDelete,
+
+    // CRUD - Customers
+    handleEditCust,
+    handleAddEditCust,
+
+    // CRUD - Corporates
+    handleEditCorp,
+    handleAddEditCorp,
+
+    // CRUD - Creditors
+    handleEditCred,
+    handleAddEditCred,
+
+    // CRUD - Vendors
+    handleEditVend,
+    handleAddEditVend,
+
+    // CRUD - Packages
+    handleEditPkg,
+    handleAddEditPkg,
+
+    // CRUD - Branches
+    handleEditBrn,
+    handleAddEditBrn,
+
+    // CRUD - Employees
+    handleEditEmp,
+    handleAddEditEmp,
+
+    // CRUD - Services
+    handleEditSrv,
+    handleAddEditSrv,
+
+    // Expenses
+    handleAddExpItem,
+    handleRemoveExpItem,
+    handleExpItemChange,
+    handleEditExp,
+    handleAddEditExpense,
+    handleDeleteExpense,
+
+    // Portals
+    handleAddEditPortal,
+
+    // Transfer
+    handleTransfer,
+
+    // Investments
+    handleAddInvestment,
+
+    // PDF & Print
+    downloadPDF,
+    handleDownloadPDF,
+    printInvoice,
+
+    // Share
+    shareWhatsApp,
+    shareEmail,
+
+    // Invoice Actions
+    openPreview,
+    openRefundModal,
+    openSettleModal,
+    handleQuickSettle,
+    handleSettlePayment,
+    handleRefund,
+    handleEditInvoice,
+    handleCreateInvoice,
+    handleDeleteInvoice,
+
+    // Staff Mistakes
+    handleAddMistake,
+    handlePreviewMistake,
+    handleDeleteMistake,
+
+    // Payroll
+    handleGenerateSlip,
+    handleDeletePayroll,
+    handleProcessPayroll,
+
+    // Employee Advances
+    handleAddAdvance,
+    handleUpdateAdvanceStatus,
+    handleDeleteAdvance,
+
+    // Contracts
+    handleGenerateContract,
+    handleGenerateOffer,
+
+    // SuperAdmin
+    handleAddTenant,
+    handleToggleSubscription,
+    handleDeleteTenant,
+
+    // Export
+    handleExportCSV
+  };
+}
