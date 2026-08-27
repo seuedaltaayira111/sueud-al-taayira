@@ -3,46 +3,99 @@
 import React, { useState, useEffect } from 'react';
 import ERPModals from './ERPModals';
 
-export default function ERPLayout({ 
-  children, tr, lang, setLang, theme, setTheme, page, setPage, 
-  modal, setModal, passForm, setPassForm, handleChangePassword, 
-  handleLogout, handleSendMessage, chatOpen, setChatOpen, 
-  chatMessages, chatInput, setChatInput, userProfile, menu, 
-  settleForm, setSettleForm, handleSettlePayment, 
-  refundForm, setRefundForm, handleRefund, 
-  previewHTML, downloadPDF, data 
+export default function ERPLayout({
+  children, tr, lang, setLang, theme, setTheme, page, setPage,
+  modal, setModal, passForm, setPassForm, handleChangePassword,
+  handleLogout, handleSendMessage, chatOpen, setChatOpen,
+  chatMessages, chatInput, setChatInput, userProfile, menu,
+  settleForm, setSettleForm, handleSettlePayment,
+  refundForm, setRefundForm, handleRefund,
+  previewHTML, downloadPDF, data
 }) {
   const isAr = lang === 'ar';
-  const t = (key, fallback) => tr?.[key] || fallback || key;
+  const isDark = theme === 'dark';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Close mobile menu on resize
+  // Apply theme to body
   useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth > 768) setIsMobileMenuOpen(false);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    if (isDark) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.body.style.background = '#0F172A';
+      document.body.style.color = '#E2E8F0';
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light');
+      document.body.style.background = '#F8FAFC';
+      document.body.style.color = '#1E293B';
+    }
+  }, [isDark]);
 
-  // Group menu by section
   const groupedMenu = menu.reduce((acc, item) => {
     if (!acc[item.section]) acc[item.section] = [];
     acc[item.section].push(item);
     return acc;
   }, {});
 
-  // Get sidebar width based on collapse state
-  const sidebarWidth = sidebarCollapsed ? '72px' : '280px';
-  const sidebarPadding = sidebarCollapsed ? '12px' : '16px';
+  // Icons mapping for menu items
+  const getIcon = (id) => {
+    const icons = {
+      'dashboard': '📊',
+      'create': '✈️',
+      'list': '📋',
+      'refunds': '🔄',
+      'customers': '👤',
+      'corporates': '🏢',
+      'creditors': '💳',
+      'credit': '💰',
+      'vendors': '🚚',
+      'packages': '📦',
+      'branches': '🏢',
+      'portals': '🛫',
+      'bank': '🏦',
+      'invest': '📈',
+      'hr': '👨‍💼',
+      'users': '👥',
+      'settings': '⚙️',
+      'reports': '📊',
+      'audit': '📜',
+      'statements': '📑',
+      'contract': '📝',
+      'offer': '🎁',
+      'superadmin': '👑',
+      'profile': '👤',
+      'profitability': '📊',
+      'notifications': '🔔',
+      'ai_dashboard': '🤖',
+      'quotations': '📄',
+      'hr_advanced': '👨‍💼',
+      'ai_pricing': '🤖',
+      'my_attendance': '⏰',
+      'credit_limits': '💳',
+      'customer_statement': '📊',
+      'refund_statement': '📊',
+      'supplier_statement': '📦',
+      'multi_branch': '🏢',
+      'recurring_invoices': '🔁',
+      'expense_approval': '🛡️',
+      'staff_mistakes': '⚠️',
+      'expenses': '💸',
+      'flight_status': '🛫',
+      'hotel_booking': '🏨',
+      'visa_processing': '🛂',
+      'travel_insurance': '🛡️',
+      'hajj_umrah': '🕋',
+      'corporate_travel': '🏢',
+      'frequent_flyer': '🌟'
+    };
+    return icons[id] || '📄';
+  };
 
   return (
     <div style={{
       display: 'flex',
       height: '100vh',
       fontFamily: isAr ? "'Cairo', 'Tajawal', sans-serif" : "'Inter', 'Poppins', sans-serif",
-      background: 'var(--bg-primary, #0F172A)',
+      background: isDark ? '#0F172A' : '#F8FAFC',
       direction: isAr ? 'rtl' : 'ltr',
       overflow: 'hidden',
       position: 'relative'
@@ -62,6 +115,8 @@ export default function ERPLayout({
         handleRefund={handleRefund} 
         previewHTML={previewHTML} 
         downloadPDF={downloadPDF}
+        lang={lang}
+        theme={theme}
       />
 
       {/* ===== MOBILE HEADER ===== */}
@@ -73,12 +128,12 @@ export default function ERPLayout({
         left: 0,
         right: 0,
         height: '64px',
-        background: 'linear-gradient(135deg, #0F172A, #1E3A8A)',
+        background: isDark ? 'linear-gradient(135deg, #0F172A, #1E3A8A)' : 'linear-gradient(135deg, #1E3A8A, #2563EB)',
         zIndex: 100,
         padding: '0 16px',
         alignItems: 'center',
         justifyContent: 'space-between',
-        borderBottom: '1px solid #334155'
+        borderBottom: isDark ? '1px solid #334155' : '1px solid #E2E8F0'
       }}>
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} style={{
           background: 'none',
@@ -105,10 +160,10 @@ export default function ERPLayout({
 
       {/* ===== SIDEBAR ===== */}
       <div style={{
-        width: sidebarWidth,
-        background: 'var(--bg-secondary, #1E293B)',
-        borderRight: '1px solid var(--border-color, #334155)',
-        padding: `${sidebarPadding} 10px`,
+        width: sidebarCollapsed ? '72px' : '280px',
+        background: isDark ? '#1E293B' : '#FFFFFF',
+        borderRight: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
+        padding: sidebarCollapsed ? '12px 8px' : '16px 12px',
         display: 'flex',
         flexDirection: 'column',
         position: 'fixed',
@@ -118,6 +173,7 @@ export default function ERPLayout({
         zIndex: 99,
         transition: 'width 0.3s ease, transform 0.3s ease',
         overflow: 'hidden',
+        boxShadow: isDark ? '4px 0 20px rgba(0,0,0,0.3)' : '4px 0 20px rgba(0,0,0,0.05)',
         '@media (max-width: 768px)': {
           transform: isMobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)',
           width: '280px',
@@ -131,7 +187,7 @@ export default function ERPLayout({
           gap: '12px',
           padding: '16px 8px',
           marginBottom: '16px',
-          borderBottom: '1px solid var(--border-color, #334155)',
+          borderBottom: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
           justifyContent: sidebarCollapsed ? 'center' : 'flex-start'
         }}>
           <div style={{
@@ -161,12 +217,12 @@ export default function ERPLayout({
               </div>
               <div style={{
                 fontSize: '8px',
-                color: '#94A3B8',
+                color: isDark ? '#94A3B8' : '#64748B',
                 textTransform: 'uppercase',
                 letterSpacing: '1px',
                 whiteSpace: 'nowrap'
               }}>
-                Travel ERP System
+                {isAr ? 'نظام إدارة السفر' : 'Travel ERP System'}
               </div>
             </div>
           )}
@@ -176,7 +232,7 @@ export default function ERPLayout({
         <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{
           background: 'none',
           border: 'none',
-          color: '#64748B',
+          color: isDark ? '#64748B' : '#94A3B8',
           cursor: 'pointer',
           padding: '6px 12px',
           fontSize: '16px',
@@ -189,15 +245,15 @@ export default function ERPLayout({
           transition: 'all 0.2s'
         }}>
           {sidebarCollapsed ? '→' : '←'}
-          {!sidebarCollapsed && <span style={{ fontSize: '11px', fontWeight: 600 }}>Collapse</span>}
+          {!sidebarCollapsed && <span style={{ fontSize: '11px', fontWeight: 600 }}>{isAr ? 'طي' : 'Collapse'}</span>}
         </button>
 
         {/* ===== LANGUAGE TOGGLE ===== */}
         <button onClick={() => setLang(isAr ? 'en' : 'ar')} style={{
           padding: '10px 14px',
-          background: 'rgba(59, 130, 246, 0.1)',
+          background: isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.05)',
           color: '#60A5FA',
-          border: '1px solid rgba(59, 130, 246, 0.2)',
+          border: isDark ? '1px solid rgba(59, 130, 246, 0.2)' : '1px solid rgba(59, 130, 246, 0.2)',
           borderRadius: '10px',
           cursor: 'pointer',
           fontWeight: 700,
@@ -214,11 +270,11 @@ export default function ERPLayout({
         </button>
 
         {/* ===== DARK MODE TOGGLE ===== */}
-        <button onClick={() => setTheme?.(theme === 'dark' ? 'light' : 'dark')} style={{
+        <button onClick={() => setTheme(isDark ? 'light' : 'dark')} style={{
           padding: '10px 14px',
-          background: theme === 'dark' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(15, 23, 42, 0.1)',
-          color: theme === 'dark' ? '#FBBF24' : '#0F172A',
-          border: theme === 'dark' ? '1px solid rgba(251, 191, 36, 0.2)' : '1px solid rgba(15, 23, 42, 0.2)',
+          background: isDark ? 'rgba(251, 191, 36, 0.1)' : 'rgba(15, 23, 42, 0.05)',
+          color: isDark ? '#FBBF24' : '#0F172A',
+          border: isDark ? '1px solid rgba(251, 191, 36, 0.2)' : '1px solid rgba(15, 23, 42, 0.2)',
           borderRadius: '10px',
           cursor: 'pointer',
           fontWeight: 700,
@@ -230,8 +286,8 @@ export default function ERPLayout({
           gap: '8px',
           transition: 'all 0.2s'
         }}>
-          <span style={{ fontSize: '16px' }}>{theme === 'dark' ? '☀️' : '🌙'}</span>
-          {!sidebarCollapsed && (theme === 'dark' ? (isAr ? 'الوضع الفاتح' : 'Light Mode') : (isAr ? 'الوضع الداكن' : 'Dark Mode'))}
+          <span style={{ fontSize: '16px' }}>{isDark ? '☀️' : '🌙'}</span>
+          {!sidebarCollapsed && (isDark ? (isAr ? 'الوضع الفاتح' : 'Light Mode') : (isAr ? 'الوضع الداكن' : 'Dark Mode'))}
         </button>
 
         {/* ===== MENU ===== */}
@@ -249,7 +305,7 @@ export default function ERPLayout({
                   fontSize: '9px',
                   textTransform: 'uppercase',
                   letterSpacing: '1.5px',
-                  color: '#64748B',
+                  color: isDark ? '#64748B' : '#94A3B8',
                   margin: '12px 10px 6px',
                   fontWeight: 700
                 }}>
@@ -258,6 +314,7 @@ export default function ERPLayout({
               )}
               {groupedMenu[section].map(m => {
                 const isActive = page === m.id;
+                const icon = getIcon(m.id);
                 return (
                   <div
                     key={m.id}
@@ -274,7 +331,7 @@ export default function ERPLayout({
                         ? 'linear-gradient(135deg, #2563EB, #1D4ED8)'
                         : 'transparent',
                       fontWeight: isActive ? 700 : 500,
-                      color: isActive ? '#FFFFFF' : '#94A3B8',
+                      color: isActive ? '#FFFFFF' : (isDark ? '#94A3B8' : '#64748B'),
                       fontSize: '13px',
                       transition: 'all 0.2s',
                       display: 'flex',
@@ -290,7 +347,7 @@ export default function ERPLayout({
                       width: sidebarCollapsed ? 'auto' : '20px',
                       textAlign: 'center'
                     }}>
-                      {m.icon || '📄'}
+                      {icon}
                     </span>
                     {!sidebarCollapsed && <span>{m.label}</span>}
                     {isActive && !sidebarCollapsed && (
@@ -312,7 +369,7 @@ export default function ERPLayout({
 
         {/* ===== USER PROFILE ===== */}
         <div style={{
-          borderTop: '1px solid var(--border-color, #334155)',
+          borderTop: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
           paddingTop: '16px',
           marginTop: '8px'
         }}>
@@ -321,9 +378,9 @@ export default function ERPLayout({
             alignItems: 'center',
             gap: '10px',
             padding: sidebarCollapsed ? '8px' : '10px 14px',
-            background: 'rgba(255,255,255,0.03)',
+            background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
             borderRadius: '12px',
-            border: '1px solid var(--border-color, #334155)',
+            border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
             justifyContent: sidebarCollapsed ? 'center' : 'flex-start'
           }}>
             <div style={{
@@ -347,14 +404,14 @@ export default function ERPLayout({
                 <div style={{
                   fontSize: '13px',
                   fontWeight: 700,
-                  color: 'var(--text-primary, #F8FAFC)',
+                  color: isDark ? '#E2E8F0' : '#1E293B',
                   whiteSpace: 'nowrap'
                 }}>
                   {userProfile?.username || 'User'}
                 </div>
                 <div style={{
                   fontSize: '10px',
-                  color: '#94A3B8',
+                  color: isDark ? '#94A3B8' : '#64748B',
                   fontWeight: 500,
                   whiteSpace: 'nowrap'
                 }}>
@@ -372,17 +429,17 @@ export default function ERPLayout({
                   padding: '8px 14px',
                   cursor: 'pointer',
                   fontSize: '12px',
-                  color: '#94A3B8',
+                  color: isDark ? '#94A3B8' : '#64748B',
                   borderRadius: '8px',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
                   transition: 'all 0.2s'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                onMouseEnter={(e) => e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               >
-                🔒 {t('changePass', 'Change Password')}
+                🔒 {isAr ? 'تغيير كلمة المرور' : 'Change Password'}
               </div>
               <div
                 onClick={handleLogout}
@@ -400,14 +457,14 @@ export default function ERPLayout({
                 onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               >
-                🚪 {t('logout', 'Logout')}
+                🚪 {isAr ? 'تسجيل الخروج' : 'Logout'}
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* ===== SIDEBAR OVERLAY (Mobile) ===== */}
+      {/* ===== SIDEBAR OVERLAY ===== */}
       {isMobileMenuOpen && (
         <div
           onClick={() => setIsMobileMenuOpen(false)}
@@ -426,11 +483,11 @@ export default function ERPLayout({
       {/* ===== MAIN CONTENT ===== */}
       <div style={{
         flex: 1,
-        marginLeft: sidebarWidth,
+        marginLeft: sidebarCollapsed ? '72px' : '280px',
         overflowY: 'auto',
         overflowX: 'hidden',
         position: 'relative',
-        background: 'var(--bg-primary, #0F172A)',
+        background: isDark ? '#0F172A' : '#F8FAFC',
         height: '100vh',
         paddingTop: '0',
         transition: 'margin-left 0.3s ease',
@@ -452,14 +509,14 @@ export default function ERPLayout({
             <div style={{
               width: '360px',
               maxHeight: '500px',
-              background: 'var(--bg-secondary, #1E293B)',
+              background: isDark ? '#1E293B' : '#FFFFFF',
               borderRadius: '20px',
               boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
               display: 'flex',
               flexDirection: 'column',
               marginBottom: '12px',
               overflow: 'hidden',
-              border: '1px solid var(--border-color, #334155)',
+              border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
               animation: 'fadeIn 0.3s ease-out'
             }}>
               <div style={{
@@ -473,7 +530,7 @@ export default function ERPLayout({
               }}>
                 <span style={{ fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontSize: '20px' }}>🤖</span>
-                  AI Travel Assistant
+                  {isAr ? 'مساعد السفر الذكي' : 'AI Travel Assistant'}
                 </span>
                 <span
                   onClick={() => setChatOpen(false)}
@@ -486,7 +543,7 @@ export default function ERPLayout({
                 flex: 1,
                 padding: '16px',
                 overflowY: 'auto',
-                background: 'var(--bg-primary, #0F172A)',
+                background: isDark ? '#0F172A' : '#F8FAFC',
                 maxHeight: '350px'
               }}>
                 {chatMessages.map((m, i) => (
@@ -500,8 +557,8 @@ export default function ERPLayout({
                     <span style={{
                       background: m.sender === 'user'
                         ? 'linear-gradient(135deg, #2563EB, #1D4ED8)'
-                        : 'var(--bg-secondary, #1E293B)',
-                      color: m.sender === 'user' ? '#fff' : 'var(--text-primary, #F8FAFC)',
+                        : (isDark ? '#1E293B' : '#F1F5F9'),
+                      color: m.sender === 'user' ? '#fff' : (isDark ? '#E2E8F0' : '#1E293B'),
                       padding: '10px 14px',
                       borderRadius: '12px',
                       display: 'inline-block',
@@ -509,7 +566,7 @@ export default function ERPLayout({
                       maxWidth: '85%',
                       lineHeight: '1.5',
                       boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                      border: m.sender === 'bot' ? '1px solid var(--border-color, #334155)' : 'none'
+                      border: m.sender === 'bot' ? (isDark ? '1px solid #334155' : '1px solid #E2E8F0') : 'none'
                     }}>
                       {m.text}
                     </span>
@@ -519,8 +576,8 @@ export default function ERPLayout({
               <div style={{
                 display: 'flex',
                 padding: '12px',
-                background: 'var(--bg-secondary, #1E293B)',
-                borderTop: '1px solid var(--border-color, #334155)',
+                background: isDark ? '#1E293B' : '#FFFFFF',
+                borderTop: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
                 gap: '8px'
               }}>
                 <input
@@ -530,13 +587,13 @@ export default function ERPLayout({
                   placeholder={isAr ? 'اسأل عن الرحلات...' : 'Ask about flights...'}
                   style={{
                     flex: 1,
-                    background: 'var(--bg-primary, #0F172A)',
-                    border: '1px solid var(--border-color, #334155)',
+                    background: isDark ? '#0F172A' : '#F1F5F9',
+                    border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
                     padding: '10px 14px',
                     outline: 'none',
                     borderRadius: '10px',
                     fontSize: '13px',
-                    color: 'var(--text-primary, #F8FAFC)'
+                    color: isDark ? '#E2E8F0' : '#1E293B'
                   }}
                 />
                 <button
