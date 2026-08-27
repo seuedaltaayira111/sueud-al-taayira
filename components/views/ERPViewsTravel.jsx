@@ -616,4 +616,851 @@ export default function ERPViewsTravel(props) {
           .select('*')
           .eq('tenant_id', userProfile.tenant_id)
           .order('created_at', { ascending: false })
-          .then(({
+          .then(({ data }) => {
+            if (data) setPolicies(data);
+          });
+      }
+    }, [userProfile?.tenant_id]);
+
+    const calculatePremium = () => {
+      const baseRates = {
+        'Single Trip': 150,
+        'Annual': 1200,
+        'Family': 400,
+        'Group': 300
+      };
+      const coverageMultipliers = {
+        'Standard': 1,
+        'Premium': 1.5,
+        'Comprehensive': 2
+      };
+      const base = baseRates[insuranceForm.policy_type] || 150;
+      const multiplier = coverageMultipliers[insuranceForm.coverage_type] || 1;
+      return base * multiplier;
+    };
+
+    useEffect(() => {
+      setInsuranceForm(prev => ({ ...prev, premium: calculatePremium() }));
+    }, [insuranceForm.policy_type, insuranceForm.coverage_type]);
+
+    const handleInsuranceSubmit = async (e) => {
+      e.preventDefault();
+      try {
+        const payload = { ...insuranceForm, tenant_id: userProfile.tenant_id };
+        const { data: newPolicy, error } = await supabase
+          .from('insurance_policies')
+          .insert([payload])
+          .select()
+          .single();
+        if (error) throw error;
+        setPolicies(prev => [newPolicy, ...prev]);
+        showToast('✅ Insurance policy issued!');
+        await logAction?.(`Insurance policy for ${insuranceForm.customer_name}`);
+        setInsuranceForm({
+          customer_name: '',
+          passport_no: '',
+          policy_type: 'Single Trip',
+          destination: '',
+          start_date: today,
+          end_date: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString().split('T')[0],
+          coverage_type: 'Standard',
+          premium: 0
+        });
+      } catch (err) {
+        showToast('Error: ' + err.message);
+      }
+    };
+
+    const handleDeletePolicy = async (id) => {
+      if (!confirm('Delete this policy?')) return;
+      try {
+        await supabase.from('insurance_policies').delete().eq('id', id);
+        setPolicies(prev => prev.filter(p => p.id !== id));
+        showToast('🗑️ Policy deleted!');
+      } catch (err) {
+        showToast('Error: ' + err.message);
+      }
+    };
+
+    return (
+      <div style={styles.container}>
+        <div style={styles.header}>
+          <h1 style={styles.title}>🛡️ {t('travel_insurance', 'Travel Insurance')}</h1>
+        </div>
+
+        <div style={styles.card}>
+          <h3 style={styles.sectionTitle}>📝 Issue Insurance Policy</h3>
+          <form onSubmit={handleInsuranceSubmit} style={styles.formRow}>
+            <div>
+              <label style={styles.label}>Customer Name / اسم العميل</label>
+              <input
+                style={styles.input}
+                value={insuranceForm.customer_name}
+                onChange={e => setInsuranceForm({ ...insuranceForm, customer_name: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <label style={styles.label}>Passport No / رقم جواز السفر</label>
+              <input
+                style={styles.input}
+                value={insuranceForm.passport_no}
+                onChange={e => setInsuranceForm({ ...insuranceForm, passport_no: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <label style={styles.label}>Policy Type / نوع البوليصة</label>
+              <select
+                style={styles.select}
+                value={insuranceForm.policy_type}
+                onChange={e => setInsuranceForm({ ...insuranceForm, policy_type: e.target.value })}
+              >
+                <option>Single Trip</option>
+                <option>Annual</option>
+                <option>Family</option>
+                <option>Group</option>
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Destination / الوجهة</label>
+              <input
+                style={styles.input}
+                value={insuranceForm.destination}
+                onChange={e => setInsuranceForm({ ...insuranceForm, destination: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <label style={styles.label}>Start Date / تاريخ البدء</label>
+              <input
+                type="date"
+                style={styles.input}
+                value={insuranceForm.start_date}
+                onChange={e => setInsuranceForm({ ...insuranceForm, start_date: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <label style={styles.label}>End Date / تاريخ الانتهاء</label>
+              <input
+                type="date"
+                style={styles.input}
+                value={insuranceForm.end_date}
+                onChange={e => setInsuranceForm({ ...insuranceForm, end_date: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <label style={styles.label}>Coverage Type / نوع التغطية</label>
+              <select
+                style={styles.select}
+                value={insuranceForm.coverage_type}
+                onChange={e => setInsuranceForm({ ...insuranceForm, coverage_type: e.target.value })}
+              >
+                <option>Standard</option>
+                <option>Premium</option>
+                <option>Comprehensive</option>
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Premium / القسط (SAR)</label>
+              <input
+                type="number"
+                style={{ ...styles.input, fontWeight: 700, color: '#34D399', fontSize: '18px' }}
+                value={insuranceForm.premium}
+                readOnly
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+              <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, width: '100%', padding: '12px' }}>
+                🛡️ Issue Policy
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div style={styles.card}>
+          <h3 style={styles.sectionTitle}>📋 Active Policies</h3>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Customer</th>
+                  <th style={styles.th}>Type</th>
+                  <th style={styles.th}>Destination</th>
+                  <th style={styles.th}>Period</th>
+                  <th style={{ ...styles.th, textAlign: 'right' }}>Premium</th>
+                  <th style={{ ...styles.th, textAlign: 'center' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {policies.map(p => (
+                  <tr key={p.id} style={{ borderBottom: '1px solid #1E293B' }}>
+                    <td style={{ ...styles.td, fontWeight: 600 }}>{p.customer_name}</td>
+                    <td style={styles.td}>{p.policy_type}</td>
+                    <td style={styles.td}>{p.destination}</td>
+                    <td style={styles.td}>{p.start_date} → {p.end_date}</td>
+                    <td style={{ ...styles.td, textAlign: 'right', color: '#34D399', fontWeight: 700 }}>
+                      {p.premium} SAR
+                    </td>
+                    <td style={{ ...styles.td, textAlign: 'center' }}>
+                      <button
+                        style={{ ...styles.btn, ...styles.btnDanger, padding: '4px 10px', fontSize: '12px' }}
+                        onClick={() => handleDeletePolicy(p.id)}
+                      >
+                        🗑️
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {policies.length === 0 && (
+                  <tr>
+                    <td colSpan="6" style={{ ...styles.td, textAlign: 'center', padding: '30px', color: '#94A3B8' }}>
+                      No insurance policies yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================
+  // 5. HAJJ / UMRAH PACKAGES
+  // ============================================================
+  if (page === 'hajj_umrah') {
+    const [packages, setPackages] = useState([]);
+    const [pkgForm, setPkgForm] = useState({
+      name: '',
+      type: 'Umrah',
+      duration: '7 Days',
+      price: 0,
+      inclusions: '',
+      start_date: today,
+      end_date: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString().split('T')[0],
+      status: 'Available'
+    });
+    const [editingId, setEditingId] = useState(null);
+
+    useEffect(() => {
+      if (userProfile?.tenant_id) {
+        supabase.from('hajj_umrah_packages')
+          .select('*')
+          .eq('tenant_id', userProfile.tenant_id)
+          .order('created_at', { ascending: false })
+          .then(({ data }) => {
+            if (data) setPackages(data);
+          });
+      }
+    }, [userProfile?.tenant_id]);
+
+    const handlePkgSubmit = async (e) => {
+      e.preventDefault();
+      try {
+        const payload = { ...pkgForm, tenant_id: userProfile.tenant_id };
+        if (editingId) {
+          const { data: updated, error } = await supabase
+            .from('hajj_umrah_packages')
+            .update(payload)
+            .eq('id', editingId)
+            .select()
+            .single();
+          if (error) throw error;
+          setPackages(prev => prev.map(p => p.id === editingId ? updated : p));
+          showToast('✅ Package updated!');
+          setEditingId(null);
+        } else {
+          const { data: newPkg, error } = await supabase
+            .from('hajj_umrah_packages')
+            .insert([payload])
+            .select()
+            .single();
+          if (error) throw error;
+          setPackages(prev => [newPkg, ...prev]);
+          showToast('✅ Package created!');
+          await logAction?.(`Hajj/Umrah package: ${pkgForm.name}`);
+        }
+        setPkgForm({
+          name: '',
+          type: 'Umrah',
+          duration: '7 Days',
+          price: 0,
+          inclusions: '',
+          start_date: today,
+          end_date: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString().split('T')[0],
+          status: 'Available'
+        });
+      } catch (err) {
+        showToast('Error: ' + err.message);
+      }
+    };
+
+    const handleEditPkg = (pkg) => {
+      setEditingId(pkg.id);
+      setPkgForm({
+        name: pkg.name,
+        type: pkg.type,
+        duration: pkg.duration,
+        price: pkg.price,
+        inclusions: pkg.inclusions,
+        start_date: pkg.start_date,
+        end_date: pkg.end_date,
+        status: pkg.status
+      });
+    };
+
+    const handleDeletePkg = async (id) => {
+      if (!confirm('Delete this package?')) return;
+      try {
+        await supabase.from('hajj_umrah_packages').delete().eq('id', id);
+        setPackages(prev => prev.filter(p => p.id !== id));
+        showToast('🗑️ Package deleted!');
+      } catch (err) {
+        showToast('Error: ' + err.message);
+      }
+    };
+
+    return (
+      <div style={styles.container}>
+        <div style={styles.header}>
+          <h1 style={styles.title}>🕋 {t('hajj_umrah', 'Hajj & Umrah Packages')}</h1>
+        </div>
+
+        <div style={styles.card}>
+          <h3 style={styles.sectionTitle}>{editingId ? '✏️ Edit Package' : '📝 Create Package'}</h3>
+          <form onSubmit={handlePkgSubmit} style={styles.formRow}>
+            <div>
+              <label style={styles.label}>Package Name / اسم الباقة</label>
+              <input
+                style={styles.input}
+                value={pkgForm.name}
+                onChange={e => setPkgForm({ ...pkgForm, name: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <label style={styles.label}>Type / النوع</label>
+              <select
+                style={styles.select}
+                value={pkgForm.type}
+                onChange={e => setPkgForm({ ...pkgForm, type: e.target.value })}
+              >
+                <option>Umrah</option>
+                <option>Hajj</option>
+                <option>Hajj VIP</option>
+                <option>Umrah VIP</option>
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Duration / المدة</label>
+              <input
+                style={styles.input}
+                value={pkgForm.duration}
+                onChange={e => setPkgForm({ ...pkgForm, duration: e.target.value })}
+              />
+            </div>
+            <div>
+              <label style={styles.label}>Price / السعر (SAR)</label>
+              <input
+                type="number"
+                style={styles.input}
+                value={pkgForm.price}
+                onChange={e => setPkgForm({ ...pkgForm, price: parseFloat(e.target.value) })}
+                required
+              />
+            </div>
+            <div>
+              <label style={styles.label}>Inclusions / يشمل</label>
+              <input
+                style={styles.input}
+                placeholder="e.g. Flight, Hotel, Visa, Transport"
+                value={pkgForm.inclusions}
+                onChange={e => setPkgForm({ ...pkgForm, inclusions: e.target.value })}
+              />
+            </div>
+            <div>
+              <label style={styles.label}>Start Date / تاريخ البدء</label>
+              <input
+                type="date"
+                style={styles.input}
+                value={pkgForm.start_date}
+                onChange={e => setPkgForm({ ...pkgForm, start_date: e.target.value })}
+              />
+            </div>
+            <div>
+              <label style={styles.label}>End Date / تاريخ الانتهاء</label>
+              <input
+                type="date"
+                style={styles.input}
+                value={pkgForm.end_date}
+                onChange={e => setPkgForm({ ...pkgForm, end_date: e.target.value })}
+              />
+            </div>
+            <div>
+              <label style={styles.label}>Status / الحالة</label>
+              <select
+                style={styles.select}
+                value={pkgForm.status}
+                onChange={e => setPkgForm({ ...pkgForm, status: e.target.value })}
+              >
+                <option>Available</option>
+                <option>Filling Fast</option>
+                <option>Sold Out</option>
+                <option>Completed</option>
+              </select>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
+              <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, padding: '12px 30px' }}>
+                {editingId ? '💾 Update' : '✅ Create'}
+              </button>
+              {editingId && (
+                <button
+                  type="button"
+                  style={{ ...styles.btn, ...styles.btnGhost }}
+                  onClick={() => {
+                    setEditingId(null);
+                    setPkgForm({
+                      name: '',
+                      type: 'Umrah',
+                      duration: '7 Days',
+                      price: 0,
+                      inclusions: '',
+                      start_date: today,
+                      end_date: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString().split('T')[0],
+                      status: 'Available'
+                    });
+                  }}
+                >
+                  ✕ Cancel
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+
+        <div style={styles.grid}>
+          {packages.map(pkg => (
+            <div key={pkg.id} style={{ ...styles.card, borderTop: `4px solid ${pkg.status === 'Available' ? '#059669' : pkg.status === 'Filling Fast' ? '#F59E0B' : '#DC2626'}` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                <div>
+                  <h3 style={{ color: '#FBBF24', margin: 0 }}>{pkg.name}</h3>
+                  <span style={{
+                    ...styles.badge,
+                    background: pkg.type === 'Hajj' ? '#7C3AED' : '#059669',
+                    color: 'white',
+                    marginTop: '4px',
+                    display: 'inline-block'
+                  }}>
+                    {pkg.type}
+                  </span>
+                </div>
+                <span style={{
+                  ...styles.badge,
+                  ...(pkg.status === 'Available' ? styles.badgeSuccess : pkg.status === 'Filling Fast' ? styles.badgeWarning : styles.badgeDanger)
+                }}>
+                  {pkg.status}
+                </span>
+              </div>
+              <div style={{ marginTop: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#94A3B8' }}>
+                  <span>📅 {pkg.duration}</span>
+                  <span>📆 {pkg.start_date} → {pkg.end_date}</span>
+                </div>
+                <div style={{ fontSize: '14px', color: '#CBD5E1', marginTop: '8px' }}>
+                  {pkg.inclusions || 'No inclusions specified'}
+                </div>
+                <div style={{ fontSize: '24px', fontWeight: 700, color: '#34D399', marginTop: '12px' }}>
+                  {pkg.price} SAR
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
+                <button
+                  style={{ ...styles.btn, ...styles.btnWarning, flex: 1, padding: '8px' }}
+                  onClick={() => handleEditPkg(pkg)}
+                >
+                  ✏️ Edit
+                </button>
+                <button
+                  style={{ ...styles.btn, ...styles.btnDanger, flex: 1, padding: '8px' }}
+                  onClick={() => handleDeletePkg(pkg.id)}
+                >
+                  🗑️ Delete
+                </button>
+              </div>
+            </div>
+          ))}
+          {packages.length === 0 && (
+            <div style={{ ...styles.card, textAlign: 'center', color: '#94A3B8', padding: '40px' }}>
+              <div style={{ fontSize: '48px', marginBottom: '10px' }}>🕋</div>
+              <h3>No packages yet</h3>
+              <p>Create your first Hajj/Umrah package above!</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================
+  // 6. CORPORATE TRAVEL
+  // ============================================================
+  if (page === 'corporate_travel') {
+    const [corpTravels, setCorpTravels] = useState([]);
+
+    useEffect(() => {
+      if (userProfile?.tenant_id) {
+        supabase.from('corporate_travel')
+          .select('*, corporates(name)')
+          .eq('tenant_id', userProfile.tenant_id)
+          .order('created_at', { ascending: false })
+          .then(({ data }) => {
+            if (data) setCorpTravels(data);
+          });
+      }
+    }, [userProfile?.tenant_id]);
+
+    return (
+      <div style={styles.container}>
+        <div style={styles.header}>
+          <h1 style={styles.title}>🏢 {t('corporate_travel', 'Corporate Travel Desk')}</h1>
+        </div>
+
+        <div style={styles.card}>
+          <h3 style={styles.sectionTitle}>📊 Corporate Travel Summary</h3>
+          <div style={styles.grid}>
+            <div style={styles.statCard}>
+              <div style={styles.statLabel}>Total Corporate Bookings</div>
+              <div style={styles.statValue}>{corpTravels.length}</div>
+            </div>
+            <div style={styles.statCard}>
+              <div style={styles.statLabel}>Active Corporate Clients</div>
+              <div style={styles.statValue}>{(data.corporates || []).length}</div>
+            </div>
+            <div style={styles.statCard}>
+              <div style={styles.statLabel}>Total Corporate Spend</div>
+              <div style={{ ...styles.statValue, color: '#34D399' }}>
+                {corpTravels.reduce((s, t) => s + (t.total_amount || 0), 0).toFixed(2)} SAR
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style={styles.card}>
+          <h3 style={styles.sectionTitle}>📋 Recent Corporate Bookings</h3>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Corporate</th>
+                  <th style={styles.th}>Booked By</th>
+                  <th style={styles.th}>Date</th>
+                  <th style={{ ...styles.th, textAlign: 'right' }}>Amount</th>
+                  <th style={{ ...styles.th, textAlign: 'center' }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {corpTravels.map(t => (
+                  <tr key={t.id} style={{ borderBottom: '1px solid #1E293B' }}>
+                    <td style={{ ...styles.td, fontWeight: 600 }}>{t.corporates?.name || 'N/A'}</td>
+                    <td style={styles.td}>{t.booked_by || 'N/A'}</td>
+                    <td style={styles.td}>{t.booking_date}</td>
+                    <td style={{ ...styles.td, textAlign: 'right', color: '#34D399', fontWeight: 700 }}>
+                      {(t.total_amount || 0).toFixed(2)} SAR
+                    </td>
+                    <td style={{ ...styles.td, textAlign: 'center' }}>
+                      <span style={{ ...styles.badge, ...styles.badgeSuccess }}>{t.status || 'Confirmed'}</span>
+                    </td>
+                  </tr>
+                ))}
+                {corpTravels.length === 0 && (
+                  <tr>
+                    <td colSpan="5" style={{ ...styles.td, textAlign: 'center', padding: '30px', color: '#94A3B8' }}>
+                      No corporate travel bookings yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================
+  // 7. FREQUENT FLYER MANAGEMENT
+  // ============================================================
+  if (page === 'frequent_flyer') {
+    const [ffMembers, setFfMembers] = useState([]);
+    const [ffForm, setFfForm] = useState({
+      customer_name: '',
+      airline: '',
+      membership_no: '',
+      tier: 'Blue',
+      points: 0,
+      status: 'Active'
+    });
+    const [editingId, setEditingId] = useState(null);
+
+    useEffect(() => {
+      if (userProfile?.tenant_id) {
+        supabase.from('frequent_flyer')
+          .select('*')
+          .eq('tenant_id', userProfile.tenant_id)
+          .order('points', { ascending: false })
+          .then(({ data }) => {
+            if (data) setFfMembers(data);
+          });
+      }
+    }, [userProfile?.tenant_id]);
+
+    const handleFfSubmit = async (e) => {
+      e.preventDefault();
+      try {
+        const payload = { ...ffForm, tenant_id: userProfile.tenant_id };
+        if (editingId) {
+          const { data: updated, error } = await supabase
+            .from('frequent_flyer')
+            .update(payload)
+            .eq('id', editingId)
+            .select()
+            .single();
+          if (error) throw error;
+          setFfMembers(prev => prev.map(f => f.id === editingId ? updated : f));
+          showToast('✅ Member updated!');
+          setEditingId(null);
+        } else {
+          const { data: newMember, error } = await supabase
+            .from('frequent_flyer')
+            .insert([payload])
+            .select()
+            .single();
+          if (error) throw error;
+          setFfMembers(prev => [newMember, ...prev]);
+          showToast('✅ Member added!');
+          await logAction?.(`Frequent flyer: ${ffForm.customer_name}`);
+        }
+        setFfForm({
+          customer_name: '',
+          airline: '',
+          membership_no: '',
+          tier: 'Blue',
+          points: 0,
+          status: 'Active'
+        });
+      } catch (err) {
+        showToast('Error: ' + err.message);
+      }
+    };
+
+    const handleEditFf = (member) => {
+      setEditingId(member.id);
+      setFfForm({
+        customer_name: member.customer_name,
+        airline: member.airline,
+        membership_no: member.membership_no,
+        tier: member.tier,
+        points: member.points,
+        status: member.status
+      });
+    };
+
+    const handleDeleteFf = async (id) => {
+      if (!confirm('Delete this member?')) return;
+      try {
+        await supabase.from('frequent_flyer').delete().eq('id', id);
+        setFfMembers(prev => prev.filter(f => f.id !== id));
+        showToast('🗑️ Member deleted!');
+      } catch (err) {
+        showToast('Error: ' + err.message);
+      }
+    };
+
+    const getTierColor = (tier) => {
+      const map = {
+        'Blue': '#3B82F6',
+        'Silver': '#94A3B8',
+        'Gold': '#FBBF24',
+        'Platinum': '#A78BFA',
+        'Diamond': '#34D399'
+      };
+      return map[tier] || '#3B82F6';
+    };
+
+    return (
+      <div style={styles.container}>
+        <div style={styles.header}>
+          <h1 style={styles.title}>🌟 {t('frequent_flyer', 'Frequent Flyer Management')}</h1>
+        </div>
+
+        <div style={styles.card}>
+          <h3 style={styles.sectionTitle}>{editingId ? '✏️ Edit Member' : '➕ Add Member'}</h3>
+          <form onSubmit={handleFfSubmit} style={styles.formRow}>
+            <div>
+              <label style={styles.label}>Customer Name / اسم العميل</label>
+              <input
+                style={styles.input}
+                value={ffForm.customer_name}
+                onChange={e => setFfForm({ ...ffForm, customer_name: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <label style={styles.label}>Airline / خط الطيران</label>
+              <input
+                style={styles.input}
+                value={ffForm.airline}
+                onChange={e => setFfForm({ ...ffForm, airline: e.target.value })}
+                placeholder="e.g. Saudia, Emirates"
+                required
+              />
+            </div>
+            <div>
+              <label style={styles.label}>Membership No / رقم العضوية</label>
+              <input
+                style={styles.input}
+                value={ffForm.membership_no}
+                onChange={e => setFfForm({ ...ffForm, membership_no: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <label style={styles.label}>Tier / المستوى</label>
+              <select
+                style={styles.select}
+                value={ffForm.tier}
+                onChange={e => setFfForm({ ...ffForm, tier: e.target.value })}
+              >
+                <option>Blue</option>
+                <option>Silver</option>
+                <option>Gold</option>
+                <option>Platinum</option>
+                <option>Diamond</option>
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Points / النقاط</label>
+              <input
+                type="number"
+                style={styles.input}
+                value={ffForm.points}
+                onChange={e => setFfForm({ ...ffForm, points: parseInt(e.target.value) })}
+              />
+            </div>
+            <div>
+              <label style={styles.label}>Status / الحالة</label>
+              <select
+                style={styles.select}
+                value={ffForm.status}
+                onChange={e => setFfForm({ ...ffForm, status: e.target.value })}
+              >
+                <option>Active</option>
+                <option>Inactive</option>
+                <option>Expired</option>
+              </select>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
+              <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, padding: '12px 30px' }}>
+                {editingId ? '💾 Update' : '✅ Add'}
+              </button>
+              {editingId && (
+                <button
+                  type="button"
+                  style={{ ...styles.btn, ...styles.btnGhost }}
+                  onClick={() => {
+                    setEditingId(null);
+                    setFfForm({
+                      customer_name: '',
+                      airline: '',
+                      membership_no: '',
+                      tier: 'Blue',
+                      points: 0,
+                      status: 'Active'
+                    });
+                  }}
+                >
+                  ✕ Cancel
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+
+        <div style={styles.card}>
+          <h3 style={styles.sectionTitle}>📋 Member List</h3>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Customer</th>
+                  <th style={styles.th}>Airline</th>
+                  <th style={styles.th}>Membership No</th>
+                  <th style={styles.th}>Tier</th>
+                  <th style={{ ...styles.th, textAlign: 'right' }}>Points</th>
+                  <th style={styles.th}>Status</th>
+                  <th style={{ ...styles.th, textAlign: 'center' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ffMembers.map(m => (
+                  <tr key={m.id} style={{ borderBottom: '1px solid #1E293B' }}>
+                    <td style={{ ...styles.td, fontWeight: 600 }}>{m.customer_name}</td>
+                    <td style={styles.td}>{m.airline}</td>
+                    <td style={styles.td}>{m.membership_no}</td>
+                    <td style={styles.td}>
+                      <span style={{
+                        padding: '4px 12px',
+                        borderRadius: '12px',
+                        background: getTierColor(m.tier) + '20',
+                        color: getTierColor(m.tier),
+                        fontWeight: 700,
+                        fontSize: '12px'
+                      }}>
+                        {m.tier}
+                      </span>
+                    </td>
+                    <td style={{ ...styles.td, textAlign: 'right', color: '#FBBF24', fontWeight: 700 }}>
+                      {m.points}
+                    </td>
+                    <td style={styles.td}>
+                      <span style={{ ...styles.badge, ...(m.status === 'Active' ? styles.badgeSuccess : styles.badgeDanger) }}>
+                        {m.status}
+                      </span>
+                    </td>
+                    <td style={{ ...styles.td, textAlign: 'center' }}>
+                      <button
+                        style={{ ...styles.btn, ...styles.btnWarning, padding: '4px 10px', marginRight: '5px', fontSize: '12px' }}
+                        onClick={() => handleEditFf(m)}
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        style={{ ...styles.btn, ...styles.btnDanger, padding: '4px 10px', fontSize: '12px' }}
+                        onClick={() => handleDeleteFf(m.id)}
+                      >
+                        🗑️
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {ffMembers.length === 0 && (
+                  <tr>
+                    <td colSpan="7" style={{ ...styles.td, textAlign: 'center', padding: '30px', color: '#94A3B8' }}>
+                      No frequent flyer members yet. Add one above!
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
