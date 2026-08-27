@@ -6,7 +6,7 @@ export default function ERPModals({
   modal, setModal, passForm, setPassForm, handleChangePassword,
   settleForm, setSettleForm, handleSettlePayment,
   refundForm, setRefundForm, handleRefund,
-  previewHTML, downloadPDF, lang, theme
+  previewHTML, downloadPDF, lang, theme, handlePrintPreview
 }) {
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
@@ -109,42 +109,6 @@ export default function ERPModals({
     padding: '20px'
   };
 
-  const handlePrintPreview = () => {
-    if (!previewHTML) {
-      alert(isAr ? 'لا يوجد مستند للطباعة' : 'No document to print');
-      return;
-    }
-    try {
-      const printWindow = window.open('', '_blank', 'width=800,height=600');
-      if (!printWindow) {
-        alert(isAr ? 'الرجاء السماح بالنوافذ المنبثقة' : 'Please allow popups');
-        return;
-      }
-      printWindow.document.write(previewHTML);
-      printWindow.document.close();
-      setTimeout(() => {
-        printWindow.focus();
-        printWindow.print();
-      }, 500);
-    } catch (e) {
-      console.error('Print error:', e);
-      alert(isAr ? 'خطأ في الطباعة' : 'Print error');
-    }
-  };
-
-  const handleDownloadPDF = async () => {
-    if (!previewHTML) {
-      alert(isAr ? 'لا يوجد مستند للتحميل' : 'No document to download');
-      return;
-    }
-    try {
-      await downloadPDF(previewHTML, 'document.pdf');
-    } catch (e) {
-      console.error('Download error:', e);
-      alert(isAr ? 'خطأ في التحميل' : 'Download error');
-    }
-  };
-
   return (
     <>
       {/* ===== CHANGE PASSWORD MODAL ===== */}
@@ -161,7 +125,7 @@ export default function ERPModals({
               <input
                 type="password"
                 placeholder={isAr ? 'أدخل كلمة المرور الجديدة' : 'Enter new password'}
-                value={passForm.newPass || ''}
+                value={passForm?.newPass || ''}
                 onChange={e => setPassForm({ newPass: e.target.value })}
                 style={styles.input}
                 required
@@ -195,7 +159,7 @@ export default function ERPModals({
               </label>
               <input
                 type="date"
-                value={settleForm.date || ''}
+                value={settleForm?.date || ''}
                 onChange={e => setSettleForm({ ...settleForm, date: e.target.value })}
                 style={styles.input}
                 required
@@ -204,7 +168,7 @@ export default function ERPModals({
                 {isAr ? 'طريقة الدفع' : 'Payment Method'}
               </label>
               <select
-                value={settleForm.mode || 'Cash'}
+                value={settleForm?.mode || 'Cash'}
                 onChange={e => setSettleForm({ ...settleForm, mode: e.target.value })}
                 style={styles.input}
               >
@@ -240,7 +204,7 @@ export default function ERPModals({
               </label>
               <input
                 type="date"
-                value={refundForm.date || ''}
+                value={refundForm?.date || ''}
                 onChange={e => setRefundForm({ ...refundForm, date: e.target.value })}
                 style={styles.input}
                 required
@@ -252,7 +216,7 @@ export default function ERPModals({
               <input
                 type="number"
                 step="0.01"
-                value={refundForm.compRefund || ''}
+                value={refundForm?.compRefund || ''}
                 onChange={e => setRefundForm({ ...refundForm, compRefund: e.target.value })}
                 style={styles.input}
                 required
@@ -264,7 +228,7 @@ export default function ERPModals({
               <input
                 type="number"
                 step="0.01"
-                value={refundForm.custRefund || ''}
+                value={refundForm?.custRefund || ''}
                 onChange={e => setRefundForm({ ...refundForm, custRefund: e.target.value })}
                 style={styles.input}
                 required
@@ -274,7 +238,7 @@ export default function ERPModals({
                 {isAr ? 'طريقة استرجاع العميل' : 'Customer Refund Method'}
               </label>
               <select
-                value={refundForm.mode || 'Cash'}
+                value={refundForm?.mode || 'Cash'}
                 onChange={e => setRefundForm({ ...refundForm, mode: e.target.value })}
                 style={styles.input}
                 required
@@ -284,7 +248,7 @@ export default function ERPModals({
                 <option value="Credit">💳 {isAr ? 'رصيد لحجز جديد' : 'Credit for New Booking'}</option>
               </select>
 
-              {refundForm.mode === 'Credit' && (
+              {refundForm?.mode === 'Credit' && (
                 <div style={{
                   background: '#065F46',
                   color: '#34D399',
@@ -294,7 +258,7 @@ export default function ERPModals({
                   fontSize: '14px',
                   fontWeight: 'bold'
                 }}>
-                  ✅ {isAr ? 'الرصيد المتاح' : 'Available Credit Balance'}: {refundForm.creditBalance?.toFixed(2) || '0.00'} SAR
+                  ✅ {isAr ? 'الرصيد المتاح' : 'Available Credit Balance'}: {refundForm?.creditBalance?.toFixed(2) || '0.00'} SAR
                 </div>
               )}
 
@@ -302,7 +266,7 @@ export default function ERPModals({
                 {isAr ? 'سبب الاسترجاع' : 'Refund Reason'}
               </label>
               <select
-                value={refundForm.reason || ''}
+                value={refundForm?.reason || ''}
                 onChange={e => setRefundForm({ ...refundForm, reason: e.target.value })}
                 style={styles.input}
                 required
@@ -332,8 +296,8 @@ export default function ERPModals({
         </div>
       )}
 
-      {/* ===== PREVIEW INVOICE MODAL ===== */}
-      {modal.type === 'preview' && (
+      {/* ===== PREVIEW INVOICE MODAL - FIXED ===== */}
+      {modal.type === 'preview' && previewHTML && (
         <div style={{ ...overlay, background: 'rgba(0,0,0,0.95)' }}>
           <div style={{
             background: isDark ? '#1E293B' : '#FFFFFF',
@@ -361,13 +325,34 @@ export default function ERPModals({
               </h3>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 <button
-                  onClick={handlePrintPreview}
+                  onClick={() => {
+                    try {
+                      const printWindow = window.open('', '_blank', 'width=800,height=600');
+                      if (printWindow) {
+                        printWindow.document.write(previewHTML);
+                        printWindow.document.close();
+                        printWindow.focus();
+                        setTimeout(() => { printWindow.print(); }, 1000);
+                      } else {
+                        alert(isAr ? '⚠️ पॉपअप ब्लॉक हो गया!' : '⚠️ Popup blocked!');
+                      }
+                    } catch (e) {
+                      console.error('Print error:', e);
+                      alert(isAr ? '❌ प्रिंट एरर' : '❌ Print error');
+                    }
+                  }}
                   style={{ ...styles.btnInfo, width: 'auto', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
                   🖨️ {isAr ? 'طباعة' : 'Print'}
                 </button>
                 <button
-                  onClick={handleDownloadPDF}
+                  onClick={() => {
+                    if (downloadPDF) {
+                      downloadPDF(previewHTML, 'document.pdf');
+                    } else {
+                      alert(isAr ? '❌ डाउनलोड उपलब्ध नहीं' : '❌ Download not available');
+                    }
+                  }}
                   style={{ ...styles.btnSuccess, width: 'auto', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
                   ⬇️ {isAr ? 'تحميل PDF' : 'Download PDF'}
