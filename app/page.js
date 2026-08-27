@@ -11,6 +11,7 @@ export default function Home() {
   const forceOpen = useRef(false);
   const t = (key, fallback) => erp.tr?.[key] || fallback || key;
 
+  // ===== DARK MODE =====
   useEffect(() => {
     if (erp.theme === 'dark') {
       document.documentElement.setAttribute('data-theme', 'dark');
@@ -23,6 +24,7 @@ export default function Home() {
     }
   }, [erp.theme]);
 
+  // ===== SAFETY TIMEOUT =====
   useEffect(() => {
     const timer = setTimeout(() => {
       forceOpen.current = true;
@@ -31,6 +33,7 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, []);
 
+  // ===== KEYBOARD SHORTCUTS =====
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.altKey && e.key.toLowerCase() === 'n') { e.preventDefault(); erp.setPage?.('create'); }
@@ -41,6 +44,7 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [erp.setPage]);
 
+  // ===== ONLINE STATUS =====
   useEffect(() => {
     const updateOnlineStatus = () => {
       setIsOnline(navigator.onLine);
@@ -55,6 +59,7 @@ export default function Home() {
     };
   }, [erp.showToast]);
 
+  // ===== ERROR SCREEN =====
   if (erp.initError) {
     return (
       <div style={{
@@ -119,6 +124,7 @@ export default function Home() {
     );
   }
 
+  // ===== LOADING =====
   const isLoading = !forceOpen.current && !erp.user && !erp.userProfile;
   if (isLoading) {
     return (
@@ -135,6 +141,7 @@ export default function Home() {
           <style>{`
             @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
             @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+            @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-20px); } }
           `}</style>
           <div style={{ fontSize: '60px', marginBottom: '20px', animation: 'spin 2s linear infinite' }}>✈️</div>
           <h2 style={{ color: '#FBBF24' }}>Loading SUEUD AL TAAYIRA ERP...</h2>
@@ -162,6 +169,7 @@ export default function Home() {
     );
   }
 
+  // ===== PERMISSIONS =====
   const profile = erp.userProfile || {};
   const isSuperAdmin = profile.role === 'SuperAdmin';
   const isAdmin = profile.is_admin || false;
@@ -171,39 +179,57 @@ export default function Home() {
   const canAccessReports = isAdmin || profile.can_access_reports || false;
   const canAccessSettings = isAdmin || profile.can_access_settings || false;
 
+  // ===== MENU WITH ADVANCE TRAVEL AGENCY FEATURES =====
   const menu = [
+    // Main
     { id: 'dashboard', label: t('dashboard', '📊 Dashboard'), show: true, section: 'Main' },
     { id: 'ai_dashboard', label: t('ai_dashboard', '🤖 AI Dashboard'), show: true, section: 'Main' },
     { id: 'my_attendance', label: '⏰ My Attendance', show: true, section: 'Main' },
     { id: 'notifications', label: t('notifications', '🔔 Notifications'), show: true, section: 'Main' },
+
+    // Travel Agency Core
     { id: 'create', label: t('create', '✈️ Create Invoice'), show: canAccessInvoices, section: 'Travel Sales' },
     { id: 'list', label: t('list', '📋 Invoices'), show: canAccessInvoices, section: 'Travel Sales' },
     { id: 'refunds', label: t('refunds', '🔄 Refunds'), show: canAccessInvoices, section: 'Travel Sales' },
     { id: 'quotations', label: t('quotations', '📄 Quotations'), show: canAccessInvoices, section: 'Travel Sales' },
+    
+    // Flight Operations
     { id: 'flight_status', label: '🛫 Flight Status', show: canAccessInvoices, section: 'Flight Operations' },
     { id: 'hotel_booking', label: '🏨 Hotel Booking', show: canAccessInvoices, section: 'Flight Operations' },
     { id: 'visa_processing', label: '🛂 Visa Processing', show: canAccessInvoices, section: 'Flight Operations' },
     { id: 'travel_insurance', label: '🛡️ Travel Insurance', show: canAccessInvoices, section: 'Flight Operations' },
     { id: 'hajj_umrah', label: '🕋 Hajj/Umrah', show: canAccessInvoices, section: 'Flight Operations' },
+
+    // Packages & Tours
     { id: 'packages', label: t('packages', '📦 Tour Packages'), show: canAccessInvoices, section: 'Packages & Tours' },
     { id: 'corporate_travel', label: '🏢 Corporate Travel', show: canAccessInvoices, section: 'Packages & Tours' },
     { id: 'frequent_flyer', label: '🌟 Frequent Flyer', show: canAccessInvoices, section: 'Packages & Tours' },
+
+    // CRM
     { id: 'customers', label: t('customers', '👤 Customers'), show: canAccessInvoices, section: 'CRM' },
     { id: 'corporates', label: t('corporates', '🏢 Corporates'), show: canAccessInvoices, section: 'CRM' },
     { id: 'creditors', label: t('creditors', '💳 Creditors'), show: canAccessInvoices, section: 'CRM' },
     { id: 'credit', label: t('credit', '💰 Credit Balances'), show: canAccessInvoices, section: 'CRM' },
     { id: 'portals', label: t('portals', '🛫 GDS/Portals'), show: canAccessInvoices, section: 'CRM' },
     { id: 'vendors', label: t('vendors', '🚚 Vendors'), show: canAccessInvoices, section: 'CRM' },
+
+    // Finance
     { id: 'bank', label: t('bank', '🏦 Bank & Cash'), show: canAccessBank, section: 'Finance' },
     { id: 'invest', label: t('invest', '📈 Investors'), show: canAccessBank, section: 'Finance' },
     { id: 'expenses', label: t('expenses', '💸 Expenses'), show: canAccessBank, section: 'Finance' },
     { id: 'profitability', label: t('profitability', '📊 Profitability'), show: true, section: 'Finance' },
     { id: 'refund_statement', label: t('refund_statement', '📑 Refund Statement'), show: canAccessReports, section: 'Finance' },
+
+    // HR
     { id: 'hr', label: t('hr', '👨‍💼 HR Directory'), show: canAccessHR, section: 'Human Resources' },
     { id: 'hr_advanced', label: t('hr_advanced', '👨‍💼 HR & Payroll'), show: canAccessHR, section: 'Human Resources' },
     { id: 'staff_mistakes', label: t('staff_mistakes', '⚠️ Staff Mistakes'), show: canAccessHR, section: 'Human Resources' },
+
+    // Contracts
     { id: 'contract', label: '📝 Corporate Contract', show: canAccessInvoices, section: 'Contracts' },
     { id: 'offer', label: '🎁 Corporate Offer', show: canAccessInvoices, section: 'Contracts' },
+
+    // Reports & Admin
     { id: 'reports', label: t('reports', '📊 Reports'), show: canAccessReports, section: 'Reports & Admin' },
     { id: 'statements', label: t('statements', '📑 Statements'), show: canAccessReports, section: 'Reports & Admin' },
     { id: 'audit', label: t('audit', '📜 Audit Logs'), show: isAdmin, section: 'Reports & Admin' },
@@ -215,6 +241,7 @@ export default function Home() {
 
   return (
     <div dir={erp.lang === 'ar' ? 'rtl' : 'ltr'}>
+      {/* OFFLINE BANNER */}
       {!isOnline && (
         <div style={{
           position: 'fixed',
@@ -231,6 +258,8 @@ export default function Home() {
           ⚠️ You are offline. Please check your internet connection.
         </div>
       )}
+
+      {/* PROFILE WARNING */}
       {!erp.userProfile && (
         <div style={{
           position: 'fixed',
@@ -259,6 +288,8 @@ export default function Home() {
           </span>
         </div>
       )}
+
+      {/* TOAST NOTIFICATION */}
       {erp.toast && (
         <div style={{
           position: 'fixed',
@@ -277,6 +308,7 @@ export default function Home() {
           {erp.toast}
         </div>
       )}
+
       <ERPLayout {...erp} menu={menu}>
         <ERPViews {...erp} />
       </ERPLayout>
