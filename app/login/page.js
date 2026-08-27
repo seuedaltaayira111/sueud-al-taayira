@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [mode, setMode] = useState('login'); // 'login' or 'forgot'
+  const [mode, setMode] = useState('login');
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [lang, setLang] = useState('en');
