@@ -25,7 +25,8 @@ export default function useERPActions(state) {
     getSalarySlipHTML, getContractHTML, getMistakeHTML,
     today, router, contractCorpName, contractType,
     contractMarkup, contractTerms, payForm, setPayForm,
-    advForm, setAdvForm
+    advForm, setAdvForm, mistakeForm, setMistakeForm,
+    leaveForm, setLeaveForm, contractForm, setContractForm
   } = state;
 
   const isAr = lang === 'ar';
@@ -50,7 +51,7 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
-  // AI CHAT
+  // AI CHAT - ENHANCED
   // ============================================================
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
@@ -68,6 +69,12 @@ export default function useERPActions(state) {
       const unpaidCount = data.invoices?.filter(i => i.status === 'Unpaid').length || 0;
       const totalCustomers = data.customers?.length || 0;
       const totalExpenses = data.expenses?.reduce((s, e) => s + (e.amount || 0), 0) || 0;
+      const totalEmployees = data.employees?.length || 0;
+      const totalPortals = data.portals?.length || 0;
+      const totalPackages = data.packages?.length || 0;
+      const totalHotels = data.hotelBookings?.length || 0;
+      const totalVisa = data.visaApplications?.length || 0;
+      const totalHajj = data.hajjUmrahPackages?.length || 0;
 
       if (input.includes('invoice') || input.includes('فاتورة')) {
         reply = isAr
@@ -87,14 +94,46 @@ export default function useERPActions(state) {
         reply = isAr
           ? `💰 إجمالي الربح: ${totalProfit.toFixed(2)} ريال.`
           : `💰 Total profit: ${totalProfit.toFixed(2)} SAR.`;
+      } else if (input.includes('expense') || input.includes('مصروف')) {
+        reply = isAr
+          ? `💸 إجمالي المصروفات: ${totalExpenses.toFixed(2)} ريال.`
+          : `💸 Total expenses: ${totalExpenses.toFixed(2)} SAR.`;
+      } else if (input.includes('employee') || input.includes('موظف')) {
+        reply = isAr
+          ? `👨‍💼 لديك ${totalEmployees} موظف مسجل.`
+          : `👨‍💼 You have ${totalEmployees} registered employees.`;
+      } else if (input.includes('hotel') || input.includes('فندق')) {
+        reply = isAr
+          ? `🏨 لديك ${totalHotels} حجز فندق.`
+          : `🏨 You have ${totalHotels} hotel bookings.`;
+      } else if (input.includes('visa') || input.includes('تأشيرة')) {
+        reply = isAr
+          ? `🛂 لديك ${totalVisa} طلب تأشيرة.`
+          : `🛂 You have ${totalVisa} visa applications.`;
+      } else if (input.includes('hajj') || input.includes('حج') || input.includes('umrah') || input.includes('عمرة')) {
+        reply = isAr
+          ? `🕋 لديك ${totalHajj} باقة حج وعمرة.`
+          : `🕋 You have ${totalHajj} Hajj/Umrah packages.`;
+      } else if (input.includes('portal') || input.includes('بوابة')) {
+        reply = isAr
+          ? `🛫 لديك ${totalPortals} بوابة بإجمالي رصيد ${data.portals?.reduce((s, p) => s + (p.current_balance || 0), 0).toFixed(2)} ريال.`
+          : `🛫 You have ${totalPortals} portals with total balance ${data.portals?.reduce((s, p) => s + (p.current_balance || 0), 0).toFixed(2)} SAR.`;
+      } else if (input.includes('package') || input.includes('باقة')) {
+        reply = isAr
+          ? `📦 لديك ${totalPackages} باقة سياحية.`
+          : `📦 You have ${totalPackages} tour packages.`;
       } else if (input.includes('help') || input.includes('مساعدة')) {
         reply = isAr
-          ? '🤖 أسألني عن: فواتير, عملاء, رحلات, أرباح, مصروفات, رواتب'
-          : '🤖 Ask me about: invoices, customers, flights, profit, expenses, salary';
+          ? '🤖 أسألني عن: فواتير, عملاء, رحلات, أرباح, مصروفات, رواتب, موظفين, فنادق, تأشيرات, حج وعمرة, بوابات, باقات'
+          : '🤖 Ask me about: invoices, customers, flights, profit, expenses, salary, employees, hotels, visas, hajj/umrah, portals, packages';
       } else if (input.includes('hello') || input.includes('hi') || input.includes('مرحبا')) {
         reply = isAr
           ? '👋 مرحباً! أنا مساعد السفر الذكي. كيف يمكنني مساعدتك؟'
           : '👋 Hello! I\'m your Smart Travel Assistant. How can I help?';
+      } else {
+        reply = isAr
+          ? '📋 يمكنني مساعدتك في: الفواتير، العملاء، الرحلات، الحجوزات، التقارير. اكتب "مساعدة" للقائمة الكاملة.'
+          : '📋 I can help with: invoices, customers, flights, bookings, reports. Type "help" for full list.';
       }
 
       setChatMessages(prev => [...prev, { sender: 'bot', text: reply }]);
@@ -601,7 +640,7 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
-  // EXPENSES CRUD
+  // EXPENSES CRUD - WITH ITEMS
   // ============================================================
   const handleAddExpItem = () => {
     setExpForm(prev => ({
@@ -628,14 +667,19 @@ export default function useERPActions(state) {
   const handleEditExp = (exp) => {
     setEditExpId(exp.id);
     setExpForm({
-      expense_type: exp.expense_type || '',
+      expense_type: exp.expense_type || 'Office Expense',
       payment_mode: exp.payment_mode || 'Cash',
       description: exp.description || '',
       expense_date: exp.expense_date || today,
       vendor_name: exp.vendor_name || '',
+      vendor_id: exp.vendor_id || '',
       taxRate: exp.tax_rate || '0',
       items: exp.items || [{ name: '', qty: 1, price: 0 }],
-      approval_status: exp.approval_status || 'Approved'
+      approval_status: exp.approval_status || 'Approved',
+      category: exp.category || 'General',
+      notes: exp.notes || '',
+      subtotal: exp.subtotal || 0,
+      total: exp.total || 0
     });
   };
 
@@ -647,15 +691,20 @@ export default function useERPActions(state) {
 
       const payload = {
         expense_date: expForm.expense_date,
-        expense_type: expForm.expense_type,
-        description: expForm.description,
-        payment_mode: expForm.payment_mode,
-        vendor_name: expForm.vendor_name,
+        expense_type: expForm.expense_type || 'Office Expense',
+        description: expForm.description || '',
+        payment_mode: expForm.payment_mode || 'Cash',
+        vendor_name: expForm.vendor_name || '',
+        vendor_id: expForm.vendor_id || null,
         tax_rate: parseFloat(expForm.taxRate) || 0,
         total_amount: totalAmount,
         amount: totalAmount,
         items: expForm.items,
         approval_status: expForm.approval_status || 'Approved',
+        category: expForm.category || 'General',
+        notes: expForm.notes || '',
+        subtotal: totalAmount,
+        total: totalAmount,
         tenant_id: userProfile.tenant_id
       };
 
@@ -697,14 +746,19 @@ export default function useERPActions(state) {
       }
 
       setExpForm({
-        expense_type: '',
+        expense_type: 'Office Expense',
         payment_mode: 'Cash',
         description: '',
         expense_date: today,
         vendor_name: '',
+        vendor_id: '',
         taxRate: '0',
         items: [{ name: '', qty: 1, price: 0 }],
-        approval_status: 'Approved'
+        approval_status: 'Approved',
+        category: 'General',
+        notes: '',
+        subtotal: 0,
+        total: 0
       });
     } catch (err) {
       showToast('Error: ' + err.message);
@@ -723,6 +777,14 @@ export default function useERPActions(state) {
     } catch (err) {
       showToast('Error: ' + err.message);
     }
+  };
+
+  // ============================================================
+  // EXPENSE VOUCHER GENERATION
+  // ============================================================
+  const generateExpenseVoucher = (exp) => {
+    setPreviewHTML(getExpenseHTML(exp, data.settings, lang));
+    setModal({ type: 'preview', data: exp });
   };
 
   // ============================================================
@@ -872,7 +934,7 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
-  // PDF DOWNLOAD - FIXED
+  // PDF DOWNLOAD - COMPLETE FIX
   // ============================================================
   const downloadPDF = async (htmlContent, filename = 'document.pdf') => {
     try {
@@ -1070,8 +1132,6 @@ export default function useERPActions(state) {
   const openPreview = (inv) => {
     try {
       console.log('👁️ openPreview called for:', inv?.invoice_no);
-      console.log('📄 getInvoiceHTML type:', typeof getInvoiceHTML);
-      console.log('📄 getRefundHTML type:', typeof getRefundHTML);
 
       if (typeof getInvoiceHTML !== 'function' && typeof getRefundHTML !== 'function') {
         console.error('❌ HTML generator functions not available!');
@@ -1188,7 +1248,9 @@ Thank you for choosing us!`;
       mode: 'Cash',
       reason: '',
       portalId: inv.portal_id || '',
-      creditBalance: cust?.store_credit || 0
+      creditBalance: cust?.store_credit || 0,
+      notes: '',
+      refund_to: 'customer'
     });
     setModal({ type: 'refund', data: inv });
   };
@@ -1197,7 +1259,7 @@ Thank you for choosing us!`;
   // OPEN SETTLE MODAL
   // ============================================================
   const openSettleModal = (inv) => {
-    setSettleForm({ id: inv.id, date: today, mode: 'Cash' });
+    setSettleForm({ id: inv.id, date: today, mode: 'Cash', amount: inv.due_amount || 0, reference: '', notes: '' });
     setModal({ type: 'settle', data: inv });
   };
 
@@ -1249,7 +1311,7 @@ Thank you for choosing us!`;
   };
 
   // ============================================================
-  // PROCESS REFUND
+  // PROCESS REFUND - WITH STORE CREDIT
   // ============================================================
   const handleRefund = async (e) => {
     e.preventDefault();
@@ -1261,6 +1323,7 @@ Thank you for choosing us!`;
       const custRef = parseFloat(refundForm.custRefund) || 0;
       const refundNo = `REF-${Date.now()}`;
 
+      // Store Credit for New Booking
       if (refundForm.mode === 'Credit' && custRef > 0 && origInv.customer_id) {
         const cust = data.customers?.find(c => c.id === origInv.customer_id);
         if (cust) {
@@ -1270,9 +1333,11 @@ Thank you for choosing us!`;
             ...prev,
             customers: prev.customers.map(c => c.id === cust.id ? { ...c, store_credit: nc } : c)
           }));
+          showToast(isAr ? `✅ ${custRef.toFixed(2)} SAR ${origInv.customers?.name} के स्टोर क्रेडिट में जोड़ा गया!` : `✅ ${custRef.toFixed(2)} SAR added to ${origInv.customers?.name}'s store credit!`);
         }
       }
 
+      // Portal refund
       if (compRef > 0 && refundForm.portalId) {
         const portal = data.portals?.find(p => p.id === refundForm.portalId);
         if (portal) {
@@ -1465,7 +1530,9 @@ Thank you for choosing us!`;
         mode: inv.payment_method || 'Cash',
         reason: inv.refund_reason || '',
         portalId: inv.portal_id,
-        creditBalance: cust?.store_credit || 0
+        creditBalance: cust?.store_credit || 0,
+        notes: '',
+        refund_to: 'customer'
       });
       setModal({ type: 'refund', data: inv });
       return;
@@ -1536,7 +1603,7 @@ Thank you for choosing us!`;
   };
 
   // ============================================================
-  // CREATE INVOICE
+  // CREATE INVOICE - WITH STORE CREDIT
   // ============================================================
   const handleCreateInvoice = async (e) => {
     e.preventDefault();
@@ -1609,6 +1676,7 @@ Thank you for choosing us!`;
         showToast(isAr ? `⚠️ पोर्टल बैलेंस कम है: ${(portal.current_balance || 0).toFixed(2)} SAR (जरूरत: ${cost.toFixed(2)} SAR)` : `⚠️ Low portal balance: ${(portal.current_balance || 0).toFixed(2)} SAR (Need: ${cost.toFixed(2)} SAR)`);
       }
 
+      // Store Credit usage
       if (invForm.payment === 'Credit Balance' && cid && usedCredit > 0) {
         const cust = data.customers?.find(c => c.id === cid);
         if (cust) {
@@ -1619,6 +1687,7 @@ Thank you for choosing us!`;
             ...prev,
             customers: prev.customers.map(c => c.id === cust.id ? { ...c, store_credit: nc } : c)
           }));
+          showToast(isAr ? `✅ ${usedCredit.toFixed(2)} SAR ${cust.name} के क्रेडिट से उपयोग किया गया!` : `✅ ${usedCredit.toFixed(2)} SAR used from ${cust.name}'s credit!`);
         }
       }
 
@@ -1749,6 +1818,7 @@ Thank you for choosing us!`;
         showToast(isAr ? '✅ इनवॉइस बन गई!' : '✅ Invoice Generated!');
       }
 
+      // Reset form
       setInvForm({
         custType: 'Individual',
         custId: 'new',
@@ -1813,7 +1883,7 @@ Thank you for choosing us!`;
   };
 
   // ============================================================
-  // STAFF MISTAKES
+  // STAFF MISTAKES - COMPLETE
   // ============================================================
   const handleAddMistake = async (e) => {
     e.preventDefault();
@@ -1860,7 +1930,7 @@ Thank you for choosing us!`;
   };
 
   // ============================================================
-  // PAYROLL
+  // PAYROLL - COMPLETE
   // ============================================================
   const handleGenerateSlip = (pay) => {
     setPreviewHTML(getSalarySlipHTML(pay, data.settings, lang));
@@ -1968,7 +2038,30 @@ Thank you for choosing us!`;
         other_deduction: 0,
         payment_mode: 'Cash',
         payment_date: today,
-        notes: ''
+        notes: '',
+        commission: 0,
+        bonus: 0,
+        allowance: 0,
+        deductions: 0,
+        net_salary: 0,
+        basic_salary: 0,
+        housing_allowance: 0,
+        transport_allowance: 0,
+        food_allowance: 0,
+        phone_allowance: 0,
+        internet_allowance: 0,
+        medical_allowance: 0,
+        education_allowance: 0,
+        overtime_hours: 0,
+        overtime_rate: 0,
+        leave_days: 0,
+        sick_days: 0,
+        unpaid_days: 0,
+        tax: 0,
+        social_security: 0,
+        insurance: 0,
+        loan: 0,
+        other_deductions: 0
       });
     } catch (err) {
       showToast('Error: ' + err.message);
@@ -2008,7 +2101,7 @@ Thank you for choosing us!`;
       await logAction(`Advance of ${amount.toFixed(2)} SAR to ${emp?.name || ''}`);
       showToast(isAr ? '✅ एडवांस दर्ज किया गया!' : '✅ Advance recorded!');
 
-      setAdvForm({ employee_id: '', amount: '', date: today, status: 'Pending' });
+      setAdvForm({ employee_id: '', amount: '', date: today, status: 'Pending', reason: '', approved_by: '', approved_date: '', repayment_date: '', installments: 1, installment_amount: 0, notes: '' });
     } catch (err) {
       showToast('Error: ' + err.message);
     }
@@ -2185,6 +2278,42 @@ Thank you for choosing us!`;
             })) || [];
             filename = 'cashbook';
             break;
+          case 'employees':
+            exportData = data.employees?.map(e => ({
+              'Name': e.name,
+              'Role': e.role,
+              'Phone': e.phone || '',
+              'Salary': e.salary || 0,
+              'Commission': e.commission_rate || 0,
+              'Iqama': e.iqama_no || '',
+              'Iqama Expiry': e.iqama_expiry || '',
+              'Nationality': e.nationality || '',
+              'Join Date': e.join_date || '',
+              'Bank': e.bank_name || ''
+            })) || [];
+            filename = 'employees';
+            break;
+          case 'portals':
+            exportData = data.portals?.map(p => ({
+              'Name': p.name,
+              'Type': p.portal_type || '',
+              'Balance': p.current_balance || 0,
+              'Contact': p.contact_person || '',
+              'Phone': p.phone || '',
+              'Credit Limit': p.credit_limit || 0
+            })) || [];
+            filename = 'portals';
+            break;
+          case 'packages':
+            exportData = data.packages?.map(p => ({
+              'Name': p.name,
+              'Price': p.price || 0,
+              'Duration': p.duration || '',
+              'Inclusions': p.inclusions || '',
+              'Status': p.status || 'Available'
+            })) || [];
+            filename = 'packages';
+            break;
           default:
             return showToast(isAr ? '❌ गलत डेटा टाइप!' : '❌ Invalid export type!');
         }
@@ -2280,6 +2409,7 @@ Thank you for choosing us!`;
     handleEditExp,
     handleAddEditExpense,
     handleDeleteExpense,
+    generateExpenseVoucher,
 
     // Portals
     handleAddEditPortal,
