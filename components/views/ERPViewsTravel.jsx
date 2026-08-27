@@ -65,6 +65,20 @@ export default function ERPViewsTravel(props) {
       width: '100%',
       boxSizing: 'border-box'
     },
+    textarea: {
+      padding: '10px 15px',
+      background: isDark ? '#0F172A' : '#F1F5F9',
+      border: isDark ? '1px solid #475569' : '1px solid #E2E8F0',
+      borderRadius: '8px',
+      color: isDark ? '#E2E8F0' : '#1E293B',
+      fontSize: '14px',
+      outline: 'none',
+      width: '100%',
+      boxSizing: 'border-box',
+      minHeight: '80px',
+      resize: 'vertical',
+      fontFamily: 'inherit'
+    },
     btn: {
       padding: '10px 20px',
       borderRadius: '8px',
@@ -219,7 +233,402 @@ export default function ERPViewsTravel(props) {
   const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
 
   // ============================================================
-  // REAL HOTEL BOOKING - WITH REAL HOTELS
+  // FLIGHT STATUS - REAL DUMMY TICKET GENERATOR WITH FORM
+  // ============================================================
+  if (page === 'flight_status') {
+    const [ticketForm, setTicketForm] = useState({
+      passenger_name: '',
+      airline: '',
+      flight_number: '',
+      origin: '',
+      destination: '',
+      departure_date: today,
+      departure_time: '08:00',
+      seat_number: '',
+      booking_reference: '',
+      ticket_number: '',
+      status: 'Confirmed',
+      class: 'Economy',
+      gate: '',
+      terminal: ''
+    });
+    const [tickets, setTickets] = useState([]);
+    const [editingId, setEditingId] = useState(null);
+
+    const airlines = [
+      { code: 'SV', name: 'Saudia' },
+      { code: 'XY', name: 'Flynas' },
+      { code: 'F3', name: 'Flyadeal' },
+      { code: 'EK', name: 'Emirates' },
+      { code: 'EY', name: 'Etihad' },
+      { code: 'QR', name: 'Qatar Airways' },
+      { code: 'GF', name: 'Gulf Air' },
+      { code: 'MS', name: 'EgyptAir' },
+      { code: 'RJ', name: 'Royal Jordanian' },
+      { code: 'PK', name: 'Pakistan International' },
+      { code: 'WY', name: 'Oman Air' },
+      { code: 'KU', name: 'Kuwait Airways' },
+      { code: 'G9', name: 'Air Arabia' },
+      { code: 'TK', name: 'Turkish Airlines' },
+      { code: '6E', name: 'IndiGo' },
+      { code: 'AI', name: 'Air India' }
+    ];
+
+    const cities = [
+      'Riyadh (RUH)', 'Jeddah (JED)', 'Dammam (DMM)', 'Madinah (MED)',
+      'Makkah', 'Cairo (CAI)', 'Dubai (DXB)', 'Abu Dhabi (AUH)',
+      'Doha (DOH)', 'Manama (BAH)', 'Kuwait (KWI)', 'Muscat (MCT)',
+      'Amman (AMM)', 'London (LHR)', 'Paris (CDG)', 'New York (NYC)',
+      'Istanbul (IST)', 'Kuala Lumpur (KUL)', 'Singapore (SIN)',
+      'Hong Kong (HKG)', 'Tokyo (NRT)'
+    ];
+
+    const statuses = ['Confirmed', 'On Time', 'Delayed', 'Boarding', 'Departed', 'Arrived', 'Cancelled'];
+    const classes = ['Economy', 'Business', 'First Class'];
+    const terminals = ['1', '2', '3', '4', '5'];
+    const gates = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+
+    const generateRandomTicket = () => {
+      const airline = airlines[Math.floor(Math.random() * airlines.length)];
+      const flightNum = Math.floor(100 + Math.random() * 900);
+      const origin = cities[Math.floor(Math.random() * cities.length)];
+      let dest = cities.filter(c => c !== origin);
+      dest = dest[Math.floor(Math.random() * dest.length)];
+      const status = statuses[Math.floor(Math.random() * statuses.length)];
+      const cls = classes[Math.floor(Math.random() * classes.length)];
+
+      return {
+        passenger_name: `PASS-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+        airline: airline.code,
+        airline_name: airline.name,
+        flight_number: `${airline.code}${flightNum}`,
+        origin: origin,
+        destination: dest,
+        departure_date: today,
+        departure_time: `${String(Math.floor(6 + Math.random() * 12)).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
+        seat_number: `${String.fromCharCode(65 + Math.floor(Math.random() * 30))}${Math.floor(1 + Math.random() * 50)}`,
+        booking_reference: `${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+        ticket_number: `TKT-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
+        status: status,
+        class: cls,
+        gate: gates[Math.floor(Math.random() * gates.length)] + Math.floor(1 + Math.random() * 30),
+        terminal: terminals[Math.floor(Math.random() * terminals.length)]
+      };
+    };
+
+    const handleGenerateTicket = (e) => {
+      e.preventDefault();
+      const ticket = generateRandomTicket();
+      setTicketForm({
+        passenger_name: ticket.passenger_name,
+        airline: ticket.airline,
+        flight_number: ticket.flight_number,
+        origin: ticket.origin,
+        destination: ticket.destination,
+        departure_date: ticket.departure_date,
+        departure_time: ticket.departure_time,
+        seat_number: ticket.seat_number,
+        booking_reference: ticket.booking_reference,
+        ticket_number: ticket.ticket_number,
+        status: ticket.status,
+        class: ticket.class,
+        gate: ticket.gate,
+        terminal: ticket.terminal
+      });
+      showToast?.(isAr ? '✅ تم إنشاء تذكرة جديدة!' : '✅ New ticket generated!');
+    };
+
+    const handleSaveTicket = (e) => {
+      e.preventDefault();
+      if (!ticketForm.passenger_name || !ticketForm.flight_number) {
+        showToast?.(isAr ? '⚠️ الرجاء ملء جميع الحقول المطلوبة' : '⚠️ Please fill all required fields');
+        return;
+      }
+
+      const newTicket = {
+        id: editingId || Date.now(),
+        ...ticketForm,
+        created_at: new Date().toISOString()
+      };
+
+      if (editingId) {
+        setTickets(prev => prev.map(t => t.id === editingId ? newTicket : t));
+        showToast?.(isAr ? '✅ تم تحديث التذكرة!' : '✅ Ticket updated!');
+        setEditingId(null);
+      } else {
+        setTickets(prev => [newTicket, ...prev]);
+        showToast?.(isAr ? '✅ تم حفظ التذكرة!' : '✅ Ticket saved!');
+      }
+
+      setTicketForm({
+        passenger_name: '',
+        airline: '',
+        flight_number: '',
+        origin: '',
+        destination: '',
+        departure_date: today,
+        departure_time: '08:00',
+        seat_number: '',
+        booking_reference: '',
+        ticket_number: '',
+        status: 'Confirmed',
+        class: 'Economy',
+        gate: '',
+        terminal: ''
+      });
+    };
+
+    const handleEditTicket = (ticket) => {
+      setEditingId(ticket.id);
+      setTicketForm({
+        passenger_name: ticket.passenger_name,
+        airline: ticket.airline,
+        flight_number: ticket.flight_number,
+        origin: ticket.origin,
+        destination: ticket.destination,
+        departure_date: ticket.departure_date || today,
+        departure_time: ticket.departure_time || '08:00',
+        seat_number: ticket.seat_number || '',
+        booking_reference: ticket.booking_reference || '',
+        ticket_number: ticket.ticket_number || '',
+        status: ticket.status || 'Confirmed',
+        class: ticket.class || 'Economy',
+        gate: ticket.gate || '',
+        terminal: ticket.terminal || ''
+      });
+    };
+
+    const handleDeleteTicket = (id) => {
+      if (!confirm(isAr ? 'حذف هذه التذكرة؟' : 'Delete this ticket?')) return;
+      setTickets(prev => prev.filter(t => t.id !== id));
+      showToast?.(isAr ? '✅ تم الحذف!' : '✅ Deleted!');
+    };
+
+    const handlePrintTicket = (ticket) => {
+      const printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Ticket ${ticket.flight_number}</title>
+          <style>
+            body { font-family: 'Arial', sans-serif; padding: 40px; background: #fff; }
+            .ticket { border: 2px solid #1E3A8A; border-radius: 12px; padding: 30px; max-width: 700px; margin: auto; }
+            .header { background: #1E3A8A; color: white; padding: 15px; border-radius: 8px 8px 0 0; text-align: center; }
+            .header h1 { margin: 0; font-size: 24px; }
+            .body { padding: 20px; }
+            .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+            .label { font-weight: bold; color: #555; }
+            .value { font-weight: 600; color: #1E3A8A; }
+            .status { display: inline-block; padding: 4px 12px; border-radius: 12px; font-weight: bold; }
+            .status-confirmed { background: #D1FAE5; color: #065F46; }
+            .status-boarding { background: #FEF3C7; color: #92400E; }
+            .status-departed { background: #DBEAFE; color: #1D4ED8; }
+            .status-arrived { background: #D1FAE5; color: #065F46; }
+            .status-delayed { background: #FEE2E2; color: #991B1B; }
+            .status-cancelled { background: #FEE2E2; color: #991B1B; }
+            .footer { text-align: center; padding: 15px; background: #F8FAFC; border-radius: 0 0 8px 8px; color: #666; font-size: 12px; }
+            @media print { body { padding: 0; } .ticket { border: none; } }
+          </style>
+        </head>
+        <body>
+          <div class="ticket">
+            <div class="header">
+              <h1>✈️ BOARDING PASS</h1>
+              <p style="margin: 5px 0 0; opacity: 0.8;">${ticket.flight_number}</p>
+            </div>
+            <div class="body">
+              <div class="row"><span class="label">Passenger Name</span><span class="value">${ticket.passenger_name}</span></div>
+              <div class="row"><span class="label">Airline</span><span class="value">${ticket.airline}</span></div>
+              <div class="row"><span class="label">Flight</span><span class="value">${ticket.flight_number}</span></div>
+              <div class="row"><span class="label">From</span><span class="value">${ticket.origin}</span></div>
+              <div class="row"><span class="label">To</span><span class="value">${ticket.destination}</span></div>
+              <div class="row"><span class="label">Date</span><span class="value">${ticket.departure_date}</span></div>
+              <div class="row"><span class="label">Time</span><span class="value">${ticket.departure_time}</span></div>
+              <div class="row"><span class="label">Seat</span><span class="value">${ticket.seat_number || 'N/A'}</span></div>
+              <div class="row"><span class="label">Booking Ref</span><span class="value">${ticket.booking_reference}</span></div>
+              <div class="row"><span class="label">Ticket No</span><span class="value">${ticket.ticket_number}</span></div>
+              <div class="row"><span class="label">Class</span><span class="value">${ticket.class}</span></div>
+              <div class="row"><span class="label">Gate</span><span class="value">${ticket.gate || 'N/A'}</span></div>
+              <div class="row"><span class="label">Terminal</span><span class="value">${ticket.terminal || 'N/A'}</span></div>
+              <div class="row"><span class="label">Status</span><span class="value"><span class="status status-${ticket.status.toLowerCase()}">${ticket.status}</span></span></div>
+            </div>
+            <div class="footer">This is a computer-generated ticket. Valid without signature.</div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const win = window.open('', '_blank', 'width=800,height=600');
+      if (win) {
+        win.document.write(printContent);
+        win.document.close();
+        setTimeout(() => { win.focus(); win.print(); }, 500);
+      }
+    };
+
+    // Load tickets from Supabase
+    useEffect(() => {
+      if (userProfile?.tenant_id) {
+        supabase.from('flight_tickets')
+          .select('*')
+          .eq('tenant_id', userProfile.tenant_id)
+          .order('created_at', { ascending: false })
+          .then(({ data }) => {
+            if (data) setTickets(data);
+          })
+          .catch(() => {});
+      }
+    }, [userProfile?.tenant_id]);
+
+    return (
+      <div style={styles.container}>
+        <div style={styles.header}>
+          <h1 style={styles.title}>🛫 {isAr ? 'إنشاء تذكرة طيران' : 'Flight Ticket Generator'}</h1>
+          <button onClick={handleGenerateTicket} style={{ ...styles.btn, ...styles.btnWarning }}>
+            🎲 {isAr ? 'توليد عشوائي' : 'Random Generate'}
+          </button>
+        </div>
+
+        {/* Ticket Form */}
+        <div style={styles.card}>
+          <h3 style={styles.sectionTitle}>
+            {editingId ? '✏️ ' + (isAr ? 'تعديل التذكرة' : 'Edit Ticket') : '📝 ' + (isAr ? 'إنشاء تذكرة جديدة' : 'Create New Ticket')}
+          </h3>
+          <form onSubmit={handleSaveTicket} style={styles.formRow}>
+            <div>
+              <label style={styles.label}>{isAr ? 'اسم المسافر *' : 'Passenger Name *'}</label>
+              <input style={styles.input} value={ticketForm.passenger_name} onChange={e => setTicketForm({ ...ticketForm, passenger_name: e.target.value })} required />
+            </div>
+            <div>
+              <label style={styles.label}>{isAr ? 'شركة الطيران *' : 'Airline *'}</label>
+              <select style={styles.select} value={ticketForm.airline} onChange={e => setTicketForm({ ...ticketForm, airline: e.target.value })} required>
+                <option value="">{isAr ? 'اختر الخطوط' : 'Select Airline'}</option>
+                {airlines.map(a => (
+                  <option key={a.code} value={a.code}>{a.code} - {a.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>{isAr ? 'رقم الرحلة *' : 'Flight Number *'}</label>
+              <input style={styles.input} placeholder="e.g. SV101" value={ticketForm.flight_number} onChange={e => setTicketForm({ ...ticketForm, flight_number: e.target.value.toUpperCase() })} required />
+            </div>
+            <div>
+              <label style={styles.label}>{isAr ? 'من *' : 'From *'}</label>
+              <select style={styles.select} value={ticketForm.origin} onChange={e => setTicketForm({ ...ticketForm, origin: e.target.value })} required>
+                <option value="">{isAr ? 'اختر المدينة' : 'Select City'}</option>
+                {cities.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>{isAr ? 'إلى *' : 'To *'}</label>
+              <select style={styles.select} value={ticketForm.destination} onChange={e => setTicketForm({ ...ticketForm, destination: e.target.value })} required>
+                <option value="">{isAr ? 'اختر المدينة' : 'Select City'}</option>
+                {cities.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>{isAr ? 'تاريخ المغادرة' : 'Departure Date'}</label>
+              <input type="date" style={styles.input} value={ticketForm.departure_date} onChange={e => setTicketForm({ ...ticketForm, departure_date: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.label}>{isAr ? 'وقت المغادرة' : 'Departure Time'}</label>
+              <input type="time" style={styles.input} value={ticketForm.departure_time} onChange={e => setTicketForm({ ...ticketForm, departure_time: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.label}>{isAr ? 'رقم المقعد' : 'Seat Number'}</label>
+              <input style={styles.input} placeholder="e.g. 12A" value={ticketForm.seat_number} onChange={e => setTicketForm({ ...ticketForm, seat_number: e.target.value.toUpperCase() })} />
+            </div>
+            <div>
+              <label style={styles.label}>{isAr ? 'رقم الحجز' : 'Booking Reference'}</label>
+              <input style={styles.input} placeholder="e.g. ABC123" value={ticketForm.booking_reference} onChange={e => setTicketForm({ ...ticketForm, booking_reference: e.target.value.toUpperCase() })} />
+            </div>
+            <div>
+              <label style={styles.label}>{isAr ? 'رقم التذكرة' : 'Ticket Number'}</label>
+              <input style={styles.input} placeholder="e.g. TKT-123456" value={ticketForm.ticket_number} onChange={e => setTicketForm({ ...ticketForm, ticket_number: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.label}>{isAr ? 'الحالة' : 'Status'}</label>
+              <select style={styles.select} value={ticketForm.status} onChange={e => setTicketForm({ ...ticketForm, status: e.target.value })}>
+                {statuses.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>{isAr ? 'الدرجة' : 'Class'}</label>
+              <select style={styles.select} value={ticketForm.class} onChange={e => setTicketForm({ ...ticketForm, class: e.target.value })}>
+                {classes.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>{isAr ? 'البوابة' : 'Gate'}</label>
+              <input style={styles.input} placeholder="e.g. B12" value={ticketForm.gate} onChange={e => setTicketForm({ ...ticketForm, gate: e.target.value.toUpperCase() })} />
+            </div>
+            <div>
+              <label style={styles.label}>{isAr ? 'الصالة' : 'Terminal'}</label>
+              <input style={styles.input} placeholder="e.g. 3" value={ticketForm.terminal} onChange={e => setTicketForm({ ...ticketForm, terminal: e.target.value })} />
+            </div>
+            <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px' }}>
+              <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, padding: '12px 30px' }}>
+                {editingId ? '💾 ' + (isAr ? 'تحديث' : 'Update') : '✅ ' + (isAr ? 'حفظ التذكرة' : 'Save Ticket')}
+              </button>
+              {editingId && (
+                <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setEditingId(null); setTicketForm({ passenger_name: '', airline: '', flight_number: '', origin: '', destination: '', departure_date: today, departure_time: '08:00', seat_number: '', booking_reference: '', ticket_number: '', status: 'Confirmed', class: 'Economy', gate: '', terminal: '' }); }}>
+                  ✕ {isAr ? 'إلغاء' : 'Cancel'}
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+
+        {/* Tickets List */}
+        {tickets.length > 0 && (
+          <div style={styles.card}>
+            <h3 style={styles.sectionTitle}>{isAr ? 'سجل التذاكر' : 'Ticket History'}</h3>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>{isAr ? 'المسافر' : 'Passenger'}</th>
+                    <th style={styles.th}>{isAr ? 'الرحلة' : 'Flight'}</th>
+                    <th style={styles.th}>{isAr ? 'من' : 'From'}</th>
+                    <th style={styles.th}>{isAr ? 'إلى' : 'To'}</th>
+                    <th style={styles.th}>{isAr ? 'التاريخ' : 'Date'}</th>
+                    <th style={styles.th}>{isAr ? 'الحالة' : 'Status'}</th>
+                    <th style={{ ...styles.th, textAlign: 'center' }}>{isAr ? 'إجراء' : 'Action'}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tickets.map(t => (
+                    <tr key={t.id}>
+                      <td style={{ ...styles.td, fontWeight: 600 }}>{t.passenger_name}</td>
+                      <td style={{ ...styles.td, color: '#60A5FA', fontWeight: 600 }}>{t.flight_number}</td>
+                      <td style={styles.td}>{t.origin}</td>
+                      <td style={styles.td}>{t.destination}</td>
+                      <td style={styles.td}>{t.departure_date}</td>
+                      <td style={styles.td}>
+                        <span style={{ ...styles.badge, ...(t.status === 'Confirmed' || t.status === 'On Time' ? styles.badgeSuccess : t.status === 'Cancelled' ? styles.badgeDanger : styles.badgeWarning) }}>
+                          {t.status}
+                        </span>
+                      </td>
+                      <td style={styles.tdCenter}>
+                        <div style={styles.actionsCell}>
+                          <button style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }} onClick={() => handlePrintTicket(t)}>🖨️</button>
+                          <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleEditTicket(t)}>✏️</button>
+                          <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDeleteTicket(t.id)}>🗑️</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ============================================================
+  // HOTEL BOOKING - REAL HOTELS WITH DETAILS
   // ============================================================
   if (page === 'hotel_booking') {
     const [hotelForm, setHotelForm] = useState({
@@ -233,20 +642,16 @@ export default function ERPViewsTravel(props) {
     const [loading, setLoading] = useState(false);
     const [bookings, setBookings] = useState([]);
 
-    // REAL HOTELS DATA
     const realHotels = [
-      { id: 1, name: 'Hilton Riyadh Hotel & Residences', stars: 5, price: 450, rating: 4.8, image: '🏨', address: 'King Abdullah Road, Riyadh', phone: '+966 11 123 4567', website: 'www.hilton.com/riyadh', amenities: ['Pool', 'Spa', 'Gym', 'Restaurant'] },
-      { id: 2, name: 'Marriott Hotel Jeddah', stars: 4, price: 320, rating: 4.5, image: '🏩', address: 'Al Hamra District, Jeddah', phone: '+966 12 234 5678', website: 'www.marriott.com/jeddah', amenities: ['Pool', 'Gym', 'Restaurant'] },
-      { id: 3, name: 'Ritz-Carlton Doha', stars: 5, price: 580, rating: 4.9, image: '🏰', address: 'West Bay, Doha', phone: '+974 1234 5678', website: 'www.ritzcarlton.com/doha', amenities: ['Pool', 'Spa', 'Gym', 'Restaurant', 'Beach'] },
-      { id: 4, name: 'Four Seasons Hotel Dubai', stars: 5, price: 620, rating: 4.9, image: '🏛️', address: 'Jumeirah Beach Road, Dubai', phone: '+971 4 123 4567', website: 'www.fourseasons.com/dubai', amenities: ['Pool', 'Spa', 'Gym', 'Restaurant', 'Beach'] },
-      { id: 5, name: 'Crowne Plaza Cairo', stars: 4, price: 280, rating: 4.3, image: '🏢', address: 'Corniche El Nil, Cairo', phone: '+20 2 123 4567', website: 'www.crowneplaza.com/cairo', amenities: ['Pool', 'Gym', 'Restaurant'] },
-      { id: 6, name: 'Hyatt Regency Istanbul', stars: 5, price: 490, rating: 4.7, image: '🏯', address: 'Taksim Square, Istanbul', phone: '+90 212 123 4567', website: 'www.hyatt.com/istanbul', amenities: ['Pool', 'Spa', 'Gym', 'Restaurant'] },
-      { id: 7, name: 'Fairmont Makkah Clock Tower', stars: 5, price: 550, rating: 4.8, image: '🕌', address: 'King Abdul Aziz Road, Makkah', phone: '+966 12 123 4567', website: 'www.fairmont.com/makkah', amenities: ['Pool', 'Gym', 'Restaurant', 'Prayer Rooms'] },
-      { id: 8, name: 'Shaza Al Madina Hotel', stars: 4, price: 350, rating: 4.6, image: '🕋', address: 'King Fahd Road, Madinah', phone: '+966 14 123 4567', website: 'www.shaza.com/madina', amenities: ['Gym', 'Restaurant', 'Prayer Rooms'] },
-      { id: 9, name: 'Burj Al Arab Jumeirah', stars: 5, price: 800, rating: 4.9, image: '🏰', address: 'Jumeirah Beach Road, Dubai', phone: '+971 4 123 4567', website: 'www.burj-al-arab.com', amenities: ['Pool', 'Spa', 'Gym', 'Restaurant', 'Beach'] },
-      { id: 10, name: 'Atlantis The Palm Dubai', stars: 5, price: 750, rating: 4.8, image: '🏝️', address: 'Palm Jumeirah, Dubai', phone: '+971 4 123 4567', website: 'www.atlantis.com/dubai', amenities: ['Pool', 'Spa', 'Gym', 'Restaurant', 'Aquarium'] },
-      { id: 11, name: 'Hilton Garden Inn Riyadh', stars: 3, price: 250, rating: 4.2, image: '🏢', address: 'King Fahd Road, Riyadh', phone: '+966 11 123 4567', website: 'www.hilton.com/riyadh-garden', amenities: ['Gym', 'Restaurant'] },
-      { id: 12, name: 'Ibis Riyadh Olaya', stars: 3, price: 180, rating: 4.0, image: '🏨', address: 'Olaya Street, Riyadh', phone: '+966 11 123 4567', website: 'www.ibis.com/riyadh', amenities: ['Restaurant'] },
+      { id: 1, name: 'Hilton Riyadh Hotel & Residences', stars: 5, price: 450, rating: 4.8, image: '🏨', address: 'King Abdullah Road, Riyadh', phone: '+966 11 123 4567', website: 'www.hilton.com/riyadh', amenities: ['Pool', 'Spa', 'Gym', 'Restaurant', 'Free WiFi'] },
+      { id: 2, name: 'Marriott Hotel Jeddah', stars: 4, price: 320, rating: 4.5, image: '🏩', address: 'Al Hamra District, Jeddah', phone: '+966 12 234 5678', website: 'www.marriott.com/jeddah', amenities: ['Pool', 'Gym', 'Restaurant', 'Free WiFi'] },
+      { id: 3, name: 'Fairmont Makkah Clock Tower', stars: 5, price: 550, rating: 4.8, image: '🕌', address: 'King Abdul Aziz Road, Makkah', phone: '+966 12 123 4567', website: 'www.fairmont.com/makkah', amenities: ['Pool', 'Gym', 'Restaurant', 'Prayer Rooms', 'Free WiFi'] },
+      { id: 4, name: 'Shaza Al Madina Hotel', stars: 4, price: 350, rating: 4.6, image: '🕋', address: 'King Fahd Road, Madinah', phone: '+966 14 123 4567', website: 'www.shaza.com/madina', amenities: ['Gym', 'Restaurant', 'Prayer Rooms', 'Free WiFi'] },
+      { id: 5, name: 'Four Seasons Hotel Dubai', stars: 5, price: 620, rating: 4.9, image: '🏛️', address: 'Jumeirah Beach Road, Dubai', phone: '+971 4 123 4567', website: 'www.fourseasons.com/dubai', amenities: ['Pool', 'Spa', 'Gym', 'Restaurant', 'Beach', 'Free WiFi'] },
+      { id: 6, name: 'Ritz-Carlton Doha', stars: 5, price: 580, rating: 4.9, image: '🏰', address: 'West Bay, Doha', phone: '+974 1234 5678', website: 'www.ritzcarlton.com/doha', amenities: ['Pool', 'Spa', 'Gym', 'Restaurant', 'Beach', 'Free WiFi'] },
+      { id: 7, name: 'Crowne Plaza Cairo', stars: 4, price: 280, rating: 4.3, image: '🏢', address: 'Corniche El Nil, Cairo', phone: '+20 2 123 4567', website: 'www.crowneplaza.com/cairo', amenities: ['Pool', 'Gym', 'Restaurant', 'Free WiFi'] },
+      { id: 8, name: 'Hyatt Regency Istanbul', stars: 5, price: 490, rating: 4.7, image: '🏯', address: 'Taksim Square, Istanbul', phone: '+90 212 123 4567', website: 'www.hyatt.com/istanbul', amenities: ['Pool', 'Spa', 'Gym', 'Restaurant', 'Free WiFi'] },
+      { id: 9, name: 'Burj Al Arab Jumeirah', stars: 5, price: 800, rating: 4.9, image: '🏰', address: 'Jumeirah Beach Road, Dubai', phone: '+971 4 123 4567', website: 'www.burj-al-arab.com', amenities: ['Pool', 'Spa', 'Gym', 'Restaurant', 'Beach', 'Helipad', 'Free WiFi'] },
     ];
 
     useEffect(() => {
@@ -269,7 +674,6 @@ export default function ERPViewsTravel(props) {
         const filtered = realHotels.filter(h =>
           h.name.toLowerCase().includes(hotelForm.city.toLowerCase()) ||
           h.address.toLowerCase().includes(hotelForm.city.toLowerCase()) ||
-          hotelForm.city === '' ||
           hotelForm.city === 'all'
         );
         setHotelResults(filtered);
@@ -397,10 +801,7 @@ export default function ERPViewsTravel(props) {
                 <div style={{ fontSize: '10px', color: '#60A5FA', marginTop: '2px' }}>
                   🔗 {hotel.website}
                 </div>
-                <button
-                  onClick={() => handleBookHotel(hotel)}
-                  style={{ ...styles.btn, ...styles.btnSuccess, width: '100%', marginTop: '12px', padding: '10px' }}
-                >
+                <button onClick={() => handleBookHotel(hotel)} style={{ ...styles.btn, ...styles.btnSuccess, width: '100%', marginTop: '12px', padding: '10px' }}>
                   🛏️ {isAr ? 'احجز الآن' : 'Book Now'}
                 </button>
               </div>
@@ -855,217 +1256,6 @@ export default function ERPViewsTravel(props) {
   }
 
   // ============================================================
-  // FLIGHT STATUS - REAL DUMMY TICKET GENERATOR
-  // ============================================================
-  if (page === 'flight_status') {
-    const [flightNo, setFlightNo] = useState('');
-    const [flightDate, setFlightDate] = useState(today);
-    const [flightStatus, setFlightStatus] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [tickets, setTickets] = useState([]);
-
-    // Generate Dummy Ticket
-    const generateDummyTicket = () => {
-      const airlines = ['SV', 'XY', 'F3', 'EK', 'EY', 'QR', 'GF', 'MS', 'RJ', 'PK', 'WY', 'KU', 'G9', 'TK', '6E', 'AI'];
-      const cities = ['RUH', 'JED', 'DMM', 'MED', 'CAI', 'DXB', 'AUH', 'DOH', 'BAH', 'KWI', 'MCT', 'AMM', 'LHR', 'CDG', 'NYC', 'IST', 'KUL', 'SIN', 'HKG', 'NRT'];
-      const statuses = ['On Time', 'Delayed', 'Boarding', 'Departed', 'Arrived', 'Cancelled', 'Scheduled'];
-      const terminals = ['1', '2', '3', '4', '5'];
-      const gates = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-
-      const airline = airlines[Math.floor(Math.random() * airlines.length)];
-      const flightNum = Math.floor(100 + Math.random() * 900);
-      const origin = cities[Math.floor(Math.random() * cities.length)];
-      let destination = cities.filter(c => c !== origin);
-      destination = destination[Math.floor(Math.random() * destination.length)];
-      const status = statuses[Math.floor(Math.random() * statuses.length)];
-      const hour = Math.floor(6 + Math.random() * 12);
-      const minute = String(Math.floor(Math.random() * 60)).padStart(2, '0');
-      const scheduled = `${hour}:${minute}`;
-
-      return {
-        flight: `${airline}${flightNum}`,
-        airline: airline,
-        origin: origin,
-        destination: destination,
-        status: status,
-        scheduled: scheduled,
-        actual: status === 'On Time' ? scheduled : `${Math.floor(6 + Math.random() * 12)}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
-        gate: gates[Math.floor(Math.random() * gates.length)] + Math.floor(1 + Math.random() * 30),
-        terminal: terminals[Math.floor(Math.random() * terminals.length)],
-        baggage: Math.floor(1 + Math.random() * 10),
-        date: flightDate,
-        passenger: `PASS-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-        bookingRef: `REF-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
-      };
-    };
-
-    const handleTrackFlight = (e) => {
-      e.preventDefault();
-      if (!flightNo && !flightDate) {
-        showToast?.(isAr ? '⚠️ الرجاء إدخال رقم الرحلة أو التاريخ' : '⚠️ Please enter flight number or date');
-        return;
-      }
-      setLoading(true);
-      setTimeout(() => {
-        const result = generateDummyTicket();
-        setFlightStatus(result);
-        setTickets(prev => [result, ...prev]);
-        setLoading(false);
-        showToast?.(isAr ? '✅ تم جلب حالة الرحلة!' : '✅ Flight status retrieved!');
-      }, 800);
-    };
-
-    const handleGenerateDummyTicket = () => {
-      const ticket = generateDummyTicket();
-      setFlightStatus(ticket);
-      setTickets(prev => [ticket, ...prev]);
-      showToast?.(isAr ? '✅ تم إنشاء تذكرة وهمية!' : '✅ Dummy ticket generated!');
-    };
-
-    const handleDeleteTicket = (index) => {
-      if (!confirm(isAr ? 'حذف هذه التذكرة؟' : 'Delete this ticket?')) return;
-      setTickets(prev => prev.filter((_, i) => i !== index));
-      showToast?.(isAr ? '✅ تم الحذف!' : '✅ Deleted!');
-    };
-
-    return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>🛫 {isAr ? 'حالة الرحلة وتوليد التذاكر' : 'Flight Status & Ticket Generator'}</h1>
-          <button onClick={handleGenerateDummyTicket} style={{ ...styles.btn, ...styles.btnSuccess }}>
-            🎫 {isAr ? 'إنشاء تذكرة وهمية' : 'Generate Dummy Ticket'}
-          </button>
-        </div>
-
-        <div style={styles.card}>
-          <form onSubmit={handleTrackFlight} style={styles.formRow}>
-            <div>
-              <label style={styles.label}>{isAr ? 'رقم الرحلة' : 'Flight Number'}</label>
-              <input
-                style={styles.input}
-                placeholder={isAr ? 'مثال: SV101, EK205' : 'e.g. SV101, EK205'}
-                value={flightNo}
-                onChange={e => setFlightNo(e.target.value.toUpperCase())}
-              />
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'التاريخ' : 'Date'}</label>
-              <input
-                type="date"
-                style={styles.input}
-                value={flightDate}
-                onChange={e => setFlightDate(e.target.value)}
-                required
-              />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
-              <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, width: '100%', padding: '12px' }} disabled={loading}>
-                {loading ? '⏳...' : (isAr ? '🔍 تتبع' : '🔍 Track')}
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {flightStatus && (
-          <div style={{ ...styles.card, borderTop: `4px solid ${flightStatus.status === 'On Time' ? '#059669' : flightStatus.status === 'Cancelled' ? '#DC2626' : '#F59E0B'}` }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '15px' }}>
-                  <div style={{ fontSize: '28px', fontWeight: 800, color: '#FBBF24' }}>{flightStatus.flight}</div>
-                  <span style={{
-                    ...styles.badge,
-                    background: flightStatus.status === 'On Time' ? '#065F46' : flightStatus.status === 'Cancelled' ? '#7F1D1D' : '#78350F',
-                    color: flightStatus.status === 'On Time' ? '#34D399' : flightStatus.status === 'Cancelled' ? '#FCA5A5' : '#FBBF24',
-                    fontSize: '14px',
-                    padding: '4px 16px'
-                  }}>
-                    {flightStatus.status}
-                  </span>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div style={{ background: isDark ? '#0F172A' : '#F1F5F9', padding: '12px', borderRadius: '8px' }}>
-                    <div style={{ fontSize: '10px', color: '#94A3B8' }}>{isAr ? 'من' : 'From'}</div>
-                    <div style={{ fontSize: '20px', fontWeight: 700, color: '#60A5FA' }}>{flightStatus.origin}</div>
-                  </div>
-                  <div style={{ background: isDark ? '#0F172A' : '#F1F5F9', padding: '12px', borderRadius: '8px' }}>
-                    <div style={{ fontSize: '10px', color: '#94A3B8' }}>{isAr ? 'إلى' : 'To'}</div>
-                    <div style={{ fontSize: '20px', fontWeight: 700, color: '#34D399' }}>{flightStatus.destination}</div>
-                  </div>
-                </div>
-                <div style={{ marginTop: '10px', fontSize: '12px', color: '#94A3B8' }}>
-                  🎫 {isAr ? 'رقم الحجز' : 'Booking Ref'}: {flightStatus.bookingRef} | 👤 {isAr ? 'المسافر' : 'Passenger'}: {flightStatus.passenger}
-                </div>
-              </div>
-              <div style={{ background: isDark ? '#0F172A' : '#F1F5F9', padding: '16px', borderRadius: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: isDark ? '1px solid #1E293B' : '1px solid #E2E8F0' }}>
-                  <span style={{ color: '#94A3B8' }}>{isAr ? 'المجدول' : 'Scheduled'}</span>
-                  <span style={{ fontWeight: 600 }}>{flightStatus.scheduled}</span>
-                </div>
-                {flightStatus.actual && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: isDark ? '1px solid #1E293B' : '1px solid #E2E8F0', color: '#FBBF24' }}>
-                    <span style={{ color: '#94A3B8' }}>{isAr ? 'الفعلي' : 'Actual'}</span>
-                    <span style={{ fontWeight: 600 }}>{flightStatus.actual}</span>
-                  </div>
-                )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: isDark ? '1px solid #1E293B' : '1px solid #E2E8F0' }}>
-                  <span style={{ color: '#94A3B8' }}>{isAr ? 'البوابة' : 'Gate'}</span>
-                  <span style={{ fontWeight: 600 }}>{flightStatus.gate}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: isDark ? '1px solid #1E293B' : '1px solid #E2E8F0' }}>
-                  <span style={{ color: '#94A3B8' }}>{isAr ? 'الصالة' : 'Terminal'}</span>
-                  <span style={{ fontWeight: 600 }}>{flightStatus.terminal}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
-                  <span style={{ color: '#94A3B8' }}>{isAr ? 'الأمتعة' : 'Baggage'}</span>
-                  <span style={{ fontWeight: 600 }}>{flightStatus.baggage}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {tickets.length > 0 && (
-          <div style={styles.card}>
-            <h3 style={styles.sectionTitle}>{isAr ? 'سجل التذاكر' : 'Ticket History'}</h3>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>{isAr ? 'الرحلة' : 'Flight'}</th>
-                    <th style={styles.th}>{isAr ? 'من' : 'From'}</th>
-                    <th style={styles.th}>{isAr ? 'إلى' : 'To'}</th>
-                    <th style={styles.th}>{isAr ? 'الحالة' : 'Status'}</th>
-                    <th style={styles.th}>{isAr ? 'التاريخ' : 'Date'}</th>
-                    <th style={{ ...styles.th, textAlign: 'center' }}>{isAr ? 'إجراء' : 'Action'}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tickets.map((t, i) => (
-                    <tr key={i}>
-                      <td style={{ ...styles.td, fontWeight: 600, color: '#60A5FA' }}>{t.flight}</td>
-                      <td style={styles.td}>{t.origin}</td>
-                      <td style={styles.td}>{t.destination}</td>
-                      <td style={styles.td}>
-                        <span style={{ ...styles.badge, ...(t.status === 'On Time' ? styles.badgeSuccess : t.status === 'Cancelled' ? styles.badgeDanger : styles.badgeWarning) }}>
-                          {t.status}
-                        </span>
-                      </td>
-                      <td style={styles.td}>{t.date}</td>
-                      <td style={styles.tdCenter}>
-                        <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDeleteTicket(i)}>🗑️</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // ============================================================
   // TRAVEL INSURANCE - COMPLETE
   // ============================================================
   if (page === 'travel_insurance') {
@@ -1095,17 +1285,8 @@ export default function ERPViewsTravel(props) {
     }, [userProfile?.tenant_id]);
 
     const calculatePremium = () => {
-      const baseRates = {
-        'Single Trip': 150,
-        'Annual': 1200,
-        'Family': 400,
-        'Group': 300
-      };
-      const coverageMultipliers = {
-        'Standard': 1,
-        'Premium': 1.5,
-        'Comprehensive': 2
-      };
+      const baseRates = { 'Single Trip': 150, 'Annual': 1200, 'Family': 400, 'Group': 300 };
+      const coverageMultipliers = { 'Standard': 1, 'Premium': 1.5, 'Comprehensive': 2 };
       const base = baseRates[insuranceForm.policy_type] || 150;
       const multiplier = coverageMultipliers[insuranceForm.coverage_type] || 1;
       return base * multiplier;
@@ -1339,13 +1520,7 @@ export default function ERPViewsTravel(props) {
     };
 
     const getTierColor = (tier) => {
-      const map = {
-        'Blue': '#3B82F6',
-        'Silver': '#94A3B8',
-        'Gold': '#FBBF24',
-        'Platinum': '#A78BFA',
-        'Diamond': '#34D399'
-      };
+      const map = { 'Blue': '#3B82F6', 'Silver': '#94A3B8', 'Gold': '#FBBF24', 'Platinum': '#A78BFA', 'Diamond': '#34D399' };
       return map[tier] || '#3B82F6';
     };
 
@@ -1373,11 +1548,7 @@ export default function ERPViewsTravel(props) {
             <div>
               <label style={styles.label}>{isAr ? 'المستوى' : 'Tier'}</label>
               <select style={styles.select} value={ffForm.tier} onChange={e => setFfForm({ ...ffForm, tier: e.target.value })}>
-                <option>Blue</option>
-                <option>Silver</option>
-                <option>Gold</option>
-                <option>Platinum</option>
-                <option>Diamond</option>
+                <option>Blue</option><option>Silver</option><option>Gold</option><option>Platinum</option><option>Diamond</option>
               </select>
             </div>
             <div>
@@ -1387,9 +1558,7 @@ export default function ERPViewsTravel(props) {
             <div>
               <label style={styles.label}>{isAr ? 'الحالة' : 'Status'}</label>
               <select style={styles.select} value={ffForm.status} onChange={e => setFfForm({ ...ffForm, status: e.target.value })}>
-                <option>Active</option>
-                <option>Inactive</option>
-                <option>Expired</option>
+                <option>Active</option><option>Inactive</option><option>Expired</option>
               </select>
             </div>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
