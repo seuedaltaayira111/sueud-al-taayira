@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 
 export default function ERPViewsSales(props) {
+  // --- DESTRUCTURE ALL PROPS ---
   const {
     page, data, lang, tr, modal, setModal, setPage,
     handleEditInvoice, handleDeleteInvoice, openPreview, openRefundModal,
@@ -25,6 +26,7 @@ export default function ERPViewsSales(props) {
     theme
   } = props;
 
+  // --- STATE ---
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -35,7 +37,7 @@ export default function ERPViewsSales(props) {
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
 
-  // ===== STYLES - BEAUTIFUL LIGHT UI =====
+  // --- STYLES ---
   const styles = {
     container: {
       padding: '24px',
@@ -332,7 +334,7 @@ export default function ERPViewsSales(props) {
   };
 
   // ============================================================
-  // INVOICES LIST - BEAUTIFUL UI
+  // INVOICES LIST - WITH WORKING PREVIEW/DOWNLOAD/PRINT
   // ============================================================
   if (page === 'list') {
     const totalRevenue = filteredInvoices.reduce((s, i) => s + (i.total || 0), 0);
@@ -438,85 +440,121 @@ export default function ERPViewsSales(props) {
                   </tr>
                 </thead>
                 <tbody>
-                  {paginate(filteredInvoices).map(inv => (
-                    <tr key={inv.id} style={{
-                      background: inv.status === 'Unpaid' ? 'rgba(245, 158, 11, 0.03)' : 'transparent'
-                    }}>
-                      <td style={{ ...styles.td, fontWeight: 700, color: '#3B82F6' }}>{inv.invoice_no}</td>
-                      <td style={styles.td}>{inv.invoice_date}</td>
-                      <td style={{ ...styles.td, fontWeight: 500 }}>{inv.customers?.name || inv.corporates?.name || 'N/A'}</td>
-                      <td style={styles.td}>{inv.airline || '-'}</td>
-                      <td style={{ ...styles.td, color: '#3B82F6', fontWeight: 600 }}>{inv.pnr || '-'}</td>
-                      <td style={styles.td}>{inv.service_type || '-'}</td>
-                      <td style={styles.tdRight}>{fmt(inv.total)}</td>
-                      <td style={{ ...styles.tdRight, color: inv.due_amount > 0 ? '#EF4444' : '#059669' }}>
-                        {fmt(inv.due_amount)}
-                      </td>
-                      <td style={styles.tdCenter}>
-                        <span style={{
-                          ...styles.badge,
-                          ...(inv.status === 'Paid' ? styles.badgePaid : inv.status === 'refunded' ? styles.badgeRefunded : styles.badgeUnpaid)
-                        }}>
-                          {getStatusIcon(inv.status)} {inv.status}
-                        </span>
-                      </td>
-                      <td style={styles.tdCenter}>
-                        <div style={styles.actionsCell}>
-                          <button
-                            style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }}
-                            onClick={() => openPreview(inv)}
-                            title={isAr ? 'معاينة' : 'Preview'}
-                          >
-                            👁️
-                          </button>
-                          <button
-                            style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }}
-                            onClick={() => handleEditInvoice(inv)}
-                            title={isAr ? 'تعديل' : 'Edit'}
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }}
-                            onClick={() => openRefundModal(inv)}
-                            title={isAr ? 'استرجاع' : 'Refund'}
-                          >
-                            🔄
-                          </button>
-                          {inv.due_amount > 0 && (
+                  {paginate(filteredInvoices).map(inv => {
+                    // DEBUG: Check if functions exist
+                    console.log('Invoice actions:', {
+                      openPreview: typeof openPreview,
+                      handleDownloadPDF: typeof handleDownloadPDF,
+                      printInvoice: typeof printInvoice
+                    });
+                    return (
+                      <tr key={inv.id} style={{
+                        background: inv.status === 'Unpaid' ? 'rgba(245, 158, 11, 0.03)' : 'transparent'
+                      }}>
+                        <td style={{ ...styles.td, fontWeight: 700, color: '#3B82F6' }}>{inv.invoice_no}</td>
+                        <td style={styles.td}>{inv.invoice_date}</td>
+                        <td style={{ ...styles.td, fontWeight: 500 }}>{inv.customers?.name || inv.corporates?.name || 'N/A'}</td>
+                        <td style={styles.td}>{inv.airline || '-'}</td>
+                        <td style={{ ...styles.td, color: '#3B82F6', fontWeight: 600 }}>{inv.pnr || '-'}</td>
+                        <td style={styles.td}>{inv.service_type || '-'}</td>
+                        <td style={styles.tdRight}>{fmt(inv.total)}</td>
+                        <td style={{ ...styles.tdRight, color: inv.due_amount > 0 ? '#EF4444' : '#059669' }}>
+                          {fmt(inv.due_amount)}
+                        </td>
+                        <td style={styles.tdCenter}>
+                          <span style={{
+                            ...styles.badge,
+                            ...(inv.status === 'Paid' ? styles.badgePaid : inv.status === 'refunded' ? styles.badgeRefunded : styles.badgeUnpaid)
+                          }}>
+                            {getStatusIcon(inv.status)} {inv.status}
+                          </span>
+                        </td>
+                        <td style={styles.tdCenter}>
+                          <div style={styles.actionsCell}>
+                            {/* PREVIEW BUTTON - FIXED */}
                             <button
-                              style={{ ...styles.actionBtn, background: '#FEF3C7', color: '#92400E' }}
-                              onClick={() => handleQuickSettle(inv)}
-                              title={isAr ? 'تسوية' : 'Settle'}
+                              style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }}
+                              onClick={() => {
+                                console.log('Preview clicked for:', inv.invoice_no);
+                                if (typeof openPreview === 'function') {
+                                  openPreview(inv);
+                                } else {
+                                  alert('Preview function not available!');
+                                }
+                              }}
+                              title={isAr ? 'معاينة' : 'Preview'}
                             >
-                              💰
+                              👁️
                             </button>
-                          )}
-                          <button
-                            style={{ ...styles.actionBtn, background: '#EDE9FE', color: '#5B21B6' }}
-                            onClick={() => printInvoice(inv)}
-                            title={isAr ? 'طباعة' : 'Print'}
-                          >
-                            🖨️
-                          </button>
-                          <button
-                            style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }}
-                            onClick={() => handleDownloadPDF(inv)}
-                            title={isAr ? 'تحميل' : 'Download'}
-                          >
-                            ⬇️
-                          </button>
-                          <button
-                            style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }}
-                            onClick={() => handleDeleteInvoice(inv)}
-                            title={isAr ? 'حذف' : 'Delete'}
-                          >
-                            🗑️
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                            {/* EDIT BUTTON */}
+                            <button
+                              style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }}
+                              onClick={() => handleEditInvoice(inv)}
+                              title={isAr ? 'تعديل' : 'Edit'}
+                            >
+                              ✏️
+                            </button>
+                            {/* REFUND BUTTON */}
+                            <button
+                              style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }}
+                              onClick={() => openRefundModal(inv)}
+                              title={isAr ? 'استرجاع' : 'Refund'}
+                            >
+                              🔄
+                            </button>
+                            {/* SETTLE BUTTON */}
+                            {inv.due_amount > 0 && (
+                              <button
+                                style={{ ...styles.actionBtn, background: '#FEF3C7', color: '#92400E' }}
+                                onClick={() => handleQuickSettle(inv)}
+                                title={isAr ? 'تسوية' : 'Settle'}
+                              >
+                                💰
+                              </button>
+                            )}
+                            {/* PRINT BUTTON - FIXED */}
+                            <button
+                              style={{ ...styles.actionBtn, background: '#EDE9FE', color: '#5B21B6' }}
+                              onClick={() => {
+                                console.log('Print clicked for:', inv.invoice_no);
+                                if (typeof printInvoice === 'function') {
+                                  printInvoice(inv);
+                                } else {
+                                  alert('Print function not available!');
+                                }
+                              }}
+                              title={isAr ? 'طباعة' : 'Print'}
+                            >
+                              🖨️
+                            </button>
+                            {/* DOWNLOAD BUTTON - FIXED */}
+                            <button
+                              style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }}
+                              onClick={() => {
+                                console.log('Download clicked for:', inv.invoice_no);
+                                if (typeof handleDownloadPDF === 'function') {
+                                  handleDownloadPDF(inv);
+                                } else {
+                                  alert('Download function not available!');
+                                }
+                              }}
+                              title={isAr ? 'تحميل' : 'Download'}
+                            >
+                              ⬇️
+                            </button>
+                            {/* DELETE BUTTON */}
+                            <button
+                              style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }}
+                              onClick={() => handleDeleteInvoice(inv)}
+                              title={isAr ? 'حذف' : 'Delete'}
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
