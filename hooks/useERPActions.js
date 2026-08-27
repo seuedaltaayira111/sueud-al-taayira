@@ -28,6 +28,8 @@ export default function useERPActions(state) {
     advForm, setAdvForm
   } = state;
 
+  const isAr = lang === 'ar';
+
   // ============================================================
   // AUTH
   // ============================================================
@@ -38,11 +40,11 @@ export default function useERPActions(state) {
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
-    if (!passForm.newPass) return showToast('Enter a new password!');
-    if (passForm.newPass.length < 6) return showToast('Password must be at least 6 characters!');
+    if (!passForm.newPass) return showToast(isAr ? 'أدخل كلمة مرور جديدة!' : 'Enter a new password!');
+    if (passForm.newPass.length < 6) return showToast(isAr ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل!' : 'Password must be at least 6 characters!');
     const { error } = await supabase.auth.updateUser({ password: passForm.newPass });
     if (error) return showToast('Error: ' + error.message);
-    showToast('Password Updated!');
+    showToast(isAr ? '✅ تم تحديث كلمة المرور!' : '✅ Password Updated!');
     setModal({ type: null, data: null });
     setPassForm({ newPass: '' });
   };
@@ -57,7 +59,7 @@ export default function useERPActions(state) {
     setChatInput('');
 
     setTimeout(() => {
-      let reply = lang === 'ar'
+      let reply = isAr
         ? 'يمكنني المساعدة في الفواتير والعملاء والرحلات. جرب السؤال عنهم!'
         : "I can help with Invoices, Customers, Flights. Try asking about them!";
 
@@ -68,29 +70,29 @@ export default function useERPActions(state) {
       const totalExpenses = data.expenses?.reduce((s, e) => s + (e.amount || 0), 0) || 0;
 
       if (input.includes('invoice') || input.includes('فاتورة')) {
-        reply = lang === 'ar'
+        reply = isAr
           ? `📄 لديك ${totalInv} فاتورة بإجمالي ${totalRev.toFixed(2)} ريال. ${unpaidCount} فاتورة غير مدفوعة.`
           : `📄 You have ${totalInv} invoices totaling ${totalRev.toFixed(2)} SAR. ${unpaidCount} unpaid.`;
       } else if (input.includes('customer') || input.includes('عميل')) {
-        reply = lang === 'ar'
+        reply = isAr
           ? `👤 لديك ${totalCustomers} عميل مسجل.`
           : `👤 You have ${totalCustomers} registered customers.`;
       } else if (input.includes('flight') || input.includes('رحلة')) {
         const airlines = [...new Set(data.invoices?.map(i => i.airline).filter(Boolean))];
-        reply = lang === 'ar'
+        reply = isAr
           ? `✈️ لديك رحلات مع: ${airlines.join(', ') || 'لا توجد رحلات'}.`
           : `✈️ You have flights with: ${airlines.join(', ') || 'No flights yet'}.`;
       } else if (input.includes('profit') || input.includes('ربح')) {
         const totalProfit = data.invoices?.reduce((s, i) => s + (i.profit || 0), 0) || 0;
-        reply = lang === 'ar'
+        reply = isAr
           ? `💰 إجمالي الربح: ${totalProfit.toFixed(2)} ريال.`
           : `💰 Total profit: ${totalProfit.toFixed(2)} SAR.`;
       } else if (input.includes('help') || input.includes('مساعدة')) {
-        reply = lang === 'ar'
+        reply = isAr
           ? '🤖 أسألني عن: فواتير, عملاء, رحلات, أرباح, مصروفات, رواتب'
           : '🤖 Ask me about: invoices, customers, flights, profit, expenses, salary';
       } else if (input.includes('hello') || input.includes('hi') || input.includes('مرحبا')) {
-        reply = lang === 'ar'
+        reply = isAr
           ? '👋 مرحباً! أنا مساعد السفر الذكي. كيف يمكنني مساعدتك؟'
           : '👋 Hello! I\'m your Smart Travel Assistant. How can I help?';
       }
@@ -111,7 +113,7 @@ export default function useERPActions(state) {
       if (error) throw error;
       const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName);
       setProfileForm(prev => ({ ...prev, avatar_url: urlData.publicUrl }));
-      showToast('Profile Picture Uploaded!');
+      showToast(isAr ? '✅ تم تحميل الصورة!' : '✅ Profile Picture Uploaded!');
     } catch (err) {
       showToast('Error: ' + err.message);
     }
@@ -130,7 +132,7 @@ export default function useERPActions(state) {
         })
         .eq('id', userProfile.id);
       if (error) throw error;
-      showToast('Profile Updated!');
+      showToast(isAr ? '✅ تم تحديث الملف!' : '✅ Profile Updated!');
       fetchAll();
     } catch (err) {
       showToast('Error: ' + err.message);
@@ -149,7 +151,7 @@ export default function useERPActions(state) {
       if (error) throw error;
       const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName);
       setSetForm(prev => ({ ...prev, logo_url: urlData.publicUrl }));
-      showToast('Logo Uploaded! Click Save to apply.');
+      showToast(isAr ? '✅ تم تحميل الشعار!' : '✅ Logo Uploaded!');
     } catch (err) {
       showToast('Error: ' + err.message);
     }
@@ -176,7 +178,7 @@ export default function useERPActions(state) {
           .insert([{ tenant_id: userProfile.tenant_id, ...setForm }]);
         if (error) throw error;
       }
-      showToast('Settings Saved!');
+      showToast(isAr ? '✅ تم حفظ الإعدادات!' : '✅ Settings Saved!');
       fetchAll();
     } catch (err) {
       showToast('Error: ' + err.message);
@@ -209,10 +211,235 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
+  // PDF DOWNLOAD - FIXED
+  // ============================================================
+  const downloadPDF = async (htmlContent, filename = 'document.pdf') => {
+    try {
+      let html2canvas, jsPDF;
+      
+      try {
+        const html2canvasModule = await import('html2canvas');
+        html2canvas = html2canvasModule.default || html2canvasModule;
+      } catch (e) {
+        console.error('html2canvas import error:', e);
+        showToast(isAr ? '⚠️ html2canvas लोड नहीं हुआ' : '⚠️ html2canvas not loaded');
+        const win = window.open('', '_blank');
+        if (win) {
+          win.document.write(htmlContent);
+          win.document.close();
+          setTimeout(() => { win.focus(); win.print(); }, 500);
+        }
+        return;
+      }
+
+      try {
+        const jsPDFModule = await import('jspdf');
+        jsPDF = jsPDFModule.default || jsPDFModule.jsPDF || jsPDFModule;
+      } catch (e) {
+        console.error('jspdf import error:', e);
+        showToast(isAr ? '⚠️ jspdf लोड नहीं हुआ' : '⚠️ jspdf not loaded');
+        return;
+      }
+
+      const div = document.createElement('div');
+      const A4_PX_W = 794;
+      div.style.cssText = `position:absolute;left:-9999px;top:0;width:${A4_PX_W}px;background:white;padding:20px;`;
+
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlContent, 'text/html');
+
+      const imgs = doc.querySelectorAll('img[src*="api.qrserver.com"], img[src*="bwipjs-api"]');
+      await Promise.all(Array.from(imgs).map(async (img) => {
+        try {
+          const resp = await fetch(img.src);
+          const blob = await resp.blob();
+          const b64 = await new Promise(r => {
+            const fr = new FileReader();
+            fr.onloadend = () => r(fr.result);
+            fr.readAsDataURL(blob);
+          });
+          img.src = b64;
+        } catch (e) {
+          console.warn('Image fetch skipped:', e.message);
+        }
+      }));
+
+      div.innerHTML = doc.body.innerHTML;
+      document.body.appendChild(div);
+
+      await new Promise(r => setTimeout(r, 300));
+
+      const canvas = await html2canvas(div, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        windowWidth: A4_PX_W,
+        windowHeight: Math.max(1123, div.scrollHeight),
+        logging: false
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const w = 210, ph = 297, h = (canvas.height * w) / canvas.width;
+
+      let left = h - ph, pos = 0;
+      pdf.addImage(imgData, 'PNG', 0, pos, w, h);
+      left -= ph;
+      while (left >= 0) {
+        pos = left - h;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, pos, w, h);
+        left -= ph;
+      }
+
+      pdf.save(filename);
+      document.body.removeChild(div);
+      showToast(isAr ? '✅ PDF डाउनलोड हो गया!' : '✅ PDF Downloaded!');
+    } catch (err) {
+      console.error('PDF Error:', err);
+      showToast(isAr ? '❌ PDF एरर: ' + err.message : '❌ PDF Error: ' + err.message);
+      try {
+        const win = window.open('', '_blank');
+        if (win) {
+          win.document.write(htmlContent);
+          win.document.close();
+          setTimeout(() => { win.focus(); win.print(); }, 500);
+        }
+      } catch (e) {
+        console.error('Fallback print error:', e);
+      }
+    }
+  };
+
+  // ============================================================
+  // INVOICE DOWNLOAD - FIXED
+  // ============================================================
+  const handleDownloadPDF = async (inv) => {
+    try {
+      const s = data.settings || {};
+      const html = inv.invoice_no?.startsWith('REF-')
+        ? getRefundHTML(inv, s, lang)
+        : getInvoiceHTML(inv, s, lang);
+      await downloadPDF(html, `${inv.invoice_no}.pdf`);
+    } catch (e) {
+      console.error('Download error:', e);
+      showToast(isAr ? '❌ डाउनलोड एरर' : '❌ Download error');
+    }
+  };
+
+  // ============================================================
+  // PRINT INVOICE - FIXED
+  // ============================================================
+  const printInvoice = (inv) => {
+    try {
+      const s = data.settings || {};
+      const html = inv.invoice_no?.startsWith('REF-')
+        ? getRefundHTML(inv, s, lang)
+        : getInvoiceHTML(inv, s, lang);
+      
+      const win = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
+      if (!win) {
+        showToast(isAr ? '⚠️ पॉपअप ब्लॉक हो गया! कृपया अनुमति दें।' : '⚠️ Popup blocked! Please allow popups.');
+        return;
+      }
+      
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      setTimeout(() => {
+        win.print();
+      }, 1000);
+    } catch (e) {
+      console.error('Print error:', e);
+      showToast(isAr ? '❌ प्रिंट एरर' : '❌ Print error');
+    }
+  };
+
+  // ============================================================
+  // OPEN PREVIEW - FIXED
+  // ============================================================
+  const openPreview = (inv) => {
+    try {
+      const s = data.settings || {};
+      let html = inv.invoice_no?.startsWith('REF-')
+        ? getRefundHTML(inv, s, lang)
+        : getInvoiceHTML(inv, s, lang);
+
+      if (!inv.invoice_no?.startsWith('REF-') && inv.linked_inv_id &&
+        (inv.booking_type === 'Previous Booking' || inv.booking_type === 'Reissue')) {
+        const linked = data.invoices?.find(i => i.invoice_no === inv.linked_inv_id);
+        if (linked) {
+          html += `<div style="margin-top:30px;border-top:2px dashed #cbd5e1;padding-top:20px;">
+            <h1 style="color:#7f1d1d;text-align:center;font-size:18px;margin-bottom:15px;">
+              ${isAr ? 'الاسترجاع المرتبط' : 'Linked Refund'}
+            </h1>
+            ${getRefundHTML(linked, s, lang)}
+          </div>`;
+        }
+      }
+      
+      setPreviewHTML(html);
+      setModal({ type: 'preview', data: inv });
+    } catch (e) {
+      console.error('Preview error:', e);
+      showToast(isAr ? '❌ प्रीव्यू एरर' : '❌ Preview error');
+    }
+  };
+
+  // ============================================================
+  // SHARE - WhatsApp & Email
+  // ============================================================
+  const shareWhatsApp = (inv) => {
+    try {
+      if (inv.invoice_no?.startsWith('REF-')) {
+        return showToast(isAr ? '⚠️ रिफंड इनवॉइस WhatsApp पर शेयर नहीं हो सकती' : '⚠️ Refund invoices cannot be shared via WhatsApp');
+      }
+      const phone = inv.customers?.phone || '';
+      const cleanPhone = phone.replace(/[^0-9]/g, '');
+      const msg = `Hello ${inv.customers?.name || ''},%0A
+Here is your invoice from ${data.settings?.company_name_en || 'SUEUD AL TAAYIRA'}:%0A
+Invoice: ${inv.invoice_no}%0A
+Total: ${(inv.total || 0).toFixed(2)} SAR%0A
+Due: ${(inv.due_amount || 0).toFixed(2)} SAR`;
+      const url = `https://wa.me/${cleanPhone}?text=${msg}`;
+      window.open(url, '_blank');
+    } catch (e) {
+      console.error('WhatsApp error:', e);
+      showToast(isAr ? '❌ व्हाट्सएप एरर' : '❌ WhatsApp error');
+    }
+  };
+
+  const shareEmail = (inv) => {
+    try {
+      if (inv.invoice_no?.startsWith('REF-')) {
+        return showToast(isAr ? '⚠️ रिफंड इनवॉइस Email पर शेयर नहीं हो सकती' : '⚠️ Refund invoices cannot be shared via Email');
+      }
+      const email = inv.customers?.email || inv.corporates?.email || '';
+      const subject = `Invoice ${inv.invoice_no}`;
+      const body = `Hello ${inv.customers?.name || inv.corporates?.name || ''},
+
+Please find your invoice details below:
+
+Invoice No: ${inv.invoice_no}
+Date: ${inv.invoice_date}
+Total: ${(inv.total || 0).toFixed(2)} SAR
+Due: ${(inv.due_amount || 0).toFixed(2)} SAR
+
+Thank you for choosing us!`;
+      const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.open(mailtoUrl, '_self');
+    } catch (e) {
+      console.error('Email error:', e);
+      showToast(isAr ? '❌ ईमेल एरर' : '❌ Email error');
+    }
+  };
+
+  // ============================================================
   // GENERIC DELETE
   // ============================================================
   const handleDelete = async (table, id) => {
-    if (!confirm('Are you sure you want to delete?')) return;
+    if (!confirm(isAr ? 'क्या आप सुनिश्चित हैं कि आप हटाना चाहते हैं?' : 'Are you sure you want to delete?')) return;
     try {
       const { error } = await supabase.from(table).delete().eq('id', id);
       if (error) throw error;
@@ -220,7 +447,7 @@ export default function useERPActions(state) {
         ...prev,
         [table]: Array.isArray(prev[table]) ? prev[table].filter(i => i.id !== id) : []
       }));
-      showToast('Deleted!');
+      showToast(isAr ? '✅ हटा दिया गया!' : '✅ Deleted!');
       await logAction(`Deleted from ${table}`);
     } catch (err) {
       showToast('Error: ' + err.message);
@@ -253,7 +480,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, customers: prev.customers.map(c => c.id === editCustId ? up : c) }));
-        showToast('Updated!');
+        showToast(isAr ? '✅ अपडेट किया गया!' : '✅ Updated!');
         setEditCustId(null);
       } else {
         const { data: nItem, error } = await supabase
@@ -263,7 +490,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, customers: [...prev.customers, nItem] }));
-        showToast('Added!');
+        showToast(isAr ? '✅ जोड़ा गया!' : '✅ Added!');
       }
       setCustForm({ name: '', phone: '', store_credit: 0 });
     } catch (err) {
@@ -292,7 +519,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, corporates: prev.corporates.map(c => c.id === editCorpId ? up : c) }));
-        showToast('Updated!');
+        showToast(isAr ? '✅ अपडेट किया गया!' : '✅ Updated!');
         setEditCorpId(null);
       } else {
         const { data: nItem, error } = await supabase
@@ -302,7 +529,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, corporates: [...prev.corporates, nItem] }));
-        showToast('Added!');
+        showToast(isAr ? '✅ जोड़ा गया!' : '✅ Added!');
       }
       setCorpForm({ name: '', vat_no: '', phone: '', address: '' });
     } catch (err) {
@@ -331,7 +558,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, creditors: prev.creditors.map(c => c.id === editCredId ? up : c) }));
-        showToast('Updated!');
+        showToast(isAr ? '✅ अपडेट किया गया!' : '✅ Updated!');
         setEditCredId(null);
       } else {
         const { data: nItem, error } = await supabase
@@ -341,7 +568,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, creditors: [...prev.creditors, nItem] }));
-        showToast('Added!');
+        showToast(isAr ? '✅ जोड़ा गया!' : '✅ Added!');
       }
       setCreditorForm({ name: '', phone: '', address: '' });
     } catch (err) {
@@ -375,7 +602,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, vendors: prev.vendors.map(c => c.id === editVendId ? up : c) }));
-        showToast('Updated!');
+        showToast(isAr ? '✅ अपडेट किया गया!' : '✅ Updated!');
         setEditVendId(null);
       } else {
         const { data: nItem, error } = await supabase
@@ -385,7 +612,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, vendors: [...prev.vendors, nItem] }));
-        showToast('Added!');
+        showToast(isAr ? '✅ जोड़ा गया!' : '✅ Added!');
       }
       setVendorForm({ name: '', phone: '', balance: 0 });
     } catch (err) {
@@ -427,7 +654,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, packages: prev.packages.map(c => c.id === editPkgId ? up : c) }));
-        showToast('Updated!');
+        showToast(isAr ? '✅ अपडेट किया गया!' : '✅ Updated!');
         setEditPkgId(null);
       } else {
         const { data: nItem, error } = await supabase
@@ -437,7 +664,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, packages: [...prev.packages, nItem] }));
-        showToast('Added!');
+        showToast(isAr ? '✅ जोड़ा गया!' : '✅ Added!');
       }
       setPkgForm({ name: '', price: '', desc: '', duration: '', inclusions: '' });
     } catch (err) {
@@ -474,7 +701,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, branches: prev.branches.map(c => c.id === editBrnId ? up : c) }));
-        showToast('Updated!');
+        showToast(isAr ? '✅ अपडेट किया गया!' : '✅ Updated!');
         setEditBrnId(null);
       } else {
         const { data: nItem, error } = await supabase
@@ -484,7 +711,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, branches: [...prev.branches, nItem] }));
-        showToast('Added!');
+        showToast(isAr ? '✅ जोड़ा गया!' : '✅ Added!');
       }
       setBrnForm({
         name: '', location: '', phone: '', manager: '',
@@ -536,7 +763,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, employees: prev.employees.map(c => c.id === editEmpId ? up : c) }));
-        showToast('Updated!');
+        showToast(isAr ? '✅ अपडेट किया गया!' : '✅ Updated!');
         setEditEmpId(null);
       } else {
         const { data: nItem, error } = await supabase
@@ -546,7 +773,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, employees: [...prev.employees, nItem] }));
-        showToast('Added!');
+        showToast(isAr ? '✅ जोड़ा गया!' : '✅ Added!');
       }
       setEmpForm({
         name: '', role: 'Sales', salary: 0, phone: '', commission_rate: 0,
@@ -580,7 +807,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, services: prev.services.map(s => s.id === editSrvId ? up : s) }));
-        showToast('Updated!');
+        showToast(isAr ? '✅ अपडेट किया गया!' : '✅ Updated!');
         setEditSrvId(null);
       } else {
         const { data: nItem, error } = await supabase
@@ -590,7 +817,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, services: [...prev.services, nItem] }));
-        showToast('Added!');
+        showToast(isAr ? '✅ जोड़ा गया!' : '✅ Added!');
       }
       setSrvForm({ name: '' });
     } catch (err) {
@@ -641,7 +868,7 @@ export default function useERPActions(state) {
     e.preventDefault();
     try {
       const totalAmount = expForm.items.reduce((s, item) => s + ((parseFloat(item.qty) || 1) * (parseFloat(item.price) || 0)), 0);
-      if (totalAmount <= 0) throw new Error('Add at least one expense item with amount!');
+      if (totalAmount <= 0) throw new Error(isAr ? 'कम से कम एक आइटम जोड़ें!' : 'Add at least one expense item!');
 
       const payload = {
         expense_date: expForm.expense_date,
@@ -666,7 +893,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, expenses: prev.expenses.map(ex => ex.id === editExpId ? up : ex) }));
-        showToast('Expense Updated!');
+        showToast(isAr ? '✅ अपडेट किया गया!' : '✅ Updated!');
         setEditExpId(null);
       } else {
         const { data: nExp, error } = await supabase
@@ -691,7 +918,7 @@ export default function useERPActions(state) {
           expenses: [nExp, ...prev.expenses]
         }));
         await logAction(`Expense ${totalAmount.toFixed(2)} SAR - ${expForm.description || expForm.expense_type}`);
-        showToast('Expense Added!');
+        showToast(isAr ? '✅ जोड़ा गया!' : '✅ Added!');
       }
 
       setExpForm({
@@ -710,14 +937,14 @@ export default function useERPActions(state) {
   };
 
   const handleDeleteExpense = async (exp) => {
-    if (!confirm('Delete this expense?')) return;
+    if (!confirm(isAr ? 'क्या आप इस खर्च को हटाना चाहते हैं?' : 'Delete this expense?')) return;
     try {
       await supabase.from('expenses').delete().eq('id', exp.id);
       setData(prev => ({
         ...prev,
         expenses: prev.expenses.filter(ex => ex.id !== exp.id)
       }));
-      showToast('Expense Deleted!');
+      showToast(isAr ? '✅ हटा दिया गया!' : '✅ Deleted!');
     } catch (err) {
       showToast('Error: ' + err.message);
     }
@@ -749,7 +976,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, portals: prev.portals.map(p => p.id === modal.data.id ? up : p) }));
-        showToast('Portal Updated!');
+        showToast(isAr ? '✅ अपडेट किया गया!' : '✅ Updated!');
       } else {
         const { data: nP, error } = await supabase
           .from('portals')
@@ -758,7 +985,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, portals: [...prev.portals, nP] }));
-        showToast('Portal Added!');
+        showToast(isAr ? '✅ जोड़ा गया!' : '✅ Added!');
       }
       setModal({ type: null, data: null });
       setPortalForm({
@@ -771,14 +998,14 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
-  // TRANSFER (Cash ↔ Bank ↔ Investor)
+  // TRANSFER
   // ============================================================
   const handleTransfer = async (e) => {
     e.preventDefault();
     try {
       const amt = parseFloat(transferForm.amount) || 0;
-      if (amt <= 0) throw new Error('Enter a valid amount!');
-      if (transferForm.from === transferForm.to) throw new Error('From and To must be different!');
+      if (amt <= 0) throw new Error(isAr ? 'सही राशि डालें!' : 'Enter a valid amount!');
+      if (transferForm.from === transferForm.to) throw new Error(isAr ? 'दोनों एक जैसे नहीं होने चाहिए!' : 'From and To must be different!');
 
       const outType = (acc) => acc === 'Cash' ? 'Cash-Out' : acc === 'Bank' ? 'Bank-Out' : 'Investor-Out';
       const inType = (acc) => acc === 'Cash' ? 'Cash-In' : acc === 'Bank' ? 'Bank-In' : 'Investor-In';
@@ -805,7 +1032,7 @@ export default function useERPActions(state) {
       }));
 
       await logAction(`Transfer ${amt.toFixed(2)} SAR: ${transferForm.from} → ${transferForm.to}`);
-      showToast(`Transferred ${amt.toFixed(2)} SAR!`);
+      showToast(isAr ? `✅ ${amt.toFixed(2)} SAR ट्रांसफर हो गया!` : `✅ Transferred ${amt.toFixed(2)} SAR!`);
 
       setTransferForm({ from: 'Cash', to: 'Bank', amount: '', date: today, description: '' });
       setModal({ type: null, data: null });
@@ -821,7 +1048,7 @@ export default function useERPActions(state) {
     e.preventDefault();
     try {
       const amount = parseFloat(investForm.amount) || 0;
-      if (amount <= 0) throw new Error('Enter a valid amount');
+      if (amount <= 0) throw new Error(isAr ? 'सही राशि डालें!' : 'Enter a valid amount');
 
       const finalReason = investForm.reason === 'Other' ? (investForm.otherReason || 'Other') : investForm.reason;
 
@@ -858,7 +1085,7 @@ export default function useERPActions(state) {
       }));
 
       await logAction(`Investment of ${amount.toFixed(2)} SAR from ${investForm.name}`);
-      showToast('✅ Investment recorded');
+      showToast(isAr ? '✅ निवेश दर्ज किया गया!' : '✅ Investment recorded!');
 
       setInvestForm({
         name: '', amount: '', date: today, mode: 'Cash',
@@ -870,164 +1097,10 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
-  // PDF DOWNLOAD
-  // ============================================================
-  const downloadPDF = async (htmlContent, filename = 'document.pdf') => {
-    try {
-      const html2canvas = (await import('html2canvas')).default;
-      const { jsPDF } = await import('jspdf');
-
-      const div = document.createElement('div');
-      const A4_PX_W = 794;
-      div.style.cssText = `position:absolute;left:-9999px;top:0;width:${A4_PX_W}px;`;
-
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(htmlContent, 'text/html');
-
-      const imgs = doc.querySelectorAll('img[src*="api.qrserver.com"], img[src*="bwipjs-api"]');
-      await Promise.all(Array.from(imgs).map(async (img) => {
-        try {
-          const resp = await fetch(img.src);
-          const blob = await resp.blob();
-          const b64 = await new Promise(r => {
-            const fr = new FileReader();
-            fr.onloadend = () => r(fr.result);
-            fr.readAsDataURL(blob);
-          });
-          img.src = b64;
-        } catch (e) {
-          console.warn("Code image fetch skipped:", e.message);
-        }
-      }));
-
-      div.innerHTML = doc.body.innerHTML;
-      document.body.appendChild(div);
-
-      await new Promise(r => setTimeout(r, 150));
-
-      const canvas = await html2canvas(div, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        windowWidth: A4_PX_W,
-        windowHeight: Math.max(1123, div.scrollHeight)
-      });
-
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const w = 210,
-        ph = 297,
-        h = (canvas.height * w) / canvas.width;
-
-      let left = h - ph,
-        pos = 0;
-      pdf.addImage(imgData, 'PNG', 0, pos, w, h);
-      left -= ph;
-      while (left >= 0) {
-        pos = left - h;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, pos, w, h);
-        left -= ph;
-      }
-
-      pdf.save(filename);
-      document.body.removeChild(div);
-      showToast('PDF Downloaded!');
-    } catch (err) {
-      showToast('PDF Error: ' + err.message);
-    }
-  };
-
-  // ============================================================
-  // INVOICE DOWNLOAD
-  // ============================================================
-  const handleDownloadPDF = async (inv) => {
-    const s = data.settings;
-    const html = inv.invoice_no?.startsWith('REF-')
-      ? getRefundHTML(inv, s, lang)
-      : getInvoiceHTML(inv, s, lang);
-    await downloadPDF(html, `${inv.invoice_no}.pdf`);
-  };
-
-  // ============================================================
-  // PRINT INVOICE
-  // ============================================================
-  const printInvoice = (inv) => {
-    const s = data.settings;
-    const html = inv.invoice_no?.startsWith('REF-')
-      ? getRefundHTML(inv, s, lang)
-      : getInvoiceHTML(inv, s, lang);
-    const w = window.open('', '_blank');
-    w.document.write(html);
-    w.document.close();
-    setTimeout(() => { w.focus(); w.print(); }, 500);
-  };
-
-  // ============================================================
-  // SHARE - WhatsApp & Email
-  // ============================================================
-  const shareWhatsApp = (inv) => {
-    if (inv.invoice_no?.startsWith('REF-')) return showToast('Refund invoices cannot be shared via WhatsApp!');
-    const phone = inv.customers?.phone || '';
-    const cleanPhone = phone.replace(/[^0-9]/g, '');
-    const msg = `Hello ${inv.customers?.name || ''},%0A
-Here is your invoice from ${data.settings?.company_name_en || 'SUEUD AL TAAYIRA'}:%0A
-Invoice: ${inv.invoice_no}%0A
-Total: ${(inv.total || 0).toFixed(2)} SAR%0A
-Due: ${(inv.due_amount || 0).toFixed(2)} SAR`;
-    const url = `https://wa.me/${cleanPhone}?text=${msg}`;
-    window.open(url, '_blank');
-  };
-
-  const shareEmail = (inv) => {
-    if (inv.invoice_no?.startsWith('REF-')) return showToast('Refund invoices cannot be shared via Email!');
-    const email = inv.customers?.email || inv.corporates?.email || '';
-    const subject = `Invoice ${inv.invoice_no}`;
-    const body = `Hello ${inv.customers?.name || inv.corporates?.name || ''},
-
-Please find your invoice details below:
-
-Invoice No: ${inv.invoice_no}
-Date: ${inv.invoice_date}
-Total: ${(inv.total || 0).toFixed(2)} SAR
-Due: ${(inv.due_amount || 0).toFixed(2)} SAR
-
-Thank you for choosing us!`;
-    const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.open(mailtoUrl, '_self');
-  };
-
-  // ============================================================
-  // OPEN PREVIEW
-  // ============================================================
-  const openPreview = (inv) => {
-    const s = data.settings;
-    let html = inv.invoice_no?.startsWith('REF-')
-      ? getRefundHTML(inv, s, lang)
-      : getInvoiceHTML(inv, s, lang);
-
-    if (!inv.invoice_no?.startsWith('REF-') && inv.linked_inv_id &&
-      (inv.booking_type === 'Previous Booking' || inv.booking_type === 'Reissue')) {
-      const linked = data.invoices.find(i => i.invoice_no === inv.linked_inv_id);
-      if (linked) {
-        html += `<div style="margin-top:30px;border-top:2px dashed #cbd5e1;padding-top:20px;">
-          <h1 style="color:#7f1d1d;text-align:center;font-size:18px;margin-bottom:15px;">
-            Linked Refund / فاتورة الاسترجاع المرتبطة
-          </h1>
-          ${getRefundHTML(linked, s, lang)}
-        </div>`;
-      }
-    }
-    setPreviewHTML(html);
-    setModal({ type: 'preview', data: inv });
-  };
-
-  // ============================================================
   // OPEN REFUND MODAL
   // ============================================================
   const openRefundModal = (inv) => {
-    const cust = data.customers.find(c => c.id === inv.customer_id);
+    const cust = data.customers?.find(c => c.id === inv.customer_id);
     setRefundForm({
       id: inv.id,
       date: today,
@@ -1057,8 +1130,8 @@ Thank you for choosing us!`;
   const handleSettlePayment = async (e) => {
     e.preventDefault();
     try {
-      const inv = modal.data || data.invoices.find(i => i.id === settleForm.id);
-      if (!inv) throw new Error('Invoice not found');
+      const inv = modal.data || data.invoices?.find(i => i.id === settleForm.id);
+      if (!inv) throw new Error(isAr ? 'इनवॉइस नहीं मिला' : 'Invoice not found');
 
       const settleAmt = inv.due_amount || 0;
       const newPaid = (inv.paid_amount || 0) + settleAmt;
@@ -1089,7 +1162,7 @@ Thank you for choosing us!`;
       }));
 
       await logAction(`Settled ${settleAmt.toFixed(2)} SAR for ${inv.invoice_no}`);
-      showToast('Payment Settled!');
+      showToast(isAr ? '✅ भुगतान सेटल हो गया!' : '✅ Payment Settled!');
       setModal({ type: null, data: null });
     } catch (err) {
       showToast('Error: ' + err.message);
@@ -1103,15 +1176,14 @@ Thank you for choosing us!`;
     e.preventDefault();
     try {
       const origInv = modal.data;
-      if (!origInv) throw new Error('Original invoice not found');
+      if (!origInv) throw new Error(isAr ? 'मूल इनवॉइस नहीं मिली' : 'Original invoice not found');
 
       const compRef = parseFloat(refundForm.compRefund) || 0;
       const custRef = parseFloat(refundForm.custRefund) || 0;
       const refundNo = `REF-${Date.now()}`;
 
-      // Update customer credit if refund mode is Credit
       if (refundForm.mode === 'Credit' && custRef > 0 && origInv.customer_id) {
-        const cust = data.customers.find(c => c.id === origInv.customer_id);
+        const cust = data.customers?.find(c => c.id === origInv.customer_id);
         if (cust) {
           const nc = (cust.store_credit || 0) + custRef;
           await supabase.from('customers').update({ store_credit: nc }).eq('id', cust.id);
@@ -1122,9 +1194,8 @@ Thank you for choosing us!`;
         }
       }
 
-      // Update portal balance if company refund
       if (compRef > 0 && refundForm.portalId) {
-        const portal = data.portals.find(p => p.id === refundForm.portalId);
+        const portal = data.portals?.find(p => p.id === refundForm.portalId);
         if (portal) {
           const nb = (portal.current_balance || 0) + compRef;
           await supabase.from('portals').update({ current_balance: nb }).eq('id', portal.id);
@@ -1135,7 +1206,6 @@ Thank you for choosing us!`;
         }
       }
 
-      // Create refund invoice
       const payload = {
         invoice_no: refundNo,
         customer_id: origInv.customer_id,
@@ -1188,7 +1258,6 @@ Thank you for choosing us!`;
 
       if (refErr) throw new Error('Refund failed: ' + refErr.message);
 
-      // Cashbook entry for customer refund
       let newCb = null;
       if (custRef > 0 && refundForm.mode !== 'Credit') {
         const cbType = refundForm.mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
@@ -1203,7 +1272,6 @@ Thank you for choosing us!`;
         newCb = nC;
       }
 
-      // Mark original invoice as refunded
       await supabase.from('invoices').update({ status: 'refunded' }).eq('id', origInv.id);
 
       setData(prev => ({
@@ -1213,7 +1281,7 @@ Thank you for choosing us!`;
       }));
 
       await logAction(`Refund ${refundNo} for ${origInv.invoice_no} (Comp:${compRef}, Cust:${custRef})`);
-      showToast('Refund Processed!');
+      showToast(isAr ? '✅ रिफंड प्रोसेस हो गया!' : '✅ Refund Processed!');
       setModal({ type: null, data: null });
     } catch (err) {
       showToast('Error: ' + err.message);
@@ -1224,19 +1292,18 @@ Thank you for choosing us!`;
   // DELETE INVOICE
   // ============================================================
   const handleDeleteInvoice = async (inv) => {
-    if (!confirm('Delete permanently? All entries will be reversed.')) return;
+    if (!confirm(isAr ? 'क्या आप सुनिश्चित हैं? सभी एंट्री रिवर्स हो जाएंगी।' : 'Delete permanently? All entries will be reversed.')) return;
     try {
       if (inv.invoice_no?.startsWith('REF-')) {
-        // Handle refund deletion
         if (inv.payment_method === 'Credit' && inv.refund_customer > 0 && inv.customer_id) {
-          const cust = data.customers.find(c => c.id === inv.customer_id);
+          const cust = data.customers?.find(c => c.id === inv.customer_id);
           if (cust) {
             const nc = (cust.store_credit || 0) - (inv.refund_customer || 0);
             await supabase.from('customers').update({ store_credit: nc }).eq('id', cust.id);
           }
         }
         if (inv.portal_id && inv.refund_company > 0) {
-          const portal = data.portals.find(p => p.id === inv.portal_id);
+          const portal = data.portals?.find(p => p.id === inv.portal_id);
           if (portal) {
             const nb = (portal.current_balance || 0) - (inv.refund_company || 0);
             await supabase.from('portals').update({ current_balance: nb }).eq('id', inv.portal_id);
@@ -1254,7 +1321,7 @@ Thank you for choosing us!`;
               .eq('id', origInv.id);
           }
         }
-        const cbs = data.cashbook.filter(c => c.reference_id === inv.id || c.description?.includes(inv.invoice_no));
+        const cbs = data.cashbook?.filter(c => c.reference_id === inv.id || c.description?.includes(inv.invoice_no)) || [];
         for (const cb of cbs) await supabase.from('cashbook').delete().eq('id', cb.id);
         await supabase.from('invoices').delete().eq('id', inv.id);
         setData(prev => ({
@@ -1262,13 +1329,12 @@ Thank you for choosing us!`;
           invoices: prev.invoices.filter(i => i.id !== inv.id),
           cashbook: prev.cashbook.filter(c => !cbs.find(x => x.id === c.id))
         }));
-        showToast('Refund Deleted & Original Restored!');
+        showToast(isAr ? '✅ रिफंड हटा दिया गया!' : '✅ Refund Deleted!');
         return;
       }
 
-      // Handle regular invoice deletion
       if (inv.used_credit > 0 && inv.customer_id) {
-        const cust = data.customers.find(c => c.id === inv.customer_id);
+        const cust = data.customers?.find(c => c.id === inv.customer_id);
         if (cust) {
           const nc = (cust.store_credit || 0) + (inv.used_credit || 0);
           await supabase.from('customers').update({ store_credit: nc }).eq('id', cust.id);
@@ -1279,18 +1345,19 @@ Thank you for choosing us!`;
         }
       }
 
-      const portal = data.portals.find(p => p.id === inv.portal_id);
+      const portal = data.portals?.find(p => p.id === inv.portal_id);
       if (portal) {
         const nb = (portal.current_balance || 0) + (inv.total_cost || 0);
         await supabase.from('portals').update({ current_balance: nb }).eq('id', portal.id);
       }
 
-      const cbs = data.cashbook.filter(c =>
+      const cbs = data.cashbook?.filter(c =>
         c.reference_id === inv.id ||
         c.description?.includes('Payment for ' + inv.invoice_no) ||
         c.description?.includes('Cash returned to customer for ' + inv.invoice_no) ||
         c.description?.includes('Credit Balance used for ' + inv.invoice_no)
-      );
+      ) || [];
+      
       for (const cb of cbs) await supabase.from('cashbook').delete().eq('id', cb.id);
       await supabase.from('invoices').delete().eq('id', inv.id);
 
@@ -1299,7 +1366,7 @@ Thank you for choosing us!`;
         invoices: prev.invoices.filter(i => i.id !== inv.id),
         cashbook: prev.cashbook.filter(c => !cbs.find(x => x.id === c.id))
       }));
-      showToast('Invoice Deleted & Balances Reversed!');
+      showToast(isAr ? '✅ इनवॉइस हटा दी गई!' : '✅ Invoice Deleted!');
     } catch (err) {
       showToast('Error: ' + err.message);
     }
@@ -1310,7 +1377,7 @@ Thank you for choosing us!`;
   // ============================================================
   const handleEditInvoice = (inv) => {
     if (inv.invoice_no?.startsWith('REF-')) {
-      const cust = data.customers.find(c => c.id === inv.customer_id);
+      const cust = data.customers?.find(c => c.id === inv.customer_id);
       setRefundForm({
         id: inv.id,
         date: inv.refund_date || inv.invoice_date || today,
@@ -1326,8 +1393,8 @@ Thank you for choosing us!`;
     }
 
     setEditInvId(inv.id);
-    const custObj = inv.customer_id ? data.customers.find(c => c.id === inv.customer_id) : null;
-    const corpObj = inv.corporate_id ? data.corporates.find(c => c.id === inv.corporate_id) : null;
+    const custObj = inv.customer_id ? data.customers?.find(c => c.id === inv.customer_id) : null;
+    const corpObj = inv.corporate_id ? data.corporates?.find(c => c.id === inv.corporate_id) : null;
 
     setInvForm({
       custType: inv.customer_id ? 'Individual' : 'Corporate',
@@ -1395,9 +1462,7 @@ Thank you for choosing us!`;
   const handleCreateInvoice = async (e) => {
     e.preventDefault();
     try {
-      // Customer creation logic
-      let cid = null,
-        corpId = null;
+      let cid = null, corpId = null;
 
       if (invForm.custType === 'Individual') {
         if (invForm.custId === 'new') {
@@ -1411,7 +1476,7 @@ Thank you for choosing us!`;
             }])
             .select()
             .single();
-          if (cErr) throw new Error('Customer creation failed: ' + cErr.message);
+          if (cErr) throw new Error(isAr ? 'कस्टमर बनाने में विफल: ' + cErr.message : 'Customer creation failed: ' + cErr.message);
           cid = nC.id;
         } else {
           cid = invForm.custId;
@@ -1429,14 +1494,13 @@ Thank you for choosing us!`;
             }])
             .select()
             .single();
-          if (corpErr) throw new Error('Corporate creation failed: ' + corpErr.message);
+          if (corpErr) throw new Error(isAr ? 'कॉर्पोरेट बनाने में विफल: ' + corpErr.message : 'Corporate creation failed: ' + corpErr.message);
           corpId = nCorp.id;
         } else {
           corpId = invForm.corpId;
         }
       }
 
-      // Calculations
       const qty = parseInt(invForm.qty) || 1;
       const cost = (parseFloat(invForm.cost) || 0) * qty;
       let sell = (parseFloat(invForm.sell) || 0) * qty;
@@ -1460,19 +1524,17 @@ Thank you for choosing us!`;
       const invoiceStatus = invoiceDue <= 0 ? 'Paid' : 'Unpaid';
       const profit = sell - cost;
 
-      // Portal check
-      const portal = data.portals.find(p => p.id === invForm.portalId);
-      if (!portal) throw new Error('Select a Portal');
+      const portal = data.portals?.find(p => p.id === invForm.portalId);
+      if (!portal) throw new Error(isAr ? 'पोर्टल चुनें!' : 'Select a Portal');
       if ((portal.current_balance || 0) < cost) {
-        showToast(`⚠️ Low portal balance: ${(portal.current_balance || 0).toFixed(2)} SAR (Need: ${cost.toFixed(2)} SAR)`);
+        showToast(isAr ? `⚠️ पोर्टल बैलेंस कम है: ${(portal.current_balance || 0).toFixed(2)} SAR (जरूरत: ${cost.toFixed(2)} SAR)` : `⚠️ Low portal balance: ${(portal.current_balance || 0).toFixed(2)} SAR (Need: ${cost.toFixed(2)} SAR)`);
       }
 
-      // Credit balance usage
       if (invForm.payment === 'Credit Balance' && cid && usedCredit > 0) {
-        const cust = data.customers.find(c => c.id === cid);
+        const cust = data.customers?.find(c => c.id === cid);
         if (cust) {
           const nc = (cust.store_credit || 0) - usedCredit;
-          if (nc < 0) throw new Error('Insufficient credit balance!');
+          if (nc < 0) throw new Error(isAr ? 'पर्याप्त क्रेडिट बैलेंस नहीं!' : 'Insufficient credit balance!');
           await supabase.from('customers').update({ store_credit: nc }).eq('id', cust.id);
           setData(prev => ({
             ...prev,
@@ -1542,9 +1604,9 @@ Thank you for choosing us!`;
           .eq('id', editInvId)
           .select('*, customers(name), corporates(name), employees(name)')
           .single();
-        if (upErr) throw new Error('Update failed: ' + upErr.message);
+        if (upErr) throw new Error(isAr ? 'अपडेट विफल: ' + upErr.message : 'Update failed: ' + upErr.message);
         setData(prev => ({ ...prev, invoices: prev.invoices.map(i => i.id === editInvId ? upInv : i) }));
-        showToast('Invoice Updated!');
+        showToast(isAr ? '✅ इनवॉइस अपडेट हो गई!' : '✅ Invoice Updated!');
         setEditInvId(null);
       } else {
         const invNo = `INV-${Date.now()}`;
@@ -1553,15 +1615,13 @@ Thank you for choosing us!`;
           .insert([{ invoice_no: invNo, ...payload }])
           .select('*, customers(name), corporates(name), employees(name)')
           .single();
-        if (invErr) throw new Error('Creation failed: ' + invErr.message);
+        if (invErr) throw new Error(isAr ? 'बनाने में विफल: ' + invErr.message : 'Creation failed: ' + invErr.message);
 
-        // Update portal balance
         const newBal = (portal.current_balance || 0) - cost;
         await supabase.from('portals').update({ current_balance: newBal }).eq('id', portal.id);
 
         await logAction(`Created Invoice ${invNo} | Amount: ${total.toFixed(2)} SAR | Profit: ${profit.toFixed(2)} SAR`);
 
-        // Cashbook entries
         let newCbEntries = [];
         if (cashPaid > 0 && invForm.payment !== 'Credit' && invForm.payment !== 'Credit Balance') {
           const cbType = invForm.payment === 'Cash' ? 'Cash-In' : 'Bank-In';
@@ -1586,7 +1646,7 @@ Thank you for choosing us!`;
             reference_id: newInv.id
           }]).select().single();
           if (nCO) newCbEntries.push(nCO);
-          showToast(`Overpayment: ${cashReturn.toFixed(2)} SAR returned in cash!`);
+          showToast(isAr ? `✅ ${cashReturn.toFixed(2)} SAR वापस किए गए!` : `✅ ${cashReturn.toFixed(2)} SAR returned!`);
         }
 
         if (usedCredit > 0) {
@@ -1607,10 +1667,9 @@ Thank you for choosing us!`;
           portals: prev.portals.map(p => p.id === portal.id ? { ...p, current_balance: newBal } : p),
           cashbook: newCbEntries.length > 0 ? [...newCbEntries, ...prev.cashbook] : prev.cashbook
         }));
-        showToast('Invoice Generated!');
+        showToast(isAr ? '✅ इनवॉइस बन गई!' : '✅ Invoice Generated!');
       }
 
-      // Reset form
       setInvForm({
         custType: 'Individual',
         custId: 'new',
@@ -1623,7 +1682,7 @@ Thank you for choosing us!`;
         corpAddress: '',
         passengers: [''],
         employeeId: '',
-        portalId: data.portals[0]?.id || '',
+        portalId: data.portals?.[0]?.id || '',
         bookingDate: today,
         invoiceDate: today,
         bookingType: 'New Booking',
@@ -1698,7 +1757,7 @@ Thank you for choosing us!`;
 
       if (error) throw error;
       setData(prev => ({ ...prev, staffMistakes: [newM, ...(prev.staffMistakes || [])] }));
-      showToast('Mistake Logged!');
+      showToast(isAr ? '✅ मिस्टेक लॉग हो गया!' : '✅ Mistake Logged!');
       fd.reset();
     } catch (err) {
       showToast('Error: ' + err.message);
@@ -1711,11 +1770,11 @@ Thank you for choosing us!`;
   };
 
   const handleDeleteMistake = async (m) => {
-    if (!confirm('Delete this mistake?')) return;
+    if (!confirm(isAr ? 'क्या आप इस मिस्टेक को हटाना चाहते हैं?' : 'Delete this mistake?')) return;
     try {
       await supabase.from('staff_mistakes').delete().eq('id', m.id);
       setData(prev => ({ ...prev, staffMistakes: prev.staffMistakes.filter(x => x.id !== m.id) }));
-      showToast('Mistake Deleted!');
+      showToast(isAr ? '✅ हटा दिया गया!' : '✅ Deleted!');
     } catch (err) {
       showToast('Error: ' + err.message);
     }
@@ -1730,9 +1789,9 @@ Thank you for choosing us!`;
   };
 
   const handleDeletePayroll = async (pay) => {
-    if (!confirm('Delete this salary slip permanently?')) return;
+    if (!confirm(isAr ? 'क्या आप इस सैलरी स्लिप को हटाना चाहते हैं?' : 'Delete this salary slip?')) return;
     try {
-      const cbs = data.cashbook.filter(c => c.reference_id === pay.id);
+      const cbs = data.cashbook?.filter(c => c.reference_id === pay.id) || [];
       for (const cb of cbs) await supabase.from('cashbook').delete().eq('id', cb.id);
       await supabase.from('payroll').delete().eq('id', pay.id);
       setData(prev => ({
@@ -1740,7 +1799,7 @@ Thank you for choosing us!`;
         payroll: prev.payroll.filter(p => p.id !== pay.id),
         cashbook: prev.cashbook.filter(c => !cbs.find(x => x.id === c.id))
       }));
-      showToast('Salary Slip Deleted!');
+      showToast(isAr ? '✅ हटा दिया गया!' : '✅ Deleted!');
     } catch (err) {
       showToast('Error: ' + err.message);
     }
@@ -1750,14 +1809,13 @@ Thank you for choosing us!`;
     e.preventDefault();
     try {
       const empId = payForm.employee_id;
-      if (!empId) throw new Error('Select an employee!');
-      const emp = data.employees.find(em => em.id === empId);
-      if (!emp) throw new Error('Employee not found!');
+      if (!empId) throw new Error(isAr ? 'कर्मचारी चुनें!' : 'Select an employee!');
+      const emp = data.employees?.find(em => em.id === empId);
+      if (!emp) throw new Error(isAr ? 'कर्मचारी नहीं मिला!' : 'Employee not found!');
 
       const month = payForm.month || today.slice(0, 7);
       const base = parseFloat(emp.salary) || 0;
 
-      // Calculate commission from paid invoices this month
       const monthInvoices = data.invoices?.filter(i =>
         i.employee_id === empId &&
         i.invoice_date?.startsWith(month) &&
@@ -1802,7 +1860,6 @@ Thank you for choosing us!`;
 
       if (error) throw new Error('Payroll failed: ' + error.message);
 
-      // Cashbook entry
       const cbType = payForm.payment_mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
       const { data: nCb } = await supabase.from('cashbook').insert([{
         trans_date: payForm.payment_date || today,
@@ -1820,7 +1877,7 @@ Thank you for choosing us!`;
       }));
 
       await logAction(`Payroll: ${emp.name} - ${netPay.toFixed(2)} SAR (${month})`);
-      showToast(`Salary Processed: ${emp.name} - ${netPay.toFixed(2)} SAR`);
+      showToast(isAr ? `✅ ${emp.name} - ${netPay.toFixed(2)} SAR सैलरी दी गई!` : `✅ ${emp.name} - ${netPay.toFixed(2)} SAR Salary Processed!`);
 
       setPayForm({
         employee_id: '',
@@ -1845,9 +1902,9 @@ Thank you for choosing us!`;
   const handleAddAdvance = async (e) => {
     e.preventDefault();
     try {
-      if (!advForm.employee_id) throw new Error('Select an employee!');
+      if (!advForm.employee_id) throw new Error(isAr ? 'कर्मचारी चुनें!' : 'Select an employee!');
       const amount = parseFloat(advForm.amount) || 0;
-      if (amount <= 0) throw new Error('Enter a valid amount');
+      if (amount <= 0) throw new Error(isAr ? 'सही राशि डालें!' : 'Enter a valid amount');
 
       const { data: newAdv, error } = await supabase
         .from('emp_advances')
@@ -1868,9 +1925,9 @@ Thank you for choosing us!`;
         empAdvances: [newAdv, ...(prev.empAdvances || [])]
       }));
 
-      const emp = data.employees.find(em => em.id === advForm.employee_id);
+      const emp = data.employees?.find(em => em.id === advForm.employee_id);
       await logAction(`Advance of ${amount.toFixed(2)} SAR to ${emp?.name || ''}`);
-      showToast('✅ Advance recorded');
+      showToast(isAr ? '✅ एडवांस दर्ज किया गया!' : '✅ Advance recorded!');
 
       setAdvForm({ employee_id: '', amount: '', date: today, status: 'Pending' });
     } catch (err) {
@@ -1885,21 +1942,21 @@ Thank you for choosing us!`;
         ...prev,
         empAdvances: prev.empAdvances.map(a => a.id === adv.id ? { ...a, status } : a)
       }));
-      showToast('Advance updated');
+      showToast(isAr ? '✅ अपडेट हो गया!' : '✅ Updated!');
     } catch (err) {
       showToast('Error: ' + err.message);
     }
   };
 
   const handleDeleteAdvance = async (adv) => {
-    if (!confirm('Delete this advance record?')) return;
+    if (!confirm(isAr ? 'क्या आप इस एडवांस को हटाना चाहते हैं?' : 'Delete this advance?')) return;
     try {
       await supabase.from('emp_advances').delete().eq('id', adv.id);
       setData(prev => ({
         ...prev,
         empAdvances: prev.empAdvances.filter(a => a.id !== adv.id)
       }));
-      showToast('Advance deleted');
+      showToast(isAr ? '✅ हटा दिया गया!' : '✅ Deleted!');
     } catch (err) {
       showToast('Error: ' + err.message);
     }
@@ -1910,7 +1967,7 @@ Thank you for choosing us!`;
   // ============================================================
   const handleGenerateContract = (e) => {
     e.preventDefault();
-    if (!contractCorpName) return showToast('Enter Corporate Name');
+    if (!contractCorpName) return showToast(isAr ? 'कॉर्पोरेट नाम डालें!' : 'Enter Corporate Name');
     const html = getContractHTML(
       data.settings,
       contractCorpName,
@@ -1926,7 +1983,7 @@ Thank you for choosing us!`;
 
   const handleGenerateOffer = (e) => {
     e.preventDefault();
-    if (!contractCorpName) return showToast('Enter Corporate Name');
+    if (!contractCorpName) return showToast(isAr ? 'कॉर्पोरेट नाम डालें!' : 'Enter Corporate Name');
     const html = getContractHTML(
       data.settings,
       contractCorpName,
@@ -1954,7 +2011,7 @@ Thank you for choosing us!`;
       });
       const resData = await res.json();
       if (resData.error) throw new Error(resData.error);
-      showToast(`Agency Created! Email: ${tenantForm.owner_email} | Pass: ${tempPass}`);
+      showToast(isAr ? `✅ एजेंसी बन गई! Email: ${tenantForm.owner_email} | Pass: ${tempPass}` : `✅ Agency Created! Email: ${tenantForm.owner_email} | Pass: ${tempPass}`);
       setTenantForm({
         agency_name: '',
         owner_email: '',
@@ -1978,7 +2035,7 @@ Thank you for choosing us!`;
         .update({ is_paid: !tenant.is_paid })
         .eq('id', tenant.id);
       if (error) throw error;
-      showToast('Subscription Updated!');
+      showToast(isAr ? '✅ सब्सक्रिप्शन अपडेट हो गया!' : '✅ Subscription Updated!');
       fetchAll();
     } catch (err) {
       showToast('Error: ' + err.message);
@@ -1986,10 +2043,10 @@ Thank you for choosing us!`;
   };
 
   const handleDeleteTenant = async (id) => {
-    if (!confirm('Delete this Agency permanently?')) return;
+    if (!confirm(isAr ? 'क्या आप इस एजेंसी को हटाना चाहते हैं?' : 'Delete this Agency permanently?')) return;
     try {
       await supabase.from('tenants').delete().eq('id', id);
-      showToast('Agency Deleted!');
+      showToast(isAr ? '✅ एजेंसी हटा दी गई!' : '✅ Agency Deleted!');
       fetchAll();
     } catch (err) {
       showToast('Error: ' + err.message);
@@ -1999,51 +2056,78 @@ Thank you for choosing us!`;
   // ============================================================
   // EXPORT DATA (CSV)
   // ============================================================
-  const handleExportCSV = (dataType) => {
+  const handleExportCSV = (dataType, customData) => {
     try {
       let csvContent = '';
       let filename = '';
+      let exportData = [];
 
-      switch (dataType) {
-        case 'invoices':
-          csvContent = 'Invoice No,Date,Customer,Airline,Total,Status,Payment\n';
-          data.invoices?.forEach(inv => {
-            csvContent += `${inv.invoice_no},${inv.invoice_date},${inv.customers?.name || inv.old_customer_name || ''},${inv.airline || ''},${inv.total || 0},${inv.status},${inv.payment_method}\n`;
-          });
-          filename = 'invoices.csv';
-          break;
-        case 'customers':
-          csvContent = 'Name,Phone,Credit Balance\n';
-          data.customers?.forEach(c => {
-            csvContent += `${c.name},${c.phone || ''},${c.store_credit || 0}\n`;
-          });
-          filename = 'customers.csv';
-          break;
-        case 'expenses':
-          csvContent = 'Date,Category,Description,Amount,Payment Mode\n';
-          data.expenses?.forEach(ex => {
-            csvContent += `${ex.expense_date},${ex.expense_type},${ex.description || ''},${ex.amount || 0},${ex.payment_mode}\n`;
-          });
-          filename = 'expenses.csv';
-          break;
-        case 'cashbook':
-          csvContent = 'Date,Type,Description,Amount\n';
-          data.cashbook?.forEach(cb => {
-            csvContent += `${cb.trans_date},${cb.type},${cb.description || ''},${cb.amount || 0}\n`;
-          });
-          filename = 'cashbook.csv';
-          break;
-        default:
-          return showToast('Invalid export type!');
+      if (customData) {
+        exportData = customData;
+        filename = typeof dataType === 'string' ? dataType : 'export';
+      } else {
+        switch (dataType) {
+          case 'invoices':
+            exportData = data.invoices?.filter(i => !i.invoice_no?.startsWith('REF-')).map(inv => ({
+              'Invoice No': inv.invoice_no,
+              'Date': inv.invoice_date,
+              'Customer': inv.customers?.name || inv.old_customer_name || '',
+              'Airline': inv.airline || '',
+              'Total': inv.total || 0,
+              'Status': inv.status,
+              'Payment': inv.payment_method
+            })) || [];
+            filename = 'invoices';
+            break;
+          case 'customers':
+            exportData = data.customers?.map(c => ({
+              'Name': c.name,
+              'Phone': c.phone || '',
+              'Credit Balance': c.store_credit || 0
+            })) || [];
+            filename = 'customers';
+            break;
+          case 'expenses':
+            exportData = data.expenses?.map(e => ({
+              'Date': e.expense_date,
+              'Category': e.expense_type,
+              'Description': e.description || '',
+              'Amount': e.amount || 0,
+              'Payment Mode': e.payment_mode
+            })) || [];
+            filename = 'expenses';
+            break;
+          case 'cashbook':
+            exportData = data.cashbook?.map(c => ({
+              'Date': c.trans_date,
+              'Type': c.type,
+              'Description': c.description || '',
+              'Amount': c.amount || 0
+            })) || [];
+            filename = 'cashbook';
+            break;
+          default:
+            return showToast(isAr ? '❌ गलत डेटा टाइप!' : '❌ Invalid export type!');
+        }
       }
+
+      if (!exportData || exportData.length === 0) {
+        return showToast(isAr ? '❌ कोई डेटा नहीं' : '❌ No data to export');
+      }
+
+      const headers = Object.keys(exportData[0]);
+      csvContent = headers.join(',') + '\n';
+      exportData.forEach(row => {
+        csvContent += headers.map(h => `"${row[h] || ''}"`).join(',') + '\n';
+      });
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = filename;
+      link.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`;
       link.click();
       URL.revokeObjectURL(link.href);
-      showToast(`${filename} exported!`);
+      showToast(isAr ? `✅ ${filename}.csv डाउनलोड हो गया!` : `✅ ${filename}.csv exported!`);
     } catch (err) {
       showToast('Export Error: ' + err.message);
     }
@@ -2069,58 +2153,6 @@ Thank you for choosing us!`;
     handleRemoveCustomField,
     handleCustomFieldChange,
 
-    // Generic
-    handleDelete,
-
-    // CRUD - Customers
-    handleEditCust,
-    handleAddEditCust,
-
-    // CRUD - Corporates
-    handleEditCorp,
-    handleAddEditCorp,
-
-    // CRUD - Creditors
-    handleEditCred,
-    handleAddEditCred,
-
-    // CRUD - Vendors
-    handleEditVend,
-    handleAddEditVend,
-
-    // CRUD - Packages
-    handleEditPkg,
-    handleAddEditPkg,
-
-    // CRUD - Branches
-    handleEditBrn,
-    handleAddEditBrn,
-
-    // CRUD - Employees
-    handleEditEmp,
-    handleAddEditEmp,
-
-    // CRUD - Services
-    handleEditSrv,
-    handleAddEditSrv,
-
-    // Expenses
-    handleAddExpItem,
-    handleRemoveExpItem,
-    handleExpItemChange,
-    handleEditExp,
-    handleAddEditExpense,
-    handleDeleteExpense,
-
-    // Portals
-    handleAddEditPortal,
-
-    // Transfer
-    handleTransfer,
-
-    // Investments
-    handleAddInvestment,
-
     // PDF & Print
     downloadPDF,
     handleDownloadPDF,
@@ -2140,6 +2172,44 @@ Thank you for choosing us!`;
     handleEditInvoice,
     handleCreateInvoice,
     handleDeleteInvoice,
+
+    // Generic Delete
+    handleDelete,
+
+    // CRUD
+    handleEditCust,
+    handleAddEditCust,
+    handleEditCorp,
+    handleAddEditCorp,
+    handleEditCred,
+    handleAddEditCred,
+    handleEditVend,
+    handleAddEditVend,
+    handleEditPkg,
+    handleAddEditPkg,
+    handleEditBrn,
+    handleAddEditBrn,
+    handleEditEmp,
+    handleAddEditEmp,
+    handleEditSrv,
+    handleAddEditSrv,
+
+    // Expenses
+    handleAddExpItem,
+    handleRemoveExpItem,
+    handleExpItemChange,
+    handleEditExp,
+    handleAddEditExpense,
+    handleDeleteExpense,
+
+    // Portals
+    handleAddEditPortal,
+
+    // Transfer
+    handleTransfer,
+
+    // Investments
+    handleAddInvestment,
 
     // Staff Mistakes
     handleAddMistake,
