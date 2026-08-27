@@ -6,11 +6,22 @@ export const metadata = {
   icons: {
     icon: '/favicon.ico',
   },
-  keywords: 'travel agency, erp, tourism, flight booking, hotel booking, visa processing, hajj, umrah, corporate travel',
+  keywords: 'travel agency, erp, tourism, flight booking, hotel booking, visa processing, hajj, umrah, corporate travel, travel management',
   authors: [{ name: 'SUEUD AL TAAYIRA' }],
   viewport: 'width=device-width, initial-scale=1',
   themeColor: '#1E3A8A',
   colorScheme: 'light dark',
+  openGraph: {
+    title: 'SUEUD AL TAAYIRA | Travel ERP System',
+    description: 'Advanced Travel & Tourism Agency ERP System',
+    type: 'website',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'SUEUD AL TAAYIRA | Travel ERP System',
+    description: 'Advanced Travel & Tourism Agency ERP System',
+  },
 };
 
 export default function RootLayout({ children }) {
@@ -25,6 +36,8 @@ export default function RootLayout({ children }) {
         />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="robots" content="index, follow" />
       </head>
       <body>{children}</body>
     </html>
