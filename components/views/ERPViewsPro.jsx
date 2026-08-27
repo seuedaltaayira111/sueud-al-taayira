@@ -317,7 +317,7 @@ export default function ERPViewsPro(props) {
             <div style={styles.statLabel}>{isAr ? 'ربح المكتب من الاسترجاعات' : 'Office Profit from Refunds'}</div>
             <div style={{ ...styles.statValue, color: '#34D399' }}>{fmt(totalOfficeProfit)}</div>
           </div>
-          <div style={{ ...styles.statCard, borderTop: '4px solid '#A78BFA'' }}>
+          <div style={{ ...styles.statCard, borderTop: '4px solid #A78BFA' }}>
             <div style={styles.statLabel}>{isAr ? 'عدد الاسترجاعات' : 'Total Refunds'}</div>
             <div style={styles.statValue}>{refunds.length}</div>
           </div>
@@ -1098,7 +1098,7 @@ export default function ERPViewsPro(props) {
   }
 
   // ============================================================
-  // STAFF MISTAKES (Already in Sales, keeping for completeness)
+  // STAFF MISTAKES
   // ============================================================
   if (page === 'staff_mistakes') {
     const totalLoss = (data.staffMistakes || []).reduce((s, m) => s + (m.loss_amount || 0), 0);
