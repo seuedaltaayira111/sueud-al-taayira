@@ -6,7 +6,7 @@ export default function ERPModals({
   modal, setModal, passForm, setPassForm, handleChangePassword,
   settleForm, setSettleForm, handleSettlePayment,
   refundForm, setRefundForm, handleRefund,
-  previewHTML, downloadPDF, lang, theme, handlePrintPreview
+  previewHTML, downloadPDF, lang, theme
 }) {
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
@@ -22,7 +22,8 @@ export default function ERPModals({
       boxSizing: 'border-box',
       background: isDark ? '#0F172A' : '#F8FAFC',
       color: isDark ? '#E2E8F0' : '#1E293B',
-      fontSize: '14px'
+      fontSize: '14px',
+      transition: 'all 0.2s'
     },
     btnPrimary: {
       padding: '12px 15px',
@@ -33,7 +34,8 @@ export default function ERPModals({
       cursor: 'pointer',
       fontWeight: 'bold',
       width: '100%',
-      boxShadow: '0 4px 6px rgba(245, 158, 11, 0.3)'
+      boxShadow: '0 4px 6px rgba(245, 158, 11, 0.3)',
+      transition: 'all 0.2s'
     },
     btnSuccess: {
       padding: '10px 15px',
@@ -42,7 +44,8 @@ export default function ERPModals({
       border: 'none',
       borderRadius: '8px',
       cursor: 'pointer',
-      fontWeight: '500'
+      fontWeight: '500',
+      transition: 'all 0.2s'
     },
     btnDanger: {
       padding: '10px 15px',
@@ -51,7 +54,8 @@ export default function ERPModals({
       border: 'none',
       borderRadius: '8px',
       cursor: 'pointer',
-      fontWeight: '500'
+      fontWeight: '500',
+      transition: 'all 0.2s'
     },
     btnInfo: {
       padding: '10px 15px',
@@ -60,7 +64,8 @@ export default function ERPModals({
       border: 'none',
       borderRadius: '8px',
       cursor: 'pointer',
-      fontWeight: '500'
+      fontWeight: '500',
+      transition: 'all 0.2s'
     },
     btnWarning: {
       padding: '10px 15px',
@@ -69,7 +74,8 @@ export default function ERPModals({
       border: 'none',
       borderRadius: '8px',
       cursor: 'pointer',
-      fontWeight: '500'
+      fontWeight: '500',
+      transition: 'all 0.2s'
     },
     card: {
       background: isDark ? '#1E293B' : '#FFFFFF',
@@ -109,9 +115,53 @@ export default function ERPModals({
     padding: '20px'
   };
 
+  // ============================================================
+  // HANDLE PRINT FROM PREVIEW
+  // ============================================================
+  const handlePrintPreview = () => {
+    if (!previewHTML) {
+      alert(isAr ? 'لا يوجد مستند للطباعة' : 'No document to print');
+      return;
+    }
+    try {
+      const printWindow = window.open('', '_blank', 'width=800,height=600');
+      if (!printWindow) {
+        alert(isAr ? 'الرجاء السماح بالنوافذ المنبثقة' : 'Please allow popups');
+        return;
+      }
+      printWindow.document.write(previewHTML);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+      }, 500);
+    } catch (e) {
+      console.error('Print error:', e);
+      alert(isAr ? 'خطأ في الطباعة' : 'Print error');
+    }
+  };
+
+  // ============================================================
+  // HANDLE DOWNLOAD FROM PREVIEW
+  // ============================================================
+  const handleDownloadPDF = async () => {
+    if (!previewHTML) {
+      alert(isAr ? 'لا يوجد مستند للتحميل' : 'No document to download');
+      return;
+    }
+    try {
+      await downloadPDF(previewHTML, 'document.pdf');
+    } catch (e) {
+      console.error('Download error:', e);
+      alert(isAr ? 'خطأ في التحميل' : 'Download error');
+    }
+  };
+
   return (
     <>
-      {/* ===== CHANGE PASSWORD MODAL ===== */}
+      {/* ============================================================
+          CHANGE PASSWORD MODAL
+          ============================================================ */}
       {modal.type === 'password' && (
         <div style={overlay}>
           <div style={styles.card}>
@@ -131,6 +181,9 @@ export default function ERPModals({
                 required
                 minLength={6}
               />
+              <p style={{ fontSize: '11px', color: '#94A3B8', marginTop: '4px' }}>
+                {isAr ? 'يجب أن تكون 6 أحرف على الأقل' : 'Minimum 6 characters'}
+              </p>
               <button type="submit" style={{ ...styles.btnPrimary, marginTop: '20px' }}>
                 {isAr ? 'تحديث كلمة المرور' : 'Update Password'}
               </button>
@@ -146,7 +199,9 @@ export default function ERPModals({
         </div>
       )}
 
-      {/* ===== SETTLE PAYMENT MODAL ===== */}
+      {/* ============================================================
+          SETTLE PAYMENT MODAL
+          ============================================================ */}
       {modal.type === 'settle' && (
         <div style={overlay}>
           <div style={styles.card}>
@@ -164,6 +219,7 @@ export default function ERPModals({
                 style={styles.input}
                 required
               />
+
               <label style={styles.label}>
                 {isAr ? 'طريقة الدفع' : 'Payment Method'}
               </label>
@@ -176,6 +232,21 @@ export default function ERPModals({
                 <option value="Bank Transfer">🏦 {isAr ? 'تحويل بنكي' : 'Bank Transfer'}</option>
                 <option value="Card">💳 {isAr ? 'بطاقة' : 'Card'}</option>
               </select>
+
+              <div style={{
+                background: isDark ? '#0F172A' : '#F1F5F9',
+                padding: '12px',
+                borderRadius: '8px',
+                marginTop: '12px',
+                display: 'flex',
+                justifyContent: 'space-between'
+              }}>
+                <span style={{ color: '#94A3B8' }}>{isAr ? 'المبلغ المستحق' : 'Due Amount'}</span>
+                <span style={{ color: '#FBBF24', fontWeight: 700 }}>
+                  {modal.data?.due_amount?.toFixed(2) || '0.00'} SAR
+                </span>
+              </div>
+
               <button type="submit" style={{ ...styles.btnPrimary, marginTop: '20px' }}>
                 {isAr ? 'تسوية الدفع' : 'Settle Payment'}
               </button>
@@ -191,7 +262,9 @@ export default function ERPModals({
         </div>
       )}
 
-      {/* ===== PROCESS REFUND MODAL ===== */}
+      {/* ============================================================
+          PROCESS REFUND MODAL
+          ============================================================ */}
       {modal.type === 'refund' && (
         <div style={overlay}>
           <div style={{ ...styles.card, width: '550px' }}>
@@ -281,6 +354,18 @@ export default function ERPModals({
                 <option value="Other">📌 {isAr ? 'أخرى' : 'Other'}</option>
               </select>
 
+              <div style={{
+                background: isDark ? '#0F172A' : '#F1F5F9',
+                padding: '12px',
+                borderRadius: '8px',
+                marginTop: '12px',
+                display: 'flex',
+                justifyContent: 'space-between'
+              }}>
+                <span style={{ color: '#94A3B8' }}>{isAr ? 'الفاتورة الأصلية' : 'Original Invoice'}</span>
+                <span style={{ color: '#60A5FA', fontWeight: 700 }}>{modal.data?.invoice_no || 'N/A'}</span>
+              </div>
+
               <button type="submit" style={{ ...styles.btnPrimary, marginTop: '20px' }}>
                 {isAr ? 'معالجة الاسترجاع' : 'Process Refund'}
               </button>
@@ -296,7 +381,9 @@ export default function ERPModals({
         </div>
       )}
 
-      {/* ===== PREVIEW INVOICE MODAL - FIXED ===== */}
+      {/* ============================================================
+          PREVIEW INVOICE MODAL - FIXED
+          ============================================================ */}
       {modal.type === 'preview' && previewHTML && (
         <div style={{ ...overlay, background: 'rgba(0,0,0,0.95)' }}>
           <div style={{
@@ -310,6 +397,7 @@ export default function ERPModals({
             flexDirection: 'column',
             border: isDark ? '1px solid #334155' : '1px solid #E2E8F0'
           }}>
+            {/* ===== HEADER ===== */}
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -324,39 +412,21 @@ export default function ERPModals({
                 📄 {isAr ? 'معاينة المستند' : 'Document Preview'}
               </h3>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                {/* ===== PRINT BUTTON ===== */}
                 <button
-                  onClick={() => {
-                    try {
-                      const printWindow = window.open('', '_blank', 'width=800,height=600');
-                      if (printWindow) {
-                        printWindow.document.write(previewHTML);
-                        printWindow.document.close();
-                        printWindow.focus();
-                        setTimeout(() => { printWindow.print(); }, 1000);
-                      } else {
-                        alert(isAr ? '⚠️ पॉपअप ब्लॉक हो गया!' : '⚠️ Popup blocked!');
-                      }
-                    } catch (e) {
-                      console.error('Print error:', e);
-                      alert(isAr ? '❌ प्रिंट एरर' : '❌ Print error');
-                    }
-                  }}
+                  onClick={handlePrintPreview}
                   style={{ ...styles.btnInfo, width: 'auto', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
                   🖨️ {isAr ? 'طباعة' : 'Print'}
                 </button>
+                {/* ===== DOWNLOAD BUTTON ===== */}
                 <button
-                  onClick={() => {
-                    if (downloadPDF) {
-                      downloadPDF(previewHTML, 'document.pdf');
-                    } else {
-                      alert(isAr ? '❌ डाउनलोड उपलब्ध नहीं' : '❌ Download not available');
-                    }
-                  }}
+                  onClick={handleDownloadPDF}
                   style={{ ...styles.btnSuccess, width: 'auto', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
                   ⬇️ {isAr ? 'تحميل PDF' : 'Download PDF'}
                 </button>
+                {/* ===== CLOSE BUTTON ===== */}
                 <button
                   onClick={() => setModal({ type: null, data: null })}
                   style={{ ...styles.btnDanger, width: 'auto', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}
@@ -365,6 +435,8 @@ export default function ERPModals({
                 </button>
               </div>
             </div>
+
+            {/* ===== IFRAME CONTENT ===== */}
             <div style={{
               flex: 1,
               overflow: 'auto',
