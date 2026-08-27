@@ -164,7 +164,7 @@ export default function useERPState() {
   const [transferForm, setTransferForm] = useState({ from:'Cash', to:'Bank', amount:'', date:today });
   const [setForm, setSetForm] = useState({});
   const [userForm, setUserForm] = useState({ email:'', username:'', role:'Staff', is_admin:false, can_access_invoices:true, can_access_bank:false, can_access_hr:false, can_access_reports:false, can_access_settings:false, employee_id:'' });
-  const [portalForm, setPortalForm] = useState({ name:'', balance:0 });
+  const [portalForm, setPortalForm] = useState({ name:'', portal_type:'GDS', current_balance:0, initial_balance:0, phone:'', contact_person:'', credit_limit:0 });
   const [tenantForm, setTenantForm] = useState({ agency_name:'', owner_email:'', subscription_end_date:'', company_name_ar:'', vat_no:'', cr_no:'', phone:'', address_ar:'' });
   const [profileForm, setProfileForm] = useState({ username:'', avatar_url:'', phone:'', address:'' });
   const [passForm, setPassForm] = useState({ newPass:'' });
