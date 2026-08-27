@@ -143,7 +143,182 @@ const translations = {
     target: 'Target (SAR)',
     achieved: 'Achieved',
     percentage: '%',
-    balance: 'Balance'
+    balance: 'Balance',
+    // Travel Features
+    flight_status: '🛫 Flight Status',
+    hotel_booking: '🏨 Hotel Booking',
+    visa_processing: '🛂 Visa Processing',
+    travel_insurance: '🛡️ Travel Insurance',
+    hajj_umrah: '🕋 Hajj/Umrah',
+    corporate_travel: '🏢 Corporate Travel',
+    frequent_flyer: '🌟 Frequent Flyer',
+    // Advanced Features
+    expense_voucher: '📄 Expense Voucher',
+    staff_mistake_voucher: '⚠️ Staff Mistake Voucher',
+    salary_slip: '📄 Salary Slip',
+    contract_document: '📄 Contract Document',
+    offer_document: '📄 Offer Document',
+    // Invoice Types
+    sales_invoice: '📄 Sales Invoice',
+    refund_invoice: '📄 Refund Invoice',
+    proforma_invoice: '📄 Proforma Invoice',
+    // Payment Methods
+    payment_cash: '💰 Cash',
+    payment_bank: '🏦 Bank Transfer',
+    payment_card: '💳 Card',
+    payment_credit: '📝 Credit',
+    payment_tabby: '📱 Tabby',
+    payment_tamara: '📱 Tamara',
+    payment_credit_balance: '💳 Credit Balance',
+    // Status
+    status_paid: '✅ Paid',
+    status_unpaid: '⏳ Unpaid',
+    status_refunded: '🔄 Refunded',
+    status_draft: '📄 Draft',
+    status_cancelled: '❌ Cancelled',
+    // Employee
+    employee_sales: 'Sales',
+    employee_accountant: 'Accountant',
+    employee_manager: 'Manager',
+    employee_admin: 'Admin',
+    employee_hr: 'HR',
+    employee_support: 'Support',
+    // Travel Services
+    service_flight: '✈️ Flight Ticket',
+    service_hotel: '🏨 Hotel',
+    service_visa: '🛂 Visa',
+    service_package: '📦 Tour Package',
+    service_insurance: '🛡️ Insurance',
+    service_hajj: '🕋 Hajj',
+    service_umrah: '🕋 Umrah',
+    service_corporate: '🏢 Corporate Travel',
+    // Flight Types
+    flight_domestic: 'Domestic',
+    flight_international: 'International',
+    flight_single: 'Single',
+    flight_return: 'Return',
+    flight_multi: 'Multi-City',
+    // Visa Types
+    visa_tourist: 'Tourist',
+    visa_business: 'Business',
+    visa_work: 'Work',
+    visa_transit: 'Transit',
+    visa_hajj: 'Hajj',
+    visa_umrah: 'Umrah',
+    visa_student: 'Student',
+    // Insurance Types
+    insurance_single: 'Single Trip',
+    insurance_annual: 'Annual',
+    insurance_family: 'Family',
+    insurance_group: 'Group',
+    // Coverage Types
+    coverage_standard: 'Standard',
+    coverage_premium: 'Premium',
+    coverage_comprehensive: 'Comprehensive',
+    // Hajj/Umrah Types
+    hajj_standard: 'Standard Hajj',
+    hajj_vip: 'VIP Hajj',
+    umrah_standard: 'Standard Umrah',
+    umrah_vip: 'VIP Umrah',
+    // Package Status
+    package_available: 'Available',
+    package_filling: 'Filling Fast',
+    package_sold: 'Sold Out',
+    package_completed: 'Completed',
+    // Portal Types
+    portal_gds: 'GDS',
+    portal_airline: 'Airline Direct',
+    portal_consolidator: 'Consolidator',
+    portal_hotel: 'Hotel Supplier',
+    portal_other: 'Other',
+    // Branch Status
+    branch_active: 'Active',
+    branch_inactive: 'Inactive',
+    // Employee Roles
+    role_sales: 'Sales',
+    role_accountant: 'Accountant',
+    role_manager: 'Manager',
+    role_admin: 'Admin',
+    role_hr: 'HR',
+    role_support: 'Support',
+    // Expense Types
+    expense_office: 'Office Expense',
+    expense_travel: 'Travel Expense',
+    expense_supplies: 'Supplies',
+    expense_utilities: 'Utilities',
+    expense_rent: 'Rent',
+    expense_salary: 'Salary',
+    expense_other: 'Other',
+    // Approval Status
+    approval_pending: 'Pending',
+    approval_approved: 'Approved',
+    approval_rejected: 'Rejected',
+    // Attendance Status
+    attendance_present: 'Present',
+    attendance_leave: 'Leave',
+    attendance_absent: 'Absent',
+    // Leave Types
+    leave_annual: 'Annual',
+    leave_sick: 'Sick',
+    leave_emergency: 'Emergency',
+    leave_unpaid: 'Unpaid',
+    // Employee Advance Status
+    advance_pending: 'Pending',
+    advance_repaid: 'Repaid',
+    advance_deducted: 'Deducted from Salary',
+    // Mistake Status
+    mistake_paid: 'Paid by Employee',
+    mistake_not_paid: 'Not Paid',
+    // Contract Types
+    contract_flight: 'Flight Tickets',
+    contract_hotel: 'Hotel Booking',
+    contract_visa: 'Visa Services',
+    contract_hajj: 'Hajj/Umrah Packages',
+    contract_complete: 'Complete Travel Management',
+    // Recurring Intervals
+    interval_monthly: 'Monthly',
+    interval_yearly: 'Yearly',
+    interval_weekly: 'Weekly',
+    interval_quarterly: 'Quarterly',
+    // Tier Levels
+    tier_blue: 'Blue',
+    tier_silver: 'Silver',
+    tier_gold: 'Gold',
+    tier_platinum: 'Platinum',
+    tier_diamond: 'Diamond',
+    // Frequent Flyer Status
+    ff_active: 'Active',
+    ff_inactive: 'Inactive',
+    ff_expired: 'Expired',
+    // Payment Status
+    payment_confirmed: 'Confirmed',
+    payment_pending: 'Pending',
+    payment_failed: 'Failed',
+    payment_refunded: 'Refunded',
+    // Ticket Status
+    ticket_confirmed: 'Confirmed',
+    ticket_on_hold: 'On Hold',
+    ticket_cancelled: 'Cancelled',
+    // Refund Reasons
+    refund_airline: 'Cancel by Airline',
+    refund_customer: 'Cancel by Customer',
+    refund_date: 'Date Change',
+    refund_no_show: 'No Show',
+    refund_duplicate: 'Duplicate Booking',
+    refund_visa: 'Visa Rejected',
+    refund_other: 'Other',
+    // Booking Types
+    booking_new: 'New Booking',
+    booking_reissue: 'Reissue',
+    booking_date_change: 'Date Change',
+    booking_void: 'Void',
+    // Flight Journey
+    journey_single: 'Single',
+    journey_return: 'Return',
+    journey_multi: 'Multi-City',
+    // Refundable Status
+    refundable_yes: 'Refundable',
+    refundable_no: 'Non-Refundable',
   },
   ar: {
     // Main
@@ -272,7 +447,182 @@ const translations = {
     target: 'الهدف (ريال)',
     achieved: 'المحقق',
     percentage: '%',
-    balance: 'الرصيد'
+    balance: 'الرصيد',
+    // Travel Features
+    flight_status: '🛫 حالة الرحلة',
+    hotel_booking: '🏨 حجز الفنادق',
+    visa_processing: '🛂 معالجة التأشيرات',
+    travel_insurance: '🛡️ التأمين على السفر',
+    hajj_umrah: '🕋 باقات الحج والعمرة',
+    corporate_travel: '🏢 السفر المؤسسي',
+    frequent_flyer: '🌟 المسافر الدائم',
+    // Advanced Features
+    expense_voucher: '📄 سند مصروفات',
+    staff_mistake_voucher: '⚠️ سند خطأ الموظف',
+    salary_slip: '📄 قسيمة راتب',
+    contract_document: '📄 وثيقة عقد',
+    offer_document: '📄 وثيقة عرض',
+    // Invoice Types
+    sales_invoice: '📄 فاتورة مبيعات',
+    refund_invoice: '📄 فاتورة استرجاع',
+    proforma_invoice: '📄 فاتورة أولية',
+    // Payment Methods
+    payment_cash: '💰 نقداً',
+    payment_bank: '🏦 تحويل بنكي',
+    payment_card: '💳 بطاقة',
+    payment_credit: '📝 آجل',
+    payment_tabby: '📱 تابي',
+    payment_tamara: '📱 تمارة',
+    payment_credit_balance: '💳 رصيد مستحق',
+    // Status
+    status_paid: '✅ مدفوعة',
+    status_unpaid: '⏳ غير مدفوعة',
+    status_refunded: '🔄 مسترجعة',
+    status_draft: '📄 مسودة',
+    status_cancelled: '❌ ملغية',
+    // Employee
+    employee_sales: 'مبيعات',
+    employee_accountant: 'محاسب',
+    employee_manager: 'مدير',
+    employee_admin: 'مدير نظام',
+    employee_hr: 'موارد بشرية',
+    employee_support: 'دعم فني',
+    // Travel Services
+    service_flight: '✈️ تذكرة طيران',
+    service_hotel: '🏨 فندق',
+    service_visa: '🛂 تأشيرة',
+    service_package: '📦 باقة سياحية',
+    service_insurance: '🛡️ تأمين',
+    service_hajj: '🕋 حج',
+    service_umrah: '🕋 عمرة',
+    service_corporate: '🏢 سفر مؤسسي',
+    // Flight Types
+    flight_domestic: 'داخلي',
+    flight_international: 'دولي',
+    flight_single: 'ذهاب',
+    flight_return: 'ذهاب وعودة',
+    flight_multi: 'متعدد المدن',
+    // Visa Types
+    visa_tourist: 'سياحية',
+    visa_business: 'أعمال',
+    visa_work: 'عمل',
+    visa_transit: 'عبور',
+    visa_hajj: 'حج',
+    visa_umrah: 'عمرة',
+    visa_student: 'طالب',
+    // Insurance Types
+    insurance_single: 'رحلة واحدة',
+    insurance_annual: 'سنوي',
+    insurance_family: 'عائلي',
+    insurance_group: 'مجموعة',
+    // Coverage Types
+    coverage_standard: 'قياسي',
+    coverage_premium: 'مميز',
+    coverage_comprehensive: 'شامل',
+    // Hajj/Umrah Types
+    hajj_standard: 'حج قياسي',
+    hajj_vip: 'حج VIP',
+    umrah_standard: 'عمرة قياسية',
+    umrah_vip: 'عمرة VIP',
+    // Package Status
+    package_available: 'متاح',
+    package_filling: 'يكتمل بسرعة',
+    package_sold: 'نفذ',
+    package_completed: 'مكتمل',
+    // Portal Types
+    portal_gds: 'GDS',
+    portal_airline: 'مباشر مع الخطوط',
+    portal_consolidator: 'تجميعي',
+    portal_hotel: 'مورد فنادق',
+    portal_other: 'أخرى',
+    // Branch Status
+    branch_active: 'نشط',
+    branch_inactive: 'غير نشط',
+    // Employee Roles
+    role_sales: 'مبيعات',
+    role_accountant: 'محاسب',
+    role_manager: 'مدير',
+    role_admin: 'مدير نظام',
+    role_hr: 'موارد بشرية',
+    role_support: 'دعم فني',
+    // Expense Types
+    expense_office: 'مصروفات مكتبية',
+    expense_travel: 'مصروفات سفر',
+    expense_supplies: 'مستلزمات',
+    expense_utilities: 'فواتير',
+    expense_rent: 'إيجار',
+    expense_salary: 'رواتب',
+    expense_other: 'أخرى',
+    // Approval Status
+    approval_pending: 'قيد الانتظار',
+    approval_approved: 'معتمد',
+    approval_rejected: 'مرفوض',
+    // Attendance Status
+    attendance_present: 'حاضر',
+    attendance_leave: 'إجازة',
+    attendance_absent: 'غائب',
+    // Leave Types
+    leave_annual: 'سنوية',
+    leave_sick: 'مرضية',
+    leave_emergency: 'طارئة',
+    leave_unpaid: 'غير مدفوعة',
+    // Employee Advance Status
+    advance_pending: 'قيد الانتظار',
+    advance_repaid: 'تم السداد',
+    advance_deducted: 'مخصوم من الراتب',
+    // Mistake Status
+    mistake_paid: 'مدفوع من الموظف',
+    mistake_not_paid: 'غير مدفوع',
+    // Contract Types
+    contract_flight: 'تذاكر طيران',
+    contract_hotel: 'حجز فنادق',
+    contract_visa: 'خدمات تأشيرات',
+    contract_hajj: 'باقات حج وعمرة',
+    contract_complete: 'إدارة سفر متكاملة',
+    // Recurring Intervals
+    interval_monthly: 'شهري',
+    interval_yearly: 'سنوي',
+    interval_weekly: 'أسبوعي',
+    interval_quarterly: 'ربع سنوي',
+    // Tier Levels
+    tier_blue: 'أزرق',
+    tier_silver: 'فضي',
+    tier_gold: 'ذهبي',
+    tier_platinum: 'بلاتيني',
+    tier_diamond: 'ماسي',
+    // Frequent Flyer Status
+    ff_active: 'نشط',
+    ff_inactive: 'غير نشط',
+    ff_expired: 'منتهي',
+    // Payment Status
+    payment_confirmed: 'مؤكد',
+    payment_pending: 'قيد الانتظار',
+    payment_failed: 'فشل',
+    payment_refunded: 'مسترجعة',
+    // Ticket Status
+    ticket_confirmed: 'مؤكد',
+    ticket_on_hold: 'معلق',
+    ticket_cancelled: 'ملغي',
+    // Refund Reasons
+    refund_airline: 'إلغاء من الخطوط',
+    refund_customer: 'إلغاء من العميل',
+    refund_date: 'تغيير التاريخ',
+    refund_no_show: 'عدم الحضور',
+    refund_duplicate: 'حجز مكرر',
+    refund_visa: 'رفض التأشيرة',
+    refund_other: 'أخرى',
+    // Booking Types
+    booking_new: 'حجز جديد',
+    booking_reissue: 'إعادة إصدار',
+    booking_date_change: 'تغيير التاريخ',
+    booking_void: 'إلغاء',
+    // Flight Journey
+    journey_single: 'ذهاب',
+    journey_return: 'ذهاب وعودة',
+    journey_multi: 'متعدد المدن',
+    // Refundable Status
+    refundable_yes: 'قابل للاسترجاع',
+    refundable_no: 'غير قابل للاسترجاع',
   }
 };
 
@@ -325,7 +675,242 @@ export default function useERPState() {
     corporateTravel: [],
     frequentFlyer: [],
     flightStatus: [],
-    hotelBookings: []
+    hotelBookings: [],
+    contracts: [],
+    offers: [],
+    recurringInvoices: [],
+    expenseApprovals: [],
+    quotations: [],
+    proformaInvoices: [],
+    employeeTargets: [],
+    leaveRequests: [],
+    payrollHistory: [],
+    mistakeVouchers: [],
+    expenseVouchers: [],
+    salarySlips: [],
+    refundRequests: [],
+    creditNotes: [],
+    debitNotes: [],
+    journalEntries: [],
+    accountBalances: [],
+    taxReports: [],
+    salesReports: [],
+    purchaseReports: [],
+    inventoryItems: [],
+    inventoryTransactions: [],
+    customerGroups: [],
+    supplierGroups: [],
+    employeeGroups: [],
+    branchTransfers: [],
+    portalTransactions: [],
+    bankReconciliations: [],
+    cashFlows: [],
+    profitCenters: [],
+    costCenters: [],
+    budgets: [],
+    forecasts: [],
+    kpis: [],
+    alerts: [],
+    reminders: [],
+    userActivities: [],
+    systemLogs: [],
+    backupLogs: [],
+    emailLogs: [],
+    smsLogs: [],
+    notificationLogs: [],
+    paymentGateways: [],
+    shippingMethods: [],
+    taxRates: [],
+    currencies: [],
+    exchangeRates: [],
+    countries: [],
+    cities: [],
+    airports: [],
+    airlines: [],
+    hotels: [],
+    tourOperators: [],
+    insuranceCompanies: [],
+    visaServices: [],
+    transportCompanies: [],
+    guides: [],
+    translators: [],
+    eventPlanners: [],
+    weddingPlanners: [],
+    conferenceOrganizers: [],
+    exhibitionOrganizers: [],
+    sportsEventOrganizers: [],
+    entertainmentOrganizers: [],
+    educationConsultants: [],
+    medicalTourism: [],
+    wellnessCenters: [],
+    spaCenters: [],
+    adventureTourism: [],
+    ecoTourism: [],
+    culturalTourism: [],
+    religiousTourism: [],
+    businessTourism: [],
+    leisureTourism: [],
+    luxuryTourism: [],
+    budgetTourism: [],
+    familyTourism: [],
+    soloTourism: [],
+    groupTourism: [],
+    corporateTourism: [],
+    incentiveTourism: [],
+    meetingTourism: [],
+    conventionTourism: [],
+    exhibitionTourism: [],
+    eventTourism: [],
+    sportsTourism: [],
+    musicTourism: [],
+    filmTourism: [],
+    fashionTourism: [],
+    foodTourism: [],
+    wineTourism: [],
+    heritageTourism: [],
+    natureTourism: [],
+    wildlifeTourism: [],
+    beachTourism: [],
+    mountainTourism: [],
+    desertTourism: [],
+    cityTourism: [],
+    ruralTourism: [],
+    agriculturalTourism: [],
+    industrialTourism: [],
+    educationalTourism: [],
+    volunteerTourism: [],
+    healthTourism: [],
+    spaTourism: [],
+    yogaTourism: [],
+    meditationTourism: [],
+    retreatTourism: [],
+    pilgrimageTourism: [],
+    historicalTourism: [],
+    archaeologicalTourism: [],
+    museumTourism: [],
+    galleryTourism: [],
+    theatreTourism: [],
+    concertTourism: [],
+    festivalTourism: [],
+    paradeTourism: [],
+    carnivalTourism: [],
+    fairTourism: [],
+    marketTourism: [],
+    shoppingTourism: [],
+    nightlifeTourism: [],
+    diningTourism: [],
+    cruiseTourism: [],
+    safariTourism: [],
+    trekkingTourism: [],
+    campingTourism: [],
+    fishingTourism: [],
+    huntingTourism: [],
+    skiingTourism: [],
+    snowboardingTourism: [],
+    surfingTourism: [],
+    divingTourism: [],
+    snorkelingTourism: [],
+    kayakingTourism: [],
+    raftingTourism: [],
+    climbingTourism: [],
+    bungeeTourism: [],
+    skydivingTourism: [],
+    paraglidingTourism: [],
+    hotAirBalloonTourism: [],
+    helicopterTourism: [],
+    privateJetTourism: [],
+    yachtTourism: [],
+    luxuryCruiseTourism: [],
+    expeditionTourism: [],
+    explorationTourism: [],
+    discoveryTourism: [],
+    adventureTravel: [],
+    luxuryTravel: [],
+    businessTravel: [],
+    leisureTravel: [],
+    groupTravel: [],
+    soloTravel: [],
+    familyTravel: [],
+    couplesTravel: [],
+    friendsTravel: [],
+    seniorTravel: [],
+    studentTravel: [],
+    youthTravel: [],
+    womenTravel: [],
+    menTravel: [],
+    lgbtTravel: [],
+    accessibleTravel: [],
+    petFriendlyTravel: [],
+    ecoFriendlyTravel: [],
+    sustainableTravel: [],
+    responsibleTravel: [],
+    ethicalTravel: [],
+    culturalTravel: [],
+    heritageTravel: [],
+    culinaryTravel: [],
+    wineTravel: [],
+    beerTravel: [],
+    coffeeTravel: [],
+    teaTravel: [],
+    chocolateTravel: [],
+    cheeseTravel: [],
+    breadTravel: [],
+    oliveOilTravel: [],
+    honeyTravel: [],
+    spiceTravel: [],
+    herbTravel: [],
+    flowerTravel: [],
+    gardenTravel: [],
+    parkTravel: [],
+    zooTravel: [],
+    aquariumTravel: [],
+    museumTravel: [],
+    galleryTravel: [],
+    theatreTravel: [],
+    operaTravel: [],
+    balletTravel: [],
+    symphonyTravel: [],
+    jazzTravel: [],
+    bluesTravel: [],
+    rockTravel: [],
+    popTravel: [],
+    classicalTravel: [],
+    folkTravel: [],
+    worldMusicTravel: [],
+    danceTravel: [],
+    festivalTravel: [],
+    paradeTravel: [],
+    carnivalTravel: [],
+    fairTravel: [],
+    marketTravel: [],
+    shoppingTravel: [],
+    nightlifeTravel: [],
+    diningTravel: [],
+    cruiseTravel: [],
+    safariTravel: [],
+    trekkingTravel: [],
+    campingTravel: [],
+    fishingTravel: [],
+    huntingTravel: [],
+    skiingTravel: [],
+    snowboardingTravel: [],
+    surfingTravel: [],
+    divingTravel: [],
+    snorkelingTravel: [],
+    kayakingTravel: [],
+    raftingTravel: [],
+    climbingTravel: [],
+    bungeeTravel: [],
+    skydivingTravel: [],
+    paraglidingTravel: [],
+    hotAirBalloonTravel: [],
+    helicopterTravel: [],
+    privateJetTravel: [],
+    yachtTravel: [],
+    luxuryCruiseTravel: [],
+    expeditionTravel: [],
+    explorationTravel: [],
+    discoveryTravel: [],
   });
 
   /* ===== INVOICE FORM ===== */
@@ -389,54 +974,81 @@ export default function useERPState() {
 
   /* ===== EXPENSE FORM ===== */
   const [expForm, setExpForm] = useState({
-    expense_type: '',
+    expense_type: 'Office Expense',
     payment_mode: 'Cash',
     description: '',
     expense_date: today,
     vendor_name: '',
+    vendor_id: '',
     taxRate: '0',
     items: [{ name: '', qty: 1, price: 0 }],
-    approval_status: 'Approved'
+    approval_status: 'Approved',
+    category: 'General',
+    subtotal: 0,
+    total: 0,
+    notes: '',
+    attachment: '',
   });
 
   /* ===== OTHER FORMS ===== */
-  const [corpForm, setCorpForm] = useState({ name: '', vat_no: '', phone: '', address: '' });
-  const [creditorForm, setCreditorForm] = useState({ name: '', phone: '', address: '' });
-  const [custForm, setCustForm] = useState({ name: '', phone: '', store_credit: 0 });
-  const [vendorForm, setVendorForm] = useState({ name: '', phone: '', balance: 0 });
-  const [pkgForm, setPkgForm] = useState({ name: '', price: '', desc: '', duration: '', inclusions: '' });
-  const [brnForm, setBrnForm] = useState({ name: '', location: '', phone: '', manager: '', email: '', timing: '', status: 'Active' });
+  const [corpForm, setCorpForm] = useState({ name: '', vat_no: '', phone: '', address: '', email: '', website: '', industry: '', size: '', credit_limit: 0 });
+  const [creditorForm, setCreditorForm] = useState({ name: '', phone: '', address: '', email: '', contact_person: '', balance: 0, credit_limit: 0 });
+  const [custForm, setCustForm] = useState({ name: '', phone: '', store_credit: 0, email: '', address: '', nationality: '', passport_no: '', date_of_birth: '', gender: '', occupation: '', company: '', notes: '' });
+  const [vendorForm, setVendorForm] = useState({ name: '', phone: '', balance: 0, email: '', address: '', contact_person: '', tax_id: '', category: '', rating: 0, notes: '' });
+  const [pkgForm, setPkgForm] = useState({ name: '', price: '', desc: '', duration: '', inclusions: '', exclusions: '', terms: '', category: '', difficulty: '', min_age: '', max_age: '', group_size: '', start_date: '', end_date: '', status: 'Available' });
+  const [brnForm, setBrnForm] = useState({ name: '', location: '', phone: '', manager: '', email: '', timing: '', status: 'Active', address: '', latitude: '', longitude: '', timezone: '', currency: '', language: '', notes: '' });
   const [empForm, setEmpForm] = useState({
     name: '', phone: '', iqama_no: '', iqama_expiry: '', role: 'Sales',
     salary: 0, commission_rate: 0, nationality: '', job_title: '',
     national_id: '', join_date: '', bank_name: '', bank_account: '',
-    labor_office_expiry: ''
+    labor_office_expiry: '', email: '', emergency_contact: '', emergency_phone: '',
+    address: '', gender: '', date_of_birth: '', marital_status: '', dependents: 0,
+    education: '', experience: '', skills: '', languages: '', certifications: '',
+    work_email: '', work_phone: '', department: '', manager_id: '', leave_balance: 0,
+    target: 0, performance_rating: 0, notes: ''
   });
-  const [srvForm, setSrvForm] = useState({ name: '' });
-  const [investForm, setInvestForm] = useState({ name: '', amount: '', date: today, mode: 'Cash', reason: 'Other', otherReason: '', desc: '' });
-  const [settleForm, setSettleForm] = useState({ id: '', date: today, mode: 'Cash' });
-  const [refundForm, setRefundForm] = useState({ id: '', date: today, compRefund: 0, custRefund: 0, mode: 'Cash', reason: '', portalId: '', creditBalance: 0 });
-  const [transferForm, setTransferForm] = useState({ from: 'Cash', to: 'Bank', amount: '', date: today, description: '' });
+  const [srvForm, setSrvForm] = useState({ name: '', description: '', price: 0, category: '', duration: '', provider: '', commission: 0, is_active: true });
+  const [investForm, setInvestForm] = useState({ name: '', amount: '', date: today, mode: 'Cash', reason: 'Other', otherReason: '', desc: '', email: '', phone: '', address: '', profit_share: 0, return_date: '', status: 'Active' });
+  const [settleForm, setSettleForm] = useState({ id: '', date: today, mode: 'Cash', amount: '', reference: '', notes: '' });
+  const [refundForm, setRefundForm] = useState({ id: '', date: today, compRefund: 0, custRefund: 0, mode: 'Cash', reason: '', portalId: '', creditBalance: 0, notes: '', refund_to: 'customer' });
+  const [transferForm, setTransferForm] = useState({ from: 'Cash', to: 'Bank', amount: '', date: today, description: '', reference: '', category: 'Internal' });
   const [setForm, setSetForm] = useState({});
   const [userForm, setUserForm] = useState({
     email: '', username: '', role: 'Staff', is_admin: false,
     can_access_invoices: true, can_access_bank: false, can_access_hr: false,
-    can_access_reports: false, can_access_settings: false, employee_id: ''
+    can_access_reports: false, can_access_settings: false, employee_id: '',
+    can_access_travel: false, can_access_finance: false, can_access_crm: false,
+    can_access_contracts: false, can_access_audit: false, can_access_superadmin: false,
+    language: 'en', theme: 'light', notifications_enabled: true
   });
   const [portalForm, setPortalForm] = useState({
     name: '', portal_type: 'GDS', current_balance: 0, initial_balance: 0,
-    phone: '', contact_person: '', credit_limit: 0
+    phone: '', contact_person: '', credit_limit: 0, email: '', address: '',
+    api_key: '', api_secret: '', api_url: '', notes: '', status: 'Active'
   });
   const [tenantForm, setTenantForm] = useState({
     agency_name: '', owner_email: '', subscription_end_date: '',
-    company_name_ar: '', vat_no: '', cr_no: '', phone: '', address_ar: ''
+    company_name_ar: '', vat_no: '', cr_no: '', phone: '', address_ar: '',
+    website: '', license_no: '', tourism_license_no: '', bank_name: '',
+    bank_account: '', iban: '', swift_code: '', logo_url: '', favicon_url: '',
+    primary_color: '', secondary_color: '', font_family: '', timezone: '',
+    currency: 'SAR', language: 'en', country: 'SA', city: 'Riyadh',
+    postal_code: '', po_box: '', tax_registration: '', commercial_registration: '',
+    municipality_license: '', civil_defense_license: '', tourist_license: '',
+    social_media: { facebook: '', instagram: '', twitter: '', youtube: '', linkedin: '' },
+    settings: { invoice_prefix: 'INV', quote_prefix: 'QUO', refund_prefix: 'REF', default_tax: 15, default_currency: 'SAR' }
   });
-  const [profileForm, setProfileForm] = useState({ username: '', avatar_url: '', phone: '', address: '' });
-  const [passForm, setPassForm] = useState({ newPass: '' });
+  const [profileForm, setProfileForm] = useState({ username: '', avatar_url: '', phone: '', address: '', email: '', bio: '', website: '', social: { facebook: '', instagram: '', twitter: '', linkedin: '' } });
+  const [passForm, setPassForm] = useState({ newPass: '', confirmPass: '' });
   const [payForm, setPayForm] = useState({
     employee_id: '', month: today.slice(0, 7), overtime: 0, gift: 0,
     advance: 0, mistakes_deduction: 0, other_deduction: 0,
-    payment_mode: 'Cash', payment_date: today, notes: ''
+    payment_mode: 'Cash', payment_date: today, notes: '',
+    commission: 0, bonus: 0, allowance: 0, deductions: 0, net_salary: 0,
+    basic_salary: 0, housing_allowance: 0, transport_allowance: 0, food_allowance: 0,
+    phone_allowance: 0, internet_allowance: 0, medical_allowance: 0, education_allowance: 0,
+    overtime_hours: 0, overtime_rate: 0, leave_days: 0, sick_days: 0, unpaid_days: 0,
+    tax: 0, social_security: 0, insurance: 0, loan: 0, other_deductions: 0,
   });
 
   /* ===== EDIT IDS ===== */
@@ -453,7 +1065,10 @@ export default function useERPState() {
   const [editUserId, setEditUserId] = useState(null);
 
   /* ===== ADVANCE FORMS ===== */
-  const [advForm, setAdvForm] = useState({ employee_id: '', amount: '', date: today, status: 'Pending' });
+  const [advForm, setAdvForm] = useState({ employee_id: '', amount: '', date: today, status: 'Pending', reason: '', approved_by: '', approved_date: '', repayment_date: '', installments: 1, installment_amount: 0, notes: '' });
+  const [mistakeForm, setMistakeForm] = useState({ employee_id: '', old_ticket_no: '', new_ticket_no: '', loss_amount: 0, paid_by_employee: false, reason: '', date: today, department: '', severity: 'Medium', notes: '' });
+  const [leaveForm, setLeaveForm] = useState({ employee_id: '', type: 'Annual', start_date: today, end_date: today, reason: '', status: 'Pending', approved_by: '', approved_date: '', notes: '' });
+  const [contractForm, setContractForm] = useState({ corporate_id: '', type: 'Flight Tickets', start_date: today, end_date: '', terms: '', markup: 10, status: 'Draft', signed_by: '', signed_date: '', notes: '' });
 
   /* ===== CHAT STATE ===== */
   const [chatInput, setChatInput] = useState('');
@@ -503,7 +1118,7 @@ export default function useERPState() {
         setRes, srvRes, advRes, investRes, attRes, appUsersRes,
         visaRes, insuranceRes, hajjRes, corpTravelRes, ffRes, hotelRes
       ] = await Promise.all([
-        supabase.from('invoices').select('*, customers(name,phone), corporates(name,vat_no,phone), employees(name,phone)').eq('tenant_id', tid).order('created_at', { ascending: false }),
+        supabase.from('invoices').select('*, customers(name,phone,store_credit), corporates(name,vat_no,phone), employees(name,phone)').eq('tenant_id', tid).order('created_at', { ascending: false }),
         supabase.from('customers').select('*').eq('tenant_id', tid),
         supabase.from('corporates').select('*').eq('tenant_id', tid),
         supabase.from('creditors').select('*').eq('tenant_id', tid),
@@ -630,7 +1245,11 @@ export default function useERPState() {
             username: profile.username || '',
             avatar_url: profile.avatar_url || '',
             phone: profile.phone || '',
-            address: profile.address || ''
+            address: profile.address || '',
+            email: profile.email || '',
+            bio: profile.bio || '',
+            website: profile.website || '',
+            social: profile.social || { facebook: '', instagram: '', twitter: '', linkedin: '' }
           });
         }
       } catch (err) {
@@ -697,6 +1316,9 @@ export default function useERPState() {
     passForm, setPassForm,
     payForm, setPayForm,
     advForm, setAdvForm,
+    mistakeForm, setMistakeForm,
+    leaveForm, setLeaveForm,
+    contractForm, setContractForm,
 
     // Chat
     chatInput, setChatInput, chatMessages, setChatMessages,
