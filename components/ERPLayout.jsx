@@ -10,7 +10,7 @@ export default function ERPLayout({
   chatMessages, chatInput, setChatInput, userProfile, menu,
   settleForm, setSettleForm, handleSettlePayment,
   refundForm, setRefundForm, handleRefund,
-  previewHTML, downloadPDF, data
+  previewHTML, downloadPDF, data, showToast
 }) {
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
@@ -30,6 +30,7 @@ export default function ERPLayout({
     }
   }, [isDark]);
 
+  // Group menu by section
   const groupedMenu = menu.reduce((acc, item) => {
     if (!acc[item.section]) acc[item.section] = [];
     acc[item.section].push(item);
@@ -101,6 +102,7 @@ export default function ERPLayout({
       position: 'relative'
     }}>
       
+      {/* ===== MODALS ===== */}
       <ERPModals 
         modal={modal} 
         setModal={setModal} 
@@ -119,7 +121,9 @@ export default function ERPLayout({
         theme={theme}
       />
 
-      {/* ===== MOBILE HEADER ===== */}
+      {/* ============================================================
+          MOBILE HEADER
+          ============================================================ */}
       <div style={{
         display: 'none',
         '@media (max-width: 768px)': { display: 'flex' },
@@ -158,7 +162,9 @@ export default function ERPLayout({
         </button>
       </div>
 
-      {/* ===== SIDEBAR ===== */}
+      {/* ============================================================
+          SIDEBAR
+          ============================================================ */}
       <div style={{
         width: sidebarCollapsed ? '72px' : '280px',
         background: isDark ? '#1E293B' : '#FFFFFF',
@@ -367,7 +373,9 @@ export default function ERPLayout({
           ))}
         </div>
 
-        {/* ===== USER PROFILE ===== */}
+        {/* ============================================================
+            USER PROFILE
+            ============================================================ */}
         <div style={{
           borderTop: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
           paddingTop: '16px',
@@ -464,7 +472,7 @@ export default function ERPLayout({
         </div>
       </div>
 
-      {/* ===== SIDEBAR OVERLAY ===== */}
+      {/* ===== SIDEBAR OVERLAY (Mobile) ===== */}
       {isMobileMenuOpen && (
         <div
           onClick={() => setIsMobileMenuOpen(false)}
@@ -480,7 +488,9 @@ export default function ERPLayout({
         />
       )}
 
-      {/* ===== MAIN CONTENT ===== */}
+      {/* ============================================================
+          MAIN CONTENT
+          ============================================================ */}
       <div style={{
         flex: 1,
         marginLeft: sidebarCollapsed ? '72px' : '280px',
@@ -498,7 +508,9 @@ export default function ERPLayout({
       }}>
         {children}
         
-        {/* ===== AI CHAT WIDGET ===== */}
+        {/* ============================================================
+            AI CHAT WIDGET
+            ============================================================ */}
         <div style={{
           position: 'fixed',
           bottom: '24px',
@@ -519,6 +531,7 @@ export default function ERPLayout({
               border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
               animation: 'fadeIn 0.3s ease-out'
             }}>
+              {/* Chat Header */}
               <div style={{
                 background: 'linear-gradient(135deg, #1E3A8A, #2563EB)',
                 color: '#FFFFFF',
@@ -539,6 +552,8 @@ export default function ERPLayout({
                   ✕
                 </span>
               </div>
+
+              {/* Chat Messages */}
               <div style={{
                 flex: 1,
                 padding: '16px',
@@ -573,6 +588,8 @@ export default function ERPLayout({
                   </div>
                 ))}
               </div>
+
+              {/* Chat Input */}
               <div style={{
                 display: 'flex',
                 padding: '12px',
@@ -614,6 +631,8 @@ export default function ERPLayout({
               </div>
             </div>
           )}
+
+          {/* Chat Toggle Button */}
           <button
             onClick={() => setChatOpen(!chatOpen)}
             style={{
