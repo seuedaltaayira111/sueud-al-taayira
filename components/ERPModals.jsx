@@ -11,8 +11,24 @@ export default function ERPModals({
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
 
+  // ============================================================
+  // STYLES
+  // ============================================================
   const styles = {
     input: {
+      width: '100%',
+      padding: '12px 15px',
+      margin: '8px 0',
+      border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
+      borderRadius: '8px',
+      outline: 'none',
+      boxSizing: 'border-box',
+      background: isDark ? '#0F172A' : '#F8FAFC',
+      color: isDark ? '#E2E8F0' : '#1E293B',
+      fontSize: '14px',
+      transition: 'all 0.2s'
+    },
+    select: {
       width: '100%',
       padding: '12px 15px',
       margin: '8px 0',
@@ -226,7 +242,7 @@ export default function ERPModals({
               <select
                 value={settleForm?.mode || 'Cash'}
                 onChange={e => setSettleForm({ ...settleForm, mode: e.target.value })}
-                style={styles.input}
+                style={styles.select}
               >
                 <option value="Cash">💰 {isAr ? 'نقداً' : 'Cash'}</option>
                 <option value="Bank Transfer">🏦 {isAr ? 'تحويل بنكي' : 'Bank Transfer'}</option>
@@ -313,7 +329,7 @@ export default function ERPModals({
               <select
                 value={refundForm?.mode || 'Cash'}
                 onChange={e => setRefundForm({ ...refundForm, mode: e.target.value })}
-                style={styles.input}
+                style={styles.select}
                 required
               >
                 <option value="Cash">💰 {isAr ? 'نقداً' : 'Cash'}</option>
@@ -341,7 +357,7 @@ export default function ERPModals({
               <select
                 value={refundForm?.reason || ''}
                 onChange={e => setRefundForm({ ...refundForm, reason: e.target.value })}
-                style={styles.input}
+                style={styles.select}
                 required
               >
                 <option value="">{isAr ? 'اختر السبب' : 'Select Reason'}</option>
@@ -395,7 +411,8 @@ export default function ERPModals({
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            border: isDark ? '1px solid #334155' : '1px solid #E2E8F0'
+            border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
           }}>
             {/* ===== HEADER ===== */}
             <div style={{
@@ -459,6 +476,17 @@ export default function ERPModals({
                 sandbox="allow-print allow-scripts allow-same-origin"
               />
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================
+          CUSTOM MODAL (Generic)
+          ============================================================ */}
+      {modal.type === 'custom' && modal.content && (
+        <div style={overlay}>
+          <div style={styles.card}>
+            {modal.content}
           </div>
         </div>
       )}
