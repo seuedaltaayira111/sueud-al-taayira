@@ -8,6 +8,7 @@ export default function ERPModals({
   refundForm, setRefundForm, handleRefund,
   previewHTML, downloadPDF, lang, theme
 }) {
+  // ✅ FIX: isAr defined here
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
 
