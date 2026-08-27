@@ -211,9 +211,9 @@ export default function ERPLayout({ children, tr, lang, setLang, theme, setTheme
         flex: 1, 
         overflowY: 'auto', 
         position: 'relative', 
-        background: 'linear-gradient(135deg, #EEF2FF 0%, #F0FDF4 50%, #FFF7ED 100%)',
+        background: '#0F172A',
         scrollbarWidth: 'thin',
-        scrollbarColor: '#CBD5E1 #F1F5F9'
+        scrollbarColor: '#334155 #0F172A'
       }}>
         {children}
         
