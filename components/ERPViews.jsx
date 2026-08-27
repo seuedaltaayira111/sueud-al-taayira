@@ -1,10 +1,5 @@
 'use client';
 
-/**
- * Master view router - Routes all pages to their respective components
- * Includes ADVANCE TRAVEL AGENCY features
- */
-
 import ERPViewsMisc from './views/ERPViewsMisc';
 import ERPViewsSales from './views/ERPViewsSales';
 import ERPViewsAdmin from './views/ERPViewsAdmin';
@@ -16,70 +11,53 @@ import ERPViewsTools from './views/ERPViewsTools';
 import ERPViewsTravel from './views/ERPViewsTravel';
 
 const PAGE_COMPONENT = {
-  // ===== MAIN =====
   dashboard: ERPViewsMisc,
   create: ERPViewsMisc,
   my_attendance: ERPViewsMisc,
-  notifications: ERPViewsPro,
-
-  // ===== TRAVEL AGENCY CORE =====
+  hr: ERPViewsMisc,
+  hr_advanced: ERPViewsAdvanced,
   list: ERPViewsSales,
   refunds: ERPViewsSales,
+  customers: ERPViewsSales,
+  corporates: ERPViewsSales,
+  creditors: ERPViewsSales,
+  credit: ERPViewsSales,
+  vendors: ERPViewsSales,
+  packages: ERPViewsSales,
+  branches: ERPViewsSales,
+  portals: ERPViewsSales,
+  expenses: ERPViewsSales,
+  bank: ERPViewsAdmin,
+  invest: ERPViewsAdmin,
+  audit: ERPViewsSales,
+  users: ERPViewsSales,
+  reports: ERPViewsSystem,
+  statements: ERPViewsSystem,
+  staff_mistakes: ERPViewsSales,
+  credit_limits: ERPViewsEnterprise,
+  supplier_statement: ERPViewsEnterprise,
+  multi_branch: ERPViewsEnterprise,
+  ai_dashboard: ERPViewsAdvanced,
   quotations: ERPViewsAdvanced,
-
-  // ===== FLIGHT OPERATIONS =====
+  refund_statement: ERPViewsPro,
+  customer_statement: ERPViewsPro,
+  recurring_invoices: ERPViewsPro,
+  expense_approval: ERPViewsPro,
+  notifications: ERPViewsPro,
+  profitability: ERPViewsSystem,
+  profile: ERPViewsSystem,
+  superadmin: ERPViewsSystem,
+  settings: ERPViewsSystem,
+  contract: ERPViewsSystem,
+  offer: ERPViewsSystem,
+  ai_pricing: ERPViewsTools,
   flight_status: ERPViewsTravel,
   hotel_booking: ERPViewsTravel,
   visa_processing: ERPViewsTravel,
   travel_insurance: ERPViewsTravel,
   hajj_umrah: ERPViewsTravel,
-
-  // ===== PACKAGES & TOURS =====
-  packages: ERPViewsSales,
   corporate_travel: ERPViewsTravel,
   frequent_flyer: ERPViewsTravel,
-
-  // ===== CRM =====
-  customers: ERPViewsSales,
-  corporates: ERPViewsSales,
-  creditors: ERPViewsSales,
-  credit: ERPViewsSales,
-  portals: ERPViewsSales,
-  vendors: ERPViewsAdmin,
-
-  // ===== FINANCE =====
-  bank: ERPViewsAdmin,
-  invest: ERPViewsAdmin,
-  expenses: ERPViewsSales,
-  profitability: ERPViewsSystem,
-  refund_statement: ERPViewsPro,
-
-  // ===== HR =====
-  hr: ERPViewsMisc,
-  hr_advanced: ERPViewsAdvanced,
-  staff_mistakes: ERPViewsSales,
-
-  // ===== CONTRACTS =====
-  contract: ERPViewsSystem,
-  offer: ERPViewsSystem,
-
-  // ===== REPORTS & ADMIN =====
-  reports: ERPViewsSystem,
-  statements: ERPViewsSystem,
-  audit: ERPViewsSales,
-  superadmin: ERPViewsSystem,
-  users: ERPViewsSales,
-  settings: ERPViewsSystem,
-  profile: ERPViewsSystem,
-
-  // ===== ENTERPRISE =====
-  credit_limits: ERPViewsEnterprise,
-  supplier_statement: ERPViewsEnterprise,
-  multi_branch: ERPViewsEnterprise,
-
-  // ===== TOOLS =====
-  ai_pricing: ERPViewsTools,
-  ai_dashboard: ERPViewsAdvanced,
 };
 
 export default function ERPViews(props) {
