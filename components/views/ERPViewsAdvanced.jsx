@@ -335,7 +335,7 @@ export default function ERPViewsAdvanced(props) {
             <div style={styles.statLabel}>{isAr ? 'المستحقات المتأخرة' : 'Pending Dues'}</div>
             <div style={{ ...styles.statValue, color: '#FCA5A5' }}>{fmt(totalDue)}</div>
           </div>
-          <div style={{ ...styles.statCard, borderTop: '4px solid '#60A5FA'' }}>
+          <div style={{ ...styles.statCard, borderTop: '4px solid #60A5FA' }}>
             <div style={styles.statLabel}>{isAr ? 'إجمالي الفواتير' : 'Total Invoices'}</div>
             <div style={styles.statValue}>{activeInvoices.length}</div>
           </div>
@@ -668,7 +668,6 @@ export default function ERPViewsAdvanced(props) {
 
     const handlePaySalarySubmit = async (e) => {
       e.preventDefault();
-      // Use the parent's handleProcessPayroll with the local form data
       const syntheticEvent = {
         preventDefault: () => {},
         target: {
@@ -681,9 +680,7 @@ export default function ERPViewsAdvanced(props) {
           mode: { value: payFormLocal.mode }
         }
       };
-      // Create a wrapper to pass the form data
-      const originalHandleProcessPayroll = handleProcessPayroll;
-      await originalHandleProcessPayroll(syntheticEvent);
+      await handleProcessPayroll(syntheticEvent);
     };
 
     return (
@@ -695,7 +692,7 @@ export default function ERPViewsAdvanced(props) {
           </button>
         </div>
 
-        {/* ===== TARGETS TABLE ===== */}
+        {/* Targets Table */}
         <div style={styles.card}>
           <div style={{ overflowX: 'auto' }}>
             <table style={styles.table}>
@@ -794,7 +791,7 @@ export default function ERPViewsAdvanced(props) {
           </div>
         </div>
 
-        {/* ===== ATTENDANCE ===== */}
+        {/* Attendance */}
         <div style={styles.card}>
           <h3 style={styles.sectionTitle}>📅 {isAr ? 'الحضور اليومي القائم على الوقت' : 'Daily Time-Based Attendance'}</h3>
           <p style={{ color: '#94A3B8', fontSize: '14px', marginBottom: '15px' }}>
@@ -898,7 +895,7 @@ export default function ERPViewsAdvanced(props) {
           </div>
         </div>
 
-        {/* ===== PAY SALARY ===== */}
+        {/* Pay Salary */}
         <div style={styles.card}>
           <h3 style={styles.sectionTitle}>💰 {isAr ? 'دفع الراتب' : 'Pay Salary'}</h3>
           <p style={{ color: '#94A3B8', fontSize: '14px', marginBottom: '15px' }}>
@@ -952,7 +949,7 @@ export default function ERPViewsAdvanced(props) {
           </form>
         </div>
 
-        {/* ===== SALARY SLIPS ===== */}
+        {/* Salary Slips */}
         <div style={styles.card}>
           <h3 style={styles.sectionTitle}>📋 {isAr ? 'قسائم الرواتب' : 'Salary Slips'}</h3>
           <div style={{ overflowX: 'auto' }}>
