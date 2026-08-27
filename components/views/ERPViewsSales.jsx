@@ -10,7 +10,8 @@ export default function ERPViewsSales(props) {
     handleEditPkg, handleEditBrn, handleEditEmp, handleEditExp,
     handleDeletePayroll, handleGenerateSlip, handlePreviewMistake, handleDeleteMistake,
     handleAddEditUser, handleEditUser, handleDeleteUser, userForm, setUserForm,
-    editUserId, setEditUserId, handleTransfer, transferForm, setTransferForm
+    editUserId, setEditUserId, handleTransfer, transferForm, setTransferForm,
+    handleAddEditPortal, portalForm, setPortalForm
   } = props;
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -505,12 +506,50 @@ export default function ERPViewsSales(props) {
             <div style={{ ...styles.statValue, color: '#34D399' }}>{fmt(totalBalance)}</div>
           </div>
         </div>
+
+        <div style={styles.card}>
+          <h3 style={{ marginTop: 0, color: '#FBBF24' }}>{modal?.data?.id ? 'Edit Portal' : '+ Add New Portal'}</h3>
+          <form onSubmit={handleAddEditPortal} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px' }}>
+            <div>
+              <label style={styles.formLabel}>Portal Name</label>
+              <input style={styles.input} value={portalForm.name} onChange={e => setPortalForm(p => ({ ...p, name: e.target.value }))} required />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Type</label>
+              <select style={styles.select} value={portalForm.portal_type} onChange={e => setPortalForm(p => ({ ...p, portal_type: e.target.value }))}>
+                <option>GDS</option><option>Airline Direct</option><option>Consolidator</option><option>Hotel Supplier</option><option>Other</option>
+              </select>
+            </div>
+            <div>
+              <label style={styles.formLabel}>Opening Balance</label>
+              <input type="number" step="0.01" style={styles.input} value={portalForm.initial_balance} onChange={e => setPortalForm(p => ({ ...p, initial_balance: e.target.value, current_balance: modal?.data?.id ? p.current_balance : e.target.value }))} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Contact Person</label>
+              <input style={styles.input} value={portalForm.contact_person} onChange={e => setPortalForm(p => ({ ...p, contact_person: e.target.value }))} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Phone</label>
+              <input style={styles.input} value={portalForm.phone} onChange={e => setPortalForm(p => ({ ...p, phone: e.target.value }))} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Credit Limit</label>
+              <input type="number" step="0.01" style={styles.input} value={portalForm.credit_limit} onChange={e => setPortalForm(p => ({ ...p, credit_limit: e.target.value }))} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }}>
+              <button type="submit" style={{ ...styles.btn, ...styles.btnSuccess, flex: 1 }}>{modal?.data?.id ? 'Save Changes' : 'Add Portal'}</button>
+              {modal?.data?.id && <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setModal({ type: null, data: null }); setPortalForm({ name: '', portal_type: 'GDS', current_balance: 0, initial_balance: 0, phone: '', contact_person: '', credit_limit: 0 }); }}>Cancel</button>}
+            </div>
+          </form>
+        </div>
+
         <div style={styles.card}>
           <table style={styles.table}>
             <thead>
               <tr>
                 <th style={styles.th}>Name</th>
                 <th style={styles.th}>Type</th>
+                <th style={styles.th}>Contact</th>
                 <th style={{ ...styles.th, textAlign: 'right' }}>Balance</th>
                 <th style={{ ...styles.th, textAlign: 'center' }}>{t('actions', 'Actions')}</th>
               </tr>
@@ -520,12 +559,17 @@ export default function ERPViewsSales(props) {
                 <tr key={p.id}>
                   <td style={{ ...styles.td, fontWeight: '600' }}>{p.name}</td>
                   <td style={styles.td}>{p.portal_type || '-'}</td>
+                  <td style={styles.td}>{p.contact_person || '-'} {p.phone ? '/ ' + p.phone : ''}</td>
                   <td style={{ ...styles.tdRight, color: (p.current_balance || 0) < 1000 ? '#FCA5A5' : '#34D399' }}>{fmt(p.current_balance)}</td>
                   <td style={styles.tdCenter}>
-                    <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDelete('portals', p.id)}>🗑</button>
+                    <div style={styles.actionsCell}>
+                      <button style={{ ...styles.actionBtn, background: '#065F46', color: '#34D399' }} onClick={() => { setPortalForm({ name: p.name, portal_type: p.portal_type || 'GDS', current_balance: p.current_balance || 0, initial_balance: p.initial_balance || 0, phone: p.phone || '', contact_person: p.contact_person || '', credit_limit: p.credit_limit || 0 }); setModal({ type: 'editPortal', data: p }); }}>✏️</button>
+                      <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDelete('portals', p.id)}>🗑</button>
+                    </div>
                   </td>
                 </tr>
               ))}
+              {(data.portals || []).length === 0 && <tr><td colSpan={5} style={{ ...styles.td, textAlign: 'center', padding: 30 }}>No portals yet — add one above.</td></tr>}
             </tbody>
           </table>
         </div>
