@@ -1,20 +1,8 @@
 'use client';
 
 /**
- * Master view router.
- *
- * IMPORTANT CONTEXT FOR FUTURE DEVELOPERS:
- * This app previously had 7+ "view" files (components/views/ERPViews*.jsx)
- * that implemented real pages (HR advanced, AI dashboard, quotations, refund
- * statement, profitability, settings, superadmin, credit limits, multi-branch,
- * AI pricing, etc.) but NONE of them were ever imported anywhere — only the
- * original ERPViews.jsx (now renamed to ERPViewsSales.jsx) was rendered by
- * app/page.js. That meant ~20 of the ~34 sidebar menu items rendered
- * "Page Under Development" no matter what was built in those files.
- *
- * This file fixes that by routing every `page` id to whichever component
- * actually implements it. Where a page was implemented in more than one
- * file, the more complete/correct implementation was kept (noted inline).
+ * Master view router - Routes all pages to their respective components
+ * Includes ADVANCE TRAVEL AGENCY features
  */
 
 import ERPViewsMisc from './views/ERPViewsMisc';
@@ -25,66 +13,73 @@ import ERPViewsPro from './views/ERPViewsPro';
 import ERPViewsSystem from './views/ERPViewsSystem';
 import ERPViewsEnterprise from './views/ERPViewsEnterprise';
 import ERPViewsTools from './views/ERPViewsTools';
+import ERPViewsTravel from './views/ERPViewsTravel';
 
 const PAGE_COMPONENT = {
-  // Core / dashboard / invoice creation / attendance (new, previously stubs)
+  // ===== MAIN =====
   dashboard: ERPViewsMisc,
   create: ERPViewsMisc,
   my_attendance: ERPViewsMisc,
-  hr: ERPViewsMisc,
-  hr_advanced: ERPViewsMisc,
-
-  // Sales & Invoices, CRM, Finance, HR listing, Reports & Audit, System Admin
-  // basics — all already fully implemented, just needed to be reachable.
-  list: ERPViewsSales,
-  refunds: ERPViewsSales,
-  customers: ERPViewsSales,
-  corporates: ERPViewsSales,
-  vendors: ERPViewsSales,
-  creditors: ERPViewsSales,
-  portals: ERPViewsSales,
-  packages: ERPViewsSales,
-  branches: ERPViewsSales,
-  expenses: ERPViewsSales,
-  bank: ERPViewsSales,
-  audit: ERPViewsSales,
-  users: ERPViewsSales,
-  reports: ERPViewsSales,
-  statements: ERPViewsSales,
-  staff_mistakes: ERPViewsSales,
-  credit: ERPViewsSales,
-
-  // Admin extras
-  invest: ERPViewsAdmin,
-
-  // Advanced
-  ai_dashboard: ERPViewsAdvanced,
-  quotations: ERPViewsAdvanced,
-
-  // Pro
-  refund_statement: ERPViewsPro,
-  customer_statement: ERPViewsPro,
-  recurring_invoices: ERPViewsPro,
-  expense_approval: ERPViewsPro,
   notifications: ERPViewsPro,
 
-  // System
+  // ===== TRAVEL AGENCY CORE =====
+  list: ERPViewsSales,
+  refunds: ERPViewsSales,
+  quotations: ERPViewsAdvanced,
+
+  // ===== FLIGHT OPERATIONS =====
+  flight_status: ERPViewsTravel,
+  hotel_booking: ERPViewsTravel,
+  visa_processing: ERPViewsTravel,
+  travel_insurance: ERPViewsTravel,
+  hajj_umrah: ERPViewsTravel,
+
+  // ===== PACKAGES & TOURS =====
+  packages: ERPViewsSales,
+  corporate_travel: ERPViewsTravel,
+  frequent_flyer: ERPViewsTravel,
+
+  // ===== CRM =====
+  customers: ERPViewsSales,
+  corporates: ERPViewsSales,
+  creditors: ERPViewsSales,
+  credit: ERPViewsSales,
+  portals: ERPViewsSales,
+  vendors: ERPViewsAdmin,
+
+  // ===== FINANCE =====
+  bank: ERPViewsAdmin,
+  invest: ERPViewsAdmin,
+  expenses: ERPViewsSales,
   profitability: ERPViewsSystem,
-  profile: ERPViewsSystem,
-  superadmin: ERPViewsSystem,
-  settings: ERPViewsSystem,
+  refund_statement: ERPViewsPro,
+
+  // ===== HR =====
+  hr: ERPViewsMisc,
+  hr_advanced: ERPViewsAdvanced,
+  staff_mistakes: ERPViewsSales,
+
+  // ===== CONTRACTS =====
   contract: ERPViewsSystem,
   offer: ERPViewsSystem,
 
-  // Enterprise — credit_limits implementation here is the correct one
-  // (the copy in ERPViewsSales referenced a `data.creditLimits` array that
-  // was never fetched from Supabase and was always empty/broken).
+  // ===== REPORTS & ADMIN =====
+  reports: ERPViewsSystem,
+  statements: ERPViewsSystem,
+  audit: ERPViewsSales,
+  superadmin: ERPViewsSystem,
+  users: ERPViewsSales,
+  settings: ERPViewsSystem,
+  profile: ERPViewsSystem,
+
+  // ===== ENTERPRISE =====
   credit_limits: ERPViewsEnterprise,
   supplier_statement: ERPViewsEnterprise,
   multi_branch: ERPViewsEnterprise,
 
-  // Tools
+  // ===== TOOLS =====
   ai_pricing: ERPViewsTools,
+  ai_dashboard: ERPViewsAdvanced,
 };
 
 export default function ERPViews(props) {
@@ -93,19 +88,42 @@ export default function ERPViews(props) {
 
   if (!Component) {
     return (
-      <div style={{ padding: '20px', background: '#0F172A', minHeight: '100vh', color: '#E2E8F0' }}>
-        <div style={{ background: '#1E293B', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
-          <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748B' }}>
-            <div style={{ fontSize: '60px', marginBottom: '15px' }}>🚧</div>
-            <h2 style={{ color: '#FBBF24', marginBottom: '10px' }}>Page Under Development</h2>
-            <p style={{ color: '#94A3B8' }}>{page}</p>
-            <button
-              style={{ marginTop: '20px', padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13, background: 'linear-gradient(135deg, #2563EB, #1D4ED8)', color: '#fff' }}
-              onClick={() => setPage?.('dashboard')}
-            >
-              ← Back to Dashboard
-            </button>
-          </div>
+      <div style={{
+        padding: '40px 20px',
+        background: 'var(--bg-primary, #0F172A)',
+        minHeight: '100vh',
+        color: 'var(--text-primary, #E2E8F0)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
+        <div style={{
+          background: 'var(--bg-secondary, #1E293B)',
+          borderRadius: '16px',
+          padding: '40px',
+          border: '1px solid var(--border-color, #334155)',
+          textAlign: 'center',
+          maxWidth: '500px'
+        }}>
+          <div style={{ fontSize: '60px', marginBottom: '15px' }}>🚧</div>
+          <h2 style={{ color: '#FBBF24', marginBottom: '10px' }}>Page Under Development</h2>
+          <p style={{ color: 'var(--text-muted, #94A3B8)' }}>{page}</p>
+          <button
+            style={{
+              marginTop: '20px',
+              padding: '10px 24px',
+              borderRadius: '10px',
+              border: 'none',
+              cursor: 'pointer',
+              fontWeight: 600,
+              fontSize: '14px',
+              background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+              color: '#fff'
+            }}
+            onClick={() => setPage?.('dashboard')}
+          >
+            ← Back to Dashboard
+          </button>
         </div>
       </div>
     );
