@@ -2,10 +2,15 @@ import './globals.css';
 
 export const metadata = {
   title: 'SUEUD AL TAAYIRA | Travel ERP System',
-  description: 'Advanced Travel & Tourism Agency ERP System',
+  description: 'Advanced Travel & Tourism Agency ERP System - Manage invoices, customers, flights, hotels, visas, and more.',
   icons: {
     icon: '/favicon.ico',
   },
+  keywords: 'travel agency, erp, tourism, flight booking, hotel booking, visa processing, hajj, umrah, corporate travel',
+  authors: [{ name: 'SUEUD AL TAAYIRA' }],
+  viewport: 'width=device-width, initial-scale=1',
+  themeColor: '#1E3A8A',
+  colorScheme: 'light dark',
 };
 
 export default function RootLayout({ children }) {
@@ -18,6 +23,8 @@ export default function RootLayout({ children }) {
           href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap"
           rel="stylesheet"
         />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
       <body>{children}</body>
     </html>
