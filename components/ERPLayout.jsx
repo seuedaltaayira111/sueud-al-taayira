@@ -17,7 +17,7 @@ export default function ERPLayout({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Apply theme to body
+  // ===== APPLY THEME TO BODY =====
   useEffect(() => {
     if (isDark) {
       document.documentElement.setAttribute('data-theme', 'dark');
@@ -30,14 +30,14 @@ export default function ERPLayout({
     }
   }, [isDark]);
 
-  // Group menu by section
+  // ===== GROUP MENU BY SECTION =====
   const groupedMenu = menu.reduce((acc, item) => {
     if (!acc[item.section]) acc[item.section] = [];
     acc[item.section].push(item);
     return acc;
   }, {});
 
-  // Icons mapping for menu items
+  // ===== ICONS MAPPING =====
   const getIcon = (id) => {
     const icons = {
       'dashboard': '📊',
