@@ -3,6 +3,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import {
+  getInvoiceHTML,
+  getRefundHTML,
+  getExpenseHTML,
+  getSalarySlipHTML,
+  getContractHTML,
+  getMistakeHTML
+} from '@/lib/invoiceHTML';
 
 /* ================================================================
    TRANSLATIONS - COMPLETE BILINGUAL
@@ -10,49 +18,49 @@ import { useRouter } from 'next/navigation';
 const translations = {
   en: {
     // Main
-    dashboard: 'Dashboard',
-    create: 'Create Invoice',
-    list: 'Invoices',
-    refunds: 'Refunds',
-    customers: 'Customers',
-    corporates: 'Corporates',
-    creditors: 'Creditors',
-    credit: 'Credit Balances',
-    vendors: 'Vendors',
-    packages: 'Packages',
-    branches: 'Branches',
-    portals: 'Portals',
-    bank: 'Bank & Cash',
-    invest: 'Investors',
-    hr: 'Human Resources',
-    users: 'Users',
-    settings: 'Settings',
-    reports: 'Reports',
-    audit: 'Audit Logs',
-    statements: 'Statements',
-    contract: 'Corporate Contract',
-    offer: 'Corporate Offer',
-    superadmin: 'SuperAdmin',
-    profile: 'Profile',
-    profitability: 'Profitability',
-    notifications: 'Notifications',
-    ai_dashboard: 'AI Dashboard',
-    quotations: 'Quotations',
-    hr_advanced: 'HR & Payroll',
-    ai_pricing: 'AI Pricing',
-    my_attendance: 'My Attendance',
-    credit_limits: 'Credit Limits',
-    customer_statement: 'Customer Statement',
-    refund_statement: 'Refund Statement',
-    supplier_statement: 'Supplier Statement',
-    multi_branch: 'Multi-Branch',
-    recurring_invoices: 'Recurring Invoices',
-    expense_approval: 'Expense Approval',
-    staff_mistakes: 'Staff Mistakes',
-    expenses: 'Expenses',
-    editInvoice: 'Edit Invoice',
-    generateInvoice: 'Generate Invoice',
-    updateInvoice: 'Update Invoice',
+    dashboard: '📊 Dashboard',
+    create: '✈️ Create Invoice',
+    list: '📋 Invoices',
+    refunds: '🔄 Refunds',
+    customers: '👤 Customers',
+    corporates: '🏢 Corporates',
+    creditors: '💳 Creditors',
+    credit: '💰 Credit Balances',
+    vendors: '🚚 Vendors',
+    packages: '📦 Packages',
+    branches: '🏢 Branches',
+    portals: '🛫 Portals',
+    bank: '🏦 Bank & Cash',
+    invest: '📈 Investors',
+    hr: '👨‍💼 Human Resources',
+    users: '👥 Users',
+    settings: '⚙️ Settings',
+    reports: '📊 Reports',
+    audit: '📜 Audit Logs',
+    statements: '📑 Statements',
+    contract: '📝 Corporate Contract',
+    offer: '🎁 Corporate Offer',
+    superadmin: '👑 SuperAdmin',
+    profile: '👤 Profile',
+    profitability: '📊 Profitability',
+    notifications: '🔔 Notifications',
+    ai_dashboard: '🤖 AI Dashboard',
+    quotations: '📄 Quotations',
+    hr_advanced: '👨‍💼 HR & Payroll',
+    ai_pricing: '🤖 AI Pricing',
+    my_attendance: '⏰ My Attendance',
+    credit_limits: '💳 Credit Limits',
+    customer_statement: '📊 Customer Statement',
+    refund_statement: '📊 Refund Statement',
+    supplier_statement: '📦 Supplier Statement',
+    multi_branch: '🏢 Multi-Branch',
+    recurring_invoices: '🔁 Recurring Invoices',
+    expense_approval: '🛡️ Expense Approval',
+    staff_mistakes: '⚠️ Staff Mistakes',
+    expenses: '💸 Expenses',
+    editInvoice: '✏️ Edit Invoice',
+    generateInvoice: '✅ Generate Invoice',
+    updateInvoice: '💾 Update Invoice',
     custType: 'Customer Type',
     individual: 'Individual',
     corporate: 'Corporate',
@@ -139,49 +147,49 @@ const translations = {
   },
   ar: {
     // Main
-    dashboard: 'لوحة التحكم',
-    create: 'إنشاء فاتورة',
-    list: 'الفواتير',
-    refunds: 'الاسترجاعات',
-    customers: 'العملاء',
-    corporates: 'الشركات',
-    creditors: 'الدائنون',
-    credit: 'أرصدة مستحقة',
-    vendors: 'الموردون',
-    packages: 'الباقات',
-    branches: 'الفروع',
-    portals: 'البوابات',
-    bank: 'البنك والصندوق',
-    invest: 'المستثمرون',
-    hr: 'الموارد البشرية',
-    users: 'المستخدمون',
-    settings: 'الإعدادات',
-    reports: 'التقارير',
-    audit: 'سجل التدقيق',
-    statements: 'كشوفات',
-    contract: 'عقد شركات',
-    offer: 'عرض شركات',
-    superadmin: 'المدير العام',
-    profile: 'الملف الشخصي',
-    profitability: 'الربحية',
-    notifications: 'الإشعارات',
-    ai_dashboard: 'لوحة ذكية',
-    quotations: 'عروض أسعار',
-    hr_advanced: 'الرواتب',
-    ai_pricing: 'تسعير ذكي',
-    my_attendance: 'حضوري',
-    credit_limits: 'حدود الائتمان',
-    customer_statement: 'كشف عميل',
-    refund_statement: 'كشف استرجاع',
-    supplier_statement: 'كشف مورد',
-    multi_branch: 'متعدد الفروع',
-    recurring_invoices: 'فواتير متكررة',
-    expense_approval: 'اعتماد مصروفات',
-    staff_mistakes: 'أخطاء الموظفين',
-    expenses: 'المصروفات',
-    editInvoice: 'تعديل الفاتورة',
-    generateInvoice: 'إنشاء الفاتورة',
-    updateInvoice: 'تحديث الفاتورة',
+    dashboard: '📊 لوحة التحكم',
+    create: '✈️ إنشاء فاتورة',
+    list: '📋 الفواتير',
+    refunds: '🔄 الاسترجاعات',
+    customers: '👤 العملاء',
+    corporates: '🏢 الشركات',
+    creditors: '💳 الدائنون',
+    credit: '💰 أرصدة مستحقة',
+    vendors: '🚚 الموردون',
+    packages: '📦 الباقات',
+    branches: '🏢 الفروع',
+    portals: '🛫 البوابات',
+    bank: '🏦 البنك والصندوق',
+    invest: '📈 المستثمرون',
+    hr: '👨‍💼 الموارد البشرية',
+    users: '👥 المستخدمون',
+    settings: '⚙️ الإعدادات',
+    reports: '📊 التقارير',
+    audit: '📜 سجل التدقيق',
+    statements: '📑 كشوفات',
+    contract: '📝 عقد شركات',
+    offer: '🎁 عرض شركات',
+    superadmin: '👑 المدير العام',
+    profile: '👤 الملف الشخصي',
+    profitability: '📊 الربحية',
+    notifications: '🔔 الإشعارات',
+    ai_dashboard: '🤖 لوحة ذكية',
+    quotations: '📄 عروض أسعار',
+    hr_advanced: '👨‍💼 الرواتب',
+    ai_pricing: '🤖 تسعير ذكي',
+    my_attendance: '⏰ حضوري',
+    credit_limits: '💳 حدود الائتمان',
+    customer_statement: '📊 كشف عميل',
+    refund_statement: '📊 كشف استرجاع',
+    supplier_statement: '📦 كشف مورد',
+    multi_branch: '🏢 متعدد الفروع',
+    recurring_invoices: '🔁 فواتير متكررة',
+    expense_approval: '🛡️ اعتماد مصروفات',
+    staff_mistakes: '⚠️ أخطاء الموظفين',
+    expenses: '💸 المصروفات',
+    editInvoice: '✏️ تعديل الفاتورة',
+    generateInvoice: '✅ إنشاء الفاتورة',
+    updateInvoice: '💾 تحديث الفاتورة',
     custType: 'نوع العميل',
     individual: 'فرد',
     corporate: 'شركة',
@@ -279,7 +287,7 @@ export default function useERPState() {
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [lang, setLang] = useState('en');
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState('light');
   const [initError, setInitError] = useState(null);
   const [toast, setToast] = useState(null);
   const [page, setPage] = useState('dashboard');
@@ -316,7 +324,8 @@ export default function useERPState() {
     hajjUmrahPackages: [],
     corporateTravel: [],
     frequentFlyer: [],
-    flightStatus: []
+    flightStatus: [],
+    hotelBookings: []
   });
 
   /* ===== INVOICE FORM ===== */
@@ -492,7 +501,7 @@ export default function useERPState() {
         invRes, custRes, corpRes, credRes, vendRes, pkgRes, brnRes,
         portRes, empRes, expRes, cashRes, payRes, mistRes, auditRes,
         setRes, srvRes, advRes, investRes, attRes, appUsersRes,
-        visaRes, insuranceRes, hajjRes, corpTravelRes, ffRes
+        visaRes, insuranceRes, hajjRes, corpTravelRes, ffRes, hotelRes
       ] = await Promise.all([
         supabase.from('invoices').select('*, customers(name,phone), corporates(name,vat_no,phone), employees(name,phone)').eq('tenant_id', tid).order('created_at', { ascending: false }),
         supabase.from('customers').select('*').eq('tenant_id', tid),
@@ -518,7 +527,8 @@ export default function useERPState() {
         supabase.from('insurance_policies').select('*').eq('tenant_id', tid).order('created_at', { ascending: false }),
         supabase.from('hajj_umrah_packages').select('*').eq('tenant_id', tid).order('created_at', { ascending: false }),
         supabase.from('corporate_travel').select('*, corporates(name)').eq('tenant_id', tid).order('created_at', { ascending: false }),
-        supabase.from('frequent_flyer').select('*').eq('tenant_id', tid).order('points', { ascending: false })
+        supabase.from('frequent_flyer').select('*').eq('tenant_id', tid).order('points', { ascending: false }),
+        supabase.from('hotel_bookings').select('*').eq('tenant_id', tid).order('created_at', { ascending: false })
       ]);
 
       setData({
@@ -546,7 +556,8 @@ export default function useERPState() {
         insurancePolicies: insuranceRes.data || [],
         hajjUmrahPackages: hajjRes.data || [],
         corporateTravel: corpTravelRes.data || [],
-        frequentFlyer: ffRes.data || []
+        frequentFlyer: ffRes.data || [],
+        hotelBookings: hotelRes.data || []
       });
     } catch (err) {
       console.error('Fetch all error:', err);
@@ -694,6 +705,10 @@ export default function useERPState() {
     contractCorpName, setContractCorpName,
     contractType, setContractType,
     contractMarkup, setContractMarkup,
-    contractTerms, setContractTerms
+    contractTerms, setContractTerms,
+
+    // HTML Generators
+    getInvoiceHTML, getRefundHTML, getExpenseHTML,
+    getSalarySlipHTML, getContractHTML, getMistakeHTML
   };
 }
