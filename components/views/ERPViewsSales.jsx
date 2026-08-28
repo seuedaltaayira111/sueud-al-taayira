@@ -1,11 +1,14 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export default function ERPViewsSales(props) {
   const {
     page, data, tr, modal, setModal, setPage,
-    today,  // ✅ FIXED: added today to props
+    today,
+    lang,           // ✅ FIXED: added lang
+    theme,          // ✅ FIXED: added theme
     handleEditInvoice, handleDeleteInvoice, openPreview, openRefundModal,
     handleQuickSettle, handleDownloadPDF, printInvoice, shareWhatsApp, shareEmail,
     handleEditCust, handleDelete, handleEditCorp, handleEditCred, handleEditVend,
@@ -23,10 +26,13 @@ export default function ERPViewsSales(props) {
     pkgForm, setPkgForm, editPkgId, setEditPkgId,
     brnForm, setBrnForm, editBrnId, setEditBrnId,
     empForm, setEmpForm, editEmpId, setEditEmpId,
-    theme, handleAddMistake, handleGenerateContract, handleGenerateOffer,
+    handleAddMistake, handleGenerateContract, handleGenerateOffer,
     contractCorpName, setContractCorpName, contractType, setContractType,
     contractMarkup, setContractMarkup, contractTerms, setContractTerms
   } = props;
+
+  const isAr = lang === 'ar';
+  const isDark = theme === 'dark';
 
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('');
@@ -41,10 +47,9 @@ export default function ERPViewsSales(props) {
   const [loadingStatement, setLoadingStatement] = useState(false);
 
   const t = (key, fallback) => tr?.[key] || fallback || key;
-  const isAr = lang === 'ar';
-  const isDark = theme === 'dark';
+  const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
 
-  // ===== STYLES - BEAUTIFUL UI =====
+  // ===== STYLES =====
   const styles = {
     container: {
       padding: '24px',
@@ -103,19 +108,6 @@ export default function ERPViewsSales(props) {
       color: isDark ? '#E2E8F0' : '#1E293B',
       fontSize: '14px',
       outline: 'none'
-    },
-    textarea: {
-      padding: '10px 16px',
-      background: isDark ? '#0F172A' : '#F1F5F9',
-      border: isDark ? '1px solid #475569' : '1px solid #E2E8F0',
-      borderRadius: '10px',
-      color: isDark ? '#E2E8F0' : '#1E293B',
-      fontSize: '14px',
-      outline: 'none',
-      width: '100%',
-      minHeight: '80px',
-      resize: 'vertical',
-      fontFamily: 'inherit'
     },
     btn: {
       padding: '10px 20px',
@@ -318,8 +310,6 @@ export default function ERPViewsSales(props) {
       boxShadow: '0 4px 6px rgba(37, 99, 235, 0.3)'
     }
   };
-
-  const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
 
   // ===== FILTERED INVOICES =====
   const filteredInvoices = useMemo(() => {
