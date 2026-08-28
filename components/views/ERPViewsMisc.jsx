@@ -240,6 +240,7 @@ export default function ERPViewsMisc(props) {
   };
 
   const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
+  const t = (key, fallback) => tr?.[key] || fallback || key;
 
   // ============================================================
   // DASHBOARD – with AI Insights
@@ -1676,7 +1677,6 @@ export default function ERPViewsMisc(props) {
     const [editingId, setEditingId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // ✅ Save mistake (new or update)
     const handleMistakeSubmit = async (e) => {
       e.preventDefault();
       try {
@@ -1732,7 +1732,6 @@ export default function ERPViewsMisc(props) {
       }
     };
 
-    // ✅ Preview mistake
     const handlePreviewMistakeLocal = (m) => {
       const html = getMistakeHTML?.(m, data.settings, lang);
       if (!html) return showToast?.(isAr ? '❌ HTML नहीं बना' : '❌ HTML not generated');
@@ -1740,14 +1739,12 @@ export default function ERPViewsMisc(props) {
       setModal?.({ type: 'preview', data: m });
     };
 
-    // ✅ Download mistake PDF
     const handleDownloadMistakePDF = async (m) => {
       const html = getMistakeHTML?.(m, data.settings, lang);
       if (!html) return showToast?.(isAr ? '❌ HTML नहीं बना' : '❌ HTML not generated');
       await downloadPDF?.(html, `Mistake_${m.id || 'voucher'}.pdf`);
     };
 
-    // ✅ Delete mistake
     const handleDeleteMistakeLocal = async (m) => {
       if (!confirm(isAr ? 'क्या आप हटाना चाहते हैं?' : 'Delete?')) return;
       try {
@@ -1762,7 +1759,6 @@ export default function ERPViewsMisc(props) {
       }
     };
 
-    // ✅ Edit (populate form)
     const handleEditMistake = (m) => {
       setEditingId(m.id);
       setMistakeForm({
