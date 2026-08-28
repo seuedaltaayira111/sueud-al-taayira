@@ -231,44 +231,15 @@ export default function ERPViewsEnterprise(props) {
       fontWeight: 600,
       transition: 'all 0.2s'
     },
-    label: {
-      fontSize: '13px',
-      fontWeight: 600,
-      color: isDark ? '#94A3B8' : '#64748B',
-      marginBottom: '6px',
-      display: 'block',
-      marginTop: '12px'
-    },
-    tableHeader: {
-      padding: '12px',
-      background: isDark ? '#0F172A' : '#F1F5F9',
-      color: '#FBBF24',
-      textAlign: 'left',
-      fontWeight: 600,
-      fontSize: '11px',
-      textTransform: 'uppercase',
-      letterSpacing: '0.5px',
-      borderBottom: isDark ? '2px solid #334155' : '2px solid #E2E8F0'
-    },
-    tableCell: {
-      padding: '12px',
-      borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
-      color: isDark ? '#CBD5E1' : '#1E293B'
-    },
-    tabBtn: {
-      padding: '10px 20px',
-      borderRadius: '8px',
-      border: 'none',
-      cursor: 'pointer',
-      fontWeight: 600,
-      background: isDark ? '#334155' : '#E2E8F0',
-      color: isDark ? '#94A3B8' : '#64748B',
-      transition: 'all 0.2s'
-    },
-    tabBtnActive: {
-      background: 'linear-gradient(135deg, #1E3A8A, #2563EB)',
-      color: 'white',
-      boxShadow: '0 4px 6px rgba(37, 99, 235, 0.3)'
+    aiBadge: {
+      background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+      color: '#fff',
+      padding: '2px 10px',
+      borderRadius: '12px',
+      fontSize: '10px',
+      fontWeight: 'bold',
+      display: 'inline-block',
+      marginLeft: '8px'
     }
   };
 
@@ -551,6 +522,8 @@ export default function ERPViewsEnterprise(props) {
   // MULTI-BRANCH SUPPORT
   // ============================================================
   if (page === 'multi_branch') {
+    const [selectedBranch, setSelectedBranch] = useState(null);
+
     return (
       <div style={styles.container}>
         <div style={styles.header}>
@@ -584,6 +557,7 @@ export default function ERPViewsEnterprise(props) {
                 }}
                   onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
                   onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  onClick={() => setSelectedBranch(br.id === selectedBranch ? null : br.id)}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                     <div>
@@ -634,11 +608,36 @@ export default function ERPViewsEnterprise(props) {
                     </div>
                   </div>
 
+                  {selectedBranch === br.id && (
+                    <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: isDark ? '1px solid #334155' : '1px solid #E2E8F0' }}>
+                      <h4 style={{ color: '#FBBF24', margin: '0 0 10px' }}>{isAr ? 'تفاصيل الفرع' : 'Branch Details'}</h4>
+                      <p style={{ fontSize: '13px', color: '#94A3B8', margin: '4px 0' }}>
+                        {isAr ? 'البريد الإلكتروني' : 'Email'}: {br.email || 'N/A'}
+                      </p>
+                      <p style={{ fontSize: '13px', color: '#94A3B8', margin: '4px 0' }}>
+                        {isAr ? 'التوقيت' : 'Timing'}: {br.timing || 'N/A'}
+                      </p>
+                      <p style={{ fontSize: '13px', color: '#94A3B8', margin: '4px 0' }}>
+                        {isAr ? 'العنوان' : 'Address'}: {br.address || br.location || 'N/A'}
+                      </p>
+                      <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
+                        <button
+                          style={{ ...styles.btn, ...styles.btnGhost, flex: 1 }}
+                          onClick={(e) => { e.stopPropagation(); props.setPage('branches'); }}
+                        >
+                          {isAr ? '🔍 إدارة الفرع' : '🔍 Manage Branch'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   <button
                     style={{ ...styles.btn, ...styles.btnGhost, width: '100%', marginTop: '12px', padding: '8px' }}
-                    onClick={() => props.setPage('branches')}
+                    onClick={() => setSelectedBranch(br.id === selectedBranch ? null : br.id)}
                   >
-                    {isAr ? '🔍 عرض التفاصيل' : '🔍 View Details'}
+                    {selectedBranch === br.id
+                      ? (isAr ? '🔽 إخفاء التفاصيل' : '🔼 Hide Details')
+                      : (isAr ? '🔍 عرض التفاصيل' : '🔍 View Details')}
                   </button>
                 </div>
               );
