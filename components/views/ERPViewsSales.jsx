@@ -4,7 +4,8 @@ import { useState, useMemo } from 'react';
 
 export default function ERPViewsSales(props) {
   const {
-    page, data, lang, tr, modal, setModal, setPage,
+    page, data, tr, modal, setModal, setPage,
+    today,  // ✅ FIXED: added today to props
     handleEditInvoice, handleDeleteInvoice, openPreview, openRefundModal,
     handleQuickSettle, handleDownloadPDF, printInvoice, shareWhatsApp, shareEmail,
     handleEditCust, handleDelete, handleEditCorp, handleEditCred, handleEditVend,
@@ -356,7 +357,6 @@ export default function ERPViewsSales(props) {
     const start = (currentPage - 1) * rowsPerPage;
     return list.slice(start, start + rowsPerPage);
   };
-
   const totalPages = (list) => Math.ceil((list?.length || 0) / rowsPerPage);
 
   // ===== BEAUTIFUL ICON HELPERS =====
@@ -473,7 +473,6 @@ export default function ERPViewsSales(props) {
                 </thead>
                 <tbody>
                   {paginate(filteredInvoices).map(inv => {
-                    // Handle both regular and refunded invoices
                     const isRefunded = inv.status === 'refunded';
                     return (
                       <tr key={inv.id} style={{
@@ -504,14 +503,7 @@ export default function ERPViewsSales(props) {
                           <div style={styles.actionsCell}>
                             <button
                               style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }}
-                              onClick={() => {
-                                console.log('Preview clicked for:', inv.invoice_no);
-                                if (typeof openPreview === 'function') {
-                                  openPreview(inv);
-                                } else {
-                                  alert('Preview function not available!');
-                                }
-                              }}
+                              onClick={() => openPreview(inv)}
                               title={isAr ? 'معاينة' : 'Preview'}
                             >
                               👁️
@@ -545,28 +537,14 @@ export default function ERPViewsSales(props) {
                             )}
                             <button
                               style={{ ...styles.actionBtn, background: '#EDE9FE', color: '#5B21B6' }}
-                              onClick={() => {
-                                console.log('Print clicked for:', inv.invoice_no);
-                                if (typeof printInvoice === 'function') {
-                                  printInvoice(inv);
-                                } else {
-                                  alert('Print function not available!');
-                                }
-                              }}
+                              onClick={() => printInvoice(inv)}
                               title={isAr ? 'طباعة' : 'Print'}
                             >
                               🖨️
                             </button>
                             <button
                               style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }}
-                              onClick={() => {
-                                console.log('Download clicked for:', inv.invoice_no);
-                                if (typeof handleDownloadPDF === 'function') {
-                                  handleDownloadPDF(inv);
-                                } else {
-                                  alert('Download function not available!');
-                                }
-                              }}
+                              onClick={() => handleDownloadPDF(inv)}
                               title={isAr ? 'تحميل' : 'Download'}
                             >
                               ⬇️
