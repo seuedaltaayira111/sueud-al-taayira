@@ -4,20 +4,45 @@ import React, { useState, useEffect } from 'react';
 import ERPModals from './ERPModals';
 
 export default function ERPLayout({
-  children, tr, lang, setLang, theme, setTheme, page, setPage,
-  modal, setModal, passForm, setPassForm, handleChangePassword,
-  handleLogout, handleSendMessage, chatOpen, setChatOpen,
-  chatMessages, chatInput, setChatInput, userProfile, menu,
-  settleForm, setSettleForm, handleSettlePayment,
-  refundForm, setRefundForm, handleRefund,
-  previewHTML, downloadPDF, data, showToast
+  children,
+  tr,
+  lang,
+  setLang,
+  theme,
+  setTheme,
+  page,
+  setPage,
+  modal,
+  setModal,
+  passForm,
+  setPassForm,
+  handleChangePassword,
+  handleLogout,
+  handleSendMessage,
+  chatOpen,
+  setChatOpen,
+  chatMessages,
+  chatInput,
+  setChatInput,
+  userProfile,
+  menu,
+  settleForm,
+  setSettleForm,
+  handleSettlePayment,
+  refundForm,
+  setRefundForm,
+  handleRefund,
+  previewHTML,
+  downloadPDF,
+  data,
+  showToast
 }) {
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // ===== APPLY THEME TO BODY =====
+  // Apply theme to body
   useEffect(() => {
     if (isDark) {
       document.documentElement.setAttribute('data-theme', 'dark');
@@ -30,14 +55,17 @@ export default function ERPLayout({
     }
   }, [isDark]);
 
-  // ===== GROUP MENU BY SECTION =====
-  const groupedMenu = menu.reduce((acc, item) => {
+  // Filter menu items that are shown
+  const filteredMenu = menu.filter(item => item.show !== false);
+
+  // Group menu by section
+  const groupedMenu = filteredMenu.reduce((acc, item) => {
     if (!acc[item.section]) acc[item.section] = [];
     acc[item.section].push(item);
     return acc;
   }, {});
 
-  // ===== ICONS MAPPING =====
+  // Helper to get icon for each menu item
   const getIcon = (id) => {
     const icons = {
       'dashboard': '📊',
@@ -91,234 +119,302 @@ export default function ERPLayout({
     return icons[id] || '📄';
   };
 
+  // Mobile header style
+  const mobileHeaderStyle = {
+    display: 'none',
+    '@media (max-width: 768px)': {
+      display: 'flex'
+    },
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '64px',
+    background: isDark ? 'linear-gradient(135deg, #0F172A, #1E3A8A)' : 'linear-gradient(135deg, #1E3A8A, #2563EB)',
+    zIndex: 100,
+    padding: '0 16px',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottom: isDark ? '1px solid #334155' : '1px solid #E2E8F0'
+  };
+
+  // Sidebar style with responsive transform
+  const sidebarStyle = {
+    width: sidebarCollapsed ? '72px' : '280px',
+    background: isDark ? '#1E293B' : '#FFFFFF',
+    borderRight: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
+    padding: sidebarCollapsed ? '12px 8px' : '16px 12px',
+    display: 'flex',
+    flexDirection: 'column',
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    zIndex: 99,
+    transition: 'width 0.3s ease, transform 0.3s ease',
+    overflow: 'hidden',
+    boxShadow: isDark ? '4px 0 20px rgba(0,0,0,0.3)' : '4px 0 20px rgba(0,0,0,0.05)',
+    '@media (max-width: 768px)': {
+      transform: isMobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)',
+      width: '280px',
+      boxShadow: '4px 0 30px rgba(0,0,0,0.5)'
+    }
+  };
+
+  // Main content margin
+  const mainContentStyle = {
+    flex: 1,
+    marginLeft: sidebarCollapsed ? '72px' : '280px',
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    position: 'relative',
+    background: isDark ? '#0F172A' : '#F8FAFC',
+    height: '100vh',
+    paddingTop: '0',
+    transition: 'margin-left 0.3s ease',
+    '@media (max-width: 768px)': {
+      marginLeft: 0,
+      paddingTop: '64px'
+    }
+  };
+
   return (
-    <div style={{
-      display: 'flex',
-      height: '100vh',
-      fontFamily: isAr ? "'Cairo', 'Tajawal', sans-serif" : "'Inter', 'Poppins', sans-serif",
-      background: isDark ? '#0F172A' : '#F8FAFC',
-      direction: isAr ? 'rtl' : 'ltr',
-      overflow: 'hidden',
-      position: 'relative'
-    }}>
-      
+    <div
+      style={{
+        display: 'flex',
+        height: '100vh',
+        fontFamily: isAr ? "'Cairo', 'Tajawal', sans-serif" : "'Inter', 'Poppins', sans-serif",
+        background: isDark ? '#0F172A' : '#F8FAFC',
+        direction: isAr ? 'rtl' : 'ltr',
+        overflow: 'hidden',
+        position: 'relative'
+      }}
+    >
       {/* ===== MODALS ===== */}
-      <ERPModals 
-        modal={modal} 
-        setModal={setModal} 
-        passForm={passForm} 
-        setPassForm={setPassForm} 
-        handleChangePassword={handleChangePassword} 
-        settleForm={settleForm} 
-        setSettleForm={setSettleForm} 
-        handleSettlePayment={handleSettlePayment} 
-        refundForm={refundForm} 
-        setRefundForm={setRefundForm} 
-        handleRefund={handleRefund} 
-        previewHTML={previewHTML} 
+      <ERPModals
+        modal={modal}
+        setModal={setModal}
+        passForm={passForm}
+        setPassForm={setPassForm}
+        handleChangePassword={handleChangePassword}
+        settleForm={settleForm}
+        setSettleForm={setSettleForm}
+        handleSettlePayment={handleSettlePayment}
+        refundForm={refundForm}
+        setRefundForm={setRefundForm}
+        handleRefund={handleRefund}
+        previewHTML={previewHTML}
         downloadPDF={downloadPDF}
         lang={lang}
         theme={theme}
       />
 
-      {/* ============================================================
-          MOBILE HEADER
-          ============================================================ */}
-      <div style={{
-        display: 'none',
-        '@media (max-width: 768px)': { display: 'flex' },
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: '64px',
-        background: isDark ? 'linear-gradient(135deg, #0F172A, #1E3A8A)' : 'linear-gradient(135deg, #1E3A8A, #2563EB)',
-        zIndex: 100,
-        padding: '0 16px',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderBottom: isDark ? '1px solid #334155' : '1px solid #E2E8F0'
-      }}>
-        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} style={{
-          background: 'none',
-          border: 'none',
-          color: '#FBBF24',
-          fontSize: '24px',
-          cursor: 'pointer'
-        }}>
+      {/* ===== MOBILE HEADER ===== */}
+      <div style={mobileHeaderStyle}>
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#FBBF24',
+            fontSize: '24px',
+            cursor: 'pointer'
+          }}
+        >
           {isMobileMenuOpen ? '✕' : '☰'}
         </button>
         <div style={{ color: '#FBBF24', fontWeight: 700, fontSize: '14px' }}>
           ✈️ SUEUD AL TAAYIRA
         </div>
-        <button onClick={() => setChatOpen(!chatOpen)} style={{
-          background: 'none',
-          border: 'none',
-          color: '#FBBF24',
-          fontSize: '20px',
-          cursor: 'pointer'
-        }}>
+        <button
+          onClick={() => setChatOpen(!chatOpen)}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#FBBF24',
+            fontSize: '20px',
+            cursor: 'pointer'
+          }}
+        >
           💬
         </button>
       </div>
 
-      {/* ============================================================
-          SIDEBAR
-          ============================================================ */}
-      <div style={{
-        width: sidebarCollapsed ? '72px' : '280px',
-        background: isDark ? '#1E293B' : '#FFFFFF',
-        borderRight: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
-        padding: sidebarCollapsed ? '12px 8px' : '16px 12px',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        bottom: 0,
-        zIndex: 99,
-        transition: 'width 0.3s ease, transform 0.3s ease',
-        overflow: 'hidden',
-        boxShadow: isDark ? '4px 0 20px rgba(0,0,0,0.3)' : '4px 0 20px rgba(0,0,0,0.05)',
-        '@media (max-width: 768px)': {
-          transform: isMobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)',
-          width: '280px',
-          boxShadow: '4px 0 30px rgba(0,0,0,0.5)'
-        }
-      }}>
-        {/* ===== LOGO ===== */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          padding: '16px 8px',
-          marginBottom: '16px',
-          borderBottom: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
-          justifyContent: sidebarCollapsed ? 'center' : 'flex-start'
-        }}>
-          <div style={{
-            width: sidebarCollapsed ? '40px' : '48px',
-            height: sidebarCollapsed ? '40px' : '48px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+      {/* ===== SIDEBAR ===== */}
+      <div style={sidebarStyle}>
+        {/* Logo */}
+        <div
+          style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: sidebarCollapsed ? '18px' : '22px',
-            flexShrink: 0,
-            boxShadow: '0 4px 15px rgba(245, 158, 11, 0.3)'
-          }}>
+            gap: '12px',
+            padding: '16px 8px',
+            marginBottom: '16px',
+            borderBottom: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
+            justifyContent: sidebarCollapsed ? 'center' : 'flex-start'
+          }}
+        >
+          <div
+            style={{
+              width: sidebarCollapsed ? '40px' : '48px',
+              height: sidebarCollapsed ? '40px' : '48px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: sidebarCollapsed ? '18px' : '22px',
+              flexShrink: 0,
+              boxShadow: '0 4px 15px rgba(245, 158, 11, 0.3)'
+            }}
+          >
             ✈️
           </div>
           {!sidebarCollapsed && (
             <div style={{ overflow: 'hidden' }}>
-              <div style={{
-                fontSize: '12px',
-                fontWeight: 800,
-                color: '#FBBF24',
-                lineHeight: 1.2,
-                whiteSpace: 'nowrap'
-              }}>
+              <div
+                style={{
+                  fontSize: '12px',
+                  fontWeight: 800,
+                  color: '#FBBF24',
+                  lineHeight: 1.2,
+                  whiteSpace: 'nowrap'
+                }}
+              >
                 SUEUD AL TAAYIRA
               </div>
-              <div style={{
-                fontSize: '8px',
-                color: isDark ? '#94A3B8' : '#64748B',
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-                whiteSpace: 'nowrap'
-              }}>
+              <div
+                style={{
+                  fontSize: '8px',
+                  color: isDark ? '#94A3B8' : '#64748B',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                  whiteSpace: 'nowrap'
+                }}
+              >
                 {isAr ? 'نظام إدارة السفر' : 'Travel ERP System'}
               </div>
             </div>
           )}
         </div>
 
-        {/* ===== COLLAPSE TOGGLE ===== */}
-        <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{
-          background: 'none',
-          border: 'none',
-          color: isDark ? '#64748B' : '#94A3B8',
-          cursor: 'pointer',
-          padding: '6px 12px',
-          fontSize: '16px',
-          marginBottom: '12px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-          gap: '8px',
-          borderRadius: '8px',
-          transition: 'all 0.2s'
-        }}>
+        {/* Collapse Toggle */}
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: isDark ? '#64748B' : '#94A3B8',
+            cursor: 'pointer',
+            padding: '6px 12px',
+            fontSize: '16px',
+            marginBottom: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+            gap: '8px',
+            borderRadius: '8px',
+            transition: 'all 0.2s'
+          }}
+        >
           {sidebarCollapsed ? '→' : '←'}
-          {!sidebarCollapsed && <span style={{ fontSize: '11px', fontWeight: 600 }}>{isAr ? 'طي' : 'Collapse'}</span>}
+          {!sidebarCollapsed && (
+            <span style={{ fontSize: '11px', fontWeight: 600 }}>
+              {isAr ? 'طي' : 'Collapse'}
+            </span>
+          )}
         </button>
 
-        {/* ===== LANGUAGE TOGGLE ===== */}
-        <button onClick={() => setLang(isAr ? 'en' : 'ar')} style={{
-          padding: '10px 14px',
-          background: isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.05)',
-          color: '#60A5FA',
-          border: isDark ? '1px solid rgba(59, 130, 246, 0.2)' : '1px solid rgba(59, 130, 246, 0.2)',
-          borderRadius: '10px',
-          cursor: 'pointer',
-          fontWeight: 700,
-          marginBottom: '12px',
-          fontSize: '12px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-          gap: '8px',
-          transition: 'all 0.2s'
-        }}>
+        {/* Language Toggle */}
+        <button
+          onClick={() => setLang(isAr ? 'en' : 'ar')}
+          style={{
+            padding: '10px 14px',
+            background: isDark
+              ? 'rgba(59, 130, 246, 0.1)'
+              : 'rgba(59, 130, 246, 0.05)',
+            color: '#60A5FA',
+            border: isDark
+              ? '1px solid rgba(59, 130, 246, 0.2)'
+              : '1px solid rgba(59, 130, 246, 0.2)',
+            borderRadius: '10px',
+            cursor: 'pointer',
+            fontWeight: 700,
+            marginBottom: '12px',
+            fontSize: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+            gap: '8px',
+            transition: 'all 0.2s'
+          }}
+        >
           <span style={{ fontSize: '16px' }}>🌐</span>
           {!sidebarCollapsed && (isAr ? 'English' : 'العربية')}
         </button>
 
-        {/* ===== DARK MODE TOGGLE ===== */}
-        <button onClick={() => setTheme(isDark ? 'light' : 'dark')} style={{
-          padding: '10px 14px',
-          background: isDark ? 'rgba(251, 191, 36, 0.1)' : 'rgba(15, 23, 42, 0.05)',
-          color: isDark ? '#FBBF24' : '#0F172A',
-          border: isDark ? '1px solid rgba(251, 191, 36, 0.2)' : '1px solid rgba(15, 23, 42, 0.2)',
-          borderRadius: '10px',
-          cursor: 'pointer',
-          fontWeight: 700,
-          marginBottom: '16px',
-          fontSize: '12px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-          gap: '8px',
-          transition: 'all 0.2s'
-        }}>
+        {/* Dark Mode Toggle */}
+        <button
+          onClick={() => setTheme(isDark ? 'light' : 'dark')}
+          style={{
+            padding: '10px 14px',
+            background: isDark
+              ? 'rgba(251, 191, 36, 0.1)'
+              : 'rgba(15, 23, 42, 0.05)',
+            color: isDark ? '#FBBF24' : '#0F172A',
+            border: isDark
+              ? '1px solid rgba(251, 191, 36, 0.2)'
+              : '1px solid rgba(15, 23, 42, 0.2)',
+            borderRadius: '10px',
+            cursor: 'pointer',
+            fontWeight: 700,
+            marginBottom: '16px',
+            fontSize: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+            gap: '8px',
+            transition: 'all 0.2s'
+          }}
+        >
           <span style={{ fontSize: '16px' }}>{isDark ? '☀️' : '🌙'}</span>
-          {!sidebarCollapsed && (isDark ? (isAr ? 'الوضع الفاتح' : 'Light Mode') : (isAr ? 'الوضع الداكن' : 'Dark Mode'))}
+          {!sidebarCollapsed &&
+            (isDark
+              ? isAr
+                ? 'الوضع الفاتح'
+                : 'Light Mode'
+              : isAr
+              ? 'الوضع الداكن'
+              : 'Dark Mode')}
         </button>
 
-        {/* ===== MENU ===== */}
-        <div style={{
-          flex: 1,
-          overflowY: 'auto',
-          overflowX: 'hidden',
-          scrollbarWidth: 'thin',
-          padding: '0 4px'
-        }}>
-          {Object.keys(groupedMenu).map(section => (
+        {/* Menu */}
+        <div
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            scrollbarWidth: 'thin',
+            padding: '0 4px'
+          }}
+        >
+          {Object.keys(groupedMenu).map((section) => (
             <div key={section} style={{ marginBottom: '8px' }}>
               {!sidebarCollapsed && (
-                <h4 style={{
-                  fontSize: '9px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '1.5px',
-                  color: isDark ? '#64748B' : '#94A3B8',
-                  margin: '12px 10px 6px',
-                  fontWeight: 700
-                }}>
+                <h4
+                  style={{
+                    fontSize: '9px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '1.5px',
+                    color: isDark ? '#64748B' : '#94A3B8',
+                    margin: '12px 10px 6px',
+                    fontWeight: 700
+                  }}
+                >
                   {section}
                 </h4>
               )}
-              {groupedMenu[section].map(m => {
+              {groupedMenu[section].map((m) => {
                 const isActive = page === m.id;
                 const icon = getIcon(m.id);
                 return (
@@ -337,34 +433,44 @@ export default function ERPLayout({
                         ? 'linear-gradient(135deg, #2563EB, #1D4ED8)'
                         : 'transparent',
                       fontWeight: isActive ? 700 : 500,
-                      color: isActive ? '#FFFFFF' : (isDark ? '#94A3B8' : '#64748B'),
+                      color: isActive
+                        ? '#FFFFFF'
+                        : isDark
+                        ? '#94A3B8'
+                        : '#64748B',
                       fontSize: '13px',
                       transition: 'all 0.2s',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '10px',
-                      boxShadow: isActive ? '0 4px 15px rgba(37, 99, 235, 0.3)' : 'none',
+                      boxShadow: isActive
+                        ? '0 4px 15px rgba(37, 99, 235, 0.3)'
+                        : 'none',
                       justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
                       position: 'relative'
                     }}
                   >
-                    <span style={{
-                      fontSize: sidebarCollapsed ? '18px' : '16px',
-                      width: sidebarCollapsed ? 'auto' : '20px',
-                      textAlign: 'center'
-                    }}>
+                    <span
+                      style={{
+                        fontSize: sidebarCollapsed ? '18px' : '16px',
+                        width: sidebarCollapsed ? 'auto' : '20px',
+                        textAlign: 'center'
+                      }}
+                    >
                       {icon}
                     </span>
                     {!sidebarCollapsed && <span>{m.label}</span>}
                     {isActive && !sidebarCollapsed && (
-                      <span style={{
-                        position: 'absolute',
-                        right: '10px',
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        background: '#FBBF24'
-                      }} />
+                      <span
+                        style={{
+                          position: 'absolute',
+                          right: '10px',
+                          width: '6px',
+                          height: '6px',
+                          borderRadius: '50%',
+                          background: '#FBBF24'
+                        }}
+                      />
                     )}
                   </div>
                 );
@@ -373,64 +479,81 @@ export default function ERPLayout({
           ))}
         </div>
 
-        {/* ============================================================
-            USER PROFILE
-            ============================================================ */}
-        <div style={{
-          borderTop: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
-          paddingTop: '16px',
-          marginTop: '8px'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            padding: sidebarCollapsed ? '8px' : '10px 14px',
-            background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
-            borderRadius: '12px',
-            border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
-            justifyContent: sidebarCollapsed ? 'center' : 'flex-start'
-          }}>
-            <div style={{
-              width: sidebarCollapsed ? '36px' : '40px',
-              height: sidebarCollapsed ? '36px' : '40px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #10B981, #059669)',
+        {/* User Profile */}
+        <div
+          style={{
+            borderTop: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
+            paddingTop: '16px',
+            marginTop: '8px'
+          }}
+        >
+          <div
+            style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 'bold',
-              fontSize: sidebarCollapsed ? '14px' : '16px',
-              color: '#fff',
-              flexShrink: 0,
-              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
-            }}>
+              gap: '10px',
+              padding: sidebarCollapsed ? '8px' : '10px 14px',
+              background: isDark
+                ? 'rgba(255,255,255,0.03)'
+                : 'rgba(0,0,0,0.03)',
+              borderRadius: '12px',
+              border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start'
+            }}
+          >
+            <div
+              style={{
+                width: sidebarCollapsed ? '36px' : '40px',
+                height: sidebarCollapsed ? '36px' : '40px',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, #10B981, #059669)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 'bold',
+                fontSize: sidebarCollapsed ? '14px' : '16px',
+                color: '#fff',
+                flexShrink: 0,
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+              }}
+            >
               {userProfile?.username?.[0]?.toUpperCase() || 'U'}
             </div>
             {!sidebarCollapsed && (
               <div style={{ flex: 1, overflow: 'hidden' }}>
-                <div style={{
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  color: isDark ? '#E2E8F0' : '#1E293B',
-                  whiteSpace: 'nowrap'
-                }}>
+                <div
+                  style={{
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    color: isDark ? '#E2E8F0' : '#1E293B',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
                   {userProfile?.username || 'User'}
                 </div>
-                <div style={{
-                  fontSize: '10px',
-                  color: isDark ? '#94A3B8' : '#64748B',
-                  fontWeight: 500,
-                  whiteSpace: 'nowrap'
-                }}>
+                <div
+                  style={{
+                    fontSize: '10px',
+                    color: isDark ? '#94A3B8' : '#64748B',
+                    fontWeight: 500,
+                    whiteSpace: 'nowrap'
+                  }}
+                >
                   {userProfile?.role || 'Staff'}
                 </div>
               </div>
             )}
           </div>
-          
+
           {!sidebarCollapsed && (
-            <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div
+              style={{
+                marginTop: '10px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px'
+              }}
+            >
               <div
                 onClick={() => setModal({ type: 'password', data: null })}
                 style={{
@@ -444,8 +567,14 @@ export default function ERPLayout({
                   gap: '8px',
                   transition: 'all 0.2s'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = isDark
+                    ? 'rgba(255,255,255,0.05)'
+                    : 'rgba(0,0,0,0.05)')
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = 'transparent')
+                }
               >
                 🔒 {isAr ? 'تغيير كلمة المرور' : 'Change Password'}
               </div>
@@ -462,8 +591,13 @@ export default function ERPLayout({
                   gap: '8px',
                   transition: 'all 0.2s'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background =
+                    'rgba(239, 68, 68, 0.1)')
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = 'transparent')
+                }
               >
                 🚪 {isAr ? 'تسجيل الخروج' : 'Logout'}
               </div>
@@ -488,60 +622,55 @@ export default function ERPLayout({
         />
       )}
 
-      {/* ============================================================
-          MAIN CONTENT
-          ============================================================ */}
-      <div style={{
-        flex: 1,
-        marginLeft: sidebarCollapsed ? '72px' : '280px',
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        position: 'relative',
-        background: isDark ? '#0F172A' : '#F8FAFC',
-        height: '100vh',
-        paddingTop: '0',
-        transition: 'margin-left 0.3s ease',
-        '@media (max-width: 768px)': {
-          marginLeft: 0,
-          paddingTop: '64px'
-        }
-      }}>
+      {/* ===== MAIN CONTENT ===== */}
+      <div style={mainContentStyle}>
         {children}
-        
-        {/* ============================================================
-            AI CHAT WIDGET
-            ============================================================ */}
-        <div style={{
-          position: 'fixed',
-          bottom: '24px',
-          [isAr ? 'left' : 'right']: '24px',
-          zIndex: 50
-        }}>
+
+        {/* ===== AI CHAT WIDGET ===== */}
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            [isAr ? 'left' : 'right']: '24px',
+            zIndex: 50
+          }}
+        >
           {chatOpen && (
-            <div style={{
-              width: '360px',
-              maxHeight: '500px',
-              background: isDark ? '#1E293B' : '#FFFFFF',
-              borderRadius: '20px',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-              display: 'flex',
-              flexDirection: 'column',
-              marginBottom: '12px',
-              overflow: 'hidden',
-              border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
-              animation: 'fadeIn 0.3s ease-out'
-            }}>
-              {/* Chat Header */}
-              <div style={{
-                background: 'linear-gradient(135deg, #1E3A8A, #2563EB)',
-                color: '#FFFFFF',
-                padding: '16px 20px',
-                fontWeight: 700,
+            <div
+              style={{
+                width: '360px',
+                maxHeight: '500px',
+                background: isDark ? '#1E293B' : '#FFFFFF',
+                borderRadius: '20px',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
                 display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <span style={{ fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                flexDirection: 'column',
+                marginBottom: '12px',
+                overflow: 'hidden',
+                border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
+                animation: 'fadeIn 0.3s ease-out'
+              }}
+            >
+              {/* Chat Header */}
+              <div
+                style={{
+                  background: 'linear-gradient(135deg, #1E3A8A, #2563EB)',
+                  color: '#FFFFFF',
+                  padding: '16px 20px',
+                  fontWeight: 700,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: '15px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
                   <span style={{ fontSize: '20px' }}>🤖</span>
                   {isAr ? 'مساعد السفر الذكي' : 'AI Travel Assistant'}
                 </span>
@@ -554,35 +683,59 @@ export default function ERPLayout({
               </div>
 
               {/* Chat Messages */}
-              <div style={{
-                flex: 1,
-                padding: '16px',
-                overflowY: 'auto',
-                background: isDark ? '#0F172A' : '#F8FAFC',
-                maxHeight: '350px'
-              }}>
+              <div
+                style={{
+                  flex: 1,
+                  padding: '16px',
+                  overflowY: 'auto',
+                  background: isDark ? '#0F172A' : '#F8FAFC',
+                  maxHeight: '350px'
+                }}
+              >
                 {chatMessages.map((m, i) => (
                   <div
                     key={i}
                     style={{
                       margin: '10px 0',
-                      textAlign: m.sender === 'user' ? (isAr ? 'left' : 'right') : (isAr ? 'right' : 'left')
+                      textAlign:
+                        m.sender === 'user'
+                          ? isAr
+                            ? 'left'
+                            : 'right'
+                          : isAr
+                          ? 'right'
+                          : 'left'
                     }}
                   >
-                    <span style={{
-                      background: m.sender === 'user'
-                        ? 'linear-gradient(135deg, #2563EB, #1D4ED8)'
-                        : (isDark ? '#1E293B' : '#F1F5F9'),
-                      color: m.sender === 'user' ? '#fff' : (isDark ? '#E2E8F0' : '#1E293B'),
-                      padding: '10px 14px',
-                      borderRadius: '12px',
-                      display: 'inline-block',
-                      fontSize: '13px',
-                      maxWidth: '85%',
-                      lineHeight: '1.5',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                      border: m.sender === 'bot' ? (isDark ? '1px solid #334155' : '1px solid #E2E8F0') : 'none'
-                    }}>
+                    <span
+                      style={{
+                        background:
+                          m.sender === 'user'
+                            ? 'linear-gradient(135deg, #2563EB, #1D4ED8)'
+                            : isDark
+                            ? '#1E293B'
+                            : '#F1F5F9',
+                        color:
+                          m.sender === 'user'
+                            ? '#fff'
+                            : isDark
+                            ? '#E2E8F0'
+                            : '#1E293B',
+                        padding: '10px 14px',
+                        borderRadius: '12px',
+                        display: 'inline-block',
+                        fontSize: '13px',
+                        maxWidth: '85%',
+                        lineHeight: '1.5',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        border:
+                          m.sender === 'bot'
+                            ? isDark
+                              ? '1px solid #334155'
+                              : '1px solid #E2E8F0'
+                            : 'none'
+                      }}
+                    >
                       {m.text}
                     </span>
                   </div>
@@ -590,18 +743,22 @@ export default function ERPLayout({
               </div>
 
               {/* Chat Input */}
-              <div style={{
-                display: 'flex',
-                padding: '12px',
-                background: isDark ? '#1E293B' : '#FFFFFF',
-                borderTop: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
-                gap: '8px'
-              }}>
+              <div
+                style={{
+                  display: 'flex',
+                  padding: '12px',
+                  background: isDark ? '#1E293B' : '#FFFFFF',
+                  borderTop: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
+                  gap: '8px'
+                }}
+              >
                 <input
                   value={chatInput}
-                  onChange={e => setChatInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSendMessage()}
-                  placeholder={isAr ? 'اسأل عن الرحلات...' : 'Ask about flights...'}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                  placeholder={
+                    isAr ? 'اسأل عن الرحلات...' : 'Ask about flights...'
+                  }
                   style={{
                     flex: 1,
                     background: isDark ? '#0F172A' : '#F1F5F9',
