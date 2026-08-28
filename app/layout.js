@@ -34,7 +34,7 @@ export default function RootLayout({ children }) {
           href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap"
           rel="stylesheet"
         />
-        {/* ✅ FIX: modern meta tag */}
+        {/* ✅ FIX: Use mobile-web-app-capable instead of deprecated apple-mobile-web-app-capable */}
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <link rel="manifest" href="/manifest.json" />
