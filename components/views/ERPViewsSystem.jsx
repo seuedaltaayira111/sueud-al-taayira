@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export default function ERPViewsSystem(props) {
   const {
@@ -26,11 +27,15 @@ export default function ERPViewsSystem(props) {
   const [reportTab, setReportTab] = useState('sales');
   const [repDate, setRepDate] = useState({ from: '', to: '' });
   const [statementType, setStatementType] = useState('sales');
+  const [contractQuestions, setContractQuestions] = useState([]);
+  const [aiContractStep, setAiContractStep] = useState(0);
+  const [aiContractData, setAiContractData] = useState({});
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
 
   // ===== STYLES =====
   const styles = {
     container: {
-      padding: '20px',
+      padding: '24px',
       background: isDark ? '#0F172A' : '#F8FAFC',
       minHeight: '100vh',
       color: isDark ? '#E2E8F0' : '#1E293B',
@@ -39,33 +44,33 @@ export default function ERPViewsSystem(props) {
     card: {
       background: isDark ? '#1E293B' : '#FFFFFF',
       borderRadius: '16px',
-      padding: '20px',
+      padding: '24px',
       marginBottom: '20px',
       border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
-      boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.2)' : '0 4px 6px rgba(0,0,0,0.05)'
+      boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.2)' : '0 1px 3px rgba(0,0,0,0.06)'
     },
     header: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: '20px',
+      marginBottom: '24px',
       flexWrap: 'wrap',
-      gap: '10px'
+      gap: '12px'
     },
     title: {
       fontSize: '24px',
       fontWeight: 700,
-      color: '#FBBF24',
+      color: '#1E3A8A',
       display: 'flex',
       alignItems: 'center',
       gap: '10px',
       margin: 0
     },
     input: {
-      padding: '10px 15px',
+      padding: '10px 16px',
       background: isDark ? '#0F172A' : '#F1F5F9',
       border: isDark ? '1px solid #475569' : '1px solid #E2E8F0',
-      borderRadius: '8px',
+      borderRadius: '10px',
       color: isDark ? '#E2E8F0' : '#1E293B',
       fontSize: '14px',
       outline: 'none',
@@ -74,40 +79,60 @@ export default function ERPViewsSystem(props) {
       transition: 'all 0.2s'
     },
     select: {
-      padding: '10px 15px',
+      padding: '10px 16px',
       background: isDark ? '#0F172A' : '#F1F5F9',
       border: isDark ? '1px solid #475569' : '1px solid #E2E8F0',
-      borderRadius: '8px',
+      borderRadius: '10px',
       color: isDark ? '#E2E8F0' : '#1E293B',
       fontSize: '14px',
       outline: 'none',
       width: '100%',
       boxSizing: 'border-box'
     },
+    textarea: {
+      padding: '10px 16px',
+      background: isDark ? '#0F172A' : '#F1F5F9',
+      border: isDark ? '1px solid #475569' : '1px solid #E2E8F0',
+      borderRadius: '10px',
+      color: isDark ? '#E2E8F0' : '#1E293B',
+      fontSize: '14px',
+      outline: 'none',
+      width: '100%',
+      minHeight: '80px',
+      resize: 'vertical',
+      fontFamily: 'inherit'
+    },
     btn: {
       padding: '10px 20px',
-      borderRadius: '8px',
+      borderRadius: '10px',
       border: 'none',
       cursor: 'pointer',
       fontWeight: 600,
       fontSize: '13px',
-      transition: 'all 0.2s'
+      transition: 'all 0.2s',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '6px'
     },
     btnPrimary: {
       background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
-      color: '#fff'
+      color: '#fff',
+      boxShadow: '0 2px 8px rgba(37, 99, 235, 0.2)'
     },
     btnSuccess: {
       background: 'linear-gradient(135deg, #059669, #047857)',
-      color: '#fff'
+      color: '#fff',
+      boxShadow: '0 2px 8px rgba(5, 150, 105, 0.2)'
     },
     btnDanger: {
       background: 'linear-gradient(135deg, #DC2626, #B91C1C)',
-      color: '#fff'
+      color: '#fff',
+      boxShadow: '0 2px 8px rgba(220, 38, 38, 0.2)'
     },
     btnWarning: {
       background: 'linear-gradient(135deg, #F59E0B, #D97706)',
-      color: '#0F172A'
+      color: '#fff',
+      boxShadow: '0 2px 8px rgba(245, 158, 11, 0.2)'
     },
     btnGhost: {
       background: 'transparent',
@@ -115,88 +140,14 @@ export default function ERPViewsSystem(props) {
       color: isDark ? '#94A3B8' : '#64748B'
     },
     btnInfo: {
-      background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
-      color: '#fff'
+      background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+      color: '#fff',
+      boxShadow: '0 2px 8px rgba(139, 92, 246, 0.2)'
     },
-    table: {
-      width: '100%',
-      borderCollapse: 'collapse',
-      fontSize: '13px'
-    },
-    th: {
-      padding: '12px',
-      background: isDark ? '#0F172A' : '#F1F5F9',
-      color: '#FBBF24',
-      textAlign: 'left',
-      fontWeight: 600,
-      fontSize: '11px',
-      textTransform: 'uppercase',
-      letterSpacing: '0.5px',
-      borderBottom: isDark ? '2px solid #334155' : '2px solid #E2E8F0'
-    },
-    td: {
-      padding: '12px',
-      borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
-      color: isDark ? '#CBD5E1' : '#1E293B'
-    },
-    tdRight: {
-      padding: '12px',
-      borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
-      color: isDark ? '#CBD5E1' : '#1E293B',
-      textAlign: 'right',
-      fontWeight: 600
-    },
-    tdCenter: {
-      padding: '12px',
-      borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
-      color: isDark ? '#CBD5E1' : '#1E293B',
-      textAlign: 'center'
-    },
-    badge: {
-      padding: '4px 10px',
-      borderRadius: '20px',
-      fontSize: '11px',
-      fontWeight: 600,
-      display: 'inline-block'
-    },
-    badgeSuccess: {
-      background: '#065F46',
-      color: '#34D399'
-    },
-    badgeDanger: {
-      background: '#7F1D1D',
-      color: '#FCA5A5'
-    },
-    badgeWarning: {
-      background: '#78350F',
-      color: '#FBBF24'
-    },
-    statsGrid: {
+    formRow: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-      gap: '15px',
-      marginBottom: '20px'
-    },
-    statCard: {
-      background: isDark ? 'linear-gradient(135deg, #1E293B, #0F172A)' : 'linear-gradient(135deg, #FFFFFF, #F8FAFC)',
-      padding: '18px',
-      borderRadius: '12px',
-      border: isDark ? '1px solid #334155' : '1px solid #E2E8F0'
-    },
-    statLabel: {
-      fontSize: '11px',
-      color: '#94A3B8',
-      textTransform: 'uppercase',
-      letterSpacing: '0.5px'
-    },
-    statValue: {
-      fontSize: '22px',
-      fontWeight: 700,
-      color: '#FBBF24',
-      marginTop: '5px'
-    },
-    formGroup: {
-      marginBottom: '15px'
+      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+      gap: '15px'
     },
     formLabel: {
       display: 'block',
@@ -204,11 +155,6 @@ export default function ERPViewsSystem(props) {
       color: isDark ? '#94A3B8' : '#64748B',
       fontSize: '13px',
       fontWeight: 600
-    },
-    formRow: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-      gap: '15px'
     },
     sectionTitle: {
       color: '#FBBF24',
@@ -218,37 +164,31 @@ export default function ERPViewsSystem(props) {
       paddingBottom: '10px',
       borderBottom: isDark ? '1px solid #334155' : '1px solid #E2E8F0'
     },
-    emptyState: {
-      textAlign: 'center',
-      padding: '60px 20px',
-      color: '#64748B'
+    statsGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+      gap: '16px',
+      marginBottom: '24px'
     },
-    emptyIcon: {
-      fontSize: '60px',
-      marginBottom: '15px'
+    statCard: {
+      background: isDark ? 'linear-gradient(135deg, #1E293B, #0F172A)' : '#FFFFFF',
+      padding: '20px',
+      borderRadius: '12px',
+      border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
+      boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.2)' : '0 1px 3px rgba(0,0,0,0.06)'
     },
-    actionsCell: {
-      display: 'flex',
-      gap: '5px',
-      flexWrap: 'wrap',
-      justifyContent: 'center'
+    statLabel: {
+      fontSize: '12px',
+      color: '#94A3B8',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px',
+      fontWeight: 600
     },
-    actionBtn: {
-      padding: '6px 10px',
-      borderRadius: '6px',
-      border: 'none',
-      cursor: 'pointer',
-      fontSize: '11px',
-      fontWeight: 600,
-      transition: 'all 0.2s'
-    },
-    label: {
-      fontSize: '13px',
-      fontWeight: 600,
-      color: isDark ? '#94A3B8' : '#64748B',
-      marginBottom: '6px',
-      display: 'block',
-      marginTop: '12px'
+    statValue: {
+      fontSize: '24px',
+      fontWeight: 700,
+      color: '#1E3A8A',
+      marginTop: '4px'
     },
     tabBtn: {
       padding: '10px 20px',
@@ -264,23 +204,48 @@ export default function ERPViewsSystem(props) {
       background: 'linear-gradient(135deg, #1E3A8A, #2563EB)',
       color: 'white',
       boxShadow: '0 4px 6px rgba(37, 99, 235, 0.3)'
+    },
+    table: {
+      width: '100%',
+      borderCollapse: 'collapse',
+      fontSize: '13px'
+    },
+    th: {
+      padding: '12px 16px',
+      background: isDark ? '#0F172A' : '#F8FAFC',
+      color: isDark ? '#FBBF24' : '#1E293B',
+      textAlign: 'left',
+      fontWeight: 600,
+      fontSize: '11px',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px',
+      borderBottom: isDark ? '2px solid #334155' : '2px solid #E2E8F0'
+    },
+    td: {
+      padding: '12px 16px',
+      borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
+      color: isDark ? '#CBD5E1' : '#1E293B'
+    },
+    tdRight: {
+      padding: '12px 16px',
+      borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
+      color: isDark ? '#CBD5E1' : '#1E293B',
+      textAlign: 'right',
+      fontWeight: 600
+    },
+    emptyState: {
+      textAlign: 'center',
+      padding: '60px 20px',
+      color: '#64748B'
+    },
+    emptyIcon: {
+      fontSize: '60px',
+      marginBottom: '15px'
     }
   };
 
   const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
-
-  // ===== HELPER: Filter data by date range =====
-  const filterData = (items, dateField) => {
-    if (!items) return [];
-    let filtered = items;
-    if (repDate.from) {
-      filtered = filtered.filter(i => i[dateField] >= repDate.from);
-    }
-    if (repDate.to) {
-      filtered = filtered.filter(i => i[dateField] <= repDate.to);
-    }
-    return filtered;
-  };
+  const today = new Date().toISOString().split('T')[0];
 
   // ============================================================
   // PROFITABILITY ANALYZER
@@ -727,27 +692,65 @@ export default function ERPViewsSystem(props) {
   }
 
   // ============================================================
-  // CONTRACT & OFFER
+  // AI GENERATED CONTRACT / OFFER
   // ============================================================
   if (page === 'contract' || page === 'offer') {
     const isContract = page === 'contract';
+    const [aiStep, setAiStep] = useState(0);
+    const [aiData, setAiData] = useState({
+      corporate_name: '',
+      service_type: 'Flight Tickets',
+      markup: 10,
+      validity_days: 30,
+      payment_terms: '100% advance payment required',
+      special_terms: '',
+      language: 'en'
+    });
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [aiQuestions, setAiQuestions] = useState([
+      { id: 'corporate_name', question_en: 'What is the corporate/company name?', question_ar: 'ما هو اسم الشركة؟' },
+      { id: 'service_type', question_en: 'What type of service will be provided?', question_ar: 'ما نوع الخدمة التي سيتم تقديمها؟' },
+      { id: 'markup', question_en: 'What is the markup/service fee (SAR)?', question_ar: 'ما هي رسوم الخدمة (ريال)؟' },
+      { id: 'validity_days', question_en: 'How many days is this offer valid for?', question_ar: 'كم يوم تكون صلاحية هذا العرض؟' },
+      { id: 'payment_terms', question_en: 'What are the payment terms?', question_ar: 'ما هي شروط الدفع؟' },
+      { id: 'special_terms', question_en: 'Any special terms or conditions?', question_ar: 'هل توجد شروط أو أحكام خاصة؟' },
+    ]);
 
-    const aiStandardTerms = [
-      "Payment Terms: 100% advance payment required to confirm the booking.",
-      "Validity: This document is valid for 30 days from the date of issue.",
-      "Refund Policy: All cancellations are subject to airline/hotel cancellation policies.",
-      "Prices are subject to change based on availability at the time of final booking.",
-      "Passenger names must match exactly as per passport/ID."
-    ];
-
-    const handleTermToggle = (term) => {
-      const currentTerms = contractTerms ? contractTerms.split('\n').filter(t => t.trim()) : [];
-      if (currentTerms.includes(term)) {
-        setContractTerms(currentTerms.filter(t => t !== term).join('\n'));
+    const handleAiNext = () => {
+      if (aiStep < aiQuestions.length - 1) {
+        setAiStep(aiStep + 1);
       } else {
-        setContractTerms([...currentTerms, term].join('\n'));
+        // Generate contract
+        setIsGenerating(true);
+        setTimeout(() => {
+          const terms = `${aiData.payment_terms || '100% advance payment required'}\nValidity: ${aiData.validity_days || 30} days from issue date\nRefund Policy: All cancellations subject to airline/hotel policies\nPrices subject to change based on availability\nPassenger names must match passport/ID exactly\n${aiData.special_terms || ''}`;
+          const html = props.getContractHTML(
+            data.settings,
+            aiData.corporate_name || 'Client',
+            today,
+            !isContract,
+            aiData.service_type || 'Flight Tickets',
+            aiData.markup || 10,
+            terms,
+            aiData.language || 'en'
+          );
+          setPreviewHTML?.(html);
+          setModal?.({ type: 'preview', data: null });
+          setIsGenerating(false);
+          showToast?.(isAr ? '✅ تم إنشاء المستند بنجاح!' : '✅ Document generated successfully!');
+        }, 1500);
       }
     };
+
+    const handleAiPrevious = () => {
+      if (aiStep > 0) setAiStep(aiStep - 1);
+    };
+
+    const handleAiChange = (field, value) => {
+      setAiData({ ...aiData, [field]: value });
+    };
+
+    const currentQuestion = aiQuestions[aiStep];
 
     return (
       <div style={styles.container}>
@@ -759,16 +762,147 @@ export default function ERPViewsSystem(props) {
           marginBottom: '20px'
         }}>
           <h2 style={{ margin: 0, fontSize: '24px' }}>
-            {isContract ? '📝 ' + (isAr ? 'منشئ العقود للشركات' : 'Corporate Contract Generator') : '🎁 ' + (isAr ? 'منشئ عروض الشركات' : 'Corporate Offer Generator')}
+            {isContract ? '📝 ' + (isAr ? 'منشئ العقود الذكي' : 'AI Contract Generator') : '🎁 ' + (isAr ? 'منشئ العروض الذكي' : 'AI Offer Generator')}
           </h2>
           <p style={{ margin: '5px 0 0', opacity: 0.9 }}>
-            {isContract
-              ? (isAr ? 'إنشاء اتفاقية رسمية ديناميكية.' : 'Generate a formal dynamic agreement.')
-              : (isAr ? 'إنشاء خطاب عرض خاص ديناميكي.' : 'Generate a special dynamic offer letter.')}
+            {isAr ? 'أجب على الأسئلة وسيقوم الذكاء الاصطناعي بإنشاء مستند احترافي.' : 'Answer the questions and AI will generate a professional document.'}
           </p>
         </div>
 
+        {/* AI Generator */}
         <div style={{ ...styles.card, borderLeft: '5px solid #FBBF24' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+            <h3 style={{ margin: 0, color: '#FBBF24' }}>
+              🤖 {isAr ? 'المساعد الذكي' : 'AI Assistant'}
+              <span style={{ fontSize: '12px', color: '#94A3B8', marginLeft: '10px' }}>
+                {isAr ? `السؤال ${aiStep + 1} من ${aiQuestions.length}` : `Question ${aiStep + 1} of ${aiQuestions.length}`}
+              </span>
+            </h3>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {aiQuestions.map((_, i) => (
+                <div key={i} style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: i <= aiStep ? '#FBBF24' : '#334155',
+                  transition: 'all 0.3s'
+                }} />
+              ))}
+            </div>
+          </div>
+
+          <div style={{ padding: '20px 0' }}>
+            <p style={{ fontSize: '16px', fontWeight: 600, color: isDark ? '#E2E8F0' : '#1E293B', marginBottom: '15px' }}>
+              {isAr ? currentQuestion.question_ar : currentQuestion.question_en}
+            </p>
+
+            {currentQuestion.id === 'corporate_name' && (
+              <input
+                style={styles.input}
+                value={aiData.corporate_name}
+                onChange={e => handleAiChange('corporate_name', e.target.value)}
+                placeholder={isAr ? 'مثال: أرامكو السعودية' : 'e.g. Saudi Aramco'}
+              />
+            )}
+            {currentQuestion.id === 'service_type' && (
+              <select
+                style={styles.select}
+                value={aiData.service_type}
+                onChange={e => handleAiChange('service_type', e.target.value)}
+              >
+                <option>Flight Tickets</option>
+                <option>Hotel Booking</option>
+                <option>Visa Services</option>
+                <option>Hajj/Umrah Packages</option>
+                <option>Complete Travel Management</option>
+              </select>
+            )}
+            {currentQuestion.id === 'markup' && (
+              <input
+                type="number"
+                style={styles.input}
+                value={aiData.markup}
+                onChange={e => handleAiChange('markup', parseFloat(e.target.value) || 0)}
+                placeholder="10"
+              />
+            )}
+            {currentQuestion.id === 'validity_days' && (
+              <input
+                type="number"
+                style={styles.input}
+                value={aiData.validity_days}
+                onChange={e => handleAiChange('validity_days', parseInt(e.target.value) || 30)}
+                placeholder="30"
+              />
+            )}
+            {currentQuestion.id === 'payment_terms' && (
+              <input
+                style={styles.input}
+                value={aiData.payment_terms}
+                onChange={e => handleAiChange('payment_terms', e.target.value)}
+                placeholder={isAr ? 'شروط الدفع...' : 'Payment terms...'}
+              />
+            )}
+            {currentQuestion.id === 'special_terms' && (
+              <textarea
+                style={styles.textarea}
+                value={aiData.special_terms}
+                onChange={e => handleAiChange('special_terms', e.target.value)}
+                placeholder={isAr ? 'شروط خاصة...' : 'Special terms...'}
+                rows={3}
+              />
+            )}
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+              <button
+                onClick={handleAiPrevious}
+                style={{ ...styles.btn, ...styles.btnGhost }}
+                disabled={aiStep === 0}
+              >
+                ← {isAr ? 'السابق' : 'Previous'}
+              </button>
+              <button
+                onClick={handleAiNext}
+                style={{ ...styles.btn, ...(aiStep === aiQuestions.length - 1 ? styles.btnSuccess : styles.btnPrimary) }}
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  '⏳ ' + (isAr ? 'جاري التوليد...' : 'Generating...')
+                ) : (
+                  aiStep === aiQuestions.length - 1
+                    ? (isAr ? '🚀 إنشاء المستند' : '🚀 Generate Document')
+                    : (isAr ? 'التالي →' : 'Next →')
+                )}
+              </button>
+              {aiStep === aiQuestions.length - 1 && (
+                <button
+                  type="button"
+                  style={{ ...styles.btn, ...styles.btnGhost }}
+                  onClick={() => {
+                    setAiStep(0);
+                    setAiData({
+                      corporate_name: '',
+                      service_type: 'Flight Tickets',
+                      markup: 10,
+                      validity_days: 30,
+                      payment_terms: '100% advance payment required',
+                      special_terms: '',
+                      language: 'en'
+                    });
+                  }}
+                >
+                  🔄 {isAr ? 'إعادة تعيين' : 'Reset'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Manual Contract Form */}
+        <div style={{ ...styles.card, borderLeft: '5px solid #64748B' }}>
+          <h3 style={styles.sectionTitle}>
+            📝 {isAr ? 'أو أدخل التفاصيل يدوياً' : 'Or Enter Details Manually'}
+          </h3>
           <form onSubmit={isContract ? handleGenerateContract : handleGenerateOffer} style={styles.formRow}>
             <div style={{ gridColumn: '1 / -1' }}>
               <label style={styles.formLabel}>{isAr ? 'اسم الشركة *' : 'Corporate Company Name *'}</label>
@@ -795,786 +929,22 @@ export default function ERPViewsSystem(props) {
               <label style={styles.formLabel}>{isAr ? 'رسوم الخدمة / الهامش (ريال)' : 'Service Fee / Markup (SAR)'}</label>
               <input type="number" value={contractMarkup || '10'} onChange={e => setContractMarkup(e.target.value)} style={styles.input} required />
             </div>
-
-            <div style={{ gridColumn: '1 / -1', marginTop: '10px' }}>
-              <label style={styles.formLabel}>🤖 {isAr ? 'شروط الذكاء الاصطناعي (انقر للإضافة/الحذف)' : 'AI Generated Terms (Click to add/remove)'}</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '15px' }}>
-                {aiStandardTerms.map((term, idx) => {
-                  const isSelected = contractTerms?.includes(term);
-                  return (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => handleTermToggle(term)}
-                      style={{
-                        padding: '8px 15px',
-                        borderRadius: '20px',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        transition: 'all 0.2s',
-                        background: isSelected ? '#1E3A8A' : isDark ? '#334155' : '#F1F5F9',
-                        color: isSelected ? 'white' : isDark ? '#94A3B8' : '#64748B',
-                        border: isSelected ? '1px solid #2563EB' : isDark ? '1px solid #475569' : '1px solid #E2E8F0'
-                      }}
-                    >
-                      {isSelected ? '✓ ' : '+ '}{term.substring(0, 40)}...
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
             <div style={{ gridColumn: '1 / -1' }}>
-              <label style={styles.formLabel}>{isAr ? 'الشروط والأحكام المخصصة (واحد في كل سطر)' : 'Custom Terms & Conditions (One per line)'}</label>
+              <label style={styles.formLabel}>{isAr ? 'الشروط والأحكام' : 'Terms & Conditions'}</label>
               <textarea
-                rows="6"
+                rows="5"
                 value={contractTerms || ''}
                 onChange={e => setContractTerms(e.target.value)}
-                style={{ ...styles.input, resize: 'vertical', fontFamily: 'sans-serif' }}
+                style={styles.textarea}
+                placeholder={isAr ? 'أدخل الشروط هنا...' : 'Enter terms here...'}
               />
             </div>
-
-            <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, gridColumn: '1 / -1', padding: '15px', fontSize: '16px' }}>
-              📄 {isContract
-                ? (isAr ? 'إنشاء العقد' : 'Generate Contract')
-                : (isAr ? 'إنشاء العرض' : 'Generate Offer')}
-            </button>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, width: '100%', padding: '14px' }}>
+                📄 {isContract ? (isAr ? 'إنشاء العقد' : 'Generate Contract') : (isAr ? 'إنشاء العرض' : 'Generate Offer')}
+              </button>
+            </div>
           </form>
-        </div>
-      </div>
-    );
-  }
-
-  // ============================================================
-  // REPORTS
-  // ============================================================
-  if (page === 'reports') {
-    const filteredInvoices = filterData(
-      (data.invoices || []).filter(i => !i.invoice_no?.startsWith('REF-')),
-      'invoice_date'
-    );
-    const filteredExpenses = filterData(data.expenses || [], 'expense_date');
-    const salesTotal = filteredInvoices.reduce((s, i) => s + (i.total || 0), 0);
-    const expTotal = filteredExpenses.reduce((s, e) => s + (e.amount || 0), 0);
-    const profitTotal = salesTotal - expTotal;
-
-    const exportData = (type) => {
-      switch (type) {
-        case 'sales':
-          return filteredInvoices.map(i => ({
-            Date: i.invoice_date,
-            Invoice: i.invoice_no,
-            Customer: i.customers?.name || 'N/A',
-            Total: i.total,
-            Due: i.due_amount
-          }));
-        case 'expenses':
-          return filteredExpenses.map(e => ({
-            Date: e.expense_date,
-            Type: e.expense_type,
-            Description: e.description,
-            Amount: e.amount
-          }));
-        case 'portals':
-          return (data.portals || []).map(p => ({
-            Name: p.name,
-            Balance: p.current_balance
-          }));
-        case 'outstanding':
-          return (data.invoices || [])
-            .filter(i => (i.due_amount || 0) > 0)
-            .map(i => ({
-              Invoice: i.invoice_no,
-              Customer: i.customers?.name || 'N/A',
-              Due: i.due_amount
-            }));
-        default:
-          return [];
-      }
-    };
-
-    return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>📊 {tr?.reports || 'Reports'}</h1>
-        </div>
-
-        {/* Date Filters */}
-        <div style={{ ...styles.card, display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-          <div>
-            <label style={styles.formLabel}>{isAr ? 'من تاريخ' : 'From Date'}</label>
-            <input type="date" value={repDate.from} onChange={e => setRepDate({ ...repDate, from: e.target.value })} style={{ ...styles.input, maxWidth: '200px' }} />
-          </div>
-          <div>
-            <label style={styles.formLabel}>{isAr ? 'إلى تاريخ' : 'To Date'}</label>
-            <input type="date" value={repDate.to} onChange={e => setRepDate({ ...repDate, to: e.target.value })} style={{ ...styles.input, maxWidth: '200px' }} />
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
-          {['sales', 'expenses', 'profit', 'portals', 'outstanding'].map(tab => (
-            <button
-              key={tab}
-              onClick={() => setReportTab(tab)}
-              style={{ ...styles.tabBtn, ...(reportTab === tab && styles.tabBtnActive) }}
-            >
-              {tab === 'sales' ? (isAr ? 'المبيعات' : 'Sales') :
-               tab === 'expenses' ? (isAr ? 'المصروفات' : 'Expenses') :
-               tab === 'profit' ? (isAr ? 'الربح' : 'Profit') :
-               tab === 'portals' ? (isAr ? 'البوابات' : 'Portals') :
-               (isAr ? 'المستحقات' : 'Outstanding')}
-            </button>
-          ))}
-        </div>
-
-        {/* Sales Tab */}
-        {reportTab === 'sales' && (
-          <div style={styles.card}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '15px', borderBottom: isDark ? '1px solid #334155' : '1px solid #E2E8F0', marginBottom: '15px' }}>
-              <h3 style={{ color: '#FBBF24', margin: 0 }}>
-                {isAr ? 'إجمالي المبيعات' : 'Total Sales'}: <span style={{ color: '#34D399' }}>{fmt(salesTotal)}</span>
-              </h3>
-              <button onClick={() => handleExportCSV?.('sales')} style={{ ...styles.btn, ...styles.btnSuccess }}>
-                📥 {isAr ? 'تصدير' : 'Export'}
-              </button>
-            </div>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>Date</th>
-                    <th style={styles.th}>Invoice</th>
-                    <th style={styles.th}>Customer</th>
-                    <th style={{ ...styles.th, textAlign: 'right' }}>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredInvoices.map(i => (
-                    <tr key={i.id}>
-                      <td style={styles.td}>{i.invoice_date}</td>
-                      <td style={{ ...styles.td, color: '#60A5FA' }}>{i.invoice_no}</td>
-                      <td style={styles.td}>{i.customers?.name || 'N/A'}</td>
-                      <td style={{ ...styles.tdRight, color: '#34D399' }}>{fmt(i.total)}</td>
-                    </tr>
-                  ))}
-                  {filteredInvoices.length === 0 && (
-                    <tr>
-                      <td colSpan="4" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
-                        {isAr ? 'لا توجد فواتير' : 'No invoices found'}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Expenses Tab */}
-        {reportTab === 'expenses' && (
-          <div style={styles.card}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '15px', borderBottom: isDark ? '1px solid #334155' : '1px solid #E2E8F0', marginBottom: '15px' }}>
-              <h3 style={{ color: '#FBBF24', margin: 0 }}>
-                {isAr ? 'إجمالي المصروفات' : 'Total Expenses'}: <span style={{ color: '#FCA5A5' }}>{fmt(expTotal)}</span>
-              </h3>
-              <button onClick={() => handleExportCSV?.('expenses')} style={{ ...styles.btn, ...styles.btnSuccess }}>
-                📥 {isAr ? 'تصدير' : 'Export'}
-              </button>
-            </div>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>Date</th>
-                    <th style={styles.th}>Type</th>
-                    <th style={styles.th}>Description</th>
-                    <th style={{ ...styles.th, textAlign: 'right' }}>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredExpenses.map(e => (
-                    <tr key={e.id}>
-                      <td style={styles.td}>{e.expense_date}</td>
-                      <td style={styles.td}>{e.expense_type}</td>
-                      <td style={styles.td}>{e.description}</td>
-                      <td style={{ ...styles.tdRight, color: '#FCA5A5' }}>{fmt(e.amount)}</td>
-                    </tr>
-                  ))}
-                  {filteredExpenses.length === 0 && (
-                    <tr>
-                      <td colSpan="4" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
-                        {isAr ? 'لا توجد مصروفات' : 'No expenses found'}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Profit Tab */}
-        {reportTab === 'profit' && (
-          <div style={{ ...styles.card, textAlign: 'center', padding: '40px' }}>
-            <h3 style={{ color: '#FBBF24', fontSize: '24px', marginTop: 0 }}>
-              {isAr ? 'قائمة الأرباح والخسائر' : 'Profit & Loss Statement'}
-            </h3>
-            <p style={{ fontSize: '48px', fontWeight: 'bold', color: profitTotal >= 0 ? '#34D399' : '#FCA5A5', margin: '20px 0' }}>
-              {fmt(profitTotal)}
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '50px', marginTop: '20px', flexWrap: 'wrap' }}>
-              <div>
-                <h4 style={{ color: '#94A3B8', margin: 0 }}>{isAr ? 'إجمالي المبيعات' : 'Total Sales'}</h4>
-                <p style={{ fontSize: '20px', color: '#34D399', fontWeight: 'bold' }}>{fmt(salesTotal)}</p>
-              </div>
-              <div>
-                <h4 style={{ color: '#94A3B8', margin: 0 }}>{isAr ? 'إجمالي المصروفات' : 'Total Expenses'}</h4>
-                <p style={{ fontSize: '20px', color: '#FCA5A5', fontWeight: 'bold' }}>{fmt(expTotal)}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Portals Tab */}
-        {reportTab === 'portals' && (
-          <div style={styles.card}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '15px', borderBottom: isDark ? '1px solid #334155' : '1px solid #E2E8F0', marginBottom: '15px' }}>
-              <h3 style={{ color: '#FBBF24', margin: 0 }}>{isAr ? 'تقرير أرصدة البوابات' : 'Portal Balances Report'}</h3>
-              <button onClick={() => handleExportCSV?.('portals')} style={{ ...styles.btn, ...styles.btnSuccess }}>
-                📥 {isAr ? 'تصدير' : 'Export'}
-              </button>
-            </div>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>Portal</th>
-                    <th style={{ ...styles.th, textAlign: 'right' }}>{isAr ? 'الرصيد' : 'Balance (SAR)'}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(data.portals || []).map(p => (
-                    <tr key={p.id}>
-                      <td style={{ ...styles.td, fontWeight: 600 }}>{p.name}</td>
-                      <td style={{ ...styles.tdRight, color: (p.current_balance || 0) < 0 ? '#FCA5A5' : '#34D399' }}>
-                        {fmt(p.current_balance)}
-                      </td>
-                    </tr>
-                  ))}
-                  {(data.portals || []).length === 0 && (
-                    <tr>
-                      <td colSpan="2" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
-                        {isAr ? 'لا توجد بوابات' : 'No portals found'}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Outstanding Tab */}
-        {reportTab === 'outstanding' && (() => {
-          const outInvs = (data.invoices || []).filter(i => (i.due_amount || 0) > 0);
-          const totalDue = outInvs.reduce((s, i) => s + (i.due_amount || 0), 0);
-          return (
-            <div style={styles.card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '15px', borderBottom: isDark ? '1px solid #334155' : '1px solid #E2E8F0', marginBottom: '15px' }}>
-                <h3 style={{ color: '#FBBF24', margin: 0 }}>
-                  {isAr ? 'إجمالي المستحقات' : 'Total Outstanding'}: <span style={{ color: '#FCA5A5' }}>{fmt(totalDue)}</span>
-                </h3>
-                <button onClick={() => handleExportCSV?.('outstanding')} style={{ ...styles.btn, ...styles.btnSuccess }}>
-                  📥 {isAr ? 'تصدير' : 'Export'}
-                </button>
-              </div>
-              <div style={{ overflowX: 'auto' }}>
-                <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      <th style={styles.th}>Invoice</th>
-                      <th style={styles.th}>Customer</th>
-                      <th style={{ ...styles.th, textAlign: 'right' }}>Due</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {outInvs.map(i => (
-                      <tr key={i.id}>
-                        <td style={{ ...styles.td, color: '#60A5FA' }}>{i.invoice_no}</td>
-                        <td style={styles.td}>{i.customers?.name || 'N/A'}</td>
-                        <td style={{ ...styles.tdRight, color: '#FCA5A5', fontWeight: 'bold' }}>{fmt(i.due_amount)}</td>
-                      </tr>
-                    ))}
-                    {outInvs.length === 0 && (
-                      <tr>
-                        <td colSpan="3" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
-                          {isAr ? 'لا توجد مستحقات' : 'No outstanding invoices'}
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          );
-        })()}
-      </div>
-    );
-  }
-
-  // ============================================================
-  // STATEMENTS
-  // ============================================================
-  if (page === 'statements') {
-    const tabs = ['sales', 'portals', 'vendors', 'salary', 'expenses', 'customers', 'creditors', 'credit', 'branches', 'cash', 'bank'];
-
-    const getExportData = (type) => {
-      switch (type) {
-        case 'sales':
-          return filterData((data.invoices || []).filter(i => !i.invoice_no?.startsWith('REF-')), 'invoice_date').map(i => ({
-            Date: i.invoice_date,
-            Invoice: i.invoice_no,
-            Customer: i.customers?.name || i.corporates?.name,
-            Total: i.total,
-            Due: i.due_amount
-          }));
-        case 'portals':
-          return (data.portals || []).map(p => ({ Portal: p.name, Balance: p.current_balance }));
-        case 'vendors':
-          return (data.vendors || []).map(v => ({ Vendor: v.name, Phone: v.phone, Balance: v.balance }));
-        case 'salary':
-          return filterData(data.payroll || [], 'month').map(p => ({
-            Employee: p.employees?.name,
-            Month: p.month,
-            Amount: p.amount,
-            Mode: p.payment_mode
-          }));
-        case 'expenses':
-          return filterData(data.expenses || [], 'expense_date').map(e => ({
-            Date: e.expense_date,
-            Type: e.expense_type,
-            Description: e.description,
-            Amount: e.amount
-          }));
-        case 'customers':
-          return (data.customers || []).map(c => ({ Name: c.name, Phone: c.phone, Credit: c.store_credit }));
-        case 'creditors':
-          return (data.creditors || []).map(c => ({ Name: c.name, Phone: c.phone, Address: c.address }));
-        case 'credit':
-          return (data.customers || []).filter(c => (c.store_credit || 0) > 0).map(c => ({
-            Name: c.name,
-            AvailableCredit: c.store_credit
-          }));
-        case 'branches':
-          return (data.branches || []).map(b => ({ Name: b.name, Location: b.location, Manager: b.manager }));
-        case 'cash':
-          return filterData((data.cashbook || []).filter(c => c.type?.includes('Cash')), 'trans_date').map(c => ({
-            Date: c.trans_date,
-            Description: c.description,
-            Amount: c.amount,
-            Type: c.type
-          }));
-        case 'bank':
-          return filterData((data.cashbook || []).filter(c => c.type?.includes('Bank')), 'trans_date').map(c => ({
-            Date: c.trans_date,
-            Description: c.description,
-            Amount: c.amount,
-            Type: c.type
-          }));
-        default:
-          return [];
-      }
-    };
-
-    const renderStatementTable = () => {
-      switch (statementType) {
-        case 'sales': {
-          const items = filterData((data.invoices || []).filter(i => !i.invoice_no?.startsWith('REF-')), 'invoice_date');
-          return (
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Date</th>
-                  <th style={styles.th}>Invoice</th>
-                  <th style={styles.th}>Customer</th>
-                  <th style={{ ...styles.th, textAlign: 'right' }}>Total</th>
-                  <th style={{ ...styles.th, textAlign: 'right' }}>Due</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map(i => (
-                  <tr key={i.id}>
-                    <td style={styles.td}>{i.invoice_date}</td>
-                    <td style={{ ...styles.td, color: '#60A5FA' }}>{i.invoice_no}</td>
-                    <td style={styles.td}>{i.customers?.name || i.corporates?.name || 'N/A'}</td>
-                    <td style={{ ...styles.tdRight, color: '#34D399' }}>{fmt(i.total)}</td>
-                    <td style={{ ...styles.tdRight, color: (i.due_amount || 0) > 0 ? '#FCA5A5' : '#34D399', fontWeight: 'bold' }}>
-                      {fmt(i.due_amount)}
-                    </td>
-                  </tr>
-                ))}
-                {items.length === 0 && (
-                  <tr>
-                    <td colSpan="5" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
-                      {isAr ? 'لا توجد بيانات' : 'No data available'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          );
-        }
-        case 'portals':
-          return (
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Portal</th>
-                  <th style={{ ...styles.th, textAlign: 'right' }}>Balance (SAR)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data.portals || []).map(p => (
-                  <tr key={p.id}>
-                    <td style={{ ...styles.td, fontWeight: 600 }}>{p.name}</td>
-                    <td style={{ ...styles.tdRight, color: (p.current_balance || 0) < 0 ? '#FCA5A5' : '#34D399' }}>
-                      {fmt(p.current_balance)}
-                    </td>
-                  </tr>
-                ))}
-                {(data.portals || []).length === 0 && (
-                  <tr>
-                    <td colSpan="2" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
-                      {isAr ? 'لا توجد بوابات' : 'No portals found'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          );
-        case 'vendors':
-          return (
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Vendor</th>
-                  <th style={styles.th}>Phone</th>
-                  <th style={{ ...styles.th, textAlign: 'right' }}>Balance</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data.vendors || []).map(v => (
-                  <tr key={v.id}>
-                    <td style={{ ...styles.td, fontWeight: 600 }}>{v.name}</td>
-                    <td style={styles.td}>{v.phone}</td>
-                    <td style={{ ...styles.tdRight }}>{fmt(v.balance)}</td>
-                  </tr>
-                ))}
-                {(data.vendors || []).length === 0 && (
-                  <tr>
-                    <td colSpan="3" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
-                      {isAr ? 'لا يوجد موردين' : 'No vendors found'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          );
-        case 'salary':
-          return (
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Employee</th>
-                  <th style={styles.th}>Month</th>
-                  <th style={{ ...styles.th, textAlign: 'right' }}>Amount</th>
-                  <th style={styles.th}>Mode</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data.payroll || []).map(p => (
-                  <tr key={p.id}>
-                    <td style={{ ...styles.td, fontWeight: 600 }}>{p.employees?.name || 'N/A'}</td>
-                    <td style={styles.td}>{p.month}</td>
-                    <td style={{ ...styles.tdRight, color: '#34D399' }}>{fmt(p.amount)}</td>
-                    <td style={styles.td}>{p.payment_mode || 'Cash'}</td>
-                  </tr>
-                ))}
-                {(data.payroll || []).length === 0 && (
-                  <tr>
-                    <td colSpan="4" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
-                      {isAr ? 'لا توجد رواتب' : 'No salary records'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          );
-        case 'expenses':
-          return (
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Date</th>
-                  <th style={styles.th}>Type</th>
-                  <th style={styles.th}>Description</th>
-                  <th style={{ ...styles.th, textAlign: 'right' }}>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data.expenses || []).map(e => (
-                  <tr key={e.id}>
-                    <td style={styles.td}>{e.expense_date}</td>
-                    <td style={styles.td}>{e.expense_type}</td>
-                    <td style={styles.td}>{e.description}</td>
-                    <td style={{ ...styles.tdRight, color: '#FCA5A5' }}>{fmt(e.amount)}</td>
-                  </tr>
-                ))}
-                {(data.expenses || []).length === 0 && (
-                  <tr>
-                    <td colSpan="4" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
-                      {isAr ? 'لا توجد مصروفات' : 'No expenses found'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          );
-        case 'customers':
-          return (
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Name</th>
-                  <th style={styles.th}>Phone</th>
-                  <th style={{ ...styles.th, textAlign: 'right' }}>Credit</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data.customers || []).map(c => (
-                  <tr key={c.id}>
-                    <td style={{ ...styles.td, fontWeight: 600 }}>{c.name}</td>
-                    <td style={styles.td}>{c.phone}</td>
-                    <td style={{ ...styles.tdRight }}>{fmt(c.store_credit)}</td>
-                  </tr>
-                ))}
-                {(data.customers || []).length === 0 && (
-                  <tr>
-                    <td colSpan="3" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
-                      {isAr ? 'لا يوجد عملاء' : 'No customers found'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          );
-        case 'creditors':
-          return (
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Name</th>
-                  <th style={styles.th}>Phone</th>
-                  <th style={styles.th}>Address</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data.creditors || []).map(c => (
-                  <tr key={c.id}>
-                    <td style={{ ...styles.td, fontWeight: 600 }}>{c.name}</td>
-                    <td style={styles.td}>{c.phone}</td>
-                    <td style={styles.td}>{c.address}</td>
-                  </tr>
-                ))}
-                {(data.creditors || []).length === 0 && (
-                  <tr>
-                    <td colSpan="3" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
-                      {isAr ? 'لا يوجد دائنين' : 'No creditors found'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          );
-        case 'credit':
-          return (
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Name</th>
-                  <th style={{ ...styles.th, textAlign: 'right' }}>Available Credit</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data.customers || []).filter(c => (c.store_credit || 0) > 0).map(c => (
-                  <tr key={c.id}>
-                    <td style={{ ...styles.td, fontWeight: 600 }}>{c.name}</td>
-                    <td style={{ ...styles.tdRight, color: '#34D399', fontWeight: 'bold' }}>{fmt(c.store_credit)}</td>
-                  </tr>
-                ))}
-                {(data.customers || []).filter(c => (c.store_credit || 0) > 0).length === 0 && (
-                  <tr>
-                    <td colSpan="2" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
-                      {isAr ? 'لا يوجد رصيد' : 'No credit balances'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          );
-        case 'branches':
-          return (
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Name</th>
-                  <th style={styles.th}>Location</th>
-                  <th style={styles.th}>Manager</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data.branches || []).map(b => (
-                  <tr key={b.id}>
-                    <td style={{ ...styles.td, fontWeight: 600 }}>{b.name}</td>
-                    <td style={styles.td}>{b.location}</td>
-                    <td style={styles.td}>{b.manager}</td>
-                  </tr>
-                ))}
-                {(data.branches || []).length === 0 && (
-                  <tr>
-                    <td colSpan="3" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
-                      {isAr ? 'لا توجد فروع' : 'No branches found'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          );
-        case 'cash':
-          return (
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Date</th>
-                  <th style={styles.th}>Description</th>
-                  <th style={{ ...styles.th, textAlign: 'right' }}>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data.cashbook || []).filter(c => c.type?.includes('Cash')).map(c => (
-                  <tr key={c.id}>
-                    <td style={styles.td}>{c.trans_date}</td>
-                    <td style={styles.td}>{c.description}</td>
-                    <td style={{ ...styles.tdRight, color: c.type?.includes('In') ? '#34D399' : '#FCA5A5' }}>
-                      {fmt(c.amount)}
-                    </td>
-                  </tr>
-                ))}
-                {(data.cashbook || []).filter(c => c.type?.includes('Cash')).length === 0 && (
-                  <tr>
-                    <td colSpan="3" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
-                      {isAr ? 'لا توجد معاملات نقدية' : 'No cash transactions'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          );
-        case 'bank':
-          return (
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Date</th>
-                  <th style={styles.th}>Description</th>
-                  <th style={{ ...styles.th, textAlign: 'right' }}>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data.cashbook || []).filter(c => c.type?.includes('Bank')).map(c => (
-                  <tr key={c.id}>
-                    <td style={styles.td}>{c.trans_date}</td>
-                    <td style={styles.td}>{c.description}</td>
-                    <td style={{ ...styles.tdRight, color: c.type?.includes('In') ? '#34D399' : '#FCA5A5' }}>
-                      {fmt(c.amount)}
-                    </td>
-                  </tr>
-                ))}
-                {(data.cashbook || []).filter(c => c.type?.includes('Bank')).length === 0 && (
-                  <tr>
-                    <td colSpan="3" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
-                      {isAr ? 'لا توجد معاملات بنكية' : 'No bank transactions'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          );
-        default:
-          return (
-            <div style={{ textAlign: 'center', padding: 40, color: '#94A3B8' }}>
-              {isAr ? 'اختر نوع كشف الحساب' : 'Select a statement type'}
-            </div>
-          );
-      }
-    };
-
-    return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>📑 {tr?.statements || 'Statements'}</h1>
-        </div>
-
-        {/* Date Filters */}
-        <div style={{ ...styles.card, display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-          <div>
-            <label style={styles.formLabel}>{isAr ? 'من تاريخ' : 'From Date'}</label>
-            <input type="date" value={repDate.from} onChange={e => setRepDate({ ...repDate, from: e.target.value })} style={{ ...styles.input, maxWidth: '200px' }} />
-          </div>
-          <div>
-            <label style={styles.formLabel}>{isAr ? 'إلى تاريخ' : 'To Date'}</label>
-            <input type="date" value={repDate.to} onChange={e => setRepDate({ ...repDate, to: e.target.value })} style={{ ...styles.input, maxWidth: '200px' }} />
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
-          {tabs.map(t => (
-            <button
-              key={t}
-              onClick={() => setStatementType(t)}
-              style={{ ...styles.tabBtn, ...(statementType === t && styles.tabBtnActive) }}
-            >
-              {t === 'sales' ? (isAr ? 'المبيعات' : 'Sales') :
-               t === 'portals' ? (isAr ? 'البوابات' : 'Portals') :
-               t === 'vendors' ? (isAr ? 'الموردين' : 'Vendors') :
-               t === 'salary' ? (isAr ? 'الرواتب' : 'Salary') :
-               t === 'expenses' ? (isAr ? 'المصروفات' : 'Expenses') :
-               t === 'customers' ? (isAr ? 'العملاء' : 'Customers') :
-               t === 'creditors' ? (isAr ? 'الدائنين' : 'Creditors') :
-               t === 'credit' ? (isAr ? 'الائتمان' : 'Credit') :
-               t === 'branches' ? (isAr ? 'الفروع' : 'Branches') :
-               t === 'cash' ? (isAr ? 'نقداً' : 'Cash') :
-               (isAr ? 'البنك' : 'Bank')}
-            </button>
-          ))}
-        </div>
-
-        {/* Statement Content */}
-        <div style={styles.card}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '15px', borderBottom: isDark ? '1px solid #334155' : '1px solid #E2E8F0', marginBottom: '15px' }}>
-            <h3 style={{ margin: 0, color: '#FBBF24', textTransform: 'capitalize' }}>
-              {statementType} {isAr ? 'كشف حساب' : 'Statement'}
-            </h3>
-            <button onClick={() => handleExportCSV?.(statementType)} style={{ ...styles.btn, ...styles.btnSuccess }}>
-              📥 {isAr ? 'تصدير' : 'Export'}
-            </button>
-          </div>
-          <div style={{ overflowX: 'auto' }}>
-            {renderStatementTable()}
-          </div>
         </div>
       </div>
     );
