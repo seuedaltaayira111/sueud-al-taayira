@@ -801,8 +801,7 @@ export default function useERPActions(state) {
         phone: portalForm.phone || '',
         contact_person: portalForm.contact_person || '',
         credit_limit: parseFloat(portalForm.credit_limit) || 0,
-        tenant_id: userProfile.tenant_id
-      };
+        tenant_id: userProfile.tenant_id      };
 
       if (modal?.data?.id) {
         const { data: up, error } = await supabase
