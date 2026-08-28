@@ -19,7 +19,8 @@ export default function ERPViewsSystem(props) {
     handleGenerateContract, handleGenerateOffer,
     handleAddCustomField, handleRemoveCustomField, handleCustomFieldChange,
     setModal, setPage, showToast, handleExportCSV,
-    handleAddEditUser, handleEditUser, handleDeleteUser
+    handleAddEditUser, handleEditUser, handleDeleteUser,
+    today      // ✅ ensure today is passed
   } = props;
 
   const isAr = lang === 'ar';
@@ -27,10 +28,17 @@ export default function ERPViewsSystem(props) {
   const [reportTab, setReportTab] = useState('sales');
   const [repDate, setRepDate] = useState({ from: '', to: '' });
   const [statementType, setStatementType] = useState('sales');
-  const [contractQuestions, setContractQuestions] = useState([]);
-  const [aiContractStep, setAiContractStep] = useState(0);
-  const [aiContractData, setAiContractData] = useState({});
-  const [isAiGenerating, setIsAiGenerating] = useState(false);
+  const [aiStep, setAiStep] = useState(0);
+  const [aiData, setAiData] = useState({
+    corporate_name: '',
+    service_type: 'Flight Tickets',
+    markup: 10,
+    validity_days: 30,
+    payment_terms: '100% advance payment required',
+    special_terms: '',
+    language: 'en'
+  });
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // ===== STYLES =====
   const styles = {
@@ -241,11 +249,20 @@ export default function ERPViewsSystem(props) {
     emptyIcon: {
       fontSize: '60px',
       marginBottom: '15px'
+    },
+    aiBadge: {
+      background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+      color: '#fff',
+      padding: '2px 10px',
+      borderRadius: '12px',
+      fontSize: '10px',
+      fontWeight: 'bold',
+      display: 'inline-block',
+      marginLeft: '8px'
     }
   };
 
   const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
-  const today = new Date().toISOString().split('T')[0];
 
   // ============================================================
   // PROFITABILITY ANALYZER
@@ -696,58 +713,36 @@ export default function ERPViewsSystem(props) {
   // ============================================================
   if (page === 'contract' || page === 'offer') {
     const isContract = page === 'contract';
-    const [aiStep, setAiStep] = useState(0);
-    const [aiData, setAiData] = useState({
-      corporate_name: '',
-      service_type: 'Flight Tickets',
-      markup: 10,
-      validity_days: 30,
-      payment_terms: '100% advance payment required',
-      special_terms: '',
-      language: 'en'
-    });
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [aiQuestions, setAiQuestions] = useState([
+    const aiQuestions = [
       { id: 'corporate_name', question_en: 'What is the corporate/company name?', question_ar: 'ما هو اسم الشركة؟' },
       { id: 'service_type', question_en: 'What type of service will be provided?', question_ar: 'ما نوع الخدمة التي سيتم تقديمها؟' },
       { id: 'markup', question_en: 'What is the markup/service fee (SAR)?', question_ar: 'ما هي رسوم الخدمة (ريال)؟' },
       { id: 'validity_days', question_en: 'How many days is this offer valid for?', question_ar: 'كم يوم تكون صلاحية هذا العرض؟' },
       { id: 'payment_terms', question_en: 'What are the payment terms?', question_ar: 'ما هي شروط الدفع؟' },
       { id: 'special_terms', question_en: 'Any special terms or conditions?', question_ar: 'هل توجد شروط أو أحكام خاصة؟' },
-    ]);
+    ];
 
     const handleAiNext = () => {
       if (aiStep < aiQuestions.length - 1) {
         setAiStep(aiStep + 1);
       } else {
-        // Generate contract
         setIsGenerating(true);
         setTimeout(() => {
           const terms = `${aiData.payment_terms || '100% advance payment required'}\nValidity: ${aiData.validity_days || 30} days from issue date\nRefund Policy: All cancellations subject to airline/hotel policies\nPrices subject to change based on availability\nPassenger names must match passport/ID exactly\n${aiData.special_terms || ''}`;
-          const html = props.getContractHTML(
-            data.settings,
-            aiData.corporate_name || 'Client',
-            today,
-            !isContract,
-            aiData.service_type || 'Flight Tickets',
-            aiData.markup || 10,
-            terms,
-            aiData.language || 'en'
-          );
-          setPreviewHTML?.(html);
-          setModal?.({ type: 'preview', data: null });
+          const html = handleGenerateContract?.({ preventDefault: () => {} }) || handleGenerateOffer?.({ preventDefault: () => {} });
+          // Actually call the proper function
+          if (isContract) {
+            handleGenerateContract({ preventDefault: () => {} });
+          } else {
+            handleGenerateOffer({ preventDefault: () => {} });
+          }
           setIsGenerating(false);
-          showToast?.(isAr ? '✅ تم إنشاء المستند بنجاح!' : '✅ Document generated successfully!');
         }, 1500);
       }
     };
 
     const handleAiPrevious = () => {
       if (aiStep > 0) setAiStep(aiStep - 1);
-    };
-
-    const handleAiChange = (field, value) => {
-      setAiData({ ...aiData, [field]: value });
     };
 
     const currentQuestion = aiQuestions[aiStep];
@@ -774,6 +769,7 @@ export default function ERPViewsSystem(props) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
             <h3 style={{ margin: 0, color: '#FBBF24' }}>
               🤖 {isAr ? 'المساعد الذكي' : 'AI Assistant'}
+              <span style={styles.aiBadge}>AI</span>
               <span style={{ fontSize: '12px', color: '#94A3B8', marginLeft: '10px' }}>
                 {isAr ? `السؤال ${aiStep + 1} من ${aiQuestions.length}` : `Question ${aiStep + 1} of ${aiQuestions.length}`}
               </span>
@@ -800,7 +796,7 @@ export default function ERPViewsSystem(props) {
               <input
                 style={styles.input}
                 value={aiData.corporate_name}
-                onChange={e => handleAiChange('corporate_name', e.target.value)}
+                onChange={e => setAiData({ ...aiData, corporate_name: e.target.value })}
                 placeholder={isAr ? 'مثال: أرامكو السعودية' : 'e.g. Saudi Aramco'}
               />
             )}
@@ -808,7 +804,7 @@ export default function ERPViewsSystem(props) {
               <select
                 style={styles.select}
                 value={aiData.service_type}
-                onChange={e => handleAiChange('service_type', e.target.value)}
+                onChange={e => setAiData({ ...aiData, service_type: e.target.value })}
               >
                 <option>Flight Tickets</option>
                 <option>Hotel Booking</option>
@@ -822,7 +818,7 @@ export default function ERPViewsSystem(props) {
                 type="number"
                 style={styles.input}
                 value={aiData.markup}
-                onChange={e => handleAiChange('markup', parseFloat(e.target.value) || 0)}
+                onChange={e => setAiData({ ...aiData, markup: parseFloat(e.target.value) || 0 })}
                 placeholder="10"
               />
             )}
@@ -831,7 +827,7 @@ export default function ERPViewsSystem(props) {
                 type="number"
                 style={styles.input}
                 value={aiData.validity_days}
-                onChange={e => handleAiChange('validity_days', parseInt(e.target.value) || 30)}
+                onChange={e => setAiData({ ...aiData, validity_days: parseInt(e.target.value) || 30 })}
                 placeholder="30"
               />
             )}
@@ -839,7 +835,7 @@ export default function ERPViewsSystem(props) {
               <input
                 style={styles.input}
                 value={aiData.payment_terms}
-                onChange={e => handleAiChange('payment_terms', e.target.value)}
+                onChange={e => setAiData({ ...aiData, payment_terms: e.target.value })}
                 placeholder={isAr ? 'شروط الدفع...' : 'Payment terms...'}
               />
             )}
@@ -847,7 +843,7 @@ export default function ERPViewsSystem(props) {
               <textarea
                 style={styles.textarea}
                 value={aiData.special_terms}
-                onChange={e => handleAiChange('special_terms', e.target.value)}
+                onChange={e => setAiData({ ...aiData, special_terms: e.target.value })}
                 placeholder={isAr ? 'شروط خاصة...' : 'Special terms...'}
                 rows={3}
               />
