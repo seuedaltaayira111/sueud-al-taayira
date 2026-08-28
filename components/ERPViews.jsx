@@ -2,8 +2,8 @@
 
 /**
  * Master view router - Routes all pages to their respective components
- * Includes ADVANCE TRAVEL AGENCY features
- * COMPLETE - ALL PAGES MAPPED
+ * Includes REAL TRAVEL AGENCY features
+ * REMOVED: Hotel Booking, Travel Insurance, Hajj/Umrah (dummy services)
  */
 
 import ERPViewsMisc from './views/ERPViewsMisc';
@@ -28,17 +28,13 @@ const PAGE_COMPONENT = {
   refunds: ERPViewsSales,
   quotations: ERPViewsAdvanced,
 
-  // ===== FLIGHT OPERATIONS =====
-  flight_status: ERPViewsTravel,
-  hotel_booking: ERPViewsTravel,
-  visa_processing: ERPViewsTravel,
-  travel_insurance: ERPViewsTravel,
-  hajj_umrah: ERPViewsTravel,
+  // ===== REAL TRAVEL FEATURES =====
+  flight_status: ERPViewsTravel,      // ✅ REAL - Ticket Generator
+  frequent_flyer: ERPViewsTravel,     // ✅ REAL - Frequent Flyer Management
+  corporate_travel: ERPViewsTravel,   // ✅ REAL - Corporate Travel
 
-  // ===== PACKAGES & TOURS =====
+  // ===== PACKAGES =====
   packages: ERPViewsSales,
-  corporate_travel: ERPViewsTravel,
-  frequent_flyer: ERPViewsTravel,
 
   // ===== CRM =====
   customers: ERPViewsSales,
