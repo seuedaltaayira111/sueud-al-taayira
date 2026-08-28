@@ -12,6 +12,9 @@ export default function ERPModals({
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
 
+  // ============================================================
+  // STYLES
+  // ============================================================
   const styles = {
     input: {
       width: '100%',
@@ -37,6 +40,22 @@ export default function ERPModals({
       background: isDark ? '#0F172A' : '#F8FAFC',
       color: isDark ? '#E2E8F0' : '#1E293B',
       fontSize: '14px',
+      transition: 'all 0.2s'
+    },
+    textarea: {
+      width: '100%',
+      padding: '12px 15px',
+      margin: '8px 0',
+      border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
+      borderRadius: '8px',
+      outline: 'none',
+      boxSizing: 'border-box',
+      background: isDark ? '#0F172A' : '#F8FAFC',
+      color: isDark ? '#E2E8F0' : '#1E293B',
+      fontSize: '14px',
+      minHeight: '80px',
+      resize: 'vertical',
+      fontFamily: 'inherit',
       transition: 'all 0.2s'
     },
     btnPrimary: {
@@ -129,6 +148,9 @@ export default function ERPModals({
     padding: '20px'
   };
 
+  // ============================================================
+  // HANDLE PRINT FROM PREVIEW
+  // ============================================================
   const handlePrintPreview = () => {
     if (!previewHTML) {
       alert(isAr ? 'لا يوجد مستند للطباعة' : 'No document to print');
@@ -152,6 +174,9 @@ export default function ERPModals({
     }
   };
 
+  // ============================================================
+  // HANDLE DOWNLOAD FROM PREVIEW
+  // ============================================================
   const handleDownloadPDF = async () => {
     if (!previewHTML) {
       alert(isAr ? 'لا يوجد مستند للتحميل' : 'No document to download');
@@ -167,7 +192,9 @@ export default function ERPModals({
 
   return (
     <>
-      {/* ===== CHANGE PASSWORD MODAL ===== */}
+      {/* ============================================================
+          CHANGE PASSWORD MODAL
+          ============================================================ */}
       {modal.type === 'password' && (
         <div style={overlay}>
           <div style={styles.card}>
@@ -205,7 +232,9 @@ export default function ERPModals({
         </div>
       )}
 
-      {/* ===== SETTLE PAYMENT MODAL ===== */}
+      {/* ============================================================
+          SETTLE PAYMENT MODAL
+          ============================================================ */}
       {modal.type === 'settle' && (
         <div style={overlay}>
           <div style={styles.card}>
@@ -266,7 +295,9 @@ export default function ERPModals({
         </div>
       )}
 
-      {/* ===== PROCESS REFUND MODAL ===== */}
+      {/* ============================================================
+          PROCESS REFUND MODAL
+          ============================================================ */}
       {modal.type === 'refund' && (
         <div style={overlay}>
           <div style={{ ...styles.card, width: '550px' }}>
@@ -383,7 +414,9 @@ export default function ERPModals({
         </div>
       )}
 
-      {/* ===== PREVIEW INVOICE MODAL - FIXED FOR REFUNDED INVOICES ===== */}
+      {/* ============================================================
+          PREVIEW INVOICE MODAL - FIXED
+          ============================================================ */}
       {modal.type === 'preview' && previewHTML && (
         <div style={{ ...overlay, background: 'rgba(0,0,0,0.95)' }}>
           <div style={{
@@ -398,6 +431,7 @@ export default function ERPModals({
             border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
             boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
           }}>
+            {/* ===== HEADER ===== */}
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -433,6 +467,7 @@ export default function ERPModals({
               </div>
             </div>
 
+            {/* ===== IFRAME CONTENT ===== */}
             <div style={{
               flex: 1,
               overflow: 'auto',
@@ -459,7 +494,9 @@ export default function ERPModals({
         </div>
       )}
 
-      {/* ===== CUSTOM MODAL ===== */}
+      {/* ============================================================
+          CUSTOM MODAL (Generic)
+          ============================================================ */}
       {modal.type === 'custom' && modal.content && (
         <div style={overlay}>
           <div style={styles.card}>
