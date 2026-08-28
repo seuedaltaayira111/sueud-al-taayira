@@ -235,6 +235,16 @@ export default function ERPViewsAdvanced(props) {
       fontSize: '11px',
       fontWeight: 600,
       transition: 'all 0.2s'
+    },
+    aiBadge: {
+      background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+      color: '#fff',
+      padding: '2px 10px',
+      borderRadius: '12px',
+      fontSize: '10px',
+      fontWeight: 'bold',
+      display: 'inline-block',
+      marginLeft: '8px'
     }
   };
 
