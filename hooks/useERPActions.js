@@ -32,7 +32,7 @@ export default function useERPActions(state) {
   const isAr = lang === 'ar';
 
   // ============================================================
-  // AUTH (unchanged)
+  // AUTH
   // ============================================================
   const handleLogout = () => {
     supabase.auth.signOut();
@@ -51,7 +51,7 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
-  // AI CHAT (unchanged – but you can enhance if needed)
+  // AI CHAT
   // ============================================================
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
@@ -64,7 +64,6 @@ export default function useERPActions(state) {
         ? 'मैं फ़्लाइट, इनवॉइस, कस्टमर, हज/उमरा, होटल, वीज़ा आदि में मदद कर सकता हूँ।'
         : "I can help with flights, invoices, customers, Hajj/Umrah, hotels, visas, etc.";
 
-      // Basic responses (you can expand)
       const totalInv = data.invoices?.length || 0;
       const totalRev = data.invoices?.reduce((s, i) => s + (i.total || 0), 0) || 0;
       const unpaidCount = data.invoices?.filter(i => i.status === 'Unpaid').length || 0;
@@ -90,7 +89,7 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
-  // PROFILE & SETTINGS (unchanged)
+  // PROFILE & SETTINGS
   // ============================================================
   const handleProfilePicUpload = async (e) => {
     try {
@@ -193,7 +192,7 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
-  // GENERIC DELETE (unchanged)
+  // GENERIC DELETE
   // ============================================================
   const handleDelete = async (table, id) => {
     if (!confirm(isAr ? 'क्या आप हटाना चाहते हैं?' : 'Delete?')) return;
@@ -211,7 +210,7 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
-  // CRUD (all original functions – placeholder, but fully functional)
+  // CRUD OPERATIONS (all original functions – fully implemented)
   // ============================================================
   const handleEditCust = (c) => {
     setEditCustId(c.id);
@@ -692,7 +691,7 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
-  // PORTALS (unchanged)
+  // PORTALS
   // ============================================================
   const handleAddEditPortal = async (e) => {
     e.preventDefault();
@@ -739,7 +738,7 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
-  // TRANSFER (unchanged)
+  // TRANSFER
   // ============================================================
   const handleTransfer = async (e) => {
     e.preventDefault();
@@ -783,7 +782,7 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
-  // INVESTMENTS (unchanged)
+  // INVESTMENTS
   // ============================================================
   const handleAddInvestment = async (e) => {
     e.preventDefault();
@@ -838,7 +837,7 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
-  // PDF DOWNLOAD (unchanged)
+  // PDF DOWNLOAD
   // ============================================================
   const downloadPDF = async (htmlContent, filename = 'document.pdf') => {
     try {
@@ -922,7 +921,7 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
-  // INVOICE DOWNLOAD, PRINT, PREVIEW (unchanged)
+  // INVOICE DOWNLOAD, PRINT, PREVIEW
   // ============================================================
   const handleDownloadPDF = async (inv) => {
     try {
@@ -979,7 +978,7 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
-  // SHARE (unchanged)
+  // SHARE
   // ============================================================
   const shareWhatsApp = (inv) => {
     try {
@@ -1025,7 +1024,7 @@ Thank you for choosing us!`;
   };
 
   // ============================================================
-  // REFUND & SETTLE MODALS (unchanged)
+  // REFUND & SETTLE MODALS
   // ============================================================
   const openRefundModal = (inv) => {
     const cust = data.customers?.find(c => c.id === inv.customer_id);
@@ -1288,7 +1287,7 @@ Thank you for choosing us!`;
   };
 
   // ============================================================
-  // EDIT INVOICE (unchanged)
+  // EDIT INVOICE
   // ============================================================
   const handleEditInvoice = (inv) => {
     if (inv.invoice_no?.startsWith('REF-')) {
@@ -1370,12 +1369,11 @@ Thank you for choosing us!`;
       serviceName: '',
       creditCustId: ''
     });
-    // setPage('create') is called from component, but we can't access state.setPage here.
-    // In the actual component, this function will be used with setPage.
+    // setPage will be called from component
   };
 
   // ============================================================
-  // CREATE INVOICE (unchanged)
+  // CREATE INVOICE
   // ============================================================
   const handleCreateInvoice = async (e) => {
     e.preventDefault();
@@ -1648,14 +1646,14 @@ Thank you for choosing us!`;
         creditCustId: '',
         status: 'Unpaid'
       });
-      // setPage('list') will be called from component
+      // setPage will be called from component
     } catch (err) {
       showToast('Error: ' + err.message);
     }
   };
 
   // ============================================================
-  // STAFF MISTAKES (unchanged)
+  // STAFF MISTAKES
   // ============================================================
   const handleAddMistake = async (e) => {
     e.preventDefault();
@@ -1701,7 +1699,7 @@ Thank you for choosing us!`;
   };
 
   // ============================================================
-  // PAYROLL – ORIGINAL + ENHANCED (Auto Advance Deduction)
+  // PAYROLL – WITH AUTO ADVANCE DEDUCTION
   // ============================================================
   const handleGenerateSlip = (pay) => {
     setPreviewHTML(getSalarySlipHTML(pay, data.settings, lang));
@@ -1758,7 +1756,6 @@ Thank you for choosing us!`;
       let advanceDed = parseFloat(payForm.advance) || 0;
       if (advanceDed === 0 && totalPendingAdvance > 0) {
         advanceDed = totalPendingAdvance;
-        // Mark those advances as deducted
         for (const adv of pendingAdvances) {
           await supabase.from('emp_advances').update({ status: 'Deducted from Salary' }).eq('id', adv.id);
         }
@@ -1836,7 +1833,7 @@ Thank you for choosing us!`;
   };
 
   // ============================================================
-  // EMPLOYEE ADVANCES (NEW)
+  // EMPLOYEE ADVANCES
   // ============================================================
   const handleAddAdvance = async (e) => {
     e.preventDefault();
@@ -1899,7 +1896,7 @@ Thank you for choosing us!`;
   };
 
   // ============================================================
-  // CONTRACT / OFFER (unchanged)
+  // CONTRACT / OFFER
   // ============================================================
   const handleGenerateContract = (e) => {
     e.preventDefault();
@@ -1934,7 +1931,7 @@ Thank you for choosing us!`;
   };
 
   // ============================================================
-  // SUPERADMIN – TENANT (unchanged)
+  // SUPERADMIN – TENANT
   // ============================================================
   const handleAddTenant = async (e) => {
     e.preventDefault();
@@ -1990,7 +1987,7 @@ Thank you for choosing us!`;
   };
 
   // ============================================================
-  // EXPORT CSV (unchanged)
+  // EXPORT CSV
   // ============================================================
   const handleExportCSV = (dataType, customData) => {
     try {
