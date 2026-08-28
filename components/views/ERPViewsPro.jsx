@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
 export default function ERPViewsPro(props) {
@@ -256,6 +256,16 @@ export default function ERPViewsPro(props) {
       padding: '12px',
       borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
       color: isDark ? '#CBD5E1' : '#1E293B'
+    },
+    aiBadge: {
+      background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+      color: '#fff',
+      padding: '2px 10px',
+      borderRadius: '12px',
+      fontSize: '10px',
+      fontWeight: 'bold',
+      display: 'inline-block',
+      marginLeft: '8px'
     }
   };
 
@@ -277,17 +287,6 @@ export default function ERPViewsPro(props) {
       portalRefunds[portalName].comp += (r.refund_company || 0);
       portalRefunds[portalName].cust += (r.refund_customer || 0);
     });
-
-    const refundExportData = refunds.map(r => ({
-      RefundNo: r.invoice_no,
-      Customer: r.customers?.name || r.old_customer_name || 'N/A',
-      Date: r.refund_date || r.invoice_date,
-      CompanyRefund: r.refund_company,
-      CustomerRefund: r.refund_customer,
-      OfficeProfit: (r.refund_company || 0) - (r.refund_customer || 0),
-      Reason: r.refund_reason,
-      Method: r.payment_method
-    }));
 
     return (
       <div style={styles.container}>
@@ -1104,15 +1103,6 @@ export default function ERPViewsPro(props) {
     const totalLoss = (data.staffMistakes || []).reduce((s, m) => s + (m.loss_amount || 0), 0);
     const paidByEmp = (data.staffMistakes || []).filter(m => m.paid_by_employee).reduce((s, m) => s + (m.loss_amount || 0), 0);
 
-    const mistakesExportData = (data.staffMistakes || []).map(m => ({
-      Date: m.date,
-      Employee: m.employees?.name,
-      OldTicket: m.old_ticket_no,
-      NewTicket: m.new_ticket_no,
-      LossAmount: m.loss_amount,
-      SalaryDeducted: m.paid_by_employee ? 'Yes' : 'No'
-    }));
-
     return (
       <div style={styles.container}>
         <div style={{
@@ -1190,7 +1180,14 @@ export default function ERPViewsPro(props) {
         <div style={styles.card}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '15px', borderBottom: isDark ? '1px solid #334155' : '1px solid #E2E8F0', marginBottom: '15px' }}>
             <h3 style={{ margin: 0, color: '#FBBF24' }}>{isAr ? 'سجل الأخطاء' : 'Mistake History'}</h3>
-            <button onClick={() => handleExportCSV?.(mistakesExportData, 'StaffMistakes')} style={{ ...styles.btn, ...styles.btnSuccess }}>
+            <button onClick={() => handleExportCSV?.(data.staffMistakes?.map(m => ({
+              Date: m.date,
+              Employee: m.employees?.name,
+              OldTicket: m.old_ticket_no,
+              NewTicket: m.new_ticket_no,
+              LossAmount: m.loss_amount,
+              SalaryDeducted: m.paid_by_employee ? 'Yes' : 'No'
+            })), 'StaffMistakes')} style={{ ...styles.btn, ...styles.btnSuccess }}>
               📥 {isAr ? 'تصدير' : 'Export'}
             </button>
           </div>
