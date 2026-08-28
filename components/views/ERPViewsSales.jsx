@@ -3,7 +3,6 @@
 import { useState, useMemo } from 'react';
 
 export default function ERPViewsSales(props) {
-  // --- DESTRUCTURE ALL PROPS ---
   const {
     page, data, lang, tr, modal, setModal, setPage,
     handleEditInvoice, handleDeleteInvoice, openPreview, openRefundModal,
@@ -23,21 +22,28 @@ export default function ERPViewsSales(props) {
     pkgForm, setPkgForm, editPkgId, setEditPkgId,
     brnForm, setBrnForm, editBrnId, setEditBrnId,
     empForm, setEmpForm, editEmpId, setEditEmpId,
-    theme
+    theme, handleAddMistake, handleGenerateContract, handleGenerateOffer,
+    contractCorpName, setContractCorpName, contractType, setContractType,
+    contractMarkup, setContractMarkup, contractTerms, setContractTerms
   } = props;
 
-  // --- STATE ---
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [currentPage, setCurrentPage] = useState(1);
+  const [statementType, setStatementType] = useState('sales');
+  const [stmtCustId, setStmtCustId] = useState('');
+  const [stmtVendorId, setStmtVendorId] = useState('');
+  const [customerStatement, setCustomerStatement] = useState([]);
+  const [vendorStatement, setVendorStatement] = useState([]);
+  const [loadingStatement, setLoadingStatement] = useState(false);
 
   const t = (key, fallback) => tr?.[key] || fallback || key;
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
 
-  // --- STYLES ---
+  // ===== STYLES - BEAUTIFUL UI =====
   const styles = {
     container: {
       padding: '24px',
@@ -96,6 +102,19 @@ export default function ERPViewsSales(props) {
       color: isDark ? '#E2E8F0' : '#1E293B',
       fontSize: '14px',
       outline: 'none'
+    },
+    textarea: {
+      padding: '10px 16px',
+      background: isDark ? '#0F172A' : '#F1F5F9',
+      border: isDark ? '1px solid #475569' : '1px solid #E2E8F0',
+      borderRadius: '10px',
+      color: isDark ? '#E2E8F0' : '#1E293B',
+      fontSize: '14px',
+      outline: 'none',
+      width: '100%',
+      minHeight: '80px',
+      resize: 'vertical',
+      fontFamily: 'inherit'
     },
     btn: {
       padding: '10px 20px',
@@ -281,6 +300,21 @@ export default function ERPViewsSales(props) {
     emptyIcon: {
       fontSize: '60px',
       marginBottom: '15px'
+    },
+    tabBtn: {
+      padding: '10px 20px',
+      borderRadius: '8px',
+      border: 'none',
+      cursor: 'pointer',
+      fontWeight: 600,
+      background: isDark ? '#334155' : '#E2E8F0',
+      color: isDark ? '#94A3B8' : '#64748B',
+      transition: 'all 0.2s'
+    },
+    tabBtnActive: {
+      background: 'linear-gradient(135deg, #1E3A8A, #2563EB)',
+      color: 'white',
+      boxShadow: '0 4px 6px rgba(37, 99, 235, 0.3)'
     }
   };
 
@@ -334,7 +368,7 @@ export default function ERPViewsSales(props) {
   };
 
   // ============================================================
-  // INVOICES LIST - WITH WORKING PREVIEW/DOWNLOAD/PRINT
+  // INVOICES LIST
   // ============================================================
   if (page === 'list') {
     const totalRevenue = filteredInvoices.reduce((s, i) => s + (i.total || 0), 0);
@@ -387,7 +421,6 @@ export default function ERPViewsSales(props) {
           </div>
         </div>
 
-        {/* Stats Cards */}
         <div style={styles.statsGrid}>
           <div style={styles.statCard}>
             <div style={styles.statLabel}>📄 {isAr ? 'إجمالي الفواتير' : 'Total Invoices'}</div>
@@ -411,7 +444,6 @@ export default function ERPViewsSales(props) {
           </div>
         </div>
 
-        {/* Table */}
         <div style={styles.card}>
           {paginate(filteredInvoices).length === 0 ? (
             <div style={styles.emptyState}>
@@ -441,17 +473,16 @@ export default function ERPViewsSales(props) {
                 </thead>
                 <tbody>
                   {paginate(filteredInvoices).map(inv => {
-                    // DEBUG: Check if functions exist
-                    console.log('Invoice actions:', {
-                      openPreview: typeof openPreview,
-                      handleDownloadPDF: typeof handleDownloadPDF,
-                      printInvoice: typeof printInvoice
-                    });
+                    // Handle both regular and refunded invoices
+                    const isRefunded = inv.status === 'refunded';
                     return (
                       <tr key={inv.id} style={{
-                        background: inv.status === 'Unpaid' ? 'rgba(245, 158, 11, 0.03)' : 'transparent'
+                        background: isRefunded ? 'rgba(239, 68, 68, 0.03)' : inv.status === 'Unpaid' ? 'rgba(245, 158, 11, 0.03)' : 'transparent'
                       }}>
-                        <td style={{ ...styles.td, fontWeight: 700, color: '#3B82F6' }}>{inv.invoice_no}</td>
+                        <td style={{ ...styles.td, fontWeight: 700, color: isRefunded ? '#EF4444' : '#3B82F6' }}>
+                          {inv.invoice_no}
+                          {isRefunded && <span style={{ marginLeft: '6px', fontSize: '10px', color: '#EF4444' }}>(REFUNDED)</span>}
+                        </td>
                         <td style={styles.td}>{inv.invoice_date}</td>
                         <td style={{ ...styles.td, fontWeight: 500 }}>{inv.customers?.name || inv.corporates?.name || 'N/A'}</td>
                         <td style={styles.td}>{inv.airline || '-'}</td>
@@ -464,14 +495,13 @@ export default function ERPViewsSales(props) {
                         <td style={styles.tdCenter}>
                           <span style={{
                             ...styles.badge,
-                            ...(inv.status === 'Paid' ? styles.badgePaid : inv.status === 'refunded' ? styles.badgeRefunded : styles.badgeUnpaid)
+                            ...(inv.status === 'Paid' ? styles.badgePaid : isRefunded ? styles.badgeRefunded : styles.badgeUnpaid)
                           }}>
                             {getStatusIcon(inv.status)} {inv.status}
                           </span>
                         </td>
                         <td style={styles.tdCenter}>
                           <div style={styles.actionsCell}>
-                            {/* PREVIEW BUTTON - FIXED */}
                             <button
                               style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }}
                               onClick={() => {
@@ -486,33 +516,33 @@ export default function ERPViewsSales(props) {
                             >
                               👁️
                             </button>
-                            {/* EDIT BUTTON */}
-                            <button
-                              style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }}
-                              onClick={() => handleEditInvoice(inv)}
-                              title={isAr ? 'تعديل' : 'Edit'}
-                            >
-                              ✏️
-                            </button>
-                            {/* REFUND BUTTON */}
-                            <button
-                              style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }}
-                              onClick={() => openRefundModal(inv)}
-                              title={isAr ? 'استرجاع' : 'Refund'}
-                            >
-                              🔄
-                            </button>
-                            {/* SETTLE BUTTON */}
-                            {inv.due_amount > 0 && (
-                              <button
-                                style={{ ...styles.actionBtn, background: '#FEF3C7', color: '#92400E' }}
-                                onClick={() => handleQuickSettle(inv)}
-                                title={isAr ? 'تسوية' : 'Settle'}
-                              >
-                                💰
-                              </button>
+                            {!isRefunded && (
+                              <>
+                                <button
+                                  style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }}
+                                  onClick={() => handleEditInvoice(inv)}
+                                  title={isAr ? 'تعديل' : 'Edit'}
+                                >
+                                  ✏️
+                                </button>
+                                <button
+                                  style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }}
+                                  onClick={() => openRefundModal(inv)}
+                                  title={isAr ? 'استرجاع' : 'Refund'}
+                                >
+                                  🔄
+                                </button>
+                                {inv.due_amount > 0 && (
+                                  <button
+                                    style={{ ...styles.actionBtn, background: '#FEF3C7', color: '#92400E' }}
+                                    onClick={() => handleQuickSettle(inv)}
+                                    title={isAr ? 'تسوية' : 'Settle'}
+                                  >
+                                    💰
+                                  </button>
+                                )}
+                              </>
                             )}
-                            {/* PRINT BUTTON - FIXED */}
                             <button
                               style={{ ...styles.actionBtn, background: '#EDE9FE', color: '#5B21B6' }}
                               onClick={() => {
@@ -527,7 +557,6 @@ export default function ERPViewsSales(props) {
                             >
                               🖨️
                             </button>
-                            {/* DOWNLOAD BUTTON - FIXED */}
                             <button
                               style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }}
                               onClick={() => {
@@ -542,7 +571,6 @@ export default function ERPViewsSales(props) {
                             >
                               ⬇️
                             </button>
-                            {/* DELETE BUTTON */}
                             <button
                               style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }}
                               onClick={() => handleDeleteInvoice(inv)}
@@ -561,7 +589,6 @@ export default function ERPViewsSales(props) {
           )}
         </div>
 
-        {/* Pagination */}
         <div style={styles.pagination}>
           <div style={{ color: '#94A3B8', fontSize: '13px' }}>
             {isAr ? 'عرض' : 'Showing'} {Math.min((currentPage - 1) * rowsPerPage + 1, filteredInvoices.length)} - {Math.min(currentPage * rowsPerPage, filteredInvoices.length)} {isAr ? 'من' : 'of'} {filteredInvoices.length}
@@ -1347,6 +1374,84 @@ export default function ERPViewsSales(props) {
   // EXPENSES
   // ============================================================
   if (page === 'expenses') {
+    const [expFormLocal, setExpFormLocal] = useState({
+      expense_type: 'Office Expense',
+      payment_mode: 'Cash',
+      description: '',
+      expense_date: today,
+      vendor_name: '',
+      items: [{ name: '', qty: 1, price: 0 }],
+      approval_status: 'Approved'
+    });
+
+    const handleAddExpItemLocal = () => {
+      setExpFormLocal(prev => ({
+        ...prev,
+        items: [...prev.items, { name: '', qty: 1, price: 0 }]
+      }));
+    };
+
+    const handleRemoveExpItemLocal = (i) => {
+      setExpFormLocal(prev => ({
+        ...prev,
+        items: prev.items.filter((_, idx) => idx !== i)
+      }));
+    };
+
+    const handleExpItemChangeLocal = (i, field, val) => {
+      setExpFormLocal(prev => {
+        const items = [...prev.items];
+        items[i] = { ...items[i], [field]: field === 'price' || field === 'qty' ? parseFloat(val) || 0 : val };
+        return { ...prev, items };
+      });
+    };
+
+    const handleExpenseSubmit = async (e) => {
+      e.preventDefault();
+      const totalAmount = expFormLocal.items.reduce((s, item) => s + ((parseFloat(item.qty) || 1) * (parseFloat(item.price) || 0)), 0);
+      if (totalAmount <= 0) {
+        showToast?.(isAr ? '⚠️ الرجاء إضافة عنصر واحد على الأقل' : '⚠️ Please add at least one item');
+        return;
+      }
+
+      try {
+        const payload = {
+          expense_date: expFormLocal.expense_date,
+          expense_type: expFormLocal.expense_type,
+          description: expFormLocal.description,
+          payment_mode: expFormLocal.payment_mode,
+          vendor_name: expFormLocal.vendor_name,
+          amount: totalAmount,
+          total_amount: totalAmount,
+          items: expFormLocal.items,
+          approval_status: expFormLocal.approval_status,
+          tenant_id: props.userProfile?.tenant_id
+        };
+
+        const { data: newExp, error } = await supabase
+          .from('expenses')
+          .insert([payload])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        showToast?.(isAr ? '✅ تم إضافة المصروف!' : '✅ Expense added!');
+        setExpFormLocal({
+          expense_type: 'Office Expense',
+          payment_mode: 'Cash',
+          description: '',
+          expense_date: today,
+          vendor_name: '',
+          items: [{ name: '', qty: 1, price: 0 }],
+          approval_status: 'Approved'
+        });
+        fetchAll?.();
+      } catch (err) {
+        showToast?.(isAr ? '❌ خطأ: ' + err.message : '❌ Error: ' + err.message);
+      }
+    };
+
     const filtered = (data.expenses || []).filter(e =>
       !searchTerm ||
       e.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -1373,9 +1478,6 @@ export default function ERPViewsSales(props) {
               value={dateFilter}
               onChange={e => setDateFilter(e.target.value)}
             />
-            <button style={{ ...styles.btn, ...styles.btnSuccess }} onClick={() => setPage('create')}>
-              ➕ {isAr ? 'مصروف جديد' : 'New Expense'}
-            </button>
           </div>
         </div>
 
@@ -1390,6 +1492,86 @@ export default function ERPViewsSales(props) {
           </div>
         </div>
 
+        {/* Expense Form */}
+        <div style={styles.card}>
+          <h3 style={styles.sectionTitle}>📝 {isAr ? 'إضافة مصروف جديد' : 'Add New Expense'}</h3>
+          <form onSubmit={handleExpenseSubmit} style={styles.formRow}>
+            <div>
+              <label style={styles.formLabel}>{isAr ? 'التاريخ' : 'Date'}</label>
+              <input type="date" style={styles.input} value={expFormLocal.expense_date} onChange={e => setExpFormLocal({ ...expFormLocal, expense_date: e.target.value })} required />
+            </div>
+            <div>
+              <label style={styles.formLabel}>{isAr ? 'النوع' : 'Type'}</label>
+              <select style={styles.select} value={expFormLocal.expense_type} onChange={e => setExpFormLocal({ ...expFormLocal, expense_type: e.target.value })}>
+                <option>Office Expense</option>
+                <option>Travel Expense</option>
+                <option>Supplies</option>
+                <option>Utilities</option>
+                <option>Rent</option>
+                <option>Salary</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div>
+              <label style={styles.formLabel}>{isAr ? 'المورد' : 'Vendor'}</label>
+              <input style={styles.input} value={expFormLocal.vendor_name} onChange={e => setExpFormLocal({ ...expFormLocal, vendor_name: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>{isAr ? 'طريقة الدفع' : 'Payment'}</label>
+              <select style={styles.select} value={expFormLocal.payment_mode} onChange={e => setExpFormLocal({ ...expFormLocal, payment_mode: e.target.value })}>
+                <option>Cash</option>
+                <option>Bank Transfer</option>
+                <option>Card</option>
+              </select>
+            </div>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={styles.formLabel}>{isAr ? 'الوصف' : 'Description'}</label>
+              <input style={styles.input} value={expFormLocal.description} onChange={e => setExpFormLocal({ ...expFormLocal, description: e.target.value })} />
+            </div>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={styles.formLabel}>{isAr ? 'العناصر' : 'Items'}</label>
+              {expFormLocal.items.map((item, idx) => (
+                <div key={idx} style={{ display: 'flex', gap: '10px', marginBottom: '8px', alignItems: 'center' }}>
+                  <input style={{ ...styles.input, flex: 2 }} placeholder={isAr ? 'اسم العنصر' : 'Item name'} value={item.name} onChange={e => handleExpItemChangeLocal(idx, 'name', e.target.value)} />
+                  <input type="number" style={{ ...styles.input, flex: 1 }} placeholder={isAr ? 'الكمية' : 'Qty'} value={item.qty} onChange={e => handleExpItemChangeLocal(idx, 'qty', e.target.value)} min="1" />
+                  <input type="number" step="0.01" style={{ ...styles.input, flex: 1 }} placeholder={isAr ? 'السعر' : 'Price'} value={item.price} onChange={e => handleExpItemChangeLocal(idx, 'price', e.target.value)} min="0" />
+                  {expFormLocal.items.length > 1 && (
+                    <button type="button" style={{ ...styles.btn, ...styles.btnDanger, padding: '6px 12px' }} onClick={() => handleRemoveExpItemLocal(idx)}>✕</button>
+                  )}
+                </div>
+              ))}
+              <button type="button" style={{ ...styles.btn, ...styles.btnGhost, padding: '6px 12px' }} onClick={handleAddExpItemLocal}>
+                ➕ {isAr ? 'إضافة عنصر' : 'Add Item'}
+              </button>
+              <div style={{ marginTop: '10px', padding: '10px', background: isDark ? '#0F172A' : '#F1F5F9', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontWeight: 600 }}>{isAr ? 'الإجمالي' : 'Total'}</span>
+                <span style={{ fontWeight: 700, color: '#059669' }}>
+                  {expFormLocal.items.reduce((s, item) => s + ((parseFloat(item.qty) || 1) * (parseFloat(item.price) || 0)), 0).toFixed(2)} SAR
+                </span>
+              </div>
+            </div>
+            <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px' }}>
+              <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, padding: '12px 30px' }}>
+                ✅ {isAr ? 'إضافة المصروف' : 'Add Expense'}
+              </button>
+              <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => {
+                setExpFormLocal({
+                  expense_type: 'Office Expense',
+                  payment_mode: 'Cash',
+                  description: '',
+                  expense_date: today,
+                  vendor_name: '',
+                  items: [{ name: '', qty: 1, price: 0 }],
+                  approval_status: 'Approved'
+                });
+              }}>
+                🔄 {isAr ? 'إعادة تعيين' : 'Reset'}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* Expenses List */}
         <div style={styles.card}>
           <div style={{ overflowX: 'auto' }}>
             <table style={styles.table}>
@@ -1416,7 +1598,7 @@ export default function ERPViewsSales(props) {
                     <td style={styles.tdCenter}>
                       <div style={styles.actionsCell}>
                         <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleEditExp(e)}>✏️</button>
-                        <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDelete('expenses', e.id)}>🗑️</button>
+                        <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDeleteExpense?.(e) || handleDelete('expenses', e.id)}>🗑️</button>
                       </div>
                     </td>
                   </tr>
@@ -1485,6 +1667,51 @@ export default function ERPViewsSales(props) {
   // STAFF MISTAKES
   // ============================================================
   if (page === 'staff_mistakes') {
+    const [mistakeForm, setMistakeForm] = useState({
+      employee_id: '',
+      old_ticket_no: '',
+      new_ticket_no: '',
+      loss_amount: 0,
+      paid_by_employee: false,
+      reason: '',
+      date: today
+    });
+
+    const handleMistakeSubmit = async (e) => {
+      e.preventDefault();
+      try {
+        const payload = {
+          ...mistakeForm,
+          tenant_id: props.userProfile?.tenant_id,
+          loss_amount: parseFloat(mistakeForm.loss_amount) || 0
+        };
+
+        const { data: newMistake, error } = await supabase
+          .from('staff_mistakes')
+          .insert([payload])
+          .select('*, employees(name)')
+          .single();
+
+        if (error) throw error;
+        setData?.(prev => ({
+          ...prev,
+          staffMistakes: [newMistake, ...(prev.staffMistakes || [])]
+        }));
+        showToast?.(isAr ? '✅ تم تسجيل الخطأ!' : '✅ Mistake logged!');
+        setMistakeForm({
+          employee_id: '',
+          old_ticket_no: '',
+          new_ticket_no: '',
+          loss_amount: 0,
+          paid_by_employee: false,
+          reason: '',
+          date: today
+        });
+      } catch (err) {
+        showToast?.(isAr ? '❌ خطأ: ' + err.message : '❌ Error: ' + err.message);
+      }
+    };
+
     const totalLoss = (data.staffMistakes || []).reduce((s, m) => s + (m.loss_amount || 0), 0);
     const paidByEmp = (data.staffMistakes || []).filter(m => m.paid_by_employee).reduce((s, m) => s + (m.loss_amount || 0), 0);
 
@@ -1517,6 +1744,63 @@ export default function ERPViewsSales(props) {
           </div>
         </div>
 
+        {/* Add Mistake Form */}
+        <div style={styles.card}>
+          <h3 style={styles.sectionTitle}>⚠️ {isAr ? 'تسجيل خطأ جديد' : 'Log New Mistake'}</h3>
+          <form onSubmit={handleMistakeSubmit} style={styles.formRow}>
+            <div>
+              <label style={styles.formLabel}>{isAr ? 'الموظف' : 'Employee'}</label>
+              <select style={styles.select} value={mistakeForm.employee_id} onChange={e => setMistakeForm({ ...mistakeForm, employee_id: e.target.value })} required>
+                <option value="">{isAr ? 'اختر الموظف' : 'Select Employee'}</option>
+                {(data.employees || []).map(e => (
+                  <option key={e.id} value={e.id}>{e.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={styles.formLabel}>{isAr ? 'رقم التذكرة القديمة' : 'Old Ticket No'}</label>
+              <input style={styles.input} value={mistakeForm.old_ticket_no} onChange={e => setMistakeForm({ ...mistakeForm, old_ticket_no: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>{isAr ? 'رقم التذكرة الجديدة' : 'New Ticket No'}</label>
+              <input style={styles.input} value={mistakeForm.new_ticket_no} onChange={e => setMistakeForm({ ...mistakeForm, new_ticket_no: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>{isAr ? 'مبلغ الخسارة (ريال)' : 'Loss Amount (SAR)'}</label>
+              <input type="number" step="0.01" style={styles.input} value={mistakeForm.loss_amount} onChange={e => setMistakeForm({ ...mistakeForm, loss_amount: e.target.value })} required />
+            </div>
+            <div>
+              <label style={styles.formLabel}>{isAr ? 'السبب' : 'Reason'}</label>
+              <input style={styles.input} value={mistakeForm.reason} onChange={e => setMistakeForm({ ...mistakeForm, reason: e.target.value })} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: isDark ? '#CBD5E1' : '#1E293B', fontSize: '13px' }}>
+                <input type="checkbox" checked={mistakeForm.paid_by_employee} onChange={e => setMistakeForm({ ...mistakeForm, paid_by_employee: e.target.checked })} />
+                {isAr ? 'خصم من الراتب' : 'Deduct from Salary'}
+              </label>
+            </div>
+            <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px' }}>
+              <button type="submit" style={{ ...styles.btn, ...styles.btnWarning, padding: '12px 30px' }}>
+                ⚠️ {isAr ? 'تسجيل الخطأ' : 'Log Mistake'}
+              </button>
+              <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => {
+                setMistakeForm({
+                  employee_id: '',
+                  old_ticket_no: '',
+                  new_ticket_no: '',
+                  loss_amount: 0,
+                  paid_by_employee: false,
+                  reason: '',
+                  date: today
+                });
+              }}>
+                🔄 {isAr ? 'إعادة تعيين' : 'Reset'}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* Mistakes List */}
         <div style={styles.card}>
           <div style={{ overflowX: 'auto' }}>
             <table style={styles.table}>
@@ -1546,14 +1830,375 @@ export default function ERPViewsSales(props) {
                     </td>
                     <td style={styles.tdCenter}>
                       <div style={styles.actionsCell}>
-                        <button style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }} onClick={() => handlePreviewMistake(m)}>👁️</button>
-                        <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDeleteMistake(m)}>🗑️</button>
+                        <button style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }} onClick={() => handlePreviewMistake?.(m)}>👁️</button>
+                        <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDeleteMistake?.(m) || handleDelete('staff_mistakes', m.id)}>🗑️</button>
                       </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================
+  // AUDIT LOGS
+  // ============================================================
+  if (page === 'audit') {
+    const filtered = (data.auditLogs || []).filter(l =>
+      !searchTerm ||
+      l.action?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      l.user_email?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    return (
+      <div style={styles.container}>
+        <div style={styles.header}>
+          <h1 style={styles.title}>📜 {t('audit', 'Audit Logs')}</h1>
+          <div style={styles.searchBox}>
+            <input
+              style={styles.input}
+              placeholder={isAr ? '🔍 بحث في السجلات...' : '🔍 Search logs...'}
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+            <input
+              type="date"
+              style={styles.input}
+              value={dateFilter}
+              onChange={e => setDateFilter(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div style={styles.card}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Date/Time</th>
+                  <th style={styles.th}>User</th>
+                  <th style={styles.th}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.filter(l => !dateFilter || l.created_at?.startsWith(dateFilter)).slice(0, 200).map(l => (
+                  <tr key={l.id}>
+                    <td style={{ ...styles.td, fontSize: '12px', color: '#94A3B8' }}>{new Date(l.created_at).toLocaleString()}</td>
+                    <td style={{ ...styles.td, fontWeight: 600, color: '#60A5FA' }}>{l.user_email || 'Unknown'}</td>
+                    <td style={styles.td}>{l.action}</td>
+                  </tr>
+                ))}
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan="3" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
+                      {isAr ? 'لا توجد سجلات تدقيق' : 'No audit logs found'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================
+  // USERS
+  // ============================================================
+  if (page === 'users') {
+    const perms = ['is_admin', 'can_access_invoices', 'can_access_bank', 'can_access_hr', 'can_access_reports', 'can_access_settings'];
+    const permLabels = {
+      is_admin: 'Admin',
+      can_access_invoices: 'Invoices',
+      can_access_bank: 'Bank',
+      can_access_hr: 'HR',
+      can_access_reports: 'Reports',
+      can_access_settings: 'Settings'
+    };
+
+    return (
+      <div style={styles.container}>
+        <div style={styles.header}>
+          <h1 style={styles.title}>👥 {t('users', 'Users')}</h1>
+        </div>
+
+        <div style={styles.card}>
+          <h3 style={styles.sectionTitle}>{editUserId ? '✏️ Edit User' : '➕ Add User'}</h3>
+          <form onSubmit={handleAddEditUser} style={styles.formRow}>
+            <div>
+              <label style={styles.formLabel}>Email {editUserId && '(cannot change)'}</label>
+              <input type="email" style={styles.input} value={userForm?.email || ''} disabled={!!editUserId} onChange={e => setUserForm(prev => ({ ...prev, email: e.target.value }))} required />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Username</label>
+              <input style={styles.input} value={userForm?.username || ''} onChange={e => setUserForm(prev => ({ ...prev, username: e.target.value }))} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Link to Employee (for attendance)</label>
+              <select style={styles.select} value={userForm?.employee_id || ''} onChange={e => setUserForm(prev => ({ ...prev, employee_id: e.target.value }))}>
+                <option value="">— None —</option>
+                {(data.employees || []).map(emp => (
+                  <option key={emp.id} value={emp.id}>{emp.name}</option>
+                ))}
+              </select>
+            </div>
+            <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+              {perms.map(p => (
+                <label key={p} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: isDark ? '#CBD5E1' : '#1E293B', fontSize: '13px' }}>
+                  <input type="checkbox" checked={!!userForm?.[p]} onChange={e => setUserForm(prev => ({ ...prev, [p]: e.target.checked }))} />
+                  {permLabels[p]}
+                </label>
+              ))}
+            </div>
+            <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px' }}>
+              <button type="submit" style={{ ...styles.btn, ...styles.btnSuccess }}>{editUserId ? '💾 Save Changes' : '➕ Create User'}</button>
+              {editUserId && (
+                <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setEditUserId(null); setUserForm({ email: '', username: '', is_admin: false, can_access_hr: false, can_access_bank: false, can_access_invoices: true, can_access_reports: false, can_access_settings: false, employee_id: '' }); }}>
+                  ✕ Cancel
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+
+        <div style={styles.card}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Email</th>
+                  <th style={styles.th}>Username</th>
+                  <th style={styles.th}>Linked Employee</th>
+                  <th style={styles.th}>Permissions</th>
+                  <th style={{ ...styles.th, textAlign: 'center' }}>{t('actions', 'Actions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(data.appUsers || []).map(u => (
+                  <tr key={u.id}>
+                    <td style={{ ...styles.td, fontWeight: 600 }}>{u.email}</td>
+                    <td style={styles.td}>{u.username || '-'}</td>
+                    <td style={styles.td}>{data.employees?.find(e => e.id === u.employee_id)?.name || '-'}</td>
+                    <td style={styles.td}>{perms.filter(p => u[p]).map(p => permLabels[p]).join(', ') || '-'}</td>
+                    <td style={styles.tdCenter}>
+                      <div style={styles.actionsCell}>
+                        <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleEditUser(u)}>✏️</button>
+                        <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDeleteUser(u)}>🗑️</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {(data.appUsers || []).length === 0 && (
+                  <tr>
+                    <td colSpan="5" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
+                      {isAr ? 'لا يوجد مستخدمين' : 'No users yet'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================
+  // REPORTS
+  // ============================================================
+  if (page === 'reports') {
+    const totalRev = (data.invoices || []).filter(i => !i.invoice_no?.startsWith('REF-')).reduce((s, i) => s + (i.total || 0), 0);
+    const totalExp = (data.expenses || []).reduce((s, e) => s + (e.amount || 0), 0);
+    const totalProfit = (data.invoices || []).filter(i => !i.invoice_no?.startsWith('REF-')).reduce((s, i) => s + (i.profit || 0), 0);
+    const netProfit = totalProfit - totalExp;
+
+    return (
+      <div style={styles.container}>
+        <div style={styles.header}>
+          <h1 style={styles.title}>📊 {t('reports', 'Reports')}</h1>
+        </div>
+
+        <div style={styles.statsGrid}>
+          <div style={styles.statCard}>
+            <div style={styles.statLabel}>{isAr ? 'إجمالي الإيرادات' : 'Total Revenue'}</div>
+            <div style={{ ...styles.statValue, color: '#34D399' }}>{fmt(totalRev)}</div>
+          </div>
+          <div style={styles.statCard}>
+            <div style={styles.statLabel}>{isAr ? 'إجمالي المصروفات' : 'Total Expenses'}</div>
+            <div style={{ ...styles.statValue, color: '#FCA5A5' }}>{fmt(totalExp)}</div>
+          </div>
+          <div style={styles.statCard}>
+            <div style={styles.statLabel}>{isAr ? 'ربح الفواتير' : 'Invoice Profit'}</div>
+            <div style={{ ...styles.statValue, color: '#FBBF24' }}>{fmt(totalProfit)}</div>
+          </div>
+          <div style={styles.statCard}>
+            <div style={styles.statLabel}>{isAr ? 'صافي الربح' : 'Net Profit'}</div>
+            <div style={{ ...styles.statValue, color: netProfit >= 0 ? '#34D399' : '#FCA5A5' }}>{fmt(netProfit)}</div>
+          </div>
+          <div style={styles.statCard}>
+            <div style={styles.statLabel}>{isAr ? 'الفواتير' : 'Invoices'}</div>
+            <div style={styles.statValue}>{data.invoices?.filter(i => !i.invoice_no?.startsWith('REF-')).length || 0}</div>
+          </div>
+          <div style={styles.statCard}>
+            <div style={styles.statLabel}>{isAr ? 'الاسترجاعات' : 'Refunds'}</div>
+            <div style={styles.statValue}>{data.invoices?.filter(i => i.invoice_no?.startsWith('REF-')).length || 0}</div>
+          </div>
+          <div style={styles.statCard}>
+            <div style={styles.statLabel}>{isAr ? 'العملاء' : 'Customers'}</div>
+            <div style={styles.statValue}>{data.customers?.length || 0}</div>
+          </div>
+          <div style={styles.statCard}>
+            <div style={styles.statLabel}>{isAr ? 'الموظفين' : 'Employees'}</div>
+            <div style={styles.statValue}>{data.employees?.length || 0}</div>
+          </div>
+        </div>
+
+        <div style={styles.card}>
+          <h3 style={styles.sectionTitle}>📈 {isAr ? 'الإيرادات حسب نوع الخدمة' : 'Revenue by Service Type'}</h3>
+          {(() => {
+            const byService = {};
+            (data.invoices || []).filter(i => !i.invoice_no?.startsWith('REF-')).forEach(i => {
+              const svc = i.service_type || 'Other';
+              byService[svc] = (byService[svc] || 0) + (i.total || 0);
+            });
+            const entries = Object.entries(byService).sort((a, b) => b[1] - a[1]);
+            return entries.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '30px', color: '#94A3B8' }}>
+                {isAr ? 'لا توجد بيانات' : 'No data available'}
+              </div>
+            ) : (
+              entries.map(([svc, amt]) => (
+                <div key={svc} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9' }}>
+                  <span style={{ color: isDark ? '#CBD5E1' : '#1E293B' }}>{svc}</span>
+                  <span style={{ color: '#34D399', fontWeight: 600 }}>{fmt(amt)}</span>
+                </div>
+              ))
+            );
+          })()}
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================
+  // STATEMENTS
+  // ============================================================
+  if (page === 'statements') {
+    const tabs = ['sales', 'portals', 'vendors', 'salary', 'expenses', 'customers', 'creditors', 'credit', 'branches', 'cash', 'bank'];
+
+    return (
+      <div style={styles.container}>
+        <div style={styles.header}>
+          <h1 style={styles.title}>📑 {t('statements', 'Statements')}</h1>
+        </div>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
+          {tabs.map(t => (
+            <button
+              key={t}
+              onClick={() => setStatementType(t)}
+              style={{ ...styles.tabBtn, ...(statementType === t && styles.tabBtnActive) }}
+            >
+              {t === 'sales' ? (isAr ? 'المبيعات' : 'Sales') :
+               t === 'portals' ? (isAr ? 'البوابات' : 'Portals') :
+               t === 'vendors' ? (isAr ? 'الموردين' : 'Vendors') :
+               t === 'salary' ? (isAr ? 'الرواتب' : 'Salary') :
+               t === 'expenses' ? (isAr ? 'المصروفات' : 'Expenses') :
+               t === 'customers' ? (isAr ? 'العملاء' : 'Customers') :
+               t === 'creditors' ? (isAr ? 'الدائنين' : 'Creditors') :
+               t === 'credit' ? (isAr ? 'الائتمان' : 'Credit') :
+               t === 'branches' ? (isAr ? 'الفروع' : 'Branches') :
+               t === 'cash' ? (isAr ? 'نقداً' : 'Cash') :
+               (isAr ? 'البنك' : 'Bank')}
+            </button>
+          ))}
+        </div>
+
+        <div style={styles.card}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '15px', borderBottom: isDark ? '1px solid #334155' : '1px solid #E2E8F0', marginBottom: '15px' }}>
+            <h3 style={{ margin: 0, color: '#FBBF24', textTransform: 'capitalize' }}>
+              {statementType} {isAr ? 'كشف حساب' : 'Statement'}
+            </h3>
+            <button onClick={() => handleExportCSV?.(statementType)} style={{ ...styles.btn, ...styles.btnSuccess }}>
+              📥 {isAr ? 'تصدير' : 'Export'}
+            </button>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            {statementType === 'sales' && (
+              <table style={styles.table}>
+                <thead><tr><th style={styles.th}>Date</th><th style={styles.th}>Invoice</th><th style={styles.th}>Customer</th><th style={{ ...styles.th, textAlign: 'right' }}>Total</th><th style={{ ...styles.th, textAlign: 'right' }}>Due</th></tr></thead>
+                <tbody>
+                  {(data.invoices || []).filter(i => !i.invoice_no?.startsWith('REF-')).map(i => (
+                    <tr key={i.id}><td style={styles.td}>{i.invoice_date}</td><td style={{ ...styles.td, color: '#60A5FA' }}>{i.invoice_no}</td><td style={styles.td}>{i.customers?.name || 'N/A'}</td><td style={styles.tdRight}>{fmt(i.total)}</td><td style={styles.tdRight}>{fmt(i.due_amount)}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {statementType === 'portals' && (
+              <table style={styles.table}>
+                <thead><tr><th style={styles.th}>Portal</th><th style={{ ...styles.th, textAlign: 'right' }}>Balance (SAR)</th></tr></thead>
+                <tbody>{(data.portals || []).map(p => <tr key={p.id}><td style={{ ...styles.td, fontWeight: 600 }}>{p.name}</td><td style={{ ...styles.tdRight, color: (p.current_balance || 0) < 0 ? '#FCA5A5' : '#34D399' }}>{fmt(p.current_balance)}</td></tr>)}</tbody>
+              </table>
+            )}
+            {statementType === 'vendors' && (
+              <table style={styles.table}>
+                <thead><tr><th style={styles.th}>Vendor</th><th style={styles.th}>Phone</th><th style={{ ...styles.th, textAlign: 'right' }}>Balance</th></tr></thead>
+                <tbody>{(data.vendors || []).map(v => <tr key={v.id}><td style={{ ...styles.td, fontWeight: 600 }}>{v.name}</td><td style={styles.td}>{v.phone}</td><td style={{ ...styles.tdRight }}>{fmt(v.balance)}</td></tr>)}</tbody>
+              </table>
+            )}
+            {statementType === 'salary' && (
+              <table style={styles.table}>
+                <thead><tr><th style={styles.th}>Employee</th><th style={styles.th}>Month</th><th style={{ ...styles.th, textAlign: 'right' }}>Amount</th><th style={styles.th}>Mode</th></tr></thead>
+                <tbody>{(data.payroll || []).map(p => <tr key={p.id}><td style={{ ...styles.td, fontWeight: 600 }}>{p.employees?.name || 'N/A'}</td><td style={styles.td}>{p.month}</td><td style={{ ...styles.tdRight, color: '#34D399' }}>{fmt(p.amount)}</td><td style={styles.td}>{p.payment_mode || 'Cash'}</td></tr>)}</tbody>
+              </table>
+            )}
+            {statementType === 'expenses' && (
+              <table style={styles.table}>
+                <thead><tr><th style={styles.th}>Date</th><th style={styles.th}>Type</th><th style={styles.th}>Description</th><th style={{ ...styles.th, textAlign: 'right' }}>Amount</th></tr></thead>
+                <tbody>{(data.expenses || []).map(e => <tr key={e.id}><td style={styles.td}>{e.expense_date}</td><td style={styles.td}>{e.expense_type}</td><td style={styles.td}>{e.description}</td><td style={{ ...styles.tdRight, color: '#FCA5A5' }}>{fmt(e.amount)}</td></tr>)}</tbody>
+              </table>
+            )}
+            {statementType === 'customers' && (
+              <table style={styles.table}>
+                <thead><tr><th style={styles.th}>Name</th><th style={styles.th}>Phone</th><th style={{ ...styles.th, textAlign: 'right' }}>Credit</th></tr></thead>
+                <tbody>{(data.customers || []).map(c => <tr key={c.id}><td style={{ ...styles.td, fontWeight: 600 }}>{c.name}</td><td style={styles.td}>{c.phone}</td><td style={{ ...styles.tdRight }}>{fmt(c.store_credit)}</td></tr>)}</tbody>
+              </table>
+            )}
+            {statementType === 'creditors' && (
+              <table style={styles.table}>
+                <thead><tr><th style={styles.th}>Name</th><th style={styles.th}>Phone</th><th style={styles.th}>Address</th></tr></thead>
+                <tbody>{(data.creditors || []).map(c => <tr key={c.id}><td style={{ ...styles.td, fontWeight: 600 }}>{c.name}</td><td style={styles.td}>{c.phone}</td><td style={styles.td}>{c.address}</td></tr>)}</tbody>
+              </table>
+            )}
+            {statementType === 'credit' && (
+              <table style={styles.table}>
+                <thead><tr><th style={styles.th}>Name</th><th style={{ ...styles.th, textAlign: 'right' }}>Available Credit</th></tr></thead>
+                <tbody>{(data.customers || []).filter(c => (c.store_credit || 0) > 0).map(c => <tr key={c.id}><td style={{ ...styles.td, fontWeight: 600 }}>{c.name}</td><td style={{ ...styles.tdRight, color: '#34D399', fontWeight: 'bold' }}>{fmt(c.store_credit)}</td></tr>)}</tbody>
+              </table>
+            )}
+            {statementType === 'branches' && (
+              <table style={styles.table}>
+                <thead><tr><th style={styles.th}>Name</th><th style={styles.th}>Location</th><th style={styles.th}>Manager</th></tr></thead>
+                <tbody>{(data.branches || []).map(b => <tr key={b.id}><td style={{ ...styles.td, fontWeight: 600 }}>{b.name}</td><td style={styles.td}>{b.location}</td><td style={styles.td}>{b.manager}</td></tr>)}</tbody>
+              </table>
+            )}
+            {statementType === 'cash' && (
+              <table style={styles.table}>
+                <thead><tr><th style={styles.th}>Date</th><th style={styles.th}>Description</th><th style={{ ...styles.th, textAlign: 'right' }}>Amount</th></tr></thead>
+                <tbody>{(data.cashbook || []).filter(c => c.type?.includes('Cash')).map(c => <tr key={c.id}><td style={styles.td}>{c.trans_date}</td><td style={styles.td}>{c.description}</td><td style={{ ...styles.tdRight, color: c.type?.includes('In') ? '#34D399' : '#FCA5A5' }}>{fmt(c.amount)}</td></tr>)}</tbody>
+              </table>
+            )}
+            {statementType === 'bank' && (
+              <table style={styles.table}>
+                <thead><tr><th style={styles.th}>Date</th><th style={styles.th}>Description</th><th style={{ ...styles.th, textAlign: 'right' }}>Amount</th></tr></thead>
+                <tbody>{(data.cashbook || []).filter(c => c.type?.includes('Bank')).map(c => <tr key={c.id}><td style={styles.td}>{c.trans_date}</td><td style={styles.td}>{c.description}</td><td style={{ ...styles.tdRight, color: c.type?.includes('In') ? '#34D399' : '#FCA5A5' }}>{fmt(c.amount)}</td></tr>)}</tbody>
+              </table>
+            )}
           </div>
         </div>
       </div>
