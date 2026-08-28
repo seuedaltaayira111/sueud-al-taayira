@@ -12,7 +12,9 @@ import {
   getMistakeHTML
 } from '@/lib/invoiceHTML';
 
-// --- Apni purani translations yahan rakhiye (main chhota kar raha hoon) ---
+// ============================================================
+// TRANSLATIONS (full)
+// ============================================================
 const translations = {
   en: {
     dashboard: '📊 Dashboard',
@@ -141,7 +143,6 @@ const translations = {
     achieved: 'Achieved',
     percentage: '%',
     balance: 'Balance',
-    // Travel Features
     flight_status: '🛫 Flight Status',
     hotel_booking: '🏨 Hotel Booking',
     visa_processing: '🛂 Visa Processing',
@@ -149,17 +150,14 @@ const translations = {
     hajj_umrah: '🕋 Hajj/Umrah',
     corporate_travel: '🏢 Corporate Travel',
     frequent_flyer: '🌟 Frequent Flyer',
-    // Advanced Features
     expense_voucher: '📄 Expense Voucher',
     staff_mistake_voucher: '⚠️ Staff Mistake Voucher',
     salary_slip: '📄 Salary Slip',
     contract_document: '📄 Contract Document',
     offer_document: '📄 Offer Document',
-    // Invoice Types
     sales_invoice: '📄 Sales Invoice',
     refund_invoice: '📄 Refund Invoice',
     proforma_invoice: '📄 Proforma Invoice',
-    // Payment Methods
     payment_cash: '💰 Cash',
     payment_bank: '🏦 Bank Transfer',
     payment_card: '💳 Card',
@@ -167,7 +165,6 @@ const translations = {
     payment_tabby: '📱 Tabby',
     payment_tamara: '📱 Tamara',
     payment_credit_balance: '💳 Credit Balance',
-    // Status
     status_paid: '✅ Paid',
     status_unpaid: '⏳ Unpaid',
     status_refunded: '🔄 Refunded',
@@ -301,7 +298,6 @@ const translations = {
     achieved: 'المحقق',
     percentage: '%',
     balance: 'الرصيد',
-    // Travel Features
     flight_status: '🛫 حالة الرحلة',
     hotel_booking: '🏨 حجز الفنادق',
     visa_processing: '🛂 معالجة التأشيرات',
@@ -309,17 +305,14 @@ const translations = {
     hajj_umrah: '🕋 باقات الحج والعمرة',
     corporate_travel: '🏢 السفر المؤسسي',
     frequent_flyer: '🌟 المسافر الدائم',
-    // Advanced Features
     expense_voucher: '📄 سند مصروفات',
     staff_mistake_voucher: '⚠️ سند خطأ الموظف',
     salary_slip: '📄 قسيمة راتب',
     contract_document: '📄 وثيقة عقد',
     offer_document: '📄 وثيقة عرض',
-    // Invoice Types
     sales_invoice: '📄 فاتورة مبيعات',
     refund_invoice: '📄 فاتورة استرجاع',
     proforma_invoice: '📄 فاتورة أولية',
-    // Payment Methods
     payment_cash: '💰 نقداً',
     payment_bank: '🏦 تحويل بنكي',
     payment_card: '💳 بطاقة',
@@ -327,7 +320,6 @@ const translations = {
     payment_tabby: '📱 تابي',
     payment_tamara: '📱 تمارة',
     payment_credit_balance: '💳 رصيد مستحق',
-    // Status
     status_paid: '✅ مدفوعة',
     status_unpaid: '⏳ غير مدفوعة',
     status_refunded: '🔄 مسترجعة',
@@ -377,7 +369,6 @@ export default function useERPState() {
     appUsers: [],
     corporateTravel: [],
     frequentFlyer: []
-    // Unwanted tables removed: hotelBookings, visaApplications, insurancePolicies, hajjUmrahPackages, flightTickets, ticketNotifications
   });
 
   /* ===== INVOICE FORM ===== */
@@ -569,72 +560,62 @@ export default function useERPState() {
     }
   }, [user?.email, userProfile?.tenant_id]);
 
-  /* ===== FETCH ALL – ONLY EXISTING TABLES (FIXED) ===== */
+  /* ===== FETCH ALL – ONLY EXISTING TABLES (Promise.allSettled) ===== */
   const fetchAll = useCallback(async () => {
     if (!userProfile?.tenant_id) return;
     const tid = userProfile.tenant_id;
 
-    try {
-      const [
-        invRes, custRes, corpRes, credRes, vendRes, pkgRes, brnRes,
-        portRes, empRes, expRes, cashRes, payRes, mistRes, auditRes,
-        setRes, srvRes, advRes, investRes, attRes, appUsersRes,
-        corpTravelRes, ffRes
-      ] = await Promise.all([
-        supabase.from('invoices').select('*, customers(name,phone,store_credit), corporates(name,vat_no,phone), employees(name,phone)').eq('tenant_id', tid).order('created_at', { ascending: false }),
-        supabase.from('customers').select('*').eq('tenant_id', tid),
-        supabase.from('corporates').select('*').eq('tenant_id', tid),
-        supabase.from('creditors').select('*').eq('tenant_id', tid),
-        supabase.from('vendors').select('*').eq('tenant_id', tid),
-        supabase.from('packages').select('*').eq('tenant_id', tid),
-        supabase.from('branches').select('*').eq('tenant_id', tid),
-        supabase.from('portals').select('*').eq('tenant_id', tid),
-        supabase.from('employees').select('*').eq('tenant_id', tid),
-        supabase.from('expenses').select('*').eq('tenant_id', tid).order('created_at', { ascending: false }),
-        supabase.from('cashbook').select('*').eq('tenant_id', tid).order('created_at', { ascending: false }),
-        supabase.from('payroll').select('*, employees(name)').eq('tenant_id', tid).order('created_at', { ascending: false }),
-        supabase.from('staff_mistakes').select('*, employees(name)').eq('tenant_id', tid).order('created_at', { ascending: false }),
-        supabase.from('audit_logs').select('*').eq('tenant_id', tid).order('created_at', { ascending: false }).limit(200),
-        supabase.from('settings').select('*').eq('tenant_id', tid).maybeSingle(),
-        supabase.from('services').select('*').eq('tenant_id', tid),
-        supabase.from('emp_advances').select('*, employees(name)').eq('tenant_id', tid),
-        supabase.from('investments').select('*').eq('tenant_id', tid).order('created_at', { ascending: false }),
-        supabase.from('attendance').select('*, employees(name)').eq('tenant_id', tid).order('date', { ascending: false }),
-        supabase.from('app_users').select('*').eq('tenant_id', tid),
-        supabase.from('corporate_travel').select('*, corporates(name)').eq('tenant_id', tid).order('created_at', { ascending: false }),
-        supabase.from('frequent_flyer').select('*').eq('tenant_id', tid).order('points', { ascending: false })
-      ]);
+    const queries = [
+      supabase.from('invoices').select('*, customers(name,phone,store_credit), corporates(name,vat_no,phone), employees(name,phone)').eq('tenant_id', tid).order('created_at', { ascending: false }),
+      supabase.from('customers').select('*').eq('tenant_id', tid),
+      supabase.from('corporates').select('*').eq('tenant_id', tid),
+      supabase.from('creditors').select('*').eq('tenant_id', tid),
+      supabase.from('vendors').select('*').eq('tenant_id', tid),
+      supabase.from('packages').select('*').eq('tenant_id', tid),
+      supabase.from('branches').select('*').eq('tenant_id', tid),
+      supabase.from('portals').select('*').eq('tenant_id', tid),
+      supabase.from('employees').select('*').eq('tenant_id', tid),
+      supabase.from('expenses').select('*').eq('tenant_id', tid).order('created_at', { ascending: false }),
+      supabase.from('cashbook').select('*').eq('tenant_id', tid).order('created_at', { ascending: false }),
+      supabase.from('payroll').select('*, employees(name)').eq('tenant_id', tid).order('created_at', { ascending: false }),
+      supabase.from('staff_mistakes').select('*, employees(name)').eq('tenant_id', tid).order('created_at', { ascending: false }),
+      supabase.from('audit_logs').select('*').eq('tenant_id', tid).order('created_at', { ascending: false }).limit(200),
+      supabase.from('settings').select('*').eq('tenant_id', tid).maybeSingle(),
+      supabase.from('services').select('*').eq('tenant_id', tid),
+      supabase.from('emp_advances').select('*, employees(name)').eq('tenant_id', tid),
+      supabase.from('investments').select('*').eq('tenant_id', tid).order('created_at', { ascending: false }),
+      supabase.from('attendance').select('*, employees(name)').eq('tenant_id', tid).order('date', { ascending: false }),
+      supabase.from('app_users').select('*').eq('tenant_id', tid),
+      supabase.from('corporate_travel').select('*, corporates(name)').eq('tenant_id', tid).order('created_at', { ascending: false }),
+      supabase.from('frequent_flyer').select('*').eq('tenant_id', tid).order('points', { ascending: false })
+    ];
 
-      setData({
-        invoices: invRes.data || [],
-        customers: custRes.data || [],
-        corporates: corpRes.data || [],
-        creditors: credRes.data || [],
-        vendors: vendRes.data || [],
-        packages: pkgRes.data || [],
-        branches: brnRes.data || [],
-        portals: portRes.data || [],
-        employees: empRes.data || [],
-        expenses: expRes.data || [],
-        cashbook: cashRes.data || [],
-        payroll: payRes.data || [],
-        staffMistakes: mistRes.data || [],
-        auditLogs: auditRes.data || [],
-        settings: setRes.data || {},
-        services: srvRes.data || [],
-        empAdvances: advRes.data || [],
-        investments: investRes.data || [],
-        attendance: attRes.data || [],
-        appUsers: appUsersRes.data || [],
-        corporateTravel: corpTravelRes.data || [],
-        frequentFlyer: ffRes.data || []
-      });
-    } catch (err) {
-      console.error('Fetch error:', err);
-    }
+    const results = await Promise.allSettled(queries);
+    const keys = [
+      'invoices', 'customers', 'corporates', 'creditors', 'vendors',
+      'packages', 'branches', 'portals', 'employees', 'expenses',
+      'cashbook', 'payroll', 'staffMistakes', 'auditLogs', 'settings',
+      'services', 'empAdvances', 'investments', 'attendance', 'appUsers',
+      'corporateTravel', 'frequentFlyer'
+    ];
+
+    const newData = {};
+    keys.forEach((key, index) => {
+      const result = results[index];
+      if (result.status === 'fulfilled' && result.value.data) {
+        newData[key] = result.value.data;
+      } else {
+        newData[key] = (key === 'settings') ? {} : [];
+        if (result.status === 'rejected') {
+          console.warn(`Failed to fetch ${key}:`, result.reason);
+        }
+      }
+    });
+
+    setData(prev => ({ ...prev, ...newData }));
   }, [userProfile?.tenant_id]);
 
-  /* ===== AUTH INIT (unchanged) ===== */
+  /* ===== AUTH INIT ===== */
   useEffect(() => {
     let mounted = true;
     const init = async () => {
@@ -661,7 +642,6 @@ export default function useERPState() {
           return;
         }
 
-        // Subscription check
         if (profile.role !== 'SuperAdmin' && profile.tenant_id) {
           const { data: tenant } = await supabase
             .from('tenants')
@@ -725,7 +705,6 @@ export default function useERPState() {
     };
   }, [router]);
 
-  /* ===== AUTO FETCH ===== */
   useEffect(() => {
     if (userProfile?.tenant_id) {
       fetchAll();
