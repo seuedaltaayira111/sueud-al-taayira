@@ -301,25 +301,8 @@ export default function ERPViewsTravel(props) {
     const terminals = ['1', '2', '3', '4', '5'];
     const gates = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
-    // Load tickets
-    useEffect(() => {
-      if (userProfile?.tenant_id) {
-        // Try to create table if not exists
-        supabase.from('flight_tickets')
-          .select('*')
-          .eq('tenant_id', userProfile.tenant_id)
-          .order('created_at', { ascending: false })
-          .then(({ data, error }) => {
-            if (error && error.message.includes('does not exist')) {
-              // Table doesn't exist, use local state
-              setTickets([]);
-            } else if (data) {
-              setTickets(data);
-            }
-          })
-          .catch(() => setTickets([]));
-      }
-    }, [userProfile?.tenant_id]);
+    // ✅ REMOVED: supabase query for flight_tickets – using local state only
+    // No useEffect for loading tickets from DB.
 
     // Generate random ticket
     const generateRandomTicket = () => {
@@ -412,12 +395,10 @@ export default function ERPViewsTravel(props) {
         };
 
         if (editingId) {
-          // Update local state
           setTickets(prev => prev.map(t => t.id === editingId ? { ...t, ...payload, id: t.id } : t));
           showToast?.(isAr ? '✅ تم تحديث التذكرة!' : '✅ Ticket updated!');
           setEditingId(null);
         } else {
-          // Add to local state
           const newTicket = {
             ...payload,
             id: `tkt-${Date.now()}`,
@@ -513,59 +494,53 @@ export default function ERPViewsTravel(props) {
 
     // Print Ticket
     const handlePrintTicket = (ticket) => {
-      const printContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Ticket ${ticket.flight_number}</title>
-          <style>
-            body { font-family: 'Arial', sans-serif; padding: 40px; background: #f5f5f5; }
-            .ticket { border: 2px solid #1E3A8A; border-radius: 16px; padding: 30px; max-width: 750px; margin: auto; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-            .header { background: linear-gradient(135deg, #1E3A8A, #2563EB); color: white; padding: 20px; border-radius: 12px 12px 0 0; text-align: center; }
-            .header h1 { margin: 0; font-size: 28px; letter-spacing: 2px; }
-            .body { padding: 25px; }
-            .row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
-            .label { font-weight: bold; color: #555; width: 40%; }
-            .value { font-weight: 600; color: #1E3A8A; width: 60%; text-align: right; }
-            .status { display: inline-block; padding: 4px 16px; border-radius: 20px; font-weight: bold; }
-            .status-confirmed { background: #D1FAE5; color: #065F46; }
-            .status-boarding { background: #FEF3C7; color: #92400E; }
-            .status-departed { background: #DBEAFE; color: #1D4ED8; }
-            .status-arrived { background: #D1FAE5; color: #065F46; }
-            .status-delayed { background: #FEE2E2; color: #991B1B; }
-            .status-cancelled { background: #FEE2E2; color: #991B1B; }
-            .footer { text-align: center; padding: 15px; background: #F8FAFC; border-radius: 0 0 12px 12px; color: #666; font-size: 12px; }
-            .qr { text-align: center; margin: 15px 0; }
-            .route { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; }
-            .route .city { font-size: 20px; font-weight: 700; color: #1E3A8A; }
-            .route .arrow { font-size: 24px; color: #F59E0B; }
-            @media print { body { padding: 0; background: white; } .ticket { border: none; box-shadow: none; } }
-          </style>
-        </head>
-        <body>
-          <div class="ticket">
-            <div class="header"><h1>✈️ BOARDING PASS</h1><p>${ticket.flight_number} | ${ticket.airline}</p></div>
-            <div class="body">
-              <div class="route"><div class="city">${ticket.origin}</div><div class="arrow">✈️ →</div><div class="city">${ticket.destination}</div></div>
-              <div class="row"><span class="label">Passenger Name</span><span class="value">${ticket.passenger_name}</span></div>
-              <div class="row"><span class="label">Phone</span><span class="value">${ticket.passenger_phone || 'N/A'}</span></div>
-              <div class="row"><span class="label">Flight</span><span class="value">${ticket.flight_number}</span></div>
-              <div class="row"><span class="label">Date</span><span class="value">${ticket.departure_date}</span></div>
-              <div class="row"><span class="label">Departure</span><span class="value">${ticket.departure_time}</span></div>
-              <div class="row"><span class="label">Arrival</span><span class="value">${ticket.arrival_time || 'N/A'}</span></div>
-              <div class="row"><span class="label">Seat</span><span class="value">${ticket.seat_number || 'N/A'}</span></div>
-              <div class="row"><span class="label">Booking Ref</span><span class="value">${ticket.booking_reference}</span></div>
-              <div class="row"><span class="label">Class</span><span class="value">${ticket.class}</span></div>
-              <div class="row"><span class="label">Status</span><span class="value"><span class="status status-${ticket.status?.toLowerCase()}">${ticket.status}</span></span></div>
-              <div class="row"><span class="label">Fare</span><span class="value">${(ticket.fare || 0).toFixed(2)} SAR</span></div>
-              <div class="row"><span class="label">Total</span><span class="value" style="font-size:18px;color:#059669;">${(ticket.total || 0).toFixed(2)} SAR</span></div>
-            </div>
-            <div class="footer">Computer-generated ticket. Valid without signature.</div>
-          </div>
-        </body>
-        </html>
-      `;
-
+      const printContent = `<!DOCTYPE html>
+<html>
+<head><title>Ticket ${ticket.flight_number}</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 40px; background: #f5f5f5; }
+  .ticket { border: 2px solid #1E3A8A; border-radius: 16px; padding: 30px; max-width: 750px; margin: auto; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+  .header { background: linear-gradient(135deg, #1E3A8A, #2563EB); color: white; padding: 20px; border-radius: 12px 12px 0 0; text-align: center; }
+  .header h1 { margin: 0; font-size: 28px; letter-spacing: 2px; }
+  .body { padding: 25px; }
+  .row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+  .label { font-weight: bold; color: #555; width: 40%; }
+  .value { font-weight: 600; color: #1E3A8A; width: 60%; text-align: right; }
+  .status { display: inline-block; padding: 4px 16px; border-radius: 20px; font-weight: bold; }
+  .status-confirmed { background: #D1FAE5; color: #065F46; }
+  .status-boarding { background: #FEF3C7; color: #92400E; }
+  .status-departed { background: #DBEAFE; color: #1D4ED8; }
+  .status-arrived { background: #D1FAE5; color: #065F46; }
+  .status-delayed { background: #FEE2E2; color: #991B1B; }
+  .status-cancelled { background: #FEE2E2; color: #991B1B; }
+  .footer { text-align: center; padding: 15px; background: #F8FAFC; border-radius: 0 0 12px 12px; color: #666; font-size: 12px; }
+  .route { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; }
+  .route .city { font-size: 20px; font-weight: 700; color: #1E3A8A; }
+  .route .arrow { font-size: 24px; color: #F59E0B; }
+  @media print { body { padding: 0; background: white; } .ticket { border: none; box-shadow: none; } }
+</style>
+</head>
+<body>
+<div class="ticket">
+  <div class="header"><h1>✈️ BOARDING PASS</h1><p>${ticket.flight_number} | ${ticket.airline}</p></div>
+  <div class="body">
+    <div class="route"><div class="city">${ticket.origin}</div><div class="arrow">✈️ →</div><div class="city">${ticket.destination}</div></div>
+    <div class="row"><span class="label">Passenger Name</span><span class="value">${ticket.passenger_name}</span></div>
+    <div class="row"><span class="label">Flight</span><span class="value">${ticket.flight_number}</span></div>
+    <div class="row"><span class="label">Date</span><span class="value">${ticket.departure_date}</span></div>
+    <div class="row"><span class="label">Departure</span><span class="value">${ticket.departure_time}</span></div>
+    <div class="row"><span class="label">Arrival</span><span class="value">${ticket.arrival_time || 'N/A'}</span></div>
+    <div class="row"><span class="label">Seat</span><span class="value">${ticket.seat_number || 'N/A'}</span></div>
+    <div class="row"><span class="label">Booking Ref</span><span class="value">${ticket.booking_reference}</span></div>
+    <div class="row"><span class="label">Class</span><span class="value">${ticket.class}</span></div>
+    <div class="row"><span class="label">Status</span><span class="value"><span class="status status-${ticket.status?.toLowerCase()}">${ticket.status}</span></span></div>
+    <div class="row"><span class="label">Fare</span><span class="value">${(ticket.fare || 0).toFixed(2)} SAR</span></div>
+    <div class="row"><span class="label">Total</span><span class="value" style="font-size:18px;color:#059669;">${(ticket.total || 0).toFixed(2)} SAR</span></div>
+  </div>
+  <div class="footer">Computer-generated ticket. Valid without signature.</div>
+</div>
+</body>
+</html>`;
       const win = window.open('', '_blank', 'width=800,height=600');
       if (win) {
         win.document.write(printContent);
