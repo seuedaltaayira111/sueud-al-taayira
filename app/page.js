@@ -178,7 +178,7 @@ export default function Home() {
   const canAccessReports = isAdmin || profile.can_access_reports || false;
   const canAccessSettings = isAdmin || profile.can_access_settings || false;
 
-  // ===== MENU – All features intact, unwanted removed =====
+  // ===== MENU – All core modules, unwanted removed =====
   const menu = [
     // Main
     { id: 'dashboard', label: t('dashboard', '📊 Dashboard'), show: true, section: 'Main' },
@@ -192,7 +192,7 @@ export default function Home() {
     { id: 'refunds', label: t('refunds', '🔄 Refunds'), show: canAccessInvoices, section: 'Travel Sales' },
     { id: 'quotations', label: t('quotations', '📄 Quotations'), show: canAccessInvoices, section: 'Travel Sales' },
     
-    // Flight Operations – only these (removed Hotel, Visa, Insurance, Hajj/Umrah)
+    // Flight Operations (only these – removed Hotel, Visa, Insurance, Hajj/Umrah)
     { id: 'flight_status', label: '🛫 Flight Status', show: canAccessInvoices, section: 'Flight Operations' },
     { id: 'corporate_travel', label: '🏢 Corporate Travel', show: canAccessInvoices, section: 'Flight Operations' },
     { id: 'frequent_flyer', label: '🌟 Frequent Flyer', show: canAccessInvoices, section: 'Flight Operations' },
