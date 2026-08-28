@@ -1,9 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function ERPViewsTools(props) {
-  const { page, tr, lang, theme } = props;
+  const {
+    page, tr, lang, theme, showToast
+  } = props;
+
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
 
@@ -121,13 +124,33 @@ export default function ERPViewsTools(props) {
       paddingBottom: '10px',
       borderBottom: isDark ? '1px solid #334155' : '1px solid #E2E8F0'
     },
-    label: {
-      fontSize: '13px',
-      fontWeight: 600,
-      color: isDark ? '#94A3B8' : '#64748B',
-      marginBottom: '6px',
-      display: 'block',
-      marginTop: '12px'
+    aiBadge: {
+      background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+      color: '#fff',
+      padding: '2px 10px',
+      borderRadius: '12px',
+      fontSize: '10px',
+      fontWeight: 'bold',
+      display: 'inline-block',
+      marginLeft: '8px'
+    },
+    statCard: {
+      background: isDark ? 'linear-gradient(135deg, #1E293B, #0F172A)' : 'linear-gradient(135deg, #FFFFFF, #F8FAFC)',
+      padding: '18px',
+      borderRadius: '12px',
+      border: isDark ? '1px solid #334155' : '1px solid #E2E8F0'
+    },
+    statLabel: {
+      fontSize: '11px',
+      color: '#94A3B8',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px'
+    },
+    statValue: {
+      fontSize: '22px',
+      fontWeight: 700,
+      color: '#FBBF24',
+      marginTop: '5px'
     }
   };
 
@@ -140,6 +163,25 @@ export default function ERPViewsTools(props) {
     const [cost, setCost] = useState(0);
     const [margin, setMargin] = useState(15);
     const [vatRate, setVatRate] = useState(15);
+    const [competitorPrice, setCompetitorPrice] = useState(0);
+    const [aiSuggestion, setAiSuggestion] = useState(null);
+
+    // AI suggestion: adjust margin based on competitor price
+    useEffect(() => {
+      if (cost > 0 && competitorPrice > 0) {
+        const suggestedMargin = ((competitorPrice - cost) / cost) * 100;
+        const clampedMargin = Math.max(5, Math.min(40, suggestedMargin));
+        setAiSuggestion({
+          suggestedMargin: clampedMargin,
+          suggestedSell: cost * (1 + clampedMargin / 100),
+          message: isAr
+            ? `بناءً على سعر المنافس (${competitorPrice.toFixed(2)} SAR)، الهامش المقترح هو ${clampedMargin.toFixed(1)}%`
+            : `Based on competitor price (${competitorPrice.toFixed(2)} SAR), suggested margin is ${clampedMargin.toFixed(1)}%`
+        });
+      } else {
+        setAiSuggestion(null);
+      }
+    }, [cost, competitorPrice]);
 
     const calculatePricing = () => {
       const c = parseFloat(cost) || 0;
@@ -156,10 +198,17 @@ export default function ERPViewsTools(props) {
 
     const { suggestedSell, profit, vatAmount, finalTotal } = calculatePricing();
 
+    const applyAISuggestion = () => {
+      if (aiSuggestion) {
+        setMargin(aiSuggestion.suggestedMargin);
+      }
+    };
+
     return (
       <div style={styles.container}>
         <div style={styles.header}>
           <h1 style={styles.title}>🤖 {isAr ? 'حاسبة التسعير الذكية' : 'AI Pricing Calculator'}</h1>
+          <span style={styles.aiBadge}>AI</span>
         </div>
 
         <div style={styles.card}>
@@ -206,6 +255,53 @@ export default function ERPViewsTools(props) {
               />
             </div>
           </div>
+
+          <div style={{ marginTop: '15px' }}>
+            <label style={styles.formLabel}>{isAr ? 'سعر المنافس (اختياري - للذكاء الاصطناعي)' : 'Competitor Price (Optional - for AI)'}</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={competitorPrice}
+              onChange={e => setCompetitorPrice(e.target.value)}
+              style={styles.input}
+              placeholder={isAr ? 'أدخل سعر المنافس' : 'Enter competitor price'}
+            />
+          </div>
+
+          {aiSuggestion && (
+            <div style={{
+              marginTop: '15px',
+              padding: '15px',
+              background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+              color: 'white',
+              borderRadius: '10px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '10px'
+            }}>
+              <span style={{ fontSize: '14px' }}>
+                🤖 {aiSuggestion.message}
+              </span>
+              <button
+                onClick={applyAISuggestion}
+                style={{
+                  padding: '8px 20px',
+                  background: '#FBBF24',
+                  color: '#0F172A',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  fontSize: '13px'
+                }}
+              >
+                {isAr ? 'تطبيق الهامش المقترح' : 'Apply Suggested Margin'}
+              </button>
+            </div>
+          )}
 
           <div style={{
             marginTop: '20px',
@@ -267,6 +363,7 @@ export default function ERPViewsTools(props) {
                 setCost(0);
                 setMargin(15);
                 setVatRate(15);
+                setCompetitorPrice(0);
               }}
             >
               🔄 {isAr ? 'إعادة تعيين' : 'Reset'}
