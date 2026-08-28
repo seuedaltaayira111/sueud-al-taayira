@@ -7,8 +7,7 @@ export default function ERPViewsSales(props) {
   const {
     page, data, tr, modal, setModal, setPage,
     today,
-    lang,           // ✅ FIXED: added lang
-    theme,          // ✅ FIXED: added theme
+    lang, theme,
     handleEditInvoice, handleDeleteInvoice, openPreview, openRefundModal,
     handleQuickSettle, handleDownloadPDF, printInvoice, shareWhatsApp, shareEmail,
     handleEditCust, handleDelete, handleEditCorp, handleEditCred, handleEditVend,
@@ -28,26 +27,12 @@ export default function ERPViewsSales(props) {
     empForm, setEmpForm, editEmpId, setEditEmpId,
     handleAddMistake, handleGenerateContract, handleGenerateOffer,
     contractCorpName, setContractCorpName, contractType, setContractType,
-    contractMarkup, setContractMarkup, contractTerms, setContractTerms
+    contractMarkup, setContractMarkup, contractTerms, setContractTerms,
+    downloadPDF, getExpenseHTML, getMistakeHTML, fetchAll, setData, setPreviewHTML
   } = props;
 
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
-
-  const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [rowsPerPage, setRowsPerPage] = useState(25);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [statementType, setStatementType] = useState('sales');
-  const [stmtCustId, setStmtCustId] = useState('');
-  const [stmtVendorId, setStmtVendorId] = useState('');
-  const [customerStatement, setCustomerStatement] = useState([]);
-  const [vendorStatement, setVendorStatement] = useState([]);
-  const [loadingStatement, setLoadingStatement] = useState(false);
-
-  const t = (key, fallback) => tr?.[key] || fallback || key;
-  const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
 
   // ===== STYLES =====
   const styles = {
@@ -108,6 +93,19 @@ export default function ERPViewsSales(props) {
       color: isDark ? '#E2E8F0' : '#1E293B',
       fontSize: '14px',
       outline: 'none'
+    },
+    textarea: {
+      padding: '10px 16px',
+      background: isDark ? '#0F172A' : '#F1F5F9',
+      border: isDark ? '1px solid #475569' : '1px solid #E2E8F0',
+      borderRadius: '10px',
+      color: isDark ? '#E2E8F0' : '#1E293B',
+      fontSize: '14px',
+      outline: 'none',
+      width: '100%',
+      minHeight: '80px',
+      resize: 'vertical',
+      fontFamily: 'inherit'
     },
     btn: {
       padding: '10px 20px',
@@ -311,6 +309,9 @@ export default function ERPViewsSales(props) {
     }
   };
 
+  const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
+  const t = (key, fallback) => tr?.[key] || fallback || key;
+
   // ===== FILTERED INVOICES =====
   const filteredInvoices = useMemo(() => {
     let inv = data.invoices?.filter(i => !i.invoice_no?.startsWith('REF-')) || [];
@@ -328,7 +329,6 @@ export default function ERPViewsSales(props) {
     return inv;
   }, [data.invoices, searchTerm, dateFilter, statusFilter]);
 
-  // ===== FILTERED REFUNDS =====
   const filteredRefunds = useMemo(() => {
     let ref = data.invoices?.filter(i => i.invoice_no?.startsWith('REF-')) || [];
     if (searchTerm) {
@@ -342,14 +342,19 @@ export default function ERPViewsSales(props) {
     return ref;
   }, [data.invoices, searchTerm]);
 
-  // ===== PAGINATION =====
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [rowsPerPage, setRowsPerPage] = useState(25);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [statementType, setStatementType] = useState('sales');
+
   const paginate = (list) => {
     const start = (currentPage - 1) * rowsPerPage;
     return list.slice(start, start + rowsPerPage);
   };
   const totalPages = (list) => Math.ceil((list?.length || 0) / rowsPerPage);
 
-  // ===== BEAUTIFUL ICON HELPERS =====
   const getStatusIcon = (status) => {
     if (status === 'Paid') return '✅';
     if (status === 'Unpaid') return '⏳';
@@ -1339,7 +1344,7 @@ export default function ERPViewsSales(props) {
   }
 
   // ============================================================
-  // EXPENSES
+  // EXPENSES – COMPLETE FIXED
   // ============================================================
   if (page === 'expenses') {
     const [expFormLocal, setExpFormLocal] = useState({
@@ -1351,6 +1356,9 @@ export default function ERPViewsSales(props) {
       items: [{ name: '', qty: 1, price: 0 }],
       approval_status: 'Approved'
     });
+    const [editingExpId, setEditingExpId] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [dateFilter, setDateFilter] = useState('');
 
     const handleAddExpItemLocal = () => {
       setExpFormLocal(prev => ({
@@ -1358,14 +1366,12 @@ export default function ERPViewsSales(props) {
         items: [...prev.items, { name: '', qty: 1, price: 0 }]
       }));
     };
-
     const handleRemoveExpItemLocal = (i) => {
       setExpFormLocal(prev => ({
         ...prev,
         items: prev.items.filter((_, idx) => idx !== i)
       }));
     };
-
     const handleExpItemChangeLocal = (i, field, val) => {
       setExpFormLocal(prev => {
         const items = [...prev.items];
@@ -1378,7 +1384,7 @@ export default function ERPViewsSales(props) {
       e.preventDefault();
       const totalAmount = expFormLocal.items.reduce((s, item) => s + ((parseFloat(item.qty) || 1) * (parseFloat(item.price) || 0)), 0);
       if (totalAmount <= 0) {
-        showToast?.(isAr ? '⚠️ الرجاء إضافة عنصر واحد على الأقل' : '⚠️ Please add at least one item');
+        showToast?.(isAr ? '⚠️ कम से कम एक आइटम डालें' : '⚠️ Please add at least one item');
         return;
       }
 
@@ -1393,18 +1399,40 @@ export default function ERPViewsSales(props) {
           total_amount: totalAmount,
           items: expFormLocal.items,
           approval_status: expFormLocal.approval_status,
-          tenant_id: props.userProfile?.tenant_id
+          tenant_id: userProfile?.tenant_id
         };
 
-        const { data: newExp, error } = await supabase
-          .from('expenses')
-          .insert([payload])
-          .select()
-          .single();
+        let result;
+        if (editingExpId) {
+          const { data: up, error } = await supabase
+            .from('expenses')
+            .update(payload)
+            .eq('id', editingExpId)
+            .select()
+            .single();
+          if (error) throw error;
+          result = up;
+          setData(prev => ({
+            ...prev,
+            expenses: prev.expenses.map(ex => ex.id === editingExpId ? up : ex)
+          }));
+          showToast?.(isAr ? '✅ अपडेट हो गया' : '✅ Updated!');
+          setEditingExpId(null);
+        } else {
+          const { data: nExp, error } = await supabase
+            .from('expenses')
+            .insert([payload])
+            .select()
+            .single();
+          if (error) throw error;
+          result = nExp;
+          setData(prev => ({
+            ...prev,
+            expenses: [nExp, ...prev.expenses]
+          }));
+          showToast?.(isAr ? '✅ खर्चा जोड़ा गया' : '✅ Expense added!');
+        }
 
-        if (error) throw error;
-
-        showToast?.(isAr ? '✅ تم إضافة المصروف!' : '✅ Expense added!');
         setExpFormLocal({
           expense_type: 'Office Expense',
           payment_mode: 'Cash',
@@ -1416,8 +1444,48 @@ export default function ERPViewsSales(props) {
         });
         fetchAll?.();
       } catch (err) {
-        showToast?.(isAr ? '❌ خطأ: ' + err.message : '❌ Error: ' + err.message);
+        showToast?.(isAr ? '❌ त्रुटि: ' + err.message : '❌ Error: ' + err.message);
       }
+    };
+
+    const handleDeleteExpenseLocal = async (exp) => {
+      if (!confirm(isAr ? 'क्या आप इस खर्च को हटाना चाहते हैं?' : 'Delete this expense?')) return;
+      try {
+        await supabase.from('expenses').delete().eq('id', exp.id);
+        setData(prev => ({
+          ...prev,
+          expenses: prev.expenses.filter(ex => ex.id !== exp.id)
+        }));
+        showToast?.(isAr ? '✅ हटा दिया' : '✅ Deleted');
+      } catch (err) {
+        showToast?.(isAr ? '❌ त्रुटि: ' + err.message : '❌ Error: ' + err.message);
+      }
+    };
+
+    const handlePreviewExpense = (exp) => {
+      const html = getExpenseHTML?.(exp, data.settings, lang);
+      if (!html) return showToast?.(isAr ? '❌ HTML नहीं बना' : '❌ HTML not generated');
+      setPreviewHTML?.(html);
+      setModal?.({ type: 'preview', data: exp });
+    };
+
+    const handleDownloadExpensePDF = async (exp) => {
+      const html = getExpenseHTML?.(exp, data.settings, lang);
+      if (!html) return showToast?.(isAr ? '❌ HTML नहीं बना' : '❌ HTML not generated');
+      await downloadPDF?.(html, `Expense_${exp.id || 'voucher'}.pdf`);
+    };
+
+    const handleEditExpense = (exp) => {
+      setEditingExpId(exp.id);
+      setExpFormLocal({
+        expense_type: exp.expense_type || 'Office Expense',
+        payment_mode: exp.payment_mode || 'Cash',
+        description: exp.description || '',
+        expense_date: exp.expense_date || today,
+        vendor_name: exp.vendor_name || '',
+        items: exp.items || [{ name: '', qty: 1, price: 0 }],
+        approval_status: exp.approval_status || 'Approved'
+      });
     };
 
     const filtered = (data.expenses || []).filter(e =>
@@ -1425,7 +1493,7 @@ export default function ERPViewsSales(props) {
       e.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       e.expense_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       e.vendor_name?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    ).filter(e => !dateFilter || e.expense_date === dateFilter);
 
     const totalExp = filtered.reduce((s, e) => s + (e.amount || 0), 0);
 
@@ -1436,7 +1504,7 @@ export default function ERPViewsSales(props) {
           <div style={styles.searchBox}>
             <input
               style={styles.input}
-              placeholder={isAr ? '🔍 بحث عن مصروف...' : '🔍 Search expenses...'}
+              placeholder={isAr ? '🔍 खर्चा खोजें...' : '🔍 Search expenses...'}
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
             />
@@ -1451,25 +1519,24 @@ export default function ERPViewsSales(props) {
 
         <div style={styles.statsGrid}>
           <div style={styles.statCard}>
-            <div style={styles.statLabel}>💸 {isAr ? 'إجمالي المصروفات' : 'Total Expenses'}</div>
+            <div style={styles.statLabel}>💸 {isAr ? 'कुल खर्च' : 'Total Expenses'}</div>
             <div style={{ ...styles.statValue, color: '#EF4444' }}>{fmt(totalExp)}</div>
           </div>
           <div style={styles.statCard}>
-            <div style={styles.statLabel}>📄 {isAr ? 'العدد' : 'Count'}</div>
+            <div style={styles.statLabel}>📄 {isAr ? 'संख्या' : 'Count'}</div>
             <div style={styles.statValue}>{filtered.length}</div>
           </div>
         </div>
 
-        {/* Expense Form */}
         <div style={styles.card}>
-          <h3 style={styles.sectionTitle}>📝 {isAr ? 'إضافة مصروف جديد' : 'Add New Expense'}</h3>
+          <h3 style={styles.sectionTitle}>{editingExpId ? '✏️ ' + (isAr ? 'संपादित करें' : 'Edit') : '📝 ' + (isAr ? 'नया खर्चा' : 'Add New Expense')}</h3>
           <form onSubmit={handleExpenseSubmit} style={styles.formRow}>
             <div>
-              <label style={styles.formLabel}>{isAr ? 'التاريخ' : 'Date'}</label>
+              <label style={styles.formLabel}>{isAr ? 'तारीख' : 'Date'}</label>
               <input type="date" style={styles.input} value={expFormLocal.expense_date} onChange={e => setExpFormLocal({ ...expFormLocal, expense_date: e.target.value })} required />
             </div>
             <div>
-              <label style={styles.formLabel}>{isAr ? 'النوع' : 'Type'}</label>
+              <label style={styles.formLabel}>{isAr ? 'प्रकार' : 'Type'}</label>
               <select style={styles.select} value={expFormLocal.expense_type} onChange={e => setExpFormLocal({ ...expFormLocal, expense_type: e.target.value })}>
                 <option>Office Expense</option>
                 <option>Travel Expense</option>
@@ -1481,11 +1548,11 @@ export default function ERPViewsSales(props) {
               </select>
             </div>
             <div>
-              <label style={styles.formLabel}>{isAr ? 'المورد' : 'Vendor'}</label>
+              <label style={styles.formLabel}>{isAr ? 'विक्रेता' : 'Vendor'}</label>
               <input style={styles.input} value={expFormLocal.vendor_name} onChange={e => setExpFormLocal({ ...expFormLocal, vendor_name: e.target.value })} />
             </div>
             <div>
-              <label style={styles.formLabel}>{isAr ? 'طريقة الدفع' : 'Payment'}</label>
+              <label style={styles.formLabel}>{isAr ? 'भुगतान विधि' : 'Payment'}</label>
               <select style={styles.select} value={expFormLocal.payment_mode} onChange={e => setExpFormLocal({ ...expFormLocal, payment_mode: e.target.value })}>
                 <option>Cash</option>
                 <option>Bank Transfer</option>
@@ -1493,26 +1560,26 @@ export default function ERPViewsSales(props) {
               </select>
             </div>
             <div style={{ gridColumn: '1 / -1' }}>
-              <label style={styles.formLabel}>{isAr ? 'الوصف' : 'Description'}</label>
+              <label style={styles.formLabel}>{isAr ? 'विवरण' : 'Description'}</label>
               <input style={styles.input} value={expFormLocal.description} onChange={e => setExpFormLocal({ ...expFormLocal, description: e.target.value })} />
             </div>
             <div style={{ gridColumn: '1 / -1' }}>
-              <label style={styles.formLabel}>{isAr ? 'العناصر' : 'Items'}</label>
+              <label style={styles.formLabel}>{isAr ? 'आइटम' : 'Items'}</label>
               {expFormLocal.items.map((item, idx) => (
                 <div key={idx} style={{ display: 'flex', gap: '10px', marginBottom: '8px', alignItems: 'center' }}>
-                  <input style={{ ...styles.input, flex: 2 }} placeholder={isAr ? 'اسم العنصر' : 'Item name'} value={item.name} onChange={e => handleExpItemChangeLocal(idx, 'name', e.target.value)} />
-                  <input type="number" style={{ ...styles.input, flex: 1 }} placeholder={isAr ? 'الكمية' : 'Qty'} value={item.qty} onChange={e => handleExpItemChangeLocal(idx, 'qty', e.target.value)} min="1" />
-                  <input type="number" step="0.01" style={{ ...styles.input, flex: 1 }} placeholder={isAr ? 'السعر' : 'Price'} value={item.price} onChange={e => handleExpItemChangeLocal(idx, 'price', e.target.value)} min="0" />
+                  <input style={{ ...styles.input, flex: 2 }} placeholder={isAr ? 'आइटम नाम' : 'Item name'} value={item.name} onChange={e => handleExpItemChangeLocal(idx, 'name', e.target.value)} />
+                  <input type="number" style={{ ...styles.input, flex: 1 }} placeholder={isAr ? 'मात्रा' : 'Qty'} value={item.qty} onChange={e => handleExpItemChangeLocal(idx, 'qty', e.target.value)} min="1" />
+                  <input type="number" step="0.01" style={{ ...styles.input, flex: 1 }} placeholder={isAr ? 'कीमत' : 'Price'} value={item.price} onChange={e => handleExpItemChangeLocal(idx, 'price', e.target.value)} min="0" />
                   {expFormLocal.items.length > 1 && (
                     <button type="button" style={{ ...styles.btn, ...styles.btnDanger, padding: '6px 12px' }} onClick={() => handleRemoveExpItemLocal(idx)}>✕</button>
                   )}
                 </div>
               ))}
               <button type="button" style={{ ...styles.btn, ...styles.btnGhost, padding: '6px 12px' }} onClick={handleAddExpItemLocal}>
-                ➕ {isAr ? 'إضافة عنصر' : 'Add Item'}
+                ➕ {isAr ? 'आइटम जोड़ें' : 'Add Item'}
               </button>
               <div style={{ marginTop: '10px', padding: '10px', background: isDark ? '#0F172A' : '#F1F5F9', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontWeight: 600 }}>{isAr ? 'الإجمالي' : 'Total'}</span>
+                <span style={{ fontWeight: 600 }}>{isAr ? 'कुल' : 'Total'}</span>
                 <span style={{ fontWeight: 700, color: '#059669' }}>
                   {expFormLocal.items.reduce((s, item) => s + ((parseFloat(item.qty) || 1) * (parseFloat(item.price) || 0)), 0).toFixed(2)} SAR
                 </span>
@@ -1520,26 +1587,17 @@ export default function ERPViewsSales(props) {
             </div>
             <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px' }}>
               <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, padding: '12px 30px' }}>
-                ✅ {isAr ? 'إضافة المصروف' : 'Add Expense'}
+                {editingExpId ? '💾 ' + (isAr ? 'अपडेट करें' : 'Update') : '✅ ' + (isAr ? 'खर्चा जोड़ें' : 'Add Expense')}
               </button>
-              <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => {
-                setExpFormLocal({
-                  expense_type: 'Office Expense',
-                  payment_mode: 'Cash',
-                  description: '',
-                  expense_date: today,
-                  vendor_name: '',
-                  items: [{ name: '', qty: 1, price: 0 }],
-                  approval_status: 'Approved'
-                });
-              }}>
-                🔄 {isAr ? 'إعادة تعيين' : 'Reset'}
-              </button>
+              {editingExpId && (
+                <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setEditingExpId(null); setExpFormLocal({ expense_type: 'Office Expense', payment_mode: 'Cash', description: '', expense_date: today, vendor_name: '', items: [{ name: '', qty: 1, price: 0 }], approval_status: 'Approved' }); }}>
+                  ✕ {isAr ? 'रद्द करें' : 'Cancel'}
+                </button>
+              )}
             </div>
           </form>
         </div>
 
-        {/* Expenses List */}
         <div style={styles.card}>
           <div style={{ overflowX: 'auto' }}>
             <table style={styles.table}>
@@ -1555,7 +1613,7 @@ export default function ERPViewsSales(props) {
                 </tr>
               </thead>
               <tbody>
-                {filtered.filter(e => !dateFilter || e.expense_date === dateFilter).map(e => (
+                {filtered.map(e => (
                   <tr key={e.id}>
                     <td style={styles.td}>{e.expense_date || '-'}</td>
                     <td style={styles.td}>{e.expense_type || '-'}</td>
@@ -1565,12 +1623,21 @@ export default function ERPViewsSales(props) {
                     <td style={{ ...styles.tdRight, color: '#EF4444' }}>{fmt(e.amount)}</td>
                     <td style={styles.tdCenter}>
                       <div style={styles.actionsCell}>
-                        <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleEditExp(e)}>✏️</button>
-                        <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDeleteExpense?.(e) || handleDelete('expenses', e.id)}>🗑️</button>
+                        <button style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }} onClick={() => handlePreviewExpense(e)} title={isAr ? 'पूर्वावलोकन' : 'Preview'}>👁️</button>
+                        <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleDownloadExpensePDF(e)} title={isAr ? 'डाउनलोड' : 'Download'}>⬇️</button>
+                        <button style={{ ...styles.actionBtn, background: '#FEF3C7', color: '#92400E' }} onClick={() => handleEditExpense(e)} title={isAr ? 'संपादित करें' : 'Edit'}>✏️</button>
+                        <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDeleteExpenseLocal(e)} title={isAr ? 'हटाएं' : 'Delete'}>🗑️</button>
                       </div>
                     </td>
                   </tr>
                 ))}
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan="7" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
+                      {isAr ? 'कोई खर्चा नहीं' : 'No expenses found'}
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -1644,28 +1711,49 @@ export default function ERPViewsSales(props) {
       reason: '',
       date: today
     });
+    const [editingId, setEditingId] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
 
     const handleMistakeSubmit = async (e) => {
       e.preventDefault();
       try {
         const payload = {
           ...mistakeForm,
-          tenant_id: props.userProfile?.tenant_id,
+          tenant_id: userProfile?.tenant_id,
           loss_amount: parseFloat(mistakeForm.loss_amount) || 0
         };
 
-        const { data: newMistake, error } = await supabase
-          .from('staff_mistakes')
-          .insert([payload])
-          .select('*, employees(name)')
-          .single();
+        let result;
+        if (editingId) {
+          const { data: up, error } = await supabase
+            .from('staff_mistakes')
+            .update(payload)
+            .eq('id', editingId)
+            .select('*, employees(name)')
+            .single();
+          if (error) throw error;
+          result = up;
+          setData(prev => ({
+            ...prev,
+            staffMistakes: prev.staffMistakes.map(m => m.id === editingId ? up : m)
+          }));
+          showToast?.(isAr ? '✅ अपडेट हो गया' : '✅ Updated!');
+          setEditingId(null);
+        } else {
+          const { data: newM, error } = await supabase
+            .from('staff_mistakes')
+            .insert([payload])
+            .select('*, employees(name)')
+            .single();
+          if (error) throw error;
+          result = newM;
+          setData(prev => ({
+            ...prev,
+            staffMistakes: [newM, ...(prev.staffMistakes || [])]
+          }));
+          showToast?.(isAr ? '✅ मिस्टेक लॉग हो गया' : '✅ Mistake Logged!');
+        }
 
-        if (error) throw error;
-        setData?.(prev => ({
-          ...prev,
-          staffMistakes: [newMistake, ...(prev.staffMistakes || [])]
-        }));
-        showToast?.(isAr ? '✅ تم تسجيل الخطأ!' : '✅ Mistake logged!');
         setMistakeForm({
           employee_id: '',
           old_ticket_no: '',
@@ -1675,13 +1763,61 @@ export default function ERPViewsSales(props) {
           reason: '',
           date: today
         });
+        fetchAll?.();
       } catch (err) {
-        showToast?.(isAr ? '❌ خطأ: ' + err.message : '❌ Error: ' + err.message);
+        showToast?.(isAr ? '❌ त्रुटि: ' + err.message : '❌ Error: ' + err.message);
       }
+    };
+
+    const handlePreviewMistakeLocal = (m) => {
+      const html = getMistakeHTML?.(m, data.settings, lang);
+      if (!html) return showToast?.(isAr ? '❌ HTML नहीं बना' : '❌ HTML not generated');
+      setPreviewHTML?.(html);
+      setModal?.({ type: 'preview', data: m });
+    };
+
+    const handleDownloadMistakePDF = async (m) => {
+      const html = getMistakeHTML?.(m, data.settings, lang);
+      if (!html) return showToast?.(isAr ? '❌ HTML नहीं बना' : '❌ HTML not generated');
+      await downloadPDF?.(html, `Mistake_${m.id || 'voucher'}.pdf`);
+    };
+
+    const handleDeleteMistakeLocal = async (m) => {
+      if (!confirm(isAr ? 'क्या आप हटाना चाहते हैं?' : 'Delete?')) return;
+      try {
+        await supabase.from('staff_mistakes').delete().eq('id', m.id);
+        setData(prev => ({
+          ...prev,
+          staffMistakes: prev.staffMistakes.filter(x => x.id !== m.id)
+        }));
+        showToast?.(isAr ? '✅ हटा दिया' : '✅ Deleted');
+      } catch (err) {
+        showToast?.(isAr ? '❌ त्रुटि: ' + err.message : '❌ Error: ' + err.message);
+      }
+    };
+
+    const handleEditMistake = (m) => {
+      setEditingId(m.id);
+      setMistakeForm({
+        employee_id: m.employee_id || '',
+        old_ticket_no: m.old_ticket_no || '',
+        new_ticket_no: m.new_ticket_no || '',
+        loss_amount: m.loss_amount || 0,
+        paid_by_employee: m.paid_by_employee || false,
+        reason: m.reason || '',
+        date: m.date || today
+      });
     };
 
     const totalLoss = (data.staffMistakes || []).reduce((s, m) => s + (m.loss_amount || 0), 0);
     const paidByEmp = (data.staffMistakes || []).filter(m => m.paid_by_employee).reduce((s, m) => s + (m.loss_amount || 0), 0);
+
+    const filteredMistakes = (data.staffMistakes || []).filter(m =>
+      !searchTerm ||
+      m.employees?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      m.old_ticket_no?.includes(searchTerm) ||
+      m.new_ticket_no?.includes(searchTerm)
+    );
 
     return (
       <div style={styles.container}>
@@ -1690,7 +1826,7 @@ export default function ERPViewsSales(props) {
           <div style={styles.searchBox}>
             <input
               style={styles.input}
-              placeholder={isAr ? '🔍 بحث...' : '🔍 Search...'}
+              placeholder={isAr ? '🔍 खोजें...' : '🔍 Search...'}
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
             />
@@ -1699,76 +1835,66 @@ export default function ERPViewsSales(props) {
 
         <div style={styles.statsGrid}>
           <div style={styles.statCard}>
-            <div style={styles.statLabel}>⚠️ {isAr ? 'إجمالي الأخطاء' : 'Total Mistakes'}</div>
+            <div style={styles.statLabel}>⚠️ {isAr ? 'कुल मिस्टेक' : 'Total Mistakes'}</div>
             <div style={styles.statValue}>{data.staffMistakes?.length || 0}</div>
           </div>
           <div style={styles.statCard}>
-            <div style={styles.statLabel}>💰 {isAr ? 'إجمالي الخسارة' : 'Total Loss'}</div>
+            <div style={styles.statLabel}>💰 {isAr ? 'कुल नुकसान' : 'Total Loss'}</div>
             <div style={{ ...styles.statValue, color: '#EF4444' }}>{fmt(totalLoss)}</div>
           </div>
           <div style={styles.statCard}>
-            <div style={styles.statLabel}>✅ {isAr ? 'مدفوع من الموظف' : 'Paid by Employee'}</div>
+            <div style={styles.statLabel}>✅ {isAr ? 'कर्मचारी द्वारा भुगतान' : 'Paid by Employee'}</div>
             <div style={{ ...styles.statValue, color: '#059669' }}>{fmt(paidByEmp)}</div>
           </div>
         </div>
 
-        {/* Add Mistake Form */}
         <div style={styles.card}>
-          <h3 style={styles.sectionTitle}>⚠️ {isAr ? 'تسجيل خطأ جديد' : 'Log New Mistake'}</h3>
+          <h3 style={styles.sectionTitle}>{editingId ? '✏️ ' + (isAr ? 'संपादित करें' : 'Edit') : '⚠️ ' + (isAr ? 'नई मिस्टेक लॉग करें' : 'Log New Mistake')}</h3>
           <form onSubmit={handleMistakeSubmit} style={styles.formRow}>
             <div>
-              <label style={styles.formLabel}>{isAr ? 'الموظف' : 'Employee'}</label>
+              <label style={styles.formLabel}>{isAr ? 'कर्मचारी' : 'Employee'}</label>
               <select style={styles.select} value={mistakeForm.employee_id} onChange={e => setMistakeForm({ ...mistakeForm, employee_id: e.target.value })} required>
-                <option value="">{isAr ? 'اختر الموظف' : 'Select Employee'}</option>
+                <option value="">{isAr ? 'चुनें' : 'Select'}</option>
                 {(data.employees || []).map(e => (
                   <option key={e.id} value={e.id}>{e.name}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label style={styles.formLabel}>{isAr ? 'رقم التذكرة القديمة' : 'Old Ticket No'}</label>
+              <label style={styles.formLabel}>{isAr ? 'पुराना टिकट नं.' : 'Old Ticket No'}</label>
               <input style={styles.input} value={mistakeForm.old_ticket_no} onChange={e => setMistakeForm({ ...mistakeForm, old_ticket_no: e.target.value })} />
             </div>
             <div>
-              <label style={styles.formLabel}>{isAr ? 'رقم التذكرة الجديدة' : 'New Ticket No'}</label>
+              <label style={styles.formLabel}>{isAr ? 'नया टिकट नं.' : 'New Ticket No'}</label>
               <input style={styles.input} value={mistakeForm.new_ticket_no} onChange={e => setMistakeForm({ ...mistakeForm, new_ticket_no: e.target.value })} />
             </div>
             <div>
-              <label style={styles.formLabel}>{isAr ? 'مبلغ الخسارة (ريال)' : 'Loss Amount (SAR)'}</label>
+              <label style={styles.formLabel}>{isAr ? 'नुकसान (SAR)' : 'Loss Amount (SAR)'}</label>
               <input type="number" step="0.01" style={styles.input} value={mistakeForm.loss_amount} onChange={e => setMistakeForm({ ...mistakeForm, loss_amount: e.target.value })} required />
             </div>
             <div>
-              <label style={styles.formLabel}>{isAr ? 'السبب' : 'Reason'}</label>
+              <label style={styles.formLabel}>{isAr ? 'कारण' : 'Reason'}</label>
               <input style={styles.input} value={mistakeForm.reason} onChange={e => setMistakeForm({ ...mistakeForm, reason: e.target.value })} />
             </div>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: isDark ? '#CBD5E1' : '#1E293B', fontSize: '13px' }}>
                 <input type="checkbox" checked={mistakeForm.paid_by_employee} onChange={e => setMistakeForm({ ...mistakeForm, paid_by_employee: e.target.checked })} />
-                {isAr ? 'خصم من الراتب' : 'Deduct from Salary'}
+                {isAr ? 'वेतन से काटें' : 'Deduct from Salary'}
               </label>
             </div>
             <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px' }}>
               <button type="submit" style={{ ...styles.btn, ...styles.btnWarning, padding: '12px 30px' }}>
-                ⚠️ {isAr ? 'تسجيل الخطأ' : 'Log Mistake'}
+                {editingId ? '💾 ' + (isAr ? 'अपडेट करें' : 'Update') : '⚠️ ' + (isAr ? 'लॉग करें' : 'Log Mistake')}
               </button>
-              <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => {
-                setMistakeForm({
-                  employee_id: '',
-                  old_ticket_no: '',
-                  new_ticket_no: '',
-                  loss_amount: 0,
-                  paid_by_employee: false,
-                  reason: '',
-                  date: today
-                });
-              }}>
-                🔄 {isAr ? 'إعادة تعيين' : 'Reset'}
-              </button>
+              {editingId && (
+                <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setEditingId(null); setMistakeForm({ employee_id: '', old_ticket_no: '', new_ticket_no: '', loss_amount: 0, paid_by_employee: false, reason: '', date: today }); }}>
+                  ✕ {isAr ? 'रद्द करें' : 'Cancel'}
+                </button>
+              )}
             </div>
           </form>
         </div>
 
-        {/* Mistakes List */}
         <div style={styles.card}>
           <div style={{ overflowX: 'auto' }}>
             <table style={styles.table}>
@@ -1784,26 +1910,42 @@ export default function ERPViewsSales(props) {
                 </tr>
               </thead>
               <tbody>
-                {(data.staffMistakes || []).filter(m => !searchTerm || m.employees?.name?.toLowerCase().includes(searchTerm.toLowerCase())).map(m => (
-                  <tr key={m.id}>
-                    <td style={styles.td}>{m.date || '-'}</td>
+                {filteredMistakes.map(m => (
+                  <tr key={m.id} style={{ background: '#FFFBEB' }}>
+                    <td style={styles.td}>{m.date}</td>
                     <td style={{ ...styles.td, fontWeight: 600 }}>{m.employees?.name || 'N/A'}</td>
-                    <td style={styles.td}>{m.old_ticket_no || '-'}</td>
-                    <td style={styles.td}>{m.new_ticket_no || '-'}</td>
-                    <td style={{ ...styles.tdRight, color: '#EF4444' }}>{fmt(m.loss_amount)}</td>
+                    <td style={styles.td}>{m.old_ticket_no}</td>
+                    <td style={styles.td}>{m.new_ticket_no}</td>
+                    <td style={{ ...styles.tdRight, fontWeight: 'bold', color: '#EF4444' }}>{fmt(m.loss_amount)}</td>
                     <td style={styles.tdCenter}>
-                      <span style={{ ...styles.badge, background: m.paid_by_employee ? '#D1FAE5' : '#FEE2E2', color: m.paid_by_employee ? '#065F46' : '#991B1B' }}>
-                        {m.paid_by_employee ? '✅ Yes' : '❌ No'}
+                      <span style={{
+                        padding: '4px 10px',
+                        borderRadius: '12px',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        color: m.paid_by_employee ? '#34D399' : '#94A3B8',
+                        background: m.paid_by_employee ? '#065F46' : '#1E293B'
+                      }}>
+                        {m.paid_by_employee ? (isAr ? 'हाँ' : 'Yes') : (isAr ? 'नहीं' : 'No')}
                       </span>
                     </td>
                     <td style={styles.tdCenter}>
                       <div style={styles.actionsCell}>
-                        <button style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }} onClick={() => handlePreviewMistake?.(m)}>👁️</button>
-                        <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDeleteMistake?.(m) || handleDelete('staff_mistakes', m.id)}>🗑️</button>
+                        <button style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }} onClick={() => handlePreviewMistakeLocal(m)} title={isAr ? 'पूर्वावलोकन' : 'Preview'}>👁️</button>
+                        <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleDownloadMistakePDF(m)} title={isAr ? 'डाउनलोड' : 'Download'}>⬇️</button>
+                        <button style={{ ...styles.actionBtn, background: '#FEF3C7', color: '#92400E' }} onClick={() => handleEditMistake(m)} title={isAr ? 'संपादित करें' : 'Edit'}>✏️</button>
+                        <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDeleteMistakeLocal(m)} title={isAr ? 'हटाएं' : 'Delete'}>🗑️</button>
                       </div>
                     </td>
                   </tr>
                 ))}
+                {filteredMistakes.length === 0 && (
+                  <tr>
+                    <td colSpan="7" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
+                      {isAr ? 'कोई मिस्टेक नहीं' : 'No mistakes logged.'}
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
