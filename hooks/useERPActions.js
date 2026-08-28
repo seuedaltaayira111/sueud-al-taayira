@@ -872,7 +872,7 @@ export default function useERPActions(state) {
 
       const div = document.createElement('div');
       const A4_PX_W = 794;
-      div.style.cssText = `position:absolute;left:-9999px;top:0;width:${A4_PX_W}px;background:white;padding:20px;`;
+      div.style.cssText = `position:absolute;left:-9999px;top:0;width:${A4_PX_W}px;background:white;`;
       const parser = new DOMParser();
       const doc = parser.parseFromString(htmlContent, 'text/html');
       const imgs = doc.querySelectorAll('img[src*="api.qrserver.com"], img[src*="bwipjs-api"]');
@@ -895,10 +895,14 @@ export default function useERPActions(state) {
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       const w = 210, ph = 297, h = (canvas.height * w) / canvas.width;
+      // Small tolerance (2mm) absorbs sub-pixel rounding / overflow noise from
+      // the capture — without it, documents that are exactly one page tall
+      // were generating a near-empty second/third page every time.
+      const TOLERANCE = 2;
       let left = h - ph, pos = 0;
       pdf.addImage(imgData, 'PNG', 0, pos, w, h);
       left -= ph;
-      while (left >= 0) {
+      while (left > TOLERANCE) {
         pos = left - h;
         pdf.addPage();
         pdf.addImage(imgData, 'PNG', 0, pos, w, h);
@@ -2095,6 +2099,77 @@ Thank you for choosing us!`;
   };
 
   // ============================================================
+  // USER MANAGEMENT — was referenced by the Users page but never
+  // implemented anywhere, so Add/Edit/Delete User crashed on use.
+  // ============================================================
+  const handleAddEditUser = async (e) => {
+    e.preventDefault();
+    try {
+      if (editUserId) {
+        const pl = {
+          username: userForm.username, role: userForm.role, is_admin: userForm.is_admin,
+          can_access_invoices: userForm.can_access_invoices, can_access_bank: userForm.can_access_bank,
+          can_access_hr: userForm.can_access_hr, can_access_reports: userForm.can_access_reports,
+          can_access_settings: userForm.can_access_settings, employee_id: userForm.employee_id || null
+        };
+        const { data: up, error } = await supabase.from('app_users').update(pl).eq('id', editUserId).select().single();
+        if (error) throw new Error(error.message);
+        setData(prev => ({ ...prev, appUsers: prev.appUsers.map(u => u.id === editUserId ? up : u) }));
+        showToast('User updated!');
+      } else {
+        const tempPass = Math.random().toString(36).slice(-8) + 'A1!';
+        const res = await fetch('/api/create-user', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: userForm.email, username: userForm.username, role: userForm.role,
+            is_admin: userForm.is_admin, can_access_invoices: userForm.can_access_invoices,
+            can_access_bank: userForm.can_access_bank, can_access_hr: userForm.can_access_hr,
+            can_access_reports: userForm.can_access_reports, can_access_settings: userForm.can_access_settings,
+            employee_id: userForm.employee_id || null, tenant_id: userProfile.tenant_id, temp_password: tempPass
+          })
+        });
+        const resData = await res.json();
+        if (resData.error) throw new Error(resData.error);
+        showToast(`User Created! Email: ${userForm.email} | Pass: ${resData.temp_password || tempPass}`);
+        await fetchAll();
+      }
+      setEditUserId(null);
+      setUserForm({
+        email: '', username: '', role: 'Staff', is_admin: false,
+        can_access_invoices: true, can_access_bank: false, can_access_hr: false,
+        can_access_reports: false, can_access_settings: false, employee_id: '',
+        can_access_travel: false, can_access_finance: false, can_access_crm: false,
+        can_access_contracts: false, can_access_audit: false, can_access_superadmin: false,
+        language: 'en', theme: 'light', notifications_enabled: true
+      });
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+
+  const handleEditUser = (u) => {
+    setEditUserId(u.id);
+    setUserForm({
+      email: u.email || '', username: u.username || '', role: u.role || 'Staff',
+      is_admin: u.is_admin || false, can_access_invoices: u.can_access_invoices !== false,
+      can_access_bank: u.can_access_bank || false, can_access_hr: u.can_access_hr || false,
+      can_access_reports: u.can_access_reports || false, can_access_settings: u.can_access_settings || false,
+      employee_id: u.employee_id || '', can_access_travel: u.can_access_travel || false,
+      can_access_finance: u.can_access_finance || false, can_access_crm: u.can_access_crm || false,
+      can_access_contracts: u.can_access_contracts || false, can_access_audit: u.can_access_audit || false,
+      can_access_superadmin: u.can_access_superadmin || false, language: u.language || 'en',
+      theme: u.theme || 'light', notifications_enabled: u.notifications_enabled !== false
+    });
+  };
+
+  const handleDeleteUser = async (u) => {
+    if (!confirm(`Delete user ${u.email}? This cannot be undone.`)) return;
+    try {
+      await supabase.from('app_users').delete().eq('id', u.id);
+      setData(prev => ({ ...prev, appUsers: prev.appUsers.filter(x => x.id !== u.id) }));
+      showToast('User deleted');
+    } catch (err) { showToast('Error: ' + err.message); }
+  };
+
+  // ============================================================
   // RETURN ALL ACTIONS
   // ============================================================
   return {
@@ -2162,6 +2237,9 @@ Thank you for choosing us!`;
     handleAddTenant,
     handleToggleSubscription,
     handleDeleteTenant,
-    handleExportCSV
+    handleExportCSV,
+    handleAddEditUser,
+    handleEditUser,
+    handleDeleteUser
   };
 }
