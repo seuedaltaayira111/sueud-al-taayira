@@ -13,7 +13,7 @@ import {
 } from '@/lib/invoiceHTML';
 
 // ============================================================
-// TRANSLATIONS (full)
+// TRANSLATIONS (full bilingual)
 // ============================================================
 const translations = {
   en: {
@@ -143,6 +143,7 @@ const translations = {
     achieved: 'Achieved',
     percentage: '%',
     balance: 'Balance',
+    // Travel Features
     flight_status: '🛫 Flight Status',
     hotel_booking: '🏨 Hotel Booking',
     visa_processing: '🛂 Visa Processing',
@@ -150,14 +151,17 @@ const translations = {
     hajj_umrah: '🕋 Hajj/Umrah',
     corporate_travel: '🏢 Corporate Travel',
     frequent_flyer: '🌟 Frequent Flyer',
+    // Advanced Features
     expense_voucher: '📄 Expense Voucher',
     staff_mistake_voucher: '⚠️ Staff Mistake Voucher',
     salary_slip: '📄 Salary Slip',
     contract_document: '📄 Contract Document',
     offer_document: '📄 Offer Document',
+    // Invoice Types
     sales_invoice: '📄 Sales Invoice',
     refund_invoice: '📄 Refund Invoice',
     proforma_invoice: '📄 Proforma Invoice',
+    // Payment Methods
     payment_cash: '💰 Cash',
     payment_bank: '🏦 Bank Transfer',
     payment_card: '💳 Card',
@@ -165,6 +169,7 @@ const translations = {
     payment_tabby: '📱 Tabby',
     payment_tamara: '📱 Tamara',
     payment_credit_balance: '💳 Credit Balance',
+    // Status
     status_paid: '✅ Paid',
     status_unpaid: '⏳ Unpaid',
     status_refunded: '🔄 Refunded',
@@ -298,6 +303,7 @@ const translations = {
     achieved: 'المحقق',
     percentage: '%',
     balance: 'الرصيد',
+    // Travel Features
     flight_status: '🛫 حالة الرحلة',
     hotel_booking: '🏨 حجز الفنادق',
     visa_processing: '🛂 معالجة التأشيرات',
@@ -305,14 +311,17 @@ const translations = {
     hajj_umrah: '🕋 باقات الحج والعمرة',
     corporate_travel: '🏢 السفر المؤسسي',
     frequent_flyer: '🌟 المسافر الدائم',
+    // Advanced Features
     expense_voucher: '📄 سند مصروفات',
     staff_mistake_voucher: '⚠️ سند خطأ الموظف',
     salary_slip: '📄 قسيمة راتب',
     contract_document: '📄 وثيقة عقد',
     offer_document: '📄 وثيقة عرض',
+    // Invoice Types
     sales_invoice: '📄 فاتورة مبيعات',
     refund_invoice: '📄 فاتورة استرجاع',
     proforma_invoice: '📄 فاتورة أولية',
+    // Payment Methods
     payment_cash: '💰 نقداً',
     payment_bank: '🏦 تحويل بنكي',
     payment_card: '💳 بطاقة',
@@ -320,6 +329,7 @@ const translations = {
     payment_tabby: '📱 تابي',
     payment_tamara: '📱 تمارة',
     payment_credit_balance: '💳 رصيد مستحق',
+    // Status
     status_paid: '✅ مدفوعة',
     status_unpaid: '⏳ غير مدفوعة',
     status_refunded: '🔄 مسترجعة',
