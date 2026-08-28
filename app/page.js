@@ -141,7 +141,6 @@ export default function Home() {
           <style>{`
             @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
             @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
-            @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-20px); } }
           `}</style>
           <div style={{ fontSize: '60px', marginBottom: '20px', animation: 'spin 2s linear infinite' }}>✈️</div>
           <h2 style={{ color: '#FBBF24' }}>Loading SUEUD AL TAAYIRA ERP...</h2>
@@ -179,7 +178,7 @@ export default function Home() {
   const canAccessReports = isAdmin || profile.can_access_reports || false;
   const canAccessSettings = isAdmin || profile.can_access_settings || false;
 
-  // ===== MENU WITH ADVANCE TRAVEL AGENCY FEATURES =====
+  // ===== MENU WITH ADVANCE TRAVEL AGENCY FEATURES (REMOVED UNWANTED) =====
   const menu = [
     // Main
     { id: 'dashboard', label: t('dashboard', '📊 Dashboard'), show: true, section: 'Main' },
@@ -187,23 +186,19 @@ export default function Home() {
     { id: 'my_attendance', label: '⏰ My Attendance', show: true, section: 'Main' },
     { id: 'notifications', label: t('notifications', '🔔 Notifications'), show: true, section: 'Main' },
 
-    // Travel Agency Core
+    // Travel Sales Core
     { id: 'create', label: t('create', '✈️ Create Invoice'), show: canAccessInvoices, section: 'Travel Sales' },
     { id: 'list', label: t('list', '📋 Invoices'), show: canAccessInvoices, section: 'Travel Sales' },
     { id: 'refunds', label: t('refunds', '🔄 Refunds'), show: canAccessInvoices, section: 'Travel Sales' },
     { id: 'quotations', label: t('quotations', '📄 Quotations'), show: canAccessInvoices, section: 'Travel Sales' },
     
-    // Flight Operations
+    // Flight Operations (only these two – removed Hotel, Visa, Insurance, Hajj/Umrah)
     { id: 'flight_status', label: '🛫 Flight Status', show: canAccessInvoices, section: 'Flight Operations' },
-    { id: 'hotel_booking', label: '🏨 Hotel Booking', show: canAccessInvoices, section: 'Flight Operations' },
-    { id: 'visa_processing', label: '🛂 Visa Processing', show: canAccessInvoices, section: 'Flight Operations' },
-    { id: 'travel_insurance', label: '🛡️ Travel Insurance', show: canAccessInvoices, section: 'Flight Operations' },
-    { id: 'hajj_umrah', label: '🕋 Hajj/Umrah', show: canAccessInvoices, section: 'Flight Operations' },
+    { id: 'corporate_travel', label: '🏢 Corporate Travel', show: canAccessInvoices, section: 'Flight Operations' },
+    { id: 'frequent_flyer', label: '🌟 Frequent Flyer', show: canAccessInvoices, section: 'Flight Operations' },
 
     // Packages & Tours
     { id: 'packages', label: t('packages', '📦 Tour Packages'), show: canAccessInvoices, section: 'Packages & Tours' },
-    { id: 'corporate_travel', label: '🏢 Corporate Travel', show: canAccessInvoices, section: 'Packages & Tours' },
-    { id: 'frequent_flyer', label: '🌟 Frequent Flyer', show: canAccessInvoices, section: 'Packages & Tours' },
 
     // CRM
     { id: 'customers', label: t('customers', '👤 Customers'), show: canAccessInvoices, section: 'CRM' },
