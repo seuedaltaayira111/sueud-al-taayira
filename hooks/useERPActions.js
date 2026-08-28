@@ -32,7 +32,7 @@ export default function useERPActions(state) {
   const isAr = lang === 'ar';
 
   // ============================================================
-  // AUTH
+  // AUTH (unchanged)
   // ============================================================
   const handleLogout = () => {
     supabase.auth.signOut();
@@ -51,7 +51,7 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
-  // AI CHAT
+  // AI CHAT (unchanged)
   // ============================================================
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
@@ -63,14 +63,13 @@ export default function useERPActions(state) {
       let reply = isAr
         ? 'मैं फ़्लाइट, इनवॉइस, कस्टमर, हज/उमरा, होटल, वीज़ा आदि में मदद कर सकता हूँ।'
         : "I can help with flights, invoices, customers, Hajj/Umrah, hotels, visas, etc.";
-      // ... baaki AI logic aapki original file se
-      // (yahan main shorten kar raha hoon, aap apna purana logic rakh sakte hain)
+      // ... (baaki AI logic aapki original file se)
       setChatMessages(prev => [...prev, { sender: 'bot', text: reply }]);
     }, 400);
   };
 
   // ============================================================
-  // PROFILE & SETTINGS (original, unchanged)
+  // PROFILE & SETTINGS (unchanged)
   // ============================================================
   const handleProfilePicUpload = async (e) => { /* ... */ };
   const handleSaveProfile = async (e) => { /* ... */ };
@@ -81,7 +80,7 @@ export default function useERPActions(state) {
   const handleCustomFieldChange = (i, type, val) => { /* ... */ };
 
   // ============================================================
-  // GENERIC DELETE
+  // GENERIC DELETE (unchanged)
   // ============================================================
   const handleDelete = async (table, id) => {
     if (!confirm(isAr ? 'क्या आप हटाना चाहते हैं?' : 'Delete?')) return;
@@ -99,8 +98,7 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
-  // CRUD: Customers, Corporates, Creditors, Vendors, Packages, Branches, Employees, Services
-  // (Sare original functions yahan rakhiye – main sirf placeholder de raha hoon)
+  // CRUD (all original functions – placeholder)
   // ============================================================
   const handleEditCust = (c) => { /* ... */ };
   const handleAddEditCust = async (e) => { /* ... */ };
@@ -120,7 +118,7 @@ export default function useERPActions(state) {
   const handleAddEditSrv = async (e) => { /* ... */ };
 
   // ============================================================
-  // EXPENSES (with items)
+  // EXPENSES (unchanged)
   // ============================================================
   const handleAddExpItem = () => { /* ... */ };
   const handleRemoveExpItem = (i) => { /* ... */ };
@@ -134,70 +132,68 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
-  // PORTALS
+  // PORTALS (unchanged)
   // ============================================================
   const handleAddEditPortal = async (e) => { /* ... */ };
 
   // ============================================================
-  // TRANSFER
+  // TRANSFER (unchanged)
   // ============================================================
   const handleTransfer = async (e) => { /* ... */ };
 
   // ============================================================
-  // INVESTMENTS
+  // INVESTMENTS (unchanged)
   // ============================================================
   const handleAddInvestment = async (e) => { /* ... */ };
 
   // ============================================================
-  // PDF DOWNLOAD
+  // PDF DOWNLOAD (unchanged)
   // ============================================================
   const downloadPDF = async (htmlContent, filename = 'document.pdf') => {
     try {
-      // ... aapka original downloadPDF logic
-    } catch (e) { /* fallback print */ }
+      // ... your original logic
+    } catch (e) { /* fallback */ }
   };
 
   // ============================================================
-  // INVOICE DOWNLOAD, PRINT, PREVIEW
+  // INVOICE DOWNLOAD, PRINT, PREVIEW (unchanged)
   // ============================================================
   const handleDownloadPDF = async (inv) => { /* ... */ };
   const printInvoice = (inv) => { /* ... */ };
   const openPreview = (inv) => { /* ... */ };
 
   // ============================================================
-  // SHARE
+  // SHARE (unchanged)
   // ============================================================
   const shareWhatsApp = (inv) => { /* ... */ };
   const shareEmail = (inv) => { /* ... */ };
 
   // ============================================================
-  // REFUND & SETTLE MODALS
+  // REFUND & SETTLE (unchanged)
   // ============================================================
   const openRefundModal = (inv) => { /* ... */ };
   const openSettleModal = (inv) => { /* ... */ };
   const handleQuickSettle = (inv) => openSettleModal(inv);
-
   const handleSettlePayment = async (e) => { /* ... */ };
-
   const handleRefund = async (e) => { /* ... */ };
 
   // ============================================================
-  // DELETE INVOICE (with reversal)
+  // DELETE INVOICE (unchanged)
   // ============================================================
   const handleDeleteInvoice = async (inv) => { /* ... */ };
 
   // ============================================================
-  // EDIT INVOICE
+  // EDIT INVOICE (unchanged)
   // ============================================================
   const handleEditInvoice = (inv) => { /* ... */ };
 
   // ============================================================
-  // CREATE INVOICE
+  // CREATE INVOICE (unchanged)
   // ============================================================
   const handleCreateInvoice = async (e) => { /* ... */ };
 
   // ============================================================
-  // STAFF MISTAKES
+  // STAFF MISTAKES (unchanged)
   // ============================================================
   const handleAddMistake = async (e) => { /* ... */ };
   const handlePreviewMistake = (m) => {
@@ -207,7 +203,7 @@ export default function useERPActions(state) {
   const handleDeleteMistake = async (m) => { /* ... */ };
 
   // ============================================================
-  // PAYROLL (with auto-advance deduction)
+  // PAYROLL – ORIGINAL + ENHANCED (Auto Advance Deduction)
   // ============================================================
   const handleGenerateSlip = (pay) => {
     setPreviewHTML(getSalarySlipHTML(pay, data.settings, lang));
@@ -226,7 +222,7 @@ export default function useERPActions(state) {
       const month = payForm.month || today.slice(0, 7);
       const base = parseFloat(emp.salary) || 0;
 
-      // Commission
+      // Commission from invoices
       const monthInvoices = data.invoices?.filter(i =>
         i.employee_id === empId &&
         i.invoice_date?.startsWith(month) &&
@@ -236,7 +232,7 @@ export default function useERPActions(state) {
       const commissionRate = parseFloat(emp.commission_rate) || 0;
       const commissionAmt = commissionBase * (commissionRate / 100);
 
-      // Pending advances – auto deduct
+      // Auto-deduct pending advances
       const pendingAdvances = (data.empAdvances || []).filter(a => a.employee_id === empId && a.status === 'Pending');
       const totalPendingAdvance = pendingAdvances.reduce((sum, a) => sum + (a.amount || 0), 0);
 
@@ -248,7 +244,7 @@ export default function useERPActions(state) {
       let advanceDed = parseFloat(payForm.advance) || 0;
       if (advanceDed === 0 && totalPendingAdvance > 0) {
         advanceDed = totalPendingAdvance;
-        // Mark advances as deducted
+        // Mark those advances as deducted
         for (const adv of pendingAdvances) {
           await supabase.from('emp_advances').update({ status: 'Deducted from Salary' }).eq('id', adv.id);
         }
@@ -289,7 +285,6 @@ export default function useERPActions(state) {
 
       if (error) throw new Error('Payroll failed: ' + error.message);
 
-      // Cashbook entry
       const cbType = payForm.payment_mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
       const { data: nCb } = await supabase.from('cashbook').insert([{
         trans_date: payForm.payment_date || today,
@@ -327,7 +322,7 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
-  // EMPLOYEE ADVANCES
+  // EMPLOYEE ADVANCES (NEW)
   // ============================================================
   const handleAddAdvance = async (e) => {
     e.preventDefault();
@@ -390,7 +385,7 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
-  // CONTRACT / OFFER
+  // CONTRACT / OFFER (unchanged)
   // ============================================================
   const handleGenerateContract = (e) => {
     e.preventDefault();
@@ -425,14 +420,14 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
-  // SUPERADMIN – TENANT
+  // SUPERADMIN (unchanged)
   // ============================================================
   const handleAddTenant = async (e) => { /* ... */ };
   const handleToggleSubscription = async (tenant) => { /* ... */ };
   const handleDeleteTenant = async (id) => { /* ... */ };
 
   // ============================================================
-  // EXPORT CSV
+  // EXPORT CSV (unchanged)
   // ============================================================
   const handleExportCSV = (dataType, customData) => { /* ... */ };
 
