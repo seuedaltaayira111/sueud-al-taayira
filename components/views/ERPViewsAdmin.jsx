@@ -5,6 +5,8 @@ import React, { useState, useEffect } from 'react';
 export default function ERPViewsAdmin(props) {
   const {
     page, data, tr, today, userProfile, showToast, setData, logAction,
+    lang,           // ✅ FIXED: added lang
+    theme,          // ✅ FIXED: added theme
     expForm, setExpForm, editExpId, setEditExpId,
     handleAddExpItem, handleRemoveExpItem, handleExpItemChange,
     handleAddEditExpense, handleEditExp, handleDeleteExpense,
@@ -20,7 +22,7 @@ export default function ERPViewsAdmin(props) {
     handleGenerateSlip, handleDeletePayroll,
     handleAddMistake, handlePreviewMistake, handleDeleteMistake,
     handleProcessPayroll, payForm, setPayForm,
-    advForm, setAdvForm, employees, lang, theme
+    advForm, setAdvForm, employees
   } = props;
 
   const [cashbookFilter, setCashbookFilter] = useState('All');
@@ -62,7 +64,7 @@ export default function ERPViewsAdmin(props) {
     return 'Other';
   };
 
-  // Auto-update category when description changes in expense form
+  // Auto-update category when description changes
   useEffect(() => {
     if (expForm.description && expForm.expense_type === 'Other') {
       const suggested = suggestCategory(expForm.description);
@@ -287,30 +289,6 @@ export default function ERPViewsAdmin(props) {
       fontWeight: 600,
       transition: 'all 0.2s'
     },
-    label: {
-      fontSize: '13px',
-      fontWeight: 600,
-      color: isDark ? '#94A3B8' : '#64748B',
-      marginBottom: '6px',
-      display: 'block',
-      marginTop: '12px'
-    },
-    tableHeader: {
-      padding: '12px',
-      background: isDark ? '#0F172A' : '#F1F5F9',
-      color: '#FBBF24',
-      textAlign: 'left',
-      fontWeight: 600,
-      fontSize: '11px',
-      textTransform: 'uppercase',
-      letterSpacing: '0.5px',
-      borderBottom: isDark ? '2px solid #334155' : '2px solid #E2E8F0'
-    },
-    tableCell: {
-      padding: '12px',
-      borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
-      color: isDark ? '#CBD5E1' : '#1E293B'
-    },
     aiBadge: {
       background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
       color: '#fff',
@@ -326,7 +304,7 @@ export default function ERPViewsAdmin(props) {
   const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
 
   // ============================================================
-  // VENDORS – already in Sales, but we have it here too
+  // VENDORS
   // ============================================================
   if (page === 'vendors') {
     const [searchTerm, setSearchTerm] = useState('');
@@ -567,11 +545,11 @@ export default function ERPViewsAdmin(props) {
   }
 
   // ============================================================
-  // INVESTMENTS – with AI suggestion for profit share
+  // INVESTMENTS – with AI profit suggestion
   // ============================================================
   if (page === 'invest') {
     const totalInvested = (data.investments || []).reduce((s, i) => s + (i.amount || 0), 0);
-    const avgProfit = 0.12; // hypothetical AI suggested return
+    const avgProfit = 0.12; // AI suggested return
 
     return (
       <div style={styles.container}>
@@ -751,6 +729,5 @@ export default function ERPViewsAdmin(props) {
     );
   }
 
-  // If none of the above, return null
   return null;
 }
