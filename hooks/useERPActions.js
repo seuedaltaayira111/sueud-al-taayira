@@ -175,14 +175,12 @@ export default function useERPActions(state) {
       custom_fields: [...(prev.custom_fields || []), { key: '', value: '' }]
     }));
   };
-
   const handleRemoveCustomField = (i) => {
     setSetForm(prev => ({
       ...prev,
       custom_fields: prev.custom_fields.filter((_, idx) => idx !== i)
     }));
   };
-
   const handleCustomFieldChange = (i, type, val) => {
     setSetForm(prev => {
       const cf = [...prev.custom_fields];
@@ -210,7 +208,7 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
-  // CRUD OPERATIONS (all original functions – fully implemented)
+  // CUSTOMERS CRUD
   // ============================================================
   const handleEditCust = (c) => {
     setEditCustId(c.id);
@@ -252,6 +250,9 @@ export default function useERPActions(state) {
     }
   };
 
+  // ============================================================
+  // CORPORATES CRUD
+  // ============================================================
   const handleEditCorp = (c) => {
     setEditCorpId(c.id);
     setCorpForm({ name: c.name, vat_no: c.vat_no || '', phone: c.phone || '', address: c.address || '' });
@@ -287,6 +288,9 @@ export default function useERPActions(state) {
     }
   };
 
+  // ============================================================
+  // CREDITORS CRUD
+  // ============================================================
   const handleEditCred = (c) => {
     setEditCredId(c.id);
     setCreditorForm({ name: c.name, phone: c.phone || '', address: c.address || '' });
@@ -322,6 +326,9 @@ export default function useERPActions(state) {
     }
   };
 
+  // ============================================================
+  // VENDORS CRUD
+  // ============================================================
   const handleEditVend = (c) => {
     setEditVendId(c.id);
     setVendorForm({ name: c.name, phone: c.phone || '', balance: c.balance || 0 });
@@ -362,6 +369,9 @@ export default function useERPActions(state) {
     }
   };
 
+  // ============================================================
+  // PACKAGES CRUD
+  // ============================================================
   const handleEditPkg = (c) => {
     setEditPkgId(c.id);
     setPkgForm({
@@ -410,6 +420,9 @@ export default function useERPActions(state) {
     }
   };
 
+  // ============================================================
+  // BRANCHES CRUD
+  // ============================================================
   const handleEditBrn = (c) => {
     setEditBrnId(c.id);
     setBrnForm({
@@ -456,6 +469,9 @@ export default function useERPActions(state) {
     }
   };
 
+  // ============================================================
+  // EMPLOYEES CRUD
+  // ============================================================
   const handleEditEmp = (c) => {
     setEditEmpId(c.id);
     setEmpForm({
@@ -516,6 +532,9 @@ export default function useERPActions(state) {
     }
   };
 
+  // ============================================================
+  // SERVICES CRUD
+  // ============================================================
   const handleEditSrv = (c) => {
     setEditSrvId(c.id);
     setSrvForm({ name: c.name });
@@ -634,25 +653,10 @@ export default function useERPActions(state) {
           .select()
           .single();
         if (error) throw error;
-
-        const cbType = expForm.payment_mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
-        await supabase.from('cashbook').insert([{
-          trans_date: expForm.expense_date,
-          type: cbType,
-          description: `Expense: ${expForm.description || expForm.expense_type}`,
-          amount: totalAmount,
-          tenant_id: userProfile.tenant_id,
-          reference_id: nExp.id
-        }]);
-
-        setData(prev => ({
-          ...prev,
-          expenses: [nExp, ...prev.expenses]
-        }));
+        setData(prev => ({ ...prev, expenses: [nExp, ...prev.expenses] }));
         await logAction(`Expense ${totalAmount.toFixed(2)} SAR - ${expForm.description || expForm.expense_type}`);
         showToast(isAr ? '✅ जोड़ा गया' : '✅ Added');
       }
-
       setExpForm({
         expense_type: 'Office Expense',
         payment_mode: 'Cash',
@@ -668,6 +672,7 @@ export default function useERPActions(state) {
         subtotal: 0,
         total: 0
       });
+      fetchAll?.();
     } catch (err) {
       showToast('Error: ' + err.message);
     }
@@ -684,10 +689,6 @@ export default function useERPActions(state) {
     } catch (err) {
       showToast('Error: ' + err.message);
     }
-  };
-  const generateExpenseVoucher = (exp) => {
-    setPreviewHTML(getExpenseHTML(exp, data.settings, lang));
-    setModal({ type: 'preview', data: exp });
   };
 
   // ============================================================
@@ -1047,7 +1048,6 @@ Thank you for choosing us!`;
     setSettleForm({ id: inv.id, date: today, mode: 'Cash', amount: inv.due_amount || 0, reference: '', notes: '' });
     setModal({ type: 'settle', data: inv });
   };
-
   const handleQuickSettle = (inv) => openSettleModal(inv);
 
   const handleSettlePayment = async (e) => {
@@ -1373,7 +1373,7 @@ Thank you for choosing us!`;
   };
 
   // ============================================================
-  // CREATE INVOICE
+  // CREATE INVOICE (with store credit)
   // ============================================================
   const handleCreateInvoice = async (e) => {
     e.preventDefault();
@@ -1646,7 +1646,6 @@ Thank you for choosing us!`;
         creditCustId: '',
         status: 'Unpaid'
       });
-      // setPage will be called from component
     } catch (err) {
       showToast('Error: ' + err.message);
     }
@@ -1677,13 +1676,15 @@ Thank you for choosing us!`;
       setData(prev => ({ ...prev, staffMistakes: [newM, ...(prev.staffMistakes || [])] }));
       showToast(isAr ? '✅ मिस्टेक लॉग हो गया' : '✅ Mistake Logged');
       fd.reset();
+      fetchAll?.();
     } catch (err) {
       showToast('Error: ' + err.message);
     }
   };
 
   const handlePreviewMistake = (m) => {
-    setPreviewHTML(getMistakeHTML(m, data.settings, lang));
+    const html = getMistakeHTML(m, data.settings, lang);
+    setPreviewHTML(html);
     setModal({ type: 'preview', data: m });
   };
 
@@ -1702,7 +1703,8 @@ Thank you for choosing us!`;
   // PAYROLL – WITH AUTO ADVANCE DEDUCTION
   // ============================================================
   const handleGenerateSlip = (pay) => {
-    setPreviewHTML(getSalarySlipHTML(pay, data.settings, lang));
+    const html = getSalarySlipHTML(pay, data.settings, lang);
+    setPreviewHTML(html);
     setModal({ type: 'preview', data: pay });
   };
 
@@ -2143,7 +2145,6 @@ Thank you for choosing us!`;
     handleEditExp,
     handleAddEditExpense,
     handleDeleteExpense,
-    generateExpenseVoucher,
     handleAddEditPortal,
     handleTransfer,
     handleAddInvestment,
