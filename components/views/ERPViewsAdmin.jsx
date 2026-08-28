@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function ERPViewsAdmin(props) {
   const {
@@ -26,6 +26,51 @@ export default function ERPViewsAdmin(props) {
   const [cashbookFilter, setCashbookFilter] = useState('All');
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
+
+  // AI – Auto-suggest expense category based on description
+  const suggestCategory = (desc) => {
+    const keywords = {
+      'office': 'Office Expense',
+      'travel': 'Travel Expense',
+      'supply': 'Supplies',
+      'utility': 'Utilities',
+      'rent': 'Rent',
+      'salary': 'Salary',
+      'food': 'Meals',
+      'transport': 'Transport',
+      'maintenance': 'Maintenance',
+      'marketing': 'Marketing',
+      'software': 'Software',
+      'hardware': 'Hardware',
+      'training': 'Training',
+      'insurance': 'Insurance',
+      'tax': 'Tax',
+      'legal': 'Legal',
+      'medical': 'Medical',
+      'stationery': 'Stationery',
+      'cleaning': 'Cleaning',
+      'security': 'Security',
+      'communication': 'Communication',
+      'printing': 'Printing',
+      'repair': 'Repair'
+    };
+    if (!desc) return 'Other';
+    const lower = desc.toLowerCase();
+    for (const [key, cat] of Object.entries(keywords)) {
+      if (lower.includes(key)) return cat;
+    }
+    return 'Other';
+  };
+
+  // Auto-update category when description changes in expense form
+  useEffect(() => {
+    if (expForm.description && expForm.expense_type === 'Other') {
+      const suggested = suggestCategory(expForm.description);
+      if (suggested !== 'Other') {
+        setExpForm(prev => ({ ...prev, expense_type: suggested }));
+      }
+    }
+  }, [expForm.description]);
 
   // ===== STYLES =====
   const styles = {
@@ -265,19 +310,29 @@ export default function ERPViewsAdmin(props) {
       padding: '12px',
       borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
       color: isDark ? '#CBD5E1' : '#1E293B'
+    },
+    aiBadge: {
+      background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+      color: '#fff',
+      padding: '2px 10px',
+      borderRadius: '12px',
+      fontSize: '10px',
+      fontWeight: 'bold',
+      display: 'inline-block',
+      marginLeft: '8px'
     }
   };
 
   const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
 
   // ============================================================
-  // VENDORS (Already in Sales, but keeping for completeness)
+  // VENDORS – already in Sales, but we have it here too
   // ============================================================
   if (page === 'vendors') {
+    const [searchTerm, setSearchTerm] = useState('');
     const filtered = (data.vendors || []).filter(v =>
       !searchTerm || v.name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
-    const [searchTerm, setSearchTerm] = useState('');
 
     return (
       <div style={styles.container}>
@@ -363,16 +418,6 @@ export default function ERPViewsAdmin(props) {
       </div>
     );
   }
-
-  // ============================================================
-  // PACKAGES (Already in Sales)
-  // ============================================================
-  // ... (handled in ERPViewsSales)
-
-  // ============================================================
-  // BRANCHES (Already in Sales)
-  // ============================================================
-  // ... (handled in ERPViewsSales)
 
   // ============================================================
   // BANK & CASH
@@ -522,10 +567,11 @@ export default function ERPViewsAdmin(props) {
   }
 
   // ============================================================
-  // INVESTMENTS
+  // INVESTMENTS – with AI suggestion for profit share
   // ============================================================
   if (page === 'invest') {
     const totalInvested = (data.investments || []).reduce((s, i) => s + (i.amount || 0), 0);
+    const avgProfit = 0.12; // hypothetical AI suggested return
 
     return (
       <div style={styles.container}>
@@ -544,6 +590,10 @@ export default function ERPViewsAdmin(props) {
           <div style={styles.statCard}>
             <div style={styles.statLabel}>{isAr ? 'إجمالي الاستثمار' : 'Total Investment'}</div>
             <div style={{ ...styles.statValue, color: '#34D399' }}>{fmt(totalInvested)}</div>
+          </div>
+          <div style={styles.statCard}>
+            <div style={styles.statLabel}>🤖 {isAr ? 'العائد المقترح' : 'AI Suggested Return'}</div>
+            <div style={{ ...styles.statValue, color: '#A78BFA' }}>{(totalInvested * avgProfit).toFixed(2)} SAR</div>
           </div>
         </div>
 
@@ -636,16 +686,6 @@ export default function ERPViewsAdmin(props) {
   }
 
   // ============================================================
-  // PORTALS (Already in Sales)
-  // ============================================================
-  // ... (handled in ERPViewsSales)
-
-  // ============================================================
-  // EMPLOYEES (Already in Misc)
-  // ============================================================
-  // ... (handled in ERPViewsMisc)
-
-  // ============================================================
   // SERVICES
   // ============================================================
   if (page === 'services') {
@@ -711,5 +751,6 @@ export default function ERPViewsAdmin(props) {
     );
   }
 
+  // If none of the above, return null
   return null;
 }
