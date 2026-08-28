@@ -12,15 +12,25 @@ import {
   getMistakeHTML
 } from '@/lib/invoiceHTML';
 
+// --- Apni purani translations yahan rakhiye (main chhota kar raha hoon) ---
 const translations = {
-  en: { /* your existing translations */ },
-  ar: { /* your existing translations */ }
+  en: {
+    dashboard: '📊 Dashboard',
+    create: '✈️ Create Invoice',
+    // ... baaki saari translations apni original file se lein
+  },
+  ar: {
+    dashboard: '📊 لوحة التحكم',
+    create: '✈️ إنشاء فاتورة',
+    // ... baaki saari translations
+  }
 };
 
 export default function useERPState() {
   const router = useRouter();
   const today = new Date().toISOString().split('T')[0];
 
+  // Core state
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [lang, setLang] = useState('en');
@@ -32,6 +42,7 @@ export default function useERPState() {
   const [chatOpen, setChatOpen] = useState(false);
   const [previewHTML, setPreviewHTML] = useState('');
 
+  // Data – saare tables, jo aapke paas hain (unwanted nahi hata rahe, sirf errors avoid kar rahe)
   const [data, setData] = useState({
     invoices: [],
     customers: [],
@@ -54,37 +65,45 @@ export default function useERPState() {
     services: [],
     attendance: [],
     appUsers: [],
+    // Agar ye tables exist karti hain toh unhe bhi add kar sakte hain:
+    // hotelBookings: [],
+    // visaApplications: [],
+    // insurancePolicies: [],
+    // hajjUmrahPackages: [],
+    // flightTickets: [],
+    // ticketNotifications: [],
     corporateTravel: [],
     frequentFlyer: []
   });
 
-  // --- All form states (keep your existing ones) ---
-  const [invForm, setInvForm] = useState({/* your existing */});
-  const [expForm, setExpForm] = useState({/* your existing */});
-  const [corpForm, setCorpForm] = useState({/* your existing */});
-  const [creditorForm, setCreditorForm] = useState({/* your existing */});
-  const [custForm, setCustForm] = useState({/* your existing */});
-  const [vendorForm, setVendorForm] = useState({/* your existing */});
-  const [pkgForm, setPkgForm] = useState({/* your existing */});
-  const [brnForm, setBrnForm] = useState({/* your existing */});
-  const [empForm, setEmpForm] = useState({/* your existing */});
-  const [srvForm, setSrvForm] = useState({/* your existing */});
-  const [investForm, setInvestForm] = useState({/* your existing */});
-  const [settleForm, setSettleForm] = useState({/* your existing */});
-  const [refundForm, setRefundForm] = useState({/* your existing */});
-  const [transferForm, setTransferForm] = useState({/* your existing */});
-  const [setForm, setSetForm] = useState({/* your existing */});
-  const [userForm, setUserForm] = useState({/* your existing */});
-  const [portalForm, setPortalForm] = useState({/* your existing */});
-  const [tenantForm, setTenantForm] = useState({/* your existing */});
-  const [profileForm, setProfileForm] = useState({/* your existing */});
-  const [passForm, setPassForm] = useState({/* your existing */});
-  const [payForm, setPayForm] = useState({/* your existing */});
-  const [advForm, setAdvForm] = useState({/* your existing */});
-  const [mistakeForm, setMistakeForm] = useState({/* your existing */});
-  const [leaveForm, setLeaveForm] = useState({/* your existing */});
-  const [contractForm, setContractForm] = useState({/* your existing */});
+  // ---- Saare forms (purane waale, koi delete nahi) ----
+  const [invForm, setInvForm] = useState({/* aapka original object */});
+  const [expForm, setExpForm] = useState({/* original */});
+  const [corpForm, setCorpForm] = useState({/* original */});
+  const [creditorForm, setCreditorForm] = useState({/* original */});
+  const [custForm, setCustForm] = useState({/* original */});
+  const [vendorForm, setVendorForm] = useState({/* original */});
+  const [pkgForm, setPkgForm] = useState({/* original */});
+  const [brnForm, setBrnForm] = useState({/* original */});
+  const [empForm, setEmpForm] = useState({/* original */});
+  const [srvForm, setSrvForm] = useState({/* original */});
+  const [investForm, setInvestForm] = useState({/* original */});
+  const [settleForm, setSettleForm] = useState({/* original */});
+  const [refundForm, setRefundForm] = useState({/* original */});
+  const [transferForm, setTransferForm] = useState({/* original */});
+  const [setForm, setSetForm] = useState({/* original */});
+  const [userForm, setUserForm] = useState({/* original */});
+  const [portalForm, setPortalForm] = useState({/* original */});
+  const [tenantForm, setTenantForm] = useState({/* original */});
+  const [profileForm, setProfileForm] = useState({/* original */});
+  const [passForm, setPassForm] = useState({/* original */});
+  const [payForm, setPayForm] = useState({/* original */});
+  const [advForm, setAdvForm] = useState({/* original */});
+  const [mistakeForm, setMistakeForm] = useState({/* original */});
+  const [leaveForm, setLeaveForm] = useState({/* original */});
+  const [contractForm, setContractForm] = useState({/* original */});
 
+  // Edit IDs
   const [editInvId, setEditInvId] = useState(null);
   const [editExpId, setEditExpId] = useState(null);
   const [editCorpId, setEditCorpId] = useState(null);
@@ -97,15 +116,19 @@ export default function useERPState() {
   const [editSrvId, setEditSrvId] = useState(null);
   const [editUserId, setEditUserId] = useState(null);
 
+  // Chat
   const [chatInput, setChatInput] = useState('');
   const [chatMessages, setChatMessages] = useState([
     { sender: 'bot', text: '👋 Hello! I am your AI Travel ERP Assistant. Type "help" to see what I can do.' }
   ]);
+
+  // Contract
   const [contractCorpName, setContractCorpName] = useState('');
   const [contractType, setContractType] = useState('Flight Tickets');
   const [contractMarkup, setContractMarkup] = useState('10');
   const [contractTerms, setContractTerms] = useState('');
 
+  // Toast & Log
   const showToast = useCallback((msg) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3500);
@@ -120,11 +143,10 @@ export default function useERPState() {
           tenant_id: userProfile.tenant_id
         }]);
       }
-    } catch (e) {
-      console.error('Audit log error:', e);
-    }
-  }, [user?.email, userProfile?.tenant_id]);
+    } catch (e) { console.error(e); }
+  }, [user, userProfile]);
 
+  // ---- FETCH ALL (sirf wahi tables jo exist karti hain) ----
   const fetchAll = useCallback(async () => {
     if (!userProfile?.tenant_id) return;
     const tid = userProfile.tenant_id;
@@ -187,25 +209,25 @@ export default function useERPState() {
     } catch (err) {
       console.error('Fetch error:', err);
     }
-  }, [userProfile?.tenant_id]);
+  }, [userProfile]);
 
-  // Auth init (keep as is)
+  // ---- Auth Init (aapka original code yahan) ----
   useEffect(() => {
-    // ... your existing auth logic
+    // ... aapki original auth logic
   }, [router]);
 
   useEffect(() => {
-    if (userProfile?.tenant_id) {
-      fetchAll();
-    }
-  }, [userProfile?.tenant_id, fetchAll]);
+    if (userProfile?.tenant_id) fetchAll();
+  }, [userProfile, fetchAll]);
 
+  // ---- Return ----
   return {
     user, setUser, userProfile, initError, lang, setLang,
     theme, setTheme, toast, page, setPage, modal, setModal,
     chatOpen, setChatOpen, previewHTML, setPreviewHTML,
     tr: translations[lang] || translations.en, today, router,
     data, setData, showToast, logAction, fetchAll,
+    // sabhi forms aur edit IDs
     invForm, setInvForm, editInvId, setEditInvId,
     expForm, setExpForm, editExpId, setEditExpId,
     corpForm, setCorpForm, editCorpId, setEditCorpId,
