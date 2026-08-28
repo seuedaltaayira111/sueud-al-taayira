@@ -1,20 +1,42 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function ERPModals({
   modal, setModal, passForm, setPassForm, handleChangePassword,
   settleForm, setSettleForm, handleSettlePayment,
   refundForm, setRefundForm, handleRefund,
-  previewHTML, downloadPDF, lang, theme
+  previewHTML, downloadPDF, lang, theme, data, showToast
 }) {
-  // ✅ FIX: isAr defined here
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
 
-  // ============================================================
-  // STYLES
-  // ============================================================
+  // AI suggestion for refund amount (auto-calculate based on original invoice)
+  useEffect(() => {
+    if (modal.type === 'refund' && modal.data) {
+      const inv = modal.data;
+      // Suggest refund amount = due amount or total
+      const suggested = inv.due_amount || inv.total || 0;
+      setRefundForm(prev => ({
+        ...prev,
+        custRefund: suggested,
+        compRefund: 0 // not auto-filled; user can adjust
+      }));
+    }
+  }, [modal.type, modal.data]);
+
+  // AI suggestion for settle amount (auto-fill due amount)
+  useEffect(() => {
+    if (modal.type === 'settle' && modal.data) {
+      const inv = modal.data;
+      setSettleForm(prev => ({
+        ...prev,
+        amount: inv.due_amount || 0
+      }));
+    }
+  }, [modal.type, modal.data]);
+
+  // ===== STYLES (same as before, with AI accent) =====
   const styles = {
     input: {
       width: '100%',
@@ -130,6 +152,17 @@ export default function ERPModals({
       marginBottom: '0',
       display: 'block',
       marginTop: '15px'
+    },
+    aiBadge: {
+      background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+      color: '#fff',
+      padding: '2px 10px',
+      borderRadius: '12px',
+      fontSize: '10px',
+      fontWeight: 'bold',
+      display: 'inline-block',
+      marginLeft: '8px',
+      letterSpacing: '0.5px'
     }
   };
 
@@ -148,18 +181,16 @@ export default function ERPModals({
     padding: '20px'
   };
 
-  // ============================================================
-  // HANDLE PRINT FROM PREVIEW
-  // ============================================================
+  // ===== HANDLE PRINT FROM PREVIEW =====
   const handlePrintPreview = () => {
     if (!previewHTML) {
-      alert(isAr ? 'لا يوجد مستند للطباعة' : 'No document to print');
+      showToast?.(isAr ? 'لا يوجد مستند للطباعة' : 'No document to print');
       return;
     }
     try {
       const printWindow = window.open('', '_blank', 'width=800,height=600');
       if (!printWindow) {
-        alert(isAr ? 'الرجاء السماح بالنوافذ المنبثقة' : 'Please allow popups');
+        showToast?.(isAr ? 'الرجاء السماح بالنوافذ المنبثقة' : 'Please allow popups');
         return;
       }
       printWindow.document.write(previewHTML);
@@ -170,23 +201,21 @@ export default function ERPModals({
       }, 500);
     } catch (e) {
       console.error('Print error:', e);
-      alert(isAr ? 'خطأ في الطباعة' : 'Print error');
+      showToast?.(isAr ? 'خطأ في الطباعة' : 'Print error');
     }
   };
 
-  // ============================================================
-  // HANDLE DOWNLOAD FROM PREVIEW
-  // ============================================================
+  // ===== HANDLE DOWNLOAD FROM PREVIEW =====
   const handleDownloadPDF = async () => {
     if (!previewHTML) {
-      alert(isAr ? 'لا يوجد مستند للتحميل' : 'No document to download');
+      showToast?.(isAr ? 'لا يوجد مستند للتحميل' : 'No document to download');
       return;
     }
     try {
       await downloadPDF(previewHTML, 'document.pdf');
     } catch (e) {
       console.error('Download error:', e);
-      alert(isAr ? 'خطأ في التحميل' : 'Download error');
+      showToast?.(isAr ? 'خطأ في التحميل' : 'Download error');
     }
   };
 
@@ -233,13 +262,14 @@ export default function ERPModals({
       )}
 
       {/* ============================================================
-          SETTLE PAYMENT MODAL
+          SETTLE PAYMENT MODAL – with AI Suggestion
           ============================================================ */}
       {modal.type === 'settle' && (
         <div style={overlay}>
           <div style={styles.card}>
             <h3 style={{ color: '#FBBF24', marginTop: 0, marginBottom: '20px', fontSize: '20px' }}>
               💳 {isAr ? 'تسوية الدفع' : 'Settle Payment'}
+              <span style={styles.aiBadge}>AI</span>
             </h3>
             <form onSubmit={handleSettlePayment}>
               <label style={styles.label}>
@@ -296,13 +326,14 @@ export default function ERPModals({
       )}
 
       {/* ============================================================
-          PROCESS REFUND MODAL
+          PROCESS REFUND MODAL – with AI Suggestion
           ============================================================ */}
       {modal.type === 'refund' && (
         <div style={overlay}>
           <div style={{ ...styles.card, width: '550px' }}>
             <h3 style={{ color: '#EF4444', marginTop: 0, marginBottom: '20px', fontSize: '20px' }}>
               🔄 {isAr ? 'معالجة الاسترجاع' : 'Process Refund'}
+              <span style={styles.aiBadge}>AI</span>
             </h3>
             <form onSubmit={handleRefund}>
               <label style={styles.label}>
@@ -330,6 +361,7 @@ export default function ERPModals({
 
               <label style={styles.label}>
                 {isAr ? 'مبلغ استرجاع العميل' : 'Customer Refund Amount'}
+                <span style={styles.aiBadge}>AI Suggested</span>
               </label>
               <input
                 type="number"
@@ -339,6 +371,9 @@ export default function ERPModals({
                 style={styles.input}
                 required
               />
+              <p style={{ fontSize: '11px', color: '#94A3B8', marginTop: '4px' }}>
+                {isAr ? 'القيمة المقترحة' : 'AI suggested'}: {refundForm?.custRefund || '0.00'} SAR
+              </p>
 
               <label style={styles.label}>
                 {isAr ? 'طريقة استرجاع العميل' : 'Customer Refund Method'}
@@ -415,7 +450,7 @@ export default function ERPModals({
       )}
 
       {/* ============================================================
-          PREVIEW INVOICE MODAL - FIXED
+          PREVIEW INVOICE MODAL
           ============================================================ */}
       {modal.type === 'preview' && previewHTML && (
         <div style={{ ...overlay, background: 'rgba(0,0,0,0.95)' }}>
@@ -431,7 +466,6 @@ export default function ERPModals({
             border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
             boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
           }}>
-            {/* ===== HEADER ===== */}
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -467,7 +501,6 @@ export default function ERPModals({
               </div>
             </div>
 
-            {/* ===== IFRAME CONTENT ===== */}
             <div style={{
               flex: 1,
               overflow: 'auto',
@@ -487,7 +520,7 @@ export default function ERPModals({
                   boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
                 }}
                 title="Invoice Preview"
-                sandbox="allow-print allow-scripts allow-same-origin"
+                sandbox="allow-scripts allow-same-origin"
               />
             </div>
           </div>
