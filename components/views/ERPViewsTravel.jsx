@@ -233,27 +233,39 @@ export default function ERPViewsTravel(props) {
   const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
 
   // ============================================================
-  // FLIGHT STATUS - REAL DUMMY TICKET GENERATOR WITH FORM
+  // REAL FLIGHT TICKET GENERATOR - WITH FULL FEATURES
   // ============================================================
   if (page === 'flight_status') {
     const [ticketForm, setTicketForm] = useState({
       passenger_name: '',
+      passenger_phone: '',
+      passenger_email: '',
       airline: '',
       flight_number: '',
       origin: '',
       destination: '',
       departure_date: today,
       departure_time: '08:00',
+      arrival_time: '12:00',
       seat_number: '',
       booking_reference: '',
       ticket_number: '',
       status: 'Confirmed',
       class: 'Economy',
       gate: '',
-      terminal: ''
+      terminal: '',
+      baggage: '30 Kg',
+      meal: 'Standard',
+      special_requests: '',
+      fare: 0,
+      tax: 0,
+      total: 0
     });
     const [tickets, setTickets] = useState([]);
     const [editingId, setEditingId] = useState(null);
+    const [pnrCheck, setPnrCheck] = useState('');
+    const [pnrResult, setPnrResult] = useState(null);
+    const [notifications, setNotifications] = useState([]);
 
     const airlines = [
       { code: 'SV', name: 'Saudia' },
@@ -280,7 +292,8 @@ export default function ERPViewsTravel(props) {
       'Doha (DOH)', 'Manama (BAH)', 'Kuwait (KWI)', 'Muscat (MCT)',
       'Amman (AMM)', 'London (LHR)', 'Paris (CDG)', 'New York (NYC)',
       'Istanbul (IST)', 'Kuala Lumpur (KUL)', 'Singapore (SIN)',
-      'Hong Kong (HKG)', 'Tokyo (NRT)'
+      'Hong Kong (HKG)', 'Tokyo (NRT)', 'Bangkok (BKK)',
+      'Mumbai (BOM)', 'Delhi (DEL)', 'Karachi (KHI)', 'Lahore (LHE)'
     ];
 
     const statuses = ['Confirmed', 'On Time', 'Delayed', 'Boarding', 'Departed', 'Arrived', 'Cancelled'];
@@ -288,185 +301,7 @@ export default function ERPViewsTravel(props) {
     const terminals = ['1', '2', '3', '4', '5'];
     const gates = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
-    const generateRandomTicket = () => {
-      const airline = airlines[Math.floor(Math.random() * airlines.length)];
-      const flightNum = Math.floor(100 + Math.random() * 900);
-      const origin = cities[Math.floor(Math.random() * cities.length)];
-      let dest = cities.filter(c => c !== origin);
-      dest = dest[Math.floor(Math.random() * dest.length)];
-      const status = statuses[Math.floor(Math.random() * statuses.length)];
-      const cls = classes[Math.floor(Math.random() * classes.length)];
-
-      return {
-        passenger_name: `PASS-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-        airline: airline.code,
-        airline_name: airline.name,
-        flight_number: `${airline.code}${flightNum}`,
-        origin: origin,
-        destination: dest,
-        departure_date: today,
-        departure_time: `${String(Math.floor(6 + Math.random() * 12)).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
-        seat_number: `${String.fromCharCode(65 + Math.floor(Math.random() * 30))}${Math.floor(1 + Math.random() * 50)}`,
-        booking_reference: `${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-        ticket_number: `TKT-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
-        status: status,
-        class: cls,
-        gate: gates[Math.floor(Math.random() * gates.length)] + Math.floor(1 + Math.random() * 30),
-        terminal: terminals[Math.floor(Math.random() * terminals.length)]
-      };
-    };
-
-    const handleGenerateTicket = (e) => {
-      e.preventDefault();
-      const ticket = generateRandomTicket();
-      setTicketForm({
-        passenger_name: ticket.passenger_name,
-        airline: ticket.airline,
-        flight_number: ticket.flight_number,
-        origin: ticket.origin,
-        destination: ticket.destination,
-        departure_date: ticket.departure_date,
-        departure_time: ticket.departure_time,
-        seat_number: ticket.seat_number,
-        booking_reference: ticket.booking_reference,
-        ticket_number: ticket.ticket_number,
-        status: ticket.status,
-        class: ticket.class,
-        gate: ticket.gate,
-        terminal: ticket.terminal
-      });
-      showToast?.(isAr ? '✅ تم إنشاء تذكرة جديدة!' : '✅ New ticket generated!');
-    };
-
-    const handleSaveTicket = (e) => {
-      e.preventDefault();
-      if (!ticketForm.passenger_name || !ticketForm.flight_number) {
-        showToast?.(isAr ? '⚠️ الرجاء ملء جميع الحقول المطلوبة' : '⚠️ Please fill all required fields');
-        return;
-      }
-
-      const newTicket = {
-        id: editingId || Date.now(),
-        ...ticketForm,
-        created_at: new Date().toISOString()
-      };
-
-      if (editingId) {
-        setTickets(prev => prev.map(t => t.id === editingId ? newTicket : t));
-        showToast?.(isAr ? '✅ تم تحديث التذكرة!' : '✅ Ticket updated!');
-        setEditingId(null);
-      } else {
-        setTickets(prev => [newTicket, ...prev]);
-        showToast?.(isAr ? '✅ تم حفظ التذكرة!' : '✅ Ticket saved!');
-      }
-
-      setTicketForm({
-        passenger_name: '',
-        airline: '',
-        flight_number: '',
-        origin: '',
-        destination: '',
-        departure_date: today,
-        departure_time: '08:00',
-        seat_number: '',
-        booking_reference: '',
-        ticket_number: '',
-        status: 'Confirmed',
-        class: 'Economy',
-        gate: '',
-        terminal: ''
-      });
-    };
-
-    const handleEditTicket = (ticket) => {
-      setEditingId(ticket.id);
-      setTicketForm({
-        passenger_name: ticket.passenger_name,
-        airline: ticket.airline,
-        flight_number: ticket.flight_number,
-        origin: ticket.origin,
-        destination: ticket.destination,
-        departure_date: ticket.departure_date || today,
-        departure_time: ticket.departure_time || '08:00',
-        seat_number: ticket.seat_number || '',
-        booking_reference: ticket.booking_reference || '',
-        ticket_number: ticket.ticket_number || '',
-        status: ticket.status || 'Confirmed',
-        class: ticket.class || 'Economy',
-        gate: ticket.gate || '',
-        terminal: ticket.terminal || ''
-      });
-    };
-
-    const handleDeleteTicket = (id) => {
-      if (!confirm(isAr ? 'حذف هذه التذكرة؟' : 'Delete this ticket?')) return;
-      setTickets(prev => prev.filter(t => t.id !== id));
-      showToast?.(isAr ? '✅ تم الحذف!' : '✅ Deleted!');
-    };
-
-    const handlePrintTicket = (ticket) => {
-      const printContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Ticket ${ticket.flight_number}</title>
-          <style>
-            body { font-family: 'Arial', sans-serif; padding: 40px; background: #fff; }
-            .ticket { border: 2px solid #1E3A8A; border-radius: 12px; padding: 30px; max-width: 700px; margin: auto; }
-            .header { background: #1E3A8A; color: white; padding: 15px; border-radius: 8px 8px 0 0; text-align: center; }
-            .header h1 { margin: 0; font-size: 24px; }
-            .body { padding: 20px; }
-            .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
-            .label { font-weight: bold; color: #555; }
-            .value { font-weight: 600; color: #1E3A8A; }
-            .status { display: inline-block; padding: 4px 12px; border-radius: 12px; font-weight: bold; }
-            .status-confirmed { background: #D1FAE5; color: #065F46; }
-            .status-boarding { background: #FEF3C7; color: #92400E; }
-            .status-departed { background: #DBEAFE; color: #1D4ED8; }
-            .status-arrived { background: #D1FAE5; color: #065F46; }
-            .status-delayed { background: #FEE2E2; color: #991B1B; }
-            .status-cancelled { background: #FEE2E2; color: #991B1B; }
-            .footer { text-align: center; padding: 15px; background: #F8FAFC; border-radius: 0 0 8px 8px; color: #666; font-size: 12px; }
-            @media print { body { padding: 0; } .ticket { border: none; } }
-          </style>
-        </head>
-        <body>
-          <div class="ticket">
-            <div class="header">
-              <h1>✈️ BOARDING PASS</h1>
-              <p style="margin: 5px 0 0; opacity: 0.8;">${ticket.flight_number}</p>
-            </div>
-            <div class="body">
-              <div class="row"><span class="label">Passenger Name</span><span class="value">${ticket.passenger_name}</span></div>
-              <div class="row"><span class="label">Airline</span><span class="value">${ticket.airline}</span></div>
-              <div class="row"><span class="label">Flight</span><span class="value">${ticket.flight_number}</span></div>
-              <div class="row"><span class="label">From</span><span class="value">${ticket.origin}</span></div>
-              <div class="row"><span class="label">To</span><span class="value">${ticket.destination}</span></div>
-              <div class="row"><span class="label">Date</span><span class="value">${ticket.departure_date}</span></div>
-              <div class="row"><span class="label">Time</span><span class="value">${ticket.departure_time}</span></div>
-              <div class="row"><span class="label">Seat</span><span class="value">${ticket.seat_number || 'N/A'}</span></div>
-              <div class="row"><span class="label">Booking Ref</span><span class="value">${ticket.booking_reference}</span></div>
-              <div class="row"><span class="label">Ticket No</span><span class="value">${ticket.ticket_number}</span></div>
-              <div class="row"><span class="label">Class</span><span class="value">${ticket.class}</span></div>
-              <div class="row"><span class="label">Gate</span><span class="value">${ticket.gate || 'N/A'}</span></div>
-              <div class="row"><span class="label">Terminal</span><span class="value">${ticket.terminal || 'N/A'}</span></div>
-              <div class="row"><span class="label">Status</span><span class="value"><span class="status status-${ticket.status.toLowerCase()}">${ticket.status}</span></span></div>
-            </div>
-            <div class="footer">This is a computer-generated ticket. Valid without signature.</div>
-          </div>
-        </body>
-        </html>
-      `;
-
-      const win = window.open('', '_blank', 'width=800,height=600');
-      if (win) {
-        win.document.write(printContent);
-        win.document.close();
-        setTimeout(() => { win.focus(); win.print(); }, 500);
-      }
-    };
-
-    // Load tickets from Supabase
+    // Load tickets
     useEffect(() => {
       if (userProfile?.tenant_id) {
         supabase.from('flight_tickets')
@@ -480,13 +315,398 @@ export default function ERPViewsTravel(props) {
       }
     }, [userProfile?.tenant_id]);
 
+    // Load notifications
+    useEffect(() => {
+      if (userProfile?.tenant_id) {
+        supabase.from('ticket_notifications')
+          .select('*')
+          .eq('tenant_id', userProfile.tenant_id)
+          .order('created_at', { ascending: false })
+          .limit(20)
+          .then(({ data }) => {
+            if (data) setNotifications(data);
+          })
+          .catch(() => {});
+      }
+    }, [userProfile?.tenant_id]);
+
+    // Generate random ticket
+    const generateRandomTicket = () => {
+      const airline = airlines[Math.floor(Math.random() * airlines.length)];
+      const flightNum = Math.floor(100 + Math.random() * 900);
+      const origin = cities[Math.floor(Math.random() * cities.length)];
+      let dest = cities.filter(c => c !== origin);
+      dest = dest[Math.floor(Math.random() * dest.length)];
+      const status = statuses[Math.floor(Math.random() * statuses.length)];
+      const cls = classes[Math.floor(Math.random() * classes.length)];
+      const hour = Math.floor(6 + Math.random() * 12);
+      const minute = String(Math.floor(Math.random() * 60)).padStart(2, '0');
+      const depTime = `${String(hour).padStart(2, '0')}:${minute}`;
+      const arrHour = (hour + Math.floor(2 + Math.random() * 6)) % 24;
+      const arrTime = `${String(arrHour).padStart(2, '0')}:${minute}`;
+      const fare = Math.floor(200 + Math.random() * 800);
+      const tax = fare * 0.15;
+      const total = fare + tax;
+
+      return {
+        passenger_name: `PASS-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+        passenger_phone: `+966 5${Math.floor(10000000 + Math.random() * 90000000)}`,
+        passenger_email: `passenger${Math.floor(100 + Math.random() * 900)}@email.com`,
+        airline: airline.code,
+        airline_name: airline.name,
+        flight_number: `${airline.code}${flightNum}`,
+        origin: origin,
+        destination: dest,
+        departure_date: today,
+        departure_time: depTime,
+        arrival_time: arrTime,
+        seat_number: `${String.fromCharCode(65 + Math.floor(Math.random() * 30))}${Math.floor(1 + Math.random() * 50)}`,
+        booking_reference: `${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+        ticket_number: `TKT-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
+        status: status,
+        class: cls,
+        gate: gates[Math.floor(Math.random() * gates.length)] + Math.floor(1 + Math.random() * 30),
+        terminal: terminals[Math.floor(Math.random() * terminals.length)],
+        baggage: `${Math.floor(20 + Math.random() * 20)} Kg`,
+        meal: ['Standard', 'Vegetarian', 'Halal', 'Kosher', 'Gluten-Free'][Math.floor(Math.random() * 5)],
+        special_requests: '',
+        fare: fare,
+        tax: tax,
+        total: total
+      };
+    };
+
+    const handleGenerateTicket = (e) => {
+      e.preventDefault();
+      const ticket = generateRandomTicket();
+      setTicketForm({
+        passenger_name: ticket.passenger_name,
+        passenger_phone: ticket.passenger_phone,
+        passenger_email: ticket.passenger_email,
+        airline: ticket.airline,
+        flight_number: ticket.flight_number,
+        origin: ticket.origin,
+        destination: ticket.destination,
+        departure_date: ticket.departure_date,
+        departure_time: ticket.departure_time,
+        arrival_time: ticket.arrival_time,
+        seat_number: ticket.seat_number,
+        booking_reference: ticket.booking_reference,
+        ticket_number: ticket.ticket_number,
+        status: ticket.status,
+        class: ticket.class,
+        gate: ticket.gate,
+        terminal: ticket.terminal,
+        baggage: ticket.baggage,
+        meal: ticket.meal,
+        special_requests: '',
+        fare: ticket.fare,
+        tax: ticket.tax,
+        total: ticket.total
+      });
+      showToast?.(isAr ? '✅ تم إنشاء تذكرة جديدة!' : '✅ New ticket generated!');
+    };
+
+    const handleSaveTicket = async (e) => {
+      e.preventDefault();
+      if (!ticketForm.passenger_name || !ticketForm.flight_number || !ticketForm.origin || !ticketForm.destination) {
+        showToast?.(isAr ? '⚠️ الرجاء ملء جميع الحقول المطلوبة' : '⚠️ Please fill all required fields');
+        return;
+      }
+
+      try {
+        const payload = {
+          ...ticketForm,
+          tenant_id: userProfile.tenant_id
+        };
+
+        if (editingId) {
+          const { data: updated, error } = await supabase
+            .from('flight_tickets')
+            .update(payload)
+            .eq('id', editingId)
+            .select()
+            .single();
+          if (error) throw error;
+          setTickets(prev => prev.map(t => t.id === editingId ? updated : t));
+          showToast?.(isAr ? '✅ تم تحديث التذكرة!' : '✅ Ticket updated!');
+          setEditingId(null);
+        } else {
+          const { data: newTicket, error } = await supabase
+            .from('flight_tickets')
+            .insert([payload])
+            .select()
+            .single();
+          if (error) throw error;
+          setTickets(prev => [newTicket, ...prev]);
+
+          // Create notification for new ticket
+          await supabase.from('ticket_notifications').insert([{
+            ticket_id: newTicket.id,
+            message: `New ticket created for ${newTicket.passenger_name} (${newTicket.flight_number})`,
+            type: 'created',
+            tenant_id: userProfile.tenant_id
+          }]);
+
+          showToast?.(isAr ? '✅ تم حفظ التذكرة!' : '✅ Ticket saved!');
+        }
+
+        setTicketForm({
+          passenger_name: '',
+          passenger_phone: '',
+          passenger_email: '',
+          airline: '',
+          flight_number: '',
+          origin: '',
+          destination: '',
+          departure_date: today,
+          departure_time: '08:00',
+          arrival_time: '12:00',
+          seat_number: '',
+          booking_reference: '',
+          ticket_number: '',
+          status: 'Confirmed',
+          class: 'Economy',
+          gate: '',
+          terminal: '',
+          baggage: '30 Kg',
+          meal: 'Standard',
+          special_requests: '',
+          fare: 0,
+          tax: 0,
+          total: 0
+        });
+      } catch (err) {
+        showToast?.(isAr ? '❌ خطأ: ' + err.message : '❌ Error: ' + err.message);
+      }
+    };
+
+    const handleEditTicket = (ticket) => {
+      setEditingId(ticket.id);
+      setTicketForm({
+        passenger_name: ticket.passenger_name || '',
+        passenger_phone: ticket.passenger_phone || '',
+        passenger_email: ticket.passenger_email || '',
+        airline: ticket.airline || '',
+        flight_number: ticket.flight_number || '',
+        origin: ticket.origin || '',
+        destination: ticket.destination || '',
+        departure_date: ticket.departure_date || today,
+        departure_time: ticket.departure_time || '08:00',
+        arrival_time: ticket.arrival_time || '12:00',
+        seat_number: ticket.seat_number || '',
+        booking_reference: ticket.booking_reference || '',
+        ticket_number: ticket.ticket_number || '',
+        status: ticket.status || 'Confirmed',
+        class: ticket.class || 'Economy',
+        gate: ticket.gate || '',
+        terminal: ticket.terminal || '',
+        baggage: ticket.baggage || '30 Kg',
+        meal: ticket.meal || 'Standard',
+        special_requests: ticket.special_requests || '',
+        fare: ticket.fare || 0,
+        tax: ticket.tax || 0,
+        total: ticket.total || 0
+      });
+    };
+
+    const handleDeleteTicket = async (id) => {
+      if (!confirm(isAr ? 'حذف هذه التذكرة؟' : 'Delete this ticket?')) return;
+      try {
+        await supabase.from('flight_tickets').delete().eq('id', id);
+        setTickets(prev => prev.filter(t => t.id !== id));
+        showToast?.(isAr ? '✅ تم الحذف!' : '✅ Deleted!');
+      } catch (err) {
+        showToast?.(isAr ? '❌ خطأ في الحذف' : '❌ Delete error');
+      }
+    };
+
+    // PNR Check - Auto check for changes
+    const handlePnrCheck = async (e) => {
+      e.preventDefault();
+      if (!pnrCheck) {
+        showToast?.(isAr ? '⚠️ الرجاء إدخال رقم الحجز' : '⚠️ Please enter PNR');
+        return;
+      }
+
+      try {
+        const { data: found, error } = await supabase
+          .from('flight_tickets')
+          .select('*')
+          .eq('booking_reference', pnrCheck.toUpperCase())
+          .eq('tenant_id', userProfile.tenant_id)
+          .maybeSingle();
+
+        if (error) throw error;
+        if (!found) {
+          showToast?.(isAr ? '❌ لا توجد تذكرة بهذا الرقم' : '❌ No ticket found with this PNR');
+          setPnrResult(null);
+          return;
+        }
+
+        setPnrResult(found);
+        showToast?.(isAr ? '✅ تم العثور على التذكرة!' : '✅ Ticket found!');
+
+        // Check for changes - compare with stored version
+        const stored = tickets.find(t => t.id === found.id);
+        if (stored) {
+          let changes = [];
+          if (stored.departure_time !== found.departure_time) changes.push(`Time changed: ${stored.departure_time} → ${found.departure_time}`);
+          if (stored.gate !== found.gate) changes.push(`Gate changed: ${stored.gate} → ${found.gate}`);
+          if (stored.status !== found.status) changes.push(`Status changed: ${stored.status} → ${found.status}`);
+          if (stored.terminal !== found.terminal) changes.push(`Terminal changed: ${stored.terminal} → ${found.terminal}`);
+
+          if (changes.length > 0) {
+            // Create notification
+            await supabase.from('ticket_notifications').insert([{
+              ticket_id: found.id,
+              message: `PNR ${found.booking_reference}: ${changes.join(', ')}`,
+              type: 'change',
+              tenant_id: userProfile.tenant_id
+            }]);
+            showToast?.(isAr ? `⚠️ تغييرات تم اكتشافها: ${changes.join(', ')}` : `⚠️ Changes detected: ${changes.join(', ')}`);
+            setNotifications(prev => [{ message: `PNR ${found.booking_reference}: ${changes.join(', ')}`, type: 'change' }, ...prev]);
+          } else {
+            showToast?.(isAr ? '✅ لا توجد تغييرات على هذه التذكرة' : '✅ No changes found for this ticket');
+          }
+        }
+      } catch (err) {
+        showToast?.(isAr ? '❌ خطأ في البحث' : '❌ Search error');
+      }
+    };
+
+    // Print Ticket
+    const handlePrintTicket = (ticket) => {
+      const printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Ticket ${ticket.flight_number}</title>
+          <style>
+            body { font-family: 'Arial', sans-serif; padding: 40px; background: #f5f5f5; }
+            .ticket { border: 2px solid #1E3A8A; border-radius: 16px; padding: 30px; max-width: 750px; margin: auto; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+            .header { background: linear-gradient(135deg, #1E3A8A, #2563EB); color: white; padding: 20px; border-radius: 12px 12px 0 0; text-align: center; }
+            .header h1 { margin: 0; font-size: 28px; letter-spacing: 2px; }
+            .header p { margin: 5px 0 0; opacity: 0.9; font-size: 14px; }
+            .body { padding: 25px; }
+            .row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+            .label { font-weight: bold; color: #555; width: 40%; }
+            .value { font-weight: 600; color: #1E3A8A; width: 60%; text-align: right; }
+            .status { display: inline-block; padding: 4px 16px; border-radius: 20px; font-weight: bold; }
+            .status-confirmed { background: #D1FAE5; color: #065F46; }
+            .status-boarding { background: #FEF3C7; color: #92400E; }
+            .status-departed { background: #DBEAFE; color: #1D4ED8; }
+            .status-arrived { background: #D1FAE5; color: #065F46; }
+            .status-delayed { background: #FEE2E2; color: #991B1B; }
+            .status-cancelled { background: #FEE2E2; color: #991B1B; }
+            .footer { text-align: center; padding: 15px; background: #F8FAFC; border-radius: 0 0 12px 12px; color: #666; font-size: 12px; border-top: 1px solid #eee; }
+            .qr { text-align: center; margin: 15px 0; }
+            .qr img { border: 1px solid #ddd; padding: 5px; border-radius: 8px; }
+            .route { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; }
+            .route .city { font-size: 20px; font-weight: 700; color: #1E3A8A; }
+            .route .arrow { font-size: 24px; color: #F59E0B; }
+            .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+            .detail-item { background: #F8FAFC; padding: 10px; border-radius: 8px; }
+            .detail-item .lbl { font-size: 10px; color: #94A3B8; text-transform: uppercase; }
+            .detail-item .val { font-size: 14px; font-weight: 600; color: #1E3A8A; }
+            @media print { body { padding: 0; background: white; } .ticket { border: none; box-shadow: none; } }
+          </style>
+        </head>
+        <body>
+          <div class="ticket">
+            <div class="header">
+              <h1>✈️ BOARDING PASS</h1>
+              <p>${ticket.flight_number} | ${ticket.airline}</p>
+            </div>
+            <div class="body">
+              <div class="route">
+                <div class="city">${ticket.origin}</div>
+                <div class="arrow">✈️ →</div>
+                <div class="city">${ticket.destination}</div>
+              </div>
+              <div class="row"><span class="label">Passenger Name</span><span class="value">${ticket.passenger_name}</span></div>
+              <div class="row"><span class="label">Phone</span><span class="value">${ticket.passenger_phone || 'N/A'}</span></div>
+              <div class="row"><span class="label">Email</span><span class="value">${ticket.passenger_email || 'N/A'}</span></div>
+              <div class="row"><span class="label">Flight</span><span class="value">${ticket.flight_number}</span></div>
+              <div class="row"><span class="label">Date</span><span class="value">${ticket.departure_date}</span></div>
+              <div class="row"><span class="label">Departure</span><span class="value">${ticket.departure_time}</span></div>
+              <div class="row"><span class="label">Arrival</span><span class="value">${ticket.arrival_time || 'N/A'}</span></div>
+              <div class="row"><span class="label">Seat</span><span class="value">${ticket.seat_number || 'N/A'}</span></div>
+              <div class="row"><span class="label">Booking Ref</span><span class="value">${ticket.booking_reference}</span></div>
+              <div class="row"><span class="label">Ticket No</span><span class="value">${ticket.ticket_number}</span></div>
+              <div class="row"><span class="label">Class</span><span class="value">${ticket.class}</span></div>
+              <div class="row"><span class="label">Gate</span><span class="value">${ticket.gate || 'N/A'}</span></div>
+              <div class="row"><span class="label">Terminal</span><span class="value">${ticket.terminal || 'N/A'}</span></div>
+              <div class="row"><span class="label">Baggage</span><span class="value">${ticket.baggage || 'N/A'}</span></div>
+              <div class="row"><span class="label">Meal</span><span class="value">${ticket.meal || 'Standard'}</span></div>
+              <div class="row"><span class="label">Fare</span><span class="value">${(ticket.fare || 0).toFixed(2)} SAR</span></div>
+              <div class="row"><span class="label">Tax</span><span class="value">${(ticket.tax || 0).toFixed(2)} SAR</span></div>
+              <div class="row"><span class="label">Total</span><span class="value" style="font-size:18px;color:#059669;">${(ticket.total || 0).toFixed(2)} SAR</span></div>
+              <div class="row"><span class="label">Status</span><span class="value"><span class="status status-${ticket.status?.toLowerCase()}">${ticket.status}</span></span></div>
+              ${ticket.special_requests ? `<div class="row"><span class="label">Special Requests</span><span class="value">${ticket.special_requests}</span></div>` : ''}
+              <div class="qr">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(ticket.booking_reference + '|' + ticket.flight_number + '|' + ticket.passenger_name)}" alt="QR Code" />
+              </div>
+            </div>
+            <div class="footer">
+              This is a computer-generated ticket. Valid without signature.<br/>
+              © ${new Date().getFullYear()} SUEUD AL TAAYIRA Travel & Tourism
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const win = window.open('', '_blank', 'width=800,height=600');
+      if (win) {
+        win.document.write(printContent);
+        win.document.close();
+        setTimeout(() => { win.focus(); win.print(); }, 500);
+      }
+    };
+
     return (
       <div style={styles.container}>
         <div style={styles.header}>
           <h1 style={styles.title}>🛫 {isAr ? 'إنشاء تذكرة طيران' : 'Flight Ticket Generator'}</h1>
-          <button onClick={handleGenerateTicket} style={{ ...styles.btn, ...styles.btnWarning }}>
-            🎲 {isAr ? 'توليد عشوائي' : 'Random Generate'}
-          </button>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <button onClick={handleGenerateTicket} style={{ ...styles.btn, ...styles.btnWarning }}>
+              🎲 {isAr ? 'توليد عشوائي' : 'Random Generate'}
+            </button>
+          </div>
+        </div>
+
+        {/* PNR Check Section */}
+        <div style={styles.card}>
+          <h3 style={styles.sectionTitle}>🔍 {isAr ? 'التحقق من رقم الحجز (PNR)' : 'PNR Check'}</h3>
+          <form onSubmit={handlePnrCheck} style={styles.formRow}>
+            <div>
+              <label style={styles.label}>{isAr ? 'رقم الحجز (PNR)' : 'Booking Reference (PNR)'}</label>
+              <input
+                style={styles.input}
+                placeholder={isAr ? 'مثال: ABC123' : 'e.g. ABC123'}
+                value={pnrCheck}
+                onChange={e => setPnrCheck(e.target.value.toUpperCase())}
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+              <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, width: '100%', padding: '12px' }}>
+                🔍 {isAr ? 'تحقق' : 'Check'}
+              </button>
+            </div>
+          </form>
+          {pnrResult && (
+            <div style={{ marginTop: '15px', padding: '12px', background: isDark ? '#0F172A' : '#F1F5F9', borderRadius: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                <div><strong>{isAr ? 'المسافر' : 'Passenger'}:</strong> {pnrResult.passenger_name}</div>
+                <div><strong>{isAr ? 'الرحلة' : 'Flight'}:</strong> {pnrResult.flight_number}</div>
+                <div><strong>{isAr ? 'الحالة' : 'Status'}:</strong> <span style={{ color: pnrResult.status === 'Cancelled' ? '#EF4444' : '#059669' }}>{pnrResult.status}</span></div>
+                <div><strong>{isAr ? 'من' : 'From'}:</strong> {pnrResult.origin}</div>
+                <div><strong>{isAr ? 'إلى' : 'To'}:</strong> {pnrResult.destination}</div>
+                <div><strong>{isAr ? 'التاريخ' : 'Date'}:</strong> {pnrResult.departure_date}</div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Ticket Form */}
@@ -498,6 +718,14 @@ export default function ERPViewsTravel(props) {
             <div>
               <label style={styles.label}>{isAr ? 'اسم المسافر *' : 'Passenger Name *'}</label>
               <input style={styles.input} value={ticketForm.passenger_name} onChange={e => setTicketForm({ ...ticketForm, passenger_name: e.target.value })} required />
+            </div>
+            <div>
+              <label style={styles.label}>{isAr ? 'الهاتف' : 'Phone'}</label>
+              <input style={styles.input} value={ticketForm.passenger_phone} onChange={e => setTicketForm({ ...ticketForm, passenger_phone: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.label}>Email</label>
+              <input style={styles.input} type="email" value={ticketForm.passenger_email} onChange={e => setTicketForm({ ...ticketForm, passenger_email: e.target.value })} />
             </div>
             <div>
               <label style={styles.label}>{isAr ? 'شركة الطيران *' : 'Airline *'}</label>
@@ -535,6 +763,10 @@ export default function ERPViewsTravel(props) {
               <input type="time" style={styles.input} value={ticketForm.departure_time} onChange={e => setTicketForm({ ...ticketForm, departure_time: e.target.value })} />
             </div>
             <div>
+              <label style={styles.label}>{isAr ? 'وقت الوصول' : 'Arrival Time'}</label>
+              <input type="time" style={styles.input} value={ticketForm.arrival_time} onChange={e => setTicketForm({ ...ticketForm, arrival_time: e.target.value })} />
+            </div>
+            <div>
               <label style={styles.label}>{isAr ? 'رقم المقعد' : 'Seat Number'}</label>
               <input style={styles.input} placeholder="e.g. 12A" value={ticketForm.seat_number} onChange={e => setTicketForm({ ...ticketForm, seat_number: e.target.value.toUpperCase() })} />
             </div>
@@ -566,18 +798,70 @@ export default function ERPViewsTravel(props) {
               <label style={styles.label}>{isAr ? 'الصالة' : 'Terminal'}</label>
               <input style={styles.input} placeholder="e.g. 3" value={ticketForm.terminal} onChange={e => setTicketForm({ ...ticketForm, terminal: e.target.value })} />
             </div>
-            <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px' }}>
+            <div>
+              <label style={styles.label}>{isAr ? 'الأمتعة' : 'Baggage'}</label>
+              <input style={styles.input} placeholder="e.g. 30 Kg" value={ticketForm.baggage} onChange={e => setTicketForm({ ...ticketForm, baggage: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.label}>{isAr ? 'الوجبة' : 'Meal'}</label>
+              <select style={styles.select} value={ticketForm.meal} onChange={e => setTicketForm({ ...ticketForm, meal: e.target.value })}>
+                <option>Standard</option>
+                <option>Vegetarian</option>
+                <option>Halal</option>
+                <option>Kosher</option>
+                <option>Gluten-Free</option>
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>{isAr ? 'السعر (ريال)' : 'Fare (SAR)'}</label>
+              <input type="number" step="0.01" style={styles.input} value={ticketForm.fare} onChange={e => setTicketForm({ ...ticketForm, fare: parseFloat(e.target.value) || 0 })} />
+            </div>
+            <div>
+              <label style={styles.label}>{isAr ? 'الضريبة' : 'Tax'}</label>
+              <input type="number" step="0.01" style={styles.input} value={ticketForm.tax} onChange={e => setTicketForm({ ...ticketForm, tax: parseFloat(e.target.value) || 0 })} />
+            </div>
+            <div>
+              <label style={styles.label}>{isAr ? 'الإجمالي' : 'Total'}</label>
+              <input type="number" step="0.01" style={{ ...styles.input, fontWeight: 700, color: '#34D399' }} value={ticketForm.total} onChange={e => setTicketForm({ ...ticketForm, total: parseFloat(e.target.value) || 0 })} />
+            </div>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={styles.label}>{isAr ? 'طلبات خاصة' : 'Special Requests'}</label>
+              <textarea style={styles.textarea} value={ticketForm.special_requests} onChange={e => setTicketForm({ ...ticketForm, special_requests: e.target.value })} placeholder={isAr ? 'أي طلبات خاصة...' : 'Any special requests...'} />
+            </div>
+            <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
               <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, padding: '12px 30px' }}>
                 {editingId ? '💾 ' + (isAr ? 'تحديث' : 'Update') : '✅ ' + (isAr ? 'حفظ التذكرة' : 'Save Ticket')}
               </button>
               {editingId && (
-                <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setEditingId(null); setTicketForm({ passenger_name: '', airline: '', flight_number: '', origin: '', destination: '', departure_date: today, departure_time: '08:00', seat_number: '', booking_reference: '', ticket_number: '', status: 'Confirmed', class: 'Economy', gate: '', terminal: '' }); }}>
+                <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setEditingId(null); setTicketForm({ passenger_name: '', passenger_phone: '', passenger_email: '', airline: '', flight_number: '', origin: '', destination: '', departure_date: today, departure_time: '08:00', arrival_time: '12:00', seat_number: '', booking_reference: '', ticket_number: '', status: 'Confirmed', class: 'Economy', gate: '', terminal: '', baggage: '30 Kg', meal: 'Standard', special_requests: '', fare: 0, tax: 0, total: 0 }); }}>
                   ✕ {isAr ? 'إلغاء' : 'Cancel'}
                 </button>
               )}
             </div>
           </form>
         </div>
+
+        {/* Notifications */}
+        {notifications.length > 0 && (
+          <div style={styles.card}>
+            <h3 style={styles.sectionTitle}>🔔 {isAr ? 'إشعارات التذاكر' : 'Ticket Notifications'}</h3>
+            <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+              {notifications.map((n, i) => (
+                <div key={i} style={{
+                  padding: '8px 12px',
+                  borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}>
+                  <span style={{ fontSize: '16px' }}>{n.type === 'change' ? '⚠️' : '✅'}</span>
+                  <span style={{ fontSize: '13px', color: isDark ? '#CBD5E1' : '#1E293B' }}>{n.message}</span>
+                  <span style={{ fontSize: '10px', color: '#94A3B8', marginLeft: 'auto' }}>{new Date(n.created_at).toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Tickets List */}
         {tickets.length > 0 && (
@@ -652,6 +936,7 @@ export default function ERPViewsTravel(props) {
       { id: 7, name: 'Crowne Plaza Cairo', stars: 4, price: 280, rating: 4.3, image: '🏢', address: 'Corniche El Nil, Cairo', phone: '+20 2 123 4567', website: 'www.crowneplaza.com/cairo', amenities: ['Pool', 'Gym', 'Restaurant', 'Free WiFi'] },
       { id: 8, name: 'Hyatt Regency Istanbul', stars: 5, price: 490, rating: 4.7, image: '🏯', address: 'Taksim Square, Istanbul', phone: '+90 212 123 4567', website: 'www.hyatt.com/istanbul', amenities: ['Pool', 'Spa', 'Gym', 'Restaurant', 'Free WiFi'] },
       { id: 9, name: 'Burj Al Arab Jumeirah', stars: 5, price: 800, rating: 4.9, image: '🏰', address: 'Jumeirah Beach Road, Dubai', phone: '+971 4 123 4567', website: 'www.burj-al-arab.com', amenities: ['Pool', 'Spa', 'Gym', 'Restaurant', 'Beach', 'Helipad', 'Free WiFi'] },
+      { id: 10, name: 'Atlantis The Palm Dubai', stars: 5, price: 750, rating: 4.8, image: '🏝️', address: 'Palm Jumeirah, Dubai', phone: '+971 4 123 4567', website: 'www.atlantis.com/dubai', amenities: ['Pool', 'Spa', 'Gym', 'Restaurant', 'Aquarium', 'Free WiFi'] },
     ];
 
     useEffect(() => {
@@ -840,871 +1125,6 @@ export default function ERPViewsTravel(props) {
             </div>
           </div>
         )}
-      </div>
-    );
-  }
-
-  // ============================================================
-  // VISA PROCESSING - COMPLETE
-  // ============================================================
-  if (page === 'visa_processing') {
-    const [visaApplications, setVisaApplications] = useState([]);
-    const [visaForm, setVisaForm] = useState({
-      applicant_name: '',
-      passport_no: '',
-      nationality: '',
-      visa_type: 'Tourist',
-      destination: '',
-      travel_date: today,
-      status: 'Pending'
-    });
-    const [editingId, setEditingId] = useState(null);
-
-    useEffect(() => {
-      if (userProfile?.tenant_id) {
-        supabase.from('visa_applications')
-          .select('*')
-          .eq('tenant_id', userProfile.tenant_id)
-          .order('created_at', { ascending: false })
-          .then(({ data }) => {
-            if (data) setVisaApplications(data);
-          });
-      }
-    }, [userProfile?.tenant_id]);
-
-    const handleVisaSubmit = async (e) => {
-      e.preventDefault();
-      try {
-        const payload = { ...visaForm, tenant_id: userProfile.tenant_id };
-        if (editingId) {
-          const { data: updated, error } = await supabase
-            .from('visa_applications')
-            .update(payload)
-            .eq('id', editingId)
-            .select()
-            .single();
-          if (error) throw error;
-          setVisaApplications(prev => prev.map(v => v.id === editingId ? updated : v));
-          showToast(isAr ? '✅ تم التحديث!' : '✅ Updated!');
-          setEditingId(null);
-        } else {
-          const { data: newVisa, error } = await supabase
-            .from('visa_applications')
-            .insert([payload])
-            .select()
-            .single();
-          if (error) throw error;
-          setVisaApplications(prev => [newVisa, ...prev]);
-          showToast(isAr ? '✅ تم إنشاء طلب التأشيرة!' : '✅ Visa application created!');
-          await logAction?.(`Visa application for ${visaForm.applicant_name}`);
-        }
-        setVisaForm({
-          applicant_name: '',
-          passport_no: '',
-          nationality: '',
-          visa_type: 'Tourist',
-          destination: '',
-          travel_date: today,
-          status: 'Pending'
-        });
-      } catch (err) {
-        showToast('Error: ' + err.message);
-      }
-    };
-
-    const handleEditVisa = (visa) => {
-      setEditingId(visa.id);
-      setVisaForm({
-        applicant_name: visa.applicant_name,
-        passport_no: visa.passport_no,
-        nationality: visa.nationality,
-        visa_type: visa.visa_type,
-        destination: visa.destination,
-        travel_date: visa.travel_date,
-        status: visa.status
-      });
-    };
-
-    const handleDeleteVisa = async (id) => {
-      if (!confirm(isAr ? 'حذف طلب التأشيرة هذا؟' : 'Delete this visa application?')) return;
-      try {
-        await supabase.from('visa_applications').delete().eq('id', id);
-        setVisaApplications(prev => prev.filter(v => v.id !== id));
-        showToast(isAr ? '🗑️ تم الحذف!' : '🗑️ Deleted!');
-      } catch (err) {
-        showToast('Error: ' + err.message);
-      }
-    };
-
-    const getVisaStatusBadge = (status) => {
-      const map = {
-        'Pending': styles.badgeWarning,
-        'Processing': styles.badgeInfo,
-        'Approved': styles.badgeSuccess,
-        'Rejected': styles.badgeDanger,
-        'Delivered': styles.badgeSuccess
-      };
-      return map[status] || styles.badgeWarning;
-    };
-
-    return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>🛂 {isAr ? 'معالجة التأشيرات' : 'Visa Processing'}</h1>
-        </div>
-
-        <div style={styles.card}>
-          <h3 style={styles.sectionTitle}>{editingId ? '✏️ ' + (isAr ? 'تعديل طلب التأشيرة' : 'Edit Visa Application') : '📝 ' + (isAr ? 'طلب تأشيرة جديد' : 'New Visa Application')}</h3>
-          <form onSubmit={handleVisaSubmit} style={styles.formRow}>
-            <div>
-              <label style={styles.label}>{isAr ? 'اسم المتقدم' : 'Applicant Name'}</label>
-              <input style={styles.input} value={visaForm.applicant_name} onChange={e => setVisaForm({ ...visaForm, applicant_name: e.target.value })} required />
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'رقم جواز السفر' : 'Passport No'}</label>
-              <input style={styles.input} value={visaForm.passport_no} onChange={e => setVisaForm({ ...visaForm, passport_no: e.target.value })} required />
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'الجنسية' : 'Nationality'}</label>
-              <input style={styles.input} value={visaForm.nationality} onChange={e => setVisaForm({ ...visaForm, nationality: e.target.value })} required />
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'نوع التأشيرة' : 'Visa Type'}</label>
-              <select style={styles.select} value={visaForm.visa_type} onChange={e => setVisaForm({ ...visaForm, visa_type: e.target.value })}>
-                <option>Tourist</option>
-                <option>Business</option>
-                <option>Work</option>
-                <option>Transit</option>
-                <option>Hajj</option>
-                <option>Umrah</option>
-                <option>Student</option>
-              </select>
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'الوجهة' : 'Destination'}</label>
-              <input style={styles.input} value={visaForm.destination} onChange={e => setVisaForm({ ...visaForm, destination: e.target.value })} required />
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'تاريخ السفر' : 'Travel Date'}</label>
-              <input type="date" style={styles.input} value={visaForm.travel_date} onChange={e => setVisaForm({ ...visaForm, travel_date: e.target.value })} required />
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'الحالة' : 'Status'}</label>
-              <select style={styles.select} value={visaForm.status} onChange={e => setVisaForm({ ...visaForm, status: e.target.value })}>
-                <option>Pending</option>
-                <option>Processing</option>
-                <option>Approved</option>
-                <option>Rejected</option>
-                <option>Delivered</option>
-              </select>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
-              <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, padding: '12px 30px' }}>
-                {editingId ? '💾 ' + (isAr ? 'تحديث' : 'Update') : '✅ ' + (isAr ? 'إرسال' : 'Submit')}
-              </button>
-              {editingId && (
-                <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setEditingId(null); setVisaForm({ applicant_name: '', passport_no: '', nationality: '', visa_type: 'Tourist', destination: '', travel_date: today, status: 'Pending' }); }}>
-                  ✕ {isAr ? 'إلغاء' : 'Cancel'}
-                </button>
-              )}
-            </div>
-          </form>
-        </div>
-
-        <div style={styles.card}>
-          <h3 style={styles.sectionTitle}>📋 {isAr ? 'طلبات التأشيرة' : 'Visa Applications'}</h3>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>{isAr ? 'المتقدم' : 'Applicant'}</th>
-                  <th style={styles.th}>{isAr ? 'جواز السفر' : 'Passport'}</th>
-                  <th style={styles.th}>{isAr ? 'نوع التأشيرة' : 'Visa Type'}</th>
-                  <th style={styles.th}>{isAr ? 'الوجهة' : 'Destination'}</th>
-                  <th style={styles.th}>{isAr ? 'تاريخ السفر' : 'Travel Date'}</th>
-                  <th style={styles.th}>{isAr ? 'الحالة' : 'Status'}</th>
-                  <th style={{ ...styles.th, textAlign: 'center' }}>{isAr ? 'إجراء' : 'Action'}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visaApplications.map(v => (
-                  <tr key={v.id}>
-                    <td style={{ ...styles.td, fontWeight: 600 }}>{v.applicant_name}</td>
-                    <td style={styles.td}>{v.passport_no}</td>
-                    <td style={styles.td}>{v.visa_type}</td>
-                    <td style={styles.td}>{v.destination}</td>
-                    <td style={styles.td}>{v.travel_date}</td>
-                    <td style={styles.td}>
-                      <span style={{ ...styles.badge, ...getVisaStatusBadge(v.status) }}>{v.status}</span>
-                    </td>
-                    <td style={styles.tdCenter}>
-                      <div style={styles.actionsCell}>
-                        <button style={{ ...styles.actionBtn, background: '#065F46', color: '#34D399' }} onClick={() => handleEditVisa(v)}>✏️</button>
-                        <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDeleteVisa(v.id)}>🗑️</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {visaApplications.length === 0 && (
-                  <tr>
-                    <td colSpan="7" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
-                      {isAr ? 'لا توجد طلبات تأشيرة.' : 'No visa applications yet.'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ============================================================
-  // HAJJ/UMRAH - COMPLETE
-  // ============================================================
-  if (page === 'hajj_umrah') {
-    const [packages, setPackages] = useState([]);
-    const [pkgForm, setPkgForm] = useState({
-      name: '',
-      type: 'Umrah',
-      duration: '7 Days',
-      price: 0,
-      inclusions: '',
-      start_date: today,
-      end_date: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString().split('T')[0],
-      status: 'Available'
-    });
-    const [editingId, setEditingId] = useState(null);
-
-    useEffect(() => {
-      if (userProfile?.tenant_id) {
-        supabase.from('hajj_umrah_packages')
-          .select('*')
-          .eq('tenant_id', userProfile.tenant_id)
-          .order('created_at', { ascending: false })
-          .then(({ data }) => {
-            if (data) setPackages(data);
-          });
-      }
-    }, [userProfile?.tenant_id]);
-
-    const handlePkgSubmit = async (e) => {
-      e.preventDefault();
-      try {
-        const payload = { ...pkgForm, tenant_id: userProfile.tenant_id };
-        if (editingId) {
-          const { data: updated, error } = await supabase
-            .from('hajj_umrah_packages')
-            .update(payload)
-            .eq('id', editingId)
-            .select()
-            .single();
-          if (error) throw error;
-          setPackages(prev => prev.map(p => p.id === editingId ? updated : p));
-          showToast(isAr ? '✅ تم التحديث!' : '✅ Updated!');
-          setEditingId(null);
-        } else {
-          const { data: newPkg, error } = await supabase
-            .from('hajj_umrah_packages')
-            .insert([payload])
-            .select()
-            .single();
-          if (error) throw error;
-          setPackages(prev => [newPkg, ...prev]);
-          showToast(isAr ? '✅ تم إنشاء الباقة!' : '✅ Package created!');
-          await logAction?.(`Hajj/Umrah package: ${pkgForm.name}`);
-        }
-        setPkgForm({
-          name: '',
-          type: 'Umrah',
-          duration: '7 Days',
-          price: 0,
-          inclusions: '',
-          start_date: today,
-          end_date: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString().split('T')[0],
-          status: 'Available'
-        });
-      } catch (err) {
-        showToast('Error: ' + err.message);
-      }
-    };
-
-    const handleEditPkg = (pkg) => {
-      setEditingId(pkg.id);
-      setPkgForm({
-        name: pkg.name,
-        type: pkg.type,
-        duration: pkg.duration,
-        price: pkg.price,
-        inclusions: pkg.inclusions,
-        start_date: pkg.start_date,
-        end_date: pkg.end_date,
-        status: pkg.status
-      });
-    };
-
-    const handleDeletePkg = async (id) => {
-      if (!confirm(isAr ? 'حذف هذه الباقة؟' : 'Delete this package?')) return;
-      try {
-        await supabase.from('hajj_umrah_packages').delete().eq('id', id);
-        setPackages(prev => prev.filter(p => p.id !== id));
-        showToast(isAr ? '🗑️ تم الحذف!' : '🗑️ Deleted!');
-      } catch (err) {
-        showToast('Error: ' + err.message);
-      }
-    };
-
-    return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>🕋 {isAr ? 'باقات الحج والعمرة' : 'Hajj & Umrah Packages'}</h1>
-        </div>
-
-        <div style={styles.card}>
-          <h3 style={styles.sectionTitle}>{editingId ? '✏️ ' + (isAr ? 'تعديل الباقة' : 'Edit Package') : '📝 ' + (isAr ? 'إنشاء باقة' : 'Create Package')}</h3>
-          <form onSubmit={handlePkgSubmit} style={styles.formRow}>
-            <div>
-              <label style={styles.label}>{isAr ? 'اسم الباقة' : 'Package Name'}</label>
-              <input style={styles.input} value={pkgForm.name} onChange={e => setPkgForm({ ...pkgForm, name: e.target.value })} required />
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'النوع' : 'Type'}</label>
-              <select style={styles.select} value={pkgForm.type} onChange={e => setPkgForm({ ...pkgForm, type: e.target.value })}>
-                <option>Umrah</option>
-                <option>Hajj</option>
-                <option>Hajj VIP</option>
-                <option>Umrah VIP</option>
-              </select>
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'المدة' : 'Duration'}</label>
-              <input style={styles.input} value={pkgForm.duration} onChange={e => setPkgForm({ ...pkgForm, duration: e.target.value })} />
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'السعر (ريال)' : 'Price (SAR)'}</label>
-              <input type="number" style={styles.input} value={pkgForm.price} onChange={e => setPkgForm({ ...pkgForm, price: parseFloat(e.target.value) })} required />
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'يشمل' : 'Inclusions'}</label>
-              <input style={styles.input} placeholder={isAr ? 'مثال: طيران، فندق، تأشيرة، نقل' : 'e.g. Flight, Hotel, Visa, Transport'} value={pkgForm.inclusions} onChange={e => setPkgForm({ ...pkgForm, inclusions: e.target.value })} />
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'تاريخ البدء' : 'Start Date'}</label>
-              <input type="date" style={styles.input} value={pkgForm.start_date} onChange={e => setPkgForm({ ...pkgForm, start_date: e.target.value })} />
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'تاريخ الانتهاء' : 'End Date'}</label>
-              <input type="date" style={styles.input} value={pkgForm.end_date} onChange={e => setPkgForm({ ...pkgForm, end_date: e.target.value })} />
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'الحالة' : 'Status'}</label>
-              <select style={styles.select} value={pkgForm.status} onChange={e => setPkgForm({ ...pkgForm, status: e.target.value })}>
-                <option>Available</option>
-                <option>Filling Fast</option>
-                <option>Sold Out</option>
-                <option>Completed</option>
-              </select>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
-              <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, padding: '12px 30px' }}>
-                {editingId ? '💾 ' + (isAr ? 'تحديث' : 'Update') : '✅ ' + (isAr ? 'إنشاء' : 'Create')}
-              </button>
-              {editingId && (
-                <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setEditingId(null); setPkgForm({ name: '', type: 'Umrah', duration: '7 Days', price: 0, inclusions: '', start_date: today, end_date: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString().split('T')[0], status: 'Available' }); }}>
-                  ✕ {isAr ? 'إلغاء' : 'Cancel'}
-                </button>
-              )}
-            </div>
-          </form>
-        </div>
-
-        <div style={styles.grid}>
-          {packages.map(pkg => (
-            <div key={pkg.id} style={{ ...styles.card, borderTop: `4px solid ${pkg.status === 'Available' ? '#059669' : pkg.status === 'Filling Fast' ? '#F59E0B' : '#DC2626'}` }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                <div>
-                  <h3 style={{ color: '#FBBF24', margin: 0 }}>{pkg.name}</h3>
-                  <span style={{ ...styles.badge, background: pkg.type === 'Hajj' ? '#7C3AED' : '#059669', color: 'white', marginTop: '4px', display: 'inline-block' }}>{pkg.type}</span>
-                </div>
-                <span style={{ ...styles.badge, ...(pkg.status === 'Available' ? styles.badgeSuccess : pkg.status === 'Filling Fast' ? styles.badgeWarning : styles.badgeDanger) }}>{pkg.status}</span>
-              </div>
-              <div style={{ marginTop: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#94A3B8' }}>
-                  <span>📅 {pkg.duration}</span>
-                  <span>📆 {pkg.start_date} → {pkg.end_date}</span>
-                </div>
-                <div style={{ fontSize: '14px', color: '#CBD5E1', marginTop: '8px' }}>{pkg.inclusions || isAr ? 'لا توجد مشتملات محددة' : 'No inclusions specified'}</div>
-                <div style={{ fontSize: '24px', fontWeight: 700, color: '#34D399', marginTop: '12px' }}>{fmt(pkg.price)}</div>
-              </div>
-              <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
-                <button style={{ ...styles.btn, ...styles.btnWarning, flex: 1, padding: '8px' }} onClick={() => handleEditPkg(pkg)}>✏️ {isAr ? 'تعديل' : 'Edit'}</button>
-                <button style={{ ...styles.btn, ...styles.btnDanger, flex: 1, padding: '8px' }} onClick={() => handleDeletePkg(pkg.id)}>🗑️ {isAr ? 'حذف' : 'Delete'}</button>
-              </div>
-            </div>
-          ))}
-          {packages.length === 0 && (
-            <div style={{ ...styles.card, textAlign: 'center', color: '#94A3B8', padding: '40px' }}>
-              <div style={{ fontSize: '48px', marginBottom: '10px' }}>🕋</div>
-              <h3>{isAr ? 'لا توجد باقات' : 'No packages yet'}</h3>
-              <p>{isAr ? 'قم بإنشاء أول باقة حج أو عمرة' : 'Create your first Hajj/Umrah package'}</p>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // ============================================================
-  // TRAVEL INSURANCE - COMPLETE
-  // ============================================================
-  if (page === 'travel_insurance') {
-    const [insuranceForm, setInsuranceForm] = useState({
-      customer_name: '',
-      passport_no: '',
-      policy_type: 'Single Trip',
-      destination: '',
-      start_date: today,
-      end_date: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString().split('T')[0],
-      coverage_type: 'Standard',
-      premium: 0
-    });
-    const [policies, setPolicies] = useState([]);
-
-    useEffect(() => {
-      if (userProfile?.tenant_id) {
-        supabase.from('insurance_policies')
-          .select('*')
-          .eq('tenant_id', userProfile.tenant_id)
-          .order('created_at', { ascending: false })
-          .then(({ data }) => {
-            if (data) setPolicies(data);
-          })
-          .catch(() => {});
-      }
-    }, [userProfile?.tenant_id]);
-
-    const calculatePremium = () => {
-      const baseRates = { 'Single Trip': 150, 'Annual': 1200, 'Family': 400, 'Group': 300 };
-      const coverageMultipliers = { 'Standard': 1, 'Premium': 1.5, 'Comprehensive': 2 };
-      const base = baseRates[insuranceForm.policy_type] || 150;
-      const multiplier = coverageMultipliers[insuranceForm.coverage_type] || 1;
-      return base * multiplier;
-    };
-
-    useEffect(() => {
-      setInsuranceForm(prev => ({ ...prev, premium: calculatePremium() }));
-    }, [insuranceForm.policy_type, insuranceForm.coverage_type]);
-
-    const handleInsuranceSubmit = async (e) => {
-      e.preventDefault();
-      try {
-        const payload = { ...insuranceForm, tenant_id: userProfile.tenant_id };
-        const { data: newPolicy, error } = await supabase
-          .from('insurance_policies')
-          .insert([payload])
-          .select()
-          .single();
-
-        if (error) throw error;
-        setPolicies(prev => [newPolicy, ...prev]);
-        showToast?.(isAr ? '✅ تم إصدار بوليصة التأمين!' : '✅ Insurance policy issued!');
-        await logAction?.(`Insurance policy for ${insuranceForm.customer_name}`);
-        setInsuranceForm({
-          customer_name: '',
-          passport_no: '',
-          policy_type: 'Single Trip',
-          destination: '',
-          start_date: today,
-          end_date: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString().split('T')[0],
-          coverage_type: 'Standard',
-          premium: 0
-        });
-      } catch (err) {
-        showToast?.(isAr ? '❌ خطأ: ' + err.message : '❌ Error: ' + err.message);
-      }
-    };
-
-    const handleDeletePolicy = async (id) => {
-      if (!confirm(isAr ? 'حذف هذه البوليصة؟' : 'Delete this policy?')) return;
-      try {
-        await supabase.from('insurance_policies').delete().eq('id', id);
-        setPolicies(prev => prev.filter(p => p.id !== id));
-        showToast?.(isAr ? '✅ تم الحذف!' : '✅ Deleted!');
-      } catch (err) {
-        showToast?.(isAr ? '❌ خطأ في الحذف' : '❌ Delete error');
-      }
-    };
-
-    return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>🛡️ {isAr ? 'التأمين على السفر' : 'Travel Insurance'}</h1>
-        </div>
-
-        <div style={styles.card}>
-          <h3 style={styles.sectionTitle}>{isAr ? 'إصدار بوليصة تأمين' : 'Issue Insurance Policy'}</h3>
-          <form onSubmit={handleInsuranceSubmit} style={styles.formRow}>
-            <div>
-              <label style={styles.label}>{isAr ? 'اسم العميل' : 'Customer Name'}</label>
-              <input style={styles.input} value={insuranceForm.customer_name} onChange={e => setInsuranceForm({ ...insuranceForm, customer_name: e.target.value })} required />
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'رقم جواز السفر' : 'Passport No'}</label>
-              <input style={styles.input} value={insuranceForm.passport_no} onChange={e => setInsuranceForm({ ...insuranceForm, passport_no: e.target.value })} required />
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'نوع البوليصة' : 'Policy Type'}</label>
-              <select style={styles.select} value={insuranceForm.policy_type} onChange={e => setInsuranceForm({ ...insuranceForm, policy_type: e.target.value })}>
-                <option>Single Trip</option>
-                <option>Annual</option>
-                <option>Family</option>
-                <option>Group</option>
-              </select>
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'الوجهة' : 'Destination'}</label>
-              <input style={styles.input} value={insuranceForm.destination} onChange={e => setInsuranceForm({ ...insuranceForm, destination: e.target.value })} required />
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'تاريخ البدء' : 'Start Date'}</label>
-              <input type="date" style={styles.input} value={insuranceForm.start_date} onChange={e => setInsuranceForm({ ...insuranceForm, start_date: e.target.value })} required />
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'تاريخ الانتهاء' : 'End Date'}</label>
-              <input type="date" style={styles.input} value={insuranceForm.end_date} onChange={e => setInsuranceForm({ ...insuranceForm, end_date: e.target.value })} required />
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'نوع التغطية' : 'Coverage Type'}</label>
-              <select style={styles.select} value={insuranceForm.coverage_type} onChange={e => setInsuranceForm({ ...insuranceForm, coverage_type: e.target.value })}>
-                <option>Standard</option>
-                <option>Premium</option>
-                <option>Comprehensive</option>
-              </select>
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'القسط (ريال)' : 'Premium (SAR)'}</label>
-              <input type="number" style={{ ...styles.input, fontWeight: 700, color: '#34D399', fontSize: '18px' }} value={insuranceForm.premium} readOnly />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-              <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, width: '100%', padding: '12px' }}>
-                🛡️ {isAr ? 'إصدار البوليصة' : 'Issue Policy'}
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {policies.length > 0 && (
-          <div style={styles.card}>
-            <h3 style={styles.sectionTitle}>{isAr ? 'البوليصات النشطة' : 'Active Policies'}</h3>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>{isAr ? 'العميل' : 'Customer'}</th>
-                    <th style={styles.th}>{isAr ? 'النوع' : 'Type'}</th>
-                    <th style={styles.th}>{isAr ? 'الوجهة' : 'Destination'}</th>
-                    <th style={{ ...styles.th, textAlign: 'right' }}>{isAr ? 'القسط' : 'Premium'}</th>
-                    <th style={{ ...styles.th, textAlign: 'center' }}>{isAr ? 'إجراء' : 'Action'}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {policies.map(p => (
-                    <tr key={p.id}>
-                      <td style={{ ...styles.td, fontWeight: 600 }}>{p.customer_name}</td>
-                      <td style={styles.td}>{p.policy_type}</td>
-                      <td style={styles.td}>{p.destination}</td>
-                      <td style={{ ...styles.tdRight, color: '#34D399', fontWeight: 700 }}>{fmt(p.premium)}</td>
-                      <td style={styles.tdCenter}>
-                        <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDeletePolicy(p.id)}>🗑️</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // ============================================================
-  // FREQUENT FLYER - COMPLETE
-  // ============================================================
-  if (page === 'frequent_flyer') {
-    const [ffMembers, setFfMembers] = useState([]);
-    const [ffForm, setFfForm] = useState({
-      customer_name: '',
-      airline: '',
-      membership_no: '',
-      tier: 'Blue',
-      points: 0,
-      status: 'Active'
-    });
-    const [editingId, setEditingId] = useState(null);
-
-    useEffect(() => {
-      if (userProfile?.tenant_id) {
-        supabase.from('frequent_flyer')
-          .select('*')
-          .eq('tenant_id', userProfile.tenant_id)
-          .order('points', { ascending: false })
-          .then(({ data }) => {
-            if (data) setFfMembers(data);
-          })
-          .catch(() => {});
-      }
-    }, [userProfile?.tenant_id]);
-
-    const handleFfSubmit = async (e) => {
-      e.preventDefault();
-      try {
-        const payload = { ...ffForm, tenant_id: userProfile.tenant_id };
-        if (editingId) {
-          const { data: updated, error } = await supabase
-            .from('frequent_flyer')
-            .update(payload)
-            .eq('id', editingId)
-            .select()
-            .single();
-          if (error) throw error;
-          setFfMembers(prev => prev.map(f => f.id === editingId ? updated : f));
-          showToast?.(isAr ? '✅ تم التحديث!' : '✅ Updated!');
-          setEditingId(null);
-        } else {
-          const { data: newMember, error } = await supabase
-            .from('frequent_flyer')
-            .insert([payload])
-            .select()
-            .single();
-          if (error) throw error;
-          setFfMembers(prev => [newMember, ...prev]);
-          showToast?.(isAr ? '✅ تمت الإضافة!' : '✅ Added!');
-          await logAction?.(`Frequent flyer: ${ffForm.customer_name}`);
-        }
-        setFfForm({
-          customer_name: '',
-          airline: '',
-          membership_no: '',
-          tier: 'Blue',
-          points: 0,
-          status: 'Active'
-        });
-      } catch (err) {
-        showToast?.(isAr ? '❌ خطأ: ' + err.message : '❌ Error: ' + err.message);
-      }
-    };
-
-    const handleEditFf = (member) => {
-      setEditingId(member.id);
-      setFfForm({
-        customer_name: member.customer_name,
-        airline: member.airline,
-        membership_no: member.membership_no,
-        tier: member.tier,
-        points: member.points,
-        status: member.status
-      });
-    };
-
-    const handleDeleteFf = async (id) => {
-      if (!confirm(isAr ? 'حذف هذا العضو؟' : 'Delete this member?')) return;
-      try {
-        await supabase.from('frequent_flyer').delete().eq('id', id);
-        setFfMembers(prev => prev.filter(f => f.id !== id));
-        showToast?.(isAr ? '✅ تم الحذف!' : '✅ Deleted!');
-      } catch (err) {
-        showToast?.(isAr ? '❌ خطأ في الحذف' : '❌ Delete error');
-      }
-    };
-
-    const getTierColor = (tier) => {
-      const map = { 'Blue': '#3B82F6', 'Silver': '#94A3B8', 'Gold': '#FBBF24', 'Platinum': '#A78BFA', 'Diamond': '#34D399' };
-      return map[tier] || '#3B82F6';
-    };
-
-    return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>🌟 {isAr ? 'إدارة المسافر الدائم' : 'Frequent Flyer Management'}</h1>
-        </div>
-
-        <div style={styles.card}>
-          <h3 style={styles.sectionTitle}>{editingId ? '✏️ ' + (isAr ? 'تعديل العضو' : 'Edit Member') : '➕ ' + (isAr ? 'إضافة عضو' : 'Add Member')}</h3>
-          <form onSubmit={handleFfSubmit} style={styles.formRow}>
-            <div>
-              <label style={styles.label}>{isAr ? 'اسم العميل' : 'Customer Name'}</label>
-              <input style={styles.input} value={ffForm.customer_name} onChange={e => setFfForm({ ...ffForm, customer_name: e.target.value })} required />
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'خط الطيران' : 'Airline'}</label>
-              <input style={styles.input} value={ffForm.airline} onChange={e => setFfForm({ ...ffForm, airline: e.target.value })} placeholder={isAr ? 'مثال: السعودية، الإمارات' : 'e.g. Saudia, Emirates'} required />
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'رقم العضوية' : 'Membership No'}</label>
-              <input style={styles.input} value={ffForm.membership_no} onChange={e => setFfForm({ ...ffForm, membership_no: e.target.value })} required />
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'المستوى' : 'Tier'}</label>
-              <select style={styles.select} value={ffForm.tier} onChange={e => setFfForm({ ...ffForm, tier: e.target.value })}>
-                <option>Blue</option><option>Silver</option><option>Gold</option><option>Platinum</option><option>Diamond</option>
-              </select>
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'النقاط' : 'Points'}</label>
-              <input type="number" style={styles.input} value={ffForm.points} onChange={e => setFfForm({ ...ffForm, points: parseInt(e.target.value) })} />
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'الحالة' : 'Status'}</label>
-              <select style={styles.select} value={ffForm.status} onChange={e => setFfForm({ ...ffForm, status: e.target.value })}>
-                <option>Active</option><option>Inactive</option><option>Expired</option>
-              </select>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
-              <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, width: '100%', padding: '12px' }}>
-                {editingId ? '💾 ' + (isAr ? 'تحديث' : 'Update') : '✅ ' + (isAr ? 'إضافة' : 'Add')}
-              </button>
-              {editingId && (
-                <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setEditingId(null); setFfForm({ customer_name: '', airline: '', membership_no: '', tier: 'Blue', points: 0, status: 'Active' }); }}>
-                  ✕ {isAr ? 'إلغاء' : 'Cancel'}
-                </button>
-              )}
-            </div>
-          </form>
-        </div>
-
-        {ffMembers.length > 0 && (
-          <div style={styles.card}>
-            <h3 style={styles.sectionTitle}>{isAr ? 'قائمة الأعضاء' : 'Member List'}</h3>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>{isAr ? 'العميل' : 'Customer'}</th>
-                    <th style={styles.th}>{isAr ? 'الخطوط' : 'Airline'}</th>
-                    <th style={styles.th}>{isAr ? 'رقم العضوية' : 'Membership'}</th>
-                    <th style={styles.th}>{isAr ? 'المستوى' : 'Tier'}</th>
-                    <th style={{ ...styles.th, textAlign: 'right' }}>{isAr ? 'النقاط' : 'Points'}</th>
-                    <th style={{ ...styles.th, textAlign: 'center' }}>{isAr ? 'إجراء' : 'Action'}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ffMembers.map(m => (
-                    <tr key={m.id}>
-                      <td style={{ ...styles.td, fontWeight: 600 }}>{m.customer_name}</td>
-                      <td style={styles.td}>{m.airline}</td>
-                      <td style={styles.td}>{m.membership_no}</td>
-                      <td style={styles.td}>
-                        <span style={{
-                          padding: '4px 12px',
-                          borderRadius: '12px',
-                          background: getTierColor(m.tier) + '20',
-                          color: getTierColor(m.tier),
-                          fontWeight: 700,
-                          fontSize: '12px'
-                        }}>
-                          {m.tier}
-                        </span>
-                      </td>
-                      <td style={{ ...styles.tdRight, color: '#FBBF24', fontWeight: 700 }}>{m.points}</td>
-                      <td style={styles.tdCenter}>
-                        <div style={styles.actionsCell}>
-                          <button style={{ ...styles.actionBtn, background: '#065F46', color: '#34D399' }} onClick={() => handleEditFf(m)}>✏️</button>
-                          <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDeleteFf(m.id)}>🗑️</button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // ============================================================
-  // CORPORATE TRAVEL - COMPLETE
-  // ============================================================
-  if (page === 'corporate_travel') {
-    const [corpTravels, setCorpTravels] = useState([]);
-
-    useEffect(() => {
-      if (userProfile?.tenant_id) {
-        supabase.from('corporate_travel')
-          .select('*, corporates(name)')
-          .eq('tenant_id', userProfile.tenant_id)
-          .order('created_at', { ascending: false })
-          .then(({ data }) => {
-            if (data) setCorpTravels(data);
-          });
-      }
-    }, [userProfile?.tenant_id]);
-
-    return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>🏢 {isAr ? 'السفر المؤسسي' : 'Corporate Travel'}</h1>
-        </div>
-
-        <div style={styles.card}>
-          <h3 style={styles.sectionTitle}>{isAr ? 'ملخص السفر المؤسسي' : 'Corporate Travel Summary'}</h3>
-          <div style={styles.grid}>
-            <div style={styles.statCard}>
-              <div style={styles.statLabel}>📋 {isAr ? 'إجمالي الحجوزات' : 'Total Bookings'}</div>
-              <div style={styles.statValue}>{corpTravels.length}</div>
-            </div>
-            <div style={styles.statCard}>
-              <div style={styles.statLabel}>🏢 {isAr ? 'الشركات النشطة' : 'Active Corporate Clients'}</div>
-              <div style={styles.statValue}>{(data.corporates || []).length}</div>
-            </div>
-            <div style={styles.statCard}>
-              <div style={styles.statLabel}>💰 {isAr ? 'إجمالي الإنفاق' : 'Total Spend'}</div>
-              <div style={{ ...styles.statValue, color: '#34D399' }}>
-                {corpTravels.reduce((s, t) => s + (t.total_amount || 0), 0).toFixed(2)} SAR
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div style={styles.card}>
-          <h3 style={styles.sectionTitle}>{isAr ? 'الحجوزات المؤسسية الحديثة' : 'Recent Corporate Bookings'}</h3>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>{isAr ? 'الشركة' : 'Corporate'}</th>
-                  <th style={styles.th}>{isAr ? 'محجوز بواسطة' : 'Booked By'}</th>
-                  <th style={styles.th}>{isAr ? 'التاريخ' : 'Date'}</th>
-                  <th style={{ ...styles.th, textAlign: 'right' }}>{isAr ? 'المبلغ' : 'Amount'}</th>
-                  <th style={{ ...styles.th, textAlign: 'center' }}>{isAr ? 'الحالة' : 'Status'}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {corpTravels.map(t => (
-                  <tr key={t.id}>
-                    <td style={{ ...styles.td, fontWeight: 600 }}>{t.corporates?.name || 'N/A'}</td>
-                    <td style={styles.td}>{t.booked_by || 'N/A'}</td>
-                    <td style={styles.td}>{t.booking_date}</td>
-                    <td style={{ ...styles.tdRight, color: '#34D399', fontWeight: 700 }}>{(t.total_amount || 0).toFixed(2)} SAR</td>
-                    <td style={styles.tdCenter}>
-                      <span style={{ ...styles.badge, ...styles.badgeSuccess }}>{t.status || 'Confirmed'}</span>
-                    </td>
-                  </tr>
-                ))}
-                {corpTravels.length === 0 && (
-                  <tr>
-                    <td colSpan="5" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
-                      {isAr ? 'لا توجد حجوزات سفر مؤسسي.' : 'No corporate travel bookings yet.'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
       </div>
     );
   }
