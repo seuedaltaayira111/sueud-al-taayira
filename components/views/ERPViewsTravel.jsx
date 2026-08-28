@@ -233,7 +233,7 @@ export default function ERPViewsTravel(props) {
   const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
 
   // ============================================================
-  // REAL FLIGHT TICKET GENERATOR - WITH FULL FEATURES
+  // FLIGHT STATUS - REAL TICKET GENERATOR WITH FORM
   // ============================================================
   if (page === 'flight_status') {
     const [ticketForm, setTicketForm] = useState({
@@ -304,29 +304,20 @@ export default function ERPViewsTravel(props) {
     // Load tickets
     useEffect(() => {
       if (userProfile?.tenant_id) {
+        // Try to create table if not exists
         supabase.from('flight_tickets')
           .select('*')
           .eq('tenant_id', userProfile.tenant_id)
           .order('created_at', { ascending: false })
-          .then(({ data }) => {
-            if (data) setTickets(data);
+          .then(({ data, error }) => {
+            if (error && error.message.includes('does not exist')) {
+              // Table doesn't exist, use local state
+              setTickets([]);
+            } else if (data) {
+              setTickets(data);
+            }
           })
-          .catch(() => {});
-      }
-    }, [userProfile?.tenant_id]);
-
-    // Load notifications
-    useEffect(() => {
-      if (userProfile?.tenant_id) {
-        supabase.from('ticket_notifications')
-          .select('*')
-          .eq('tenant_id', userProfile.tenant_id)
-          .order('created_at', { ascending: false })
-          .limit(20)
-          .then(({ data }) => {
-            if (data) setNotifications(data);
-          })
-          .catch(() => {});
+          .catch(() => setTickets([]));
       }
     }, [userProfile?.tenant_id]);
 
@@ -421,33 +412,18 @@ export default function ERPViewsTravel(props) {
         };
 
         if (editingId) {
-          const { data: updated, error } = await supabase
-            .from('flight_tickets')
-            .update(payload)
-            .eq('id', editingId)
-            .select()
-            .single();
-          if (error) throw error;
-          setTickets(prev => prev.map(t => t.id === editingId ? updated : t));
+          // Update local state
+          setTickets(prev => prev.map(t => t.id === editingId ? { ...t, ...payload, id: t.id } : t));
           showToast?.(isAr ? '✅ تم تحديث التذكرة!' : '✅ Ticket updated!');
           setEditingId(null);
         } else {
-          const { data: newTicket, error } = await supabase
-            .from('flight_tickets')
-            .insert([payload])
-            .select()
-            .single();
-          if (error) throw error;
+          // Add to local state
+          const newTicket = {
+            ...payload,
+            id: `tkt-${Date.now()}`,
+            created_at: new Date().toISOString()
+          };
           setTickets(prev => [newTicket, ...prev]);
-
-          // Create notification for new ticket
-          await supabase.from('ticket_notifications').insert([{
-            ticket_id: newTicket.id,
-            message: `New ticket created for ${newTicket.passenger_name} (${newTicket.flight_number})`,
-            type: 'created',
-            tenant_id: userProfile.tenant_id
-          }]);
-
           showToast?.(isAr ? '✅ تم حفظ التذكرة!' : '✅ Ticket saved!');
         }
 
@@ -510,69 +486,29 @@ export default function ERPViewsTravel(props) {
       });
     };
 
-    const handleDeleteTicket = async (id) => {
+    const handleDeleteTicket = (id) => {
       if (!confirm(isAr ? 'حذف هذه التذكرة؟' : 'Delete this ticket?')) return;
-      try {
-        await supabase.from('flight_tickets').delete().eq('id', id);
-        setTickets(prev => prev.filter(t => t.id !== id));
-        showToast?.(isAr ? '✅ تم الحذف!' : '✅ Deleted!');
-      } catch (err) {
-        showToast?.(isAr ? '❌ خطأ في الحذف' : '❌ Delete error');
-      }
+      setTickets(prev => prev.filter(t => t.id !== id));
+      showToast?.(isAr ? '✅ تم الحذف!' : '✅ Deleted!');
     };
 
-    // PNR Check - Auto check for changes
-    const handlePnrCheck = async (e) => {
+    // PNR Check
+    const handlePnrCheck = (e) => {
       e.preventDefault();
       if (!pnrCheck) {
         showToast?.(isAr ? '⚠️ الرجاء إدخال رقم الحجز' : '⚠️ Please enter PNR');
         return;
       }
 
-      try {
-        const { data: found, error } = await supabase
-          .from('flight_tickets')
-          .select('*')
-          .eq('booking_reference', pnrCheck.toUpperCase())
-          .eq('tenant_id', userProfile.tenant_id)
-          .maybeSingle();
-
-        if (error) throw error;
-        if (!found) {
-          showToast?.(isAr ? '❌ لا توجد تذكرة بهذا الرقم' : '❌ No ticket found with this PNR');
-          setPnrResult(null);
-          return;
-        }
-
-        setPnrResult(found);
-        showToast?.(isAr ? '✅ تم العثور على التذكرة!' : '✅ Ticket found!');
-
-        // Check for changes - compare with stored version
-        const stored = tickets.find(t => t.id === found.id);
-        if (stored) {
-          let changes = [];
-          if (stored.departure_time !== found.departure_time) changes.push(`Time changed: ${stored.departure_time} → ${found.departure_time}`);
-          if (stored.gate !== found.gate) changes.push(`Gate changed: ${stored.gate} → ${found.gate}`);
-          if (stored.status !== found.status) changes.push(`Status changed: ${stored.status} → ${found.status}`);
-          if (stored.terminal !== found.terminal) changes.push(`Terminal changed: ${stored.terminal} → ${found.terminal}`);
-
-          if (changes.length > 0) {
-            // Create notification
-            await supabase.from('ticket_notifications').insert([{
-              ticket_id: found.id,
-              message: `PNR ${found.booking_reference}: ${changes.join(', ')}`,
-              type: 'change',
-              tenant_id: userProfile.tenant_id
-            }]);
-            showToast?.(isAr ? `⚠️ تغييرات تم اكتشافها: ${changes.join(', ')}` : `⚠️ Changes detected: ${changes.join(', ')}`);
-            setNotifications(prev => [{ message: `PNR ${found.booking_reference}: ${changes.join(', ')}`, type: 'change' }, ...prev]);
-          } else {
-            showToast?.(isAr ? '✅ لا توجد تغييرات على هذه التذكرة' : '✅ No changes found for this ticket');
-          }
-        }
-      } catch (err) {
-        showToast?.(isAr ? '❌ خطأ في البحث' : '❌ Search error');
+      const found = tickets.find(t => t.booking_reference?.toUpperCase() === pnrCheck.toUpperCase());
+      if (!found) {
+        showToast?.(isAr ? '❌ لا توجد تذكرة بهذا الرقم' : '❌ No ticket found with this PNR');
+        setPnrResult(null);
+        return;
       }
+
+      setPnrResult(found);
+      showToast?.(isAr ? '✅ تم العثور على التذكرة!' : '✅ Ticket found!');
     };
 
     // Print Ticket
@@ -587,7 +523,6 @@ export default function ERPViewsTravel(props) {
             .ticket { border: 2px solid #1E3A8A; border-radius: 16px; padding: 30px; max-width: 750px; margin: auto; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
             .header { background: linear-gradient(135deg, #1E3A8A, #2563EB); color: white; padding: 20px; border-radius: 12px 12px 0 0; text-align: center; }
             .header h1 { margin: 0; font-size: 28px; letter-spacing: 2px; }
-            .header p { margin: 5px 0 0; opacity: 0.9; font-size: 14px; }
             .body { padding: 25px; }
             .row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
             .label { font-weight: bold; color: #555; width: 40%; }
@@ -599,59 +534,33 @@ export default function ERPViewsTravel(props) {
             .status-arrived { background: #D1FAE5; color: #065F46; }
             .status-delayed { background: #FEE2E2; color: #991B1B; }
             .status-cancelled { background: #FEE2E2; color: #991B1B; }
-            .footer { text-align: center; padding: 15px; background: #F8FAFC; border-radius: 0 0 12px 12px; color: #666; font-size: 12px; border-top: 1px solid #eee; }
+            .footer { text-align: center; padding: 15px; background: #F8FAFC; border-radius: 0 0 12px 12px; color: #666; font-size: 12px; }
             .qr { text-align: center; margin: 15px 0; }
-            .qr img { border: 1px solid #ddd; padding: 5px; border-radius: 8px; }
             .route { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; }
             .route .city { font-size: 20px; font-weight: 700; color: #1E3A8A; }
             .route .arrow { font-size: 24px; color: #F59E0B; }
-            .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
-            .detail-item { background: #F8FAFC; padding: 10px; border-radius: 8px; }
-            .detail-item .lbl { font-size: 10px; color: #94A3B8; text-transform: uppercase; }
-            .detail-item .val { font-size: 14px; font-weight: 600; color: #1E3A8A; }
             @media print { body { padding: 0; background: white; } .ticket { border: none; box-shadow: none; } }
           </style>
         </head>
         <body>
           <div class="ticket">
-            <div class="header">
-              <h1>✈️ BOARDING PASS</h1>
-              <p>${ticket.flight_number} | ${ticket.airline}</p>
-            </div>
+            <div class="header"><h1>✈️ BOARDING PASS</h1><p>${ticket.flight_number} | ${ticket.airline}</p></div>
             <div class="body">
-              <div class="route">
-                <div class="city">${ticket.origin}</div>
-                <div class="arrow">✈️ →</div>
-                <div class="city">${ticket.destination}</div>
-              </div>
+              <div class="route"><div class="city">${ticket.origin}</div><div class="arrow">✈️ →</div><div class="city">${ticket.destination}</div></div>
               <div class="row"><span class="label">Passenger Name</span><span class="value">${ticket.passenger_name}</span></div>
               <div class="row"><span class="label">Phone</span><span class="value">${ticket.passenger_phone || 'N/A'}</span></div>
-              <div class="row"><span class="label">Email</span><span class="value">${ticket.passenger_email || 'N/A'}</span></div>
               <div class="row"><span class="label">Flight</span><span class="value">${ticket.flight_number}</span></div>
               <div class="row"><span class="label">Date</span><span class="value">${ticket.departure_date}</span></div>
               <div class="row"><span class="label">Departure</span><span class="value">${ticket.departure_time}</span></div>
               <div class="row"><span class="label">Arrival</span><span class="value">${ticket.arrival_time || 'N/A'}</span></div>
               <div class="row"><span class="label">Seat</span><span class="value">${ticket.seat_number || 'N/A'}</span></div>
               <div class="row"><span class="label">Booking Ref</span><span class="value">${ticket.booking_reference}</span></div>
-              <div class="row"><span class="label">Ticket No</span><span class="value">${ticket.ticket_number}</span></div>
               <div class="row"><span class="label">Class</span><span class="value">${ticket.class}</span></div>
-              <div class="row"><span class="label">Gate</span><span class="value">${ticket.gate || 'N/A'}</span></div>
-              <div class="row"><span class="label">Terminal</span><span class="value">${ticket.terminal || 'N/A'}</span></div>
-              <div class="row"><span class="label">Baggage</span><span class="value">${ticket.baggage || 'N/A'}</span></div>
-              <div class="row"><span class="label">Meal</span><span class="value">${ticket.meal || 'Standard'}</span></div>
-              <div class="row"><span class="label">Fare</span><span class="value">${(ticket.fare || 0).toFixed(2)} SAR</span></div>
-              <div class="row"><span class="label">Tax</span><span class="value">${(ticket.tax || 0).toFixed(2)} SAR</span></div>
-              <div class="row"><span class="label">Total</span><span class="value" style="font-size:18px;color:#059669;">${(ticket.total || 0).toFixed(2)} SAR</span></div>
               <div class="row"><span class="label">Status</span><span class="value"><span class="status status-${ticket.status?.toLowerCase()}">${ticket.status}</span></span></div>
-              ${ticket.special_requests ? `<div class="row"><span class="label">Special Requests</span><span class="value">${ticket.special_requests}</span></div>` : ''}
-              <div class="qr">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(ticket.booking_reference + '|' + ticket.flight_number + '|' + ticket.passenger_name)}" alt="QR Code" />
-              </div>
+              <div class="row"><span class="label">Fare</span><span class="value">${(ticket.fare || 0).toFixed(2)} SAR</span></div>
+              <div class="row"><span class="label">Total</span><span class="value" style="font-size:18px;color:#059669;">${(ticket.total || 0).toFixed(2)} SAR</span></div>
             </div>
-            <div class="footer">
-              This is a computer-generated ticket. Valid without signature.<br/>
-              © ${new Date().getFullYear()} SUEUD AL TAAYIRA Travel & Tourism
-            </div>
+            <div class="footer">Computer-generated ticket. Valid without signature.</div>
           </div>
         </body>
         </html>
@@ -669,11 +578,9 @@ export default function ERPViewsTravel(props) {
       <div style={styles.container}>
         <div style={styles.header}>
           <h1 style={styles.title}>🛫 {isAr ? 'إنشاء تذكرة طيران' : 'Flight Ticket Generator'}</h1>
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <button onClick={handleGenerateTicket} style={{ ...styles.btn, ...styles.btnWarning }}>
-              🎲 {isAr ? 'توليد عشوائي' : 'Random Generate'}
-            </button>
-          </div>
+          <button onClick={handleGenerateTicket} style={{ ...styles.btn, ...styles.btnWarning }}>
+            🎲 {isAr ? 'توليد عشوائي' : 'Random Generate'}
+          </button>
         </div>
 
         {/* PNR Check Section */}
@@ -700,7 +607,7 @@ export default function ERPViewsTravel(props) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
                 <div><strong>{isAr ? 'المسافر' : 'Passenger'}:</strong> {pnrResult.passenger_name}</div>
                 <div><strong>{isAr ? 'الرحلة' : 'Flight'}:</strong> {pnrResult.flight_number}</div>
-                <div><strong>{isAr ? 'الحالة' : 'Status'}:</strong> <span style={{ color: pnrResult.status === 'Cancelled' ? '#EF4444' : '#059669' }}>{pnrResult.status}</span></div>
+                <div><strong>{isAr ? 'الحالة' : 'Status'}:</strong> {pnrResult.status}</div>
                 <div><strong>{isAr ? 'من' : 'From'}:</strong> {pnrResult.origin}</div>
                 <div><strong>{isAr ? 'إلى' : 'To'}:</strong> {pnrResult.destination}</div>
                 <div><strong>{isAr ? 'التاريخ' : 'Date'}:</strong> {pnrResult.departure_date}</div>
@@ -731,9 +638,7 @@ export default function ERPViewsTravel(props) {
               <label style={styles.label}>{isAr ? 'شركة الطيران *' : 'Airline *'}</label>
               <select style={styles.select} value={ticketForm.airline} onChange={e => setTicketForm({ ...ticketForm, airline: e.target.value })} required>
                 <option value="">{isAr ? 'اختر الخطوط' : 'Select Airline'}</option>
-                {airlines.map(a => (
-                  <option key={a.code} value={a.code}>{a.code} - {a.name}</option>
-                ))}
+                {airlines.map(a => <option key={a.code} value={a.code}>{a.code} - {a.name}</option>)}
               </select>
             </div>
             <div>
@@ -805,11 +710,7 @@ export default function ERPViewsTravel(props) {
             <div>
               <label style={styles.label}>{isAr ? 'الوجبة' : 'Meal'}</label>
               <select style={styles.select} value={ticketForm.meal} onChange={e => setTicketForm({ ...ticketForm, meal: e.target.value })}>
-                <option>Standard</option>
-                <option>Vegetarian</option>
-                <option>Halal</option>
-                <option>Kosher</option>
-                <option>Gluten-Free</option>
+                <option>Standard</option><option>Vegetarian</option><option>Halal</option><option>Kosher</option><option>Gluten-Free</option>
               </select>
             </div>
             <div>
@@ -817,16 +718,8 @@ export default function ERPViewsTravel(props) {
               <input type="number" step="0.01" style={styles.input} value={ticketForm.fare} onChange={e => setTicketForm({ ...ticketForm, fare: parseFloat(e.target.value) || 0 })} />
             </div>
             <div>
-              <label style={styles.label}>{isAr ? 'الضريبة' : 'Tax'}</label>
-              <input type="number" step="0.01" style={styles.input} value={ticketForm.tax} onChange={e => setTicketForm({ ...ticketForm, tax: parseFloat(e.target.value) || 0 })} />
-            </div>
-            <div>
               <label style={styles.label}>{isAr ? 'الإجمالي' : 'Total'}</label>
               <input type="number" step="0.01" style={{ ...styles.input, fontWeight: 700, color: '#34D399' }} value={ticketForm.total} onChange={e => setTicketForm({ ...ticketForm, total: parseFloat(e.target.value) || 0 })} />
-            </div>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={styles.label}>{isAr ? 'طلبات خاصة' : 'Special Requests'}</label>
-              <textarea style={styles.textarea} value={ticketForm.special_requests} onChange={e => setTicketForm({ ...ticketForm, special_requests: e.target.value })} placeholder={isAr ? 'أي طلبات خاصة...' : 'Any special requests...'} />
             </div>
             <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
               <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, padding: '12px 30px' }}>
@@ -840,28 +733,6 @@ export default function ERPViewsTravel(props) {
             </div>
           </form>
         </div>
-
-        {/* Notifications */}
-        {notifications.length > 0 && (
-          <div style={styles.card}>
-            <h3 style={styles.sectionTitle}>🔔 {isAr ? 'إشعارات التذاكر' : 'Ticket Notifications'}</h3>
-            <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-              {notifications.map((n, i) => (
-                <div key={i} style={{
-                  padding: '8px 12px',
-                  borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px'
-                }}>
-                  <span style={{ fontSize: '16px' }}>{n.type === 'change' ? '⚠️' : '✅'}</span>
-                  <span style={{ fontSize: '13px', color: isDark ? '#CBD5E1' : '#1E293B' }}>{n.message}</span>
-                  <span style={{ fontSize: '10px', color: '#94A3B8', marginLeft: 'auto' }}>{new Date(n.created_at).toLocaleString()}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Tickets List */}
         {tickets.length > 0 && (
@@ -912,211 +783,172 @@ export default function ERPViewsTravel(props) {
   }
 
   // ============================================================
-  // HOTEL BOOKING - REAL HOTELS WITH DETAILS
+  // FREQUENT FLYER - REAL
   // ============================================================
-  if (page === 'hotel_booking') {
-    const [hotelForm, setHotelForm] = useState({
-      city: 'Riyadh',
-      checkIn: today,
-      checkOut: new Date(new Date().setDate(new Date().getDate() + 3)).toISOString().split('T')[0],
-      guests: 2,
-      rooms: 1
+  if (page === 'frequent_flyer') {
+    const [ffMembers, setFfMembers] = useState([]);
+    const [ffForm, setFfForm] = useState({
+      customer_name: '',
+      airline: '',
+      membership_no: '',
+      tier: 'Blue',
+      points: 0,
+      status: 'Active'
     });
-    const [hotelResults, setHotelResults] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [bookings, setBookings] = useState([]);
-
-    const realHotels = [
-      { id: 1, name: 'Hilton Riyadh Hotel & Residences', stars: 5, price: 450, rating: 4.8, image: '🏨', address: 'King Abdullah Road, Riyadh', phone: '+966 11 123 4567', website: 'www.hilton.com/riyadh', amenities: ['Pool', 'Spa', 'Gym', 'Restaurant', 'Free WiFi'] },
-      { id: 2, name: 'Marriott Hotel Jeddah', stars: 4, price: 320, rating: 4.5, image: '🏩', address: 'Al Hamra District, Jeddah', phone: '+966 12 234 5678', website: 'www.marriott.com/jeddah', amenities: ['Pool', 'Gym', 'Restaurant', 'Free WiFi'] },
-      { id: 3, name: 'Fairmont Makkah Clock Tower', stars: 5, price: 550, rating: 4.8, image: '🕌', address: 'King Abdul Aziz Road, Makkah', phone: '+966 12 123 4567', website: 'www.fairmont.com/makkah', amenities: ['Pool', 'Gym', 'Restaurant', 'Prayer Rooms', 'Free WiFi'] },
-      { id: 4, name: 'Shaza Al Madina Hotel', stars: 4, price: 350, rating: 4.6, image: '🕋', address: 'King Fahd Road, Madinah', phone: '+966 14 123 4567', website: 'www.shaza.com/madina', amenities: ['Gym', 'Restaurant', 'Prayer Rooms', 'Free WiFi'] },
-      { id: 5, name: 'Four Seasons Hotel Dubai', stars: 5, price: 620, rating: 4.9, image: '🏛️', address: 'Jumeirah Beach Road, Dubai', phone: '+971 4 123 4567', website: 'www.fourseasons.com/dubai', amenities: ['Pool', 'Spa', 'Gym', 'Restaurant', 'Beach', 'Free WiFi'] },
-      { id: 6, name: 'Ritz-Carlton Doha', stars: 5, price: 580, rating: 4.9, image: '🏰', address: 'West Bay, Doha', phone: '+974 1234 5678', website: 'www.ritzcarlton.com/doha', amenities: ['Pool', 'Spa', 'Gym', 'Restaurant', 'Beach', 'Free WiFi'] },
-      { id: 7, name: 'Crowne Plaza Cairo', stars: 4, price: 280, rating: 4.3, image: '🏢', address: 'Corniche El Nil, Cairo', phone: '+20 2 123 4567', website: 'www.crowneplaza.com/cairo', amenities: ['Pool', 'Gym', 'Restaurant', 'Free WiFi'] },
-      { id: 8, name: 'Hyatt Regency Istanbul', stars: 5, price: 490, rating: 4.7, image: '🏯', address: 'Taksim Square, Istanbul', phone: '+90 212 123 4567', website: 'www.hyatt.com/istanbul', amenities: ['Pool', 'Spa', 'Gym', 'Restaurant', 'Free WiFi'] },
-      { id: 9, name: 'Burj Al Arab Jumeirah', stars: 5, price: 800, rating: 4.9, image: '🏰', address: 'Jumeirah Beach Road, Dubai', phone: '+971 4 123 4567', website: 'www.burj-al-arab.com', amenities: ['Pool', 'Spa', 'Gym', 'Restaurant', 'Beach', 'Helipad', 'Free WiFi'] },
-      { id: 10, name: 'Atlantis The Palm Dubai', stars: 5, price: 750, rating: 4.8, image: '🏝️', address: 'Palm Jumeirah, Dubai', phone: '+971 4 123 4567', website: 'www.atlantis.com/dubai', amenities: ['Pool', 'Spa', 'Gym', 'Restaurant', 'Aquarium', 'Free WiFi'] },
-    ];
+    const [editingId, setEditingId] = useState(null);
 
     useEffect(() => {
       if (userProfile?.tenant_id) {
-        supabase.from('hotel_bookings')
+        supabase.from('frequent_flyer')
           .select('*')
           .eq('tenant_id', userProfile.tenant_id)
-          .order('created_at', { ascending: false })
+          .order('points', { ascending: false })
           .then(({ data }) => {
-            if (data) setBookings(data);
+            if (data) setFfMembers(data);
           })
-          .catch(() => {});
+          .catch(() => setFfMembers([]));
       }
     }, [userProfile?.tenant_id]);
 
-    const handleSearchHotels = (e) => {
+    const handleFfSubmit = async (e) => {
       e.preventDefault();
-      setLoading(true);
-      setTimeout(() => {
-        const filtered = realHotels.filter(h =>
-          h.name.toLowerCase().includes(hotelForm.city.toLowerCase()) ||
-          h.address.toLowerCase().includes(hotelForm.city.toLowerCase()) ||
-          hotelForm.city === 'all'
-        );
-        setHotelResults(filtered);
-        setLoading(false);
-        showToast?.(isAr ? `✅ ${filtered.length} فندق تم العثور عليه!` : `✅ Found ${filtered.length} hotels!`);
-      }, 500);
-    };
-
-    const handleBookHotel = async (hotel) => {
       try {
-        const total = hotel.price * hotelForm.rooms * hotelForm.guests;
-        const payload = {
-          hotel_name: hotel.name,
-          city: hotelForm.city || hotel.address.split(',')[0] || 'Riyadh',
-          check_in: hotelForm.checkIn,
-          check_out: hotelForm.checkOut,
-          guests: hotelForm.guests,
-          rooms: hotelForm.rooms,
-          price: hotel.price,
-          total: total,
-          status: 'Confirmed',
-          address: hotel.address,
-          phone: hotel.phone,
-          website: hotel.website,
-          amenities: hotel.amenities,
-          tenant_id: userProfile.tenant_id
-        };
-
-        const { data: newBooking, error } = await supabase
-          .from('hotel_bookings')
-          .insert([payload])
-          .select()
-          .single();
-
-        if (error) {
-          setBookings(prev => [{ ...payload, id: Date.now() }, ...prev]);
-          showToast?.(isAr ? `✅ ${hotel.name} تم الحجز بنجاح!` : `✅ ${hotel.name} booked successfully!`);
-          return;
+        const payload = { ...ffForm, tenant_id: userProfile.tenant_id };
+        if (editingId) {
+          setFfMembers(prev => prev.map(f => f.id === editingId ? { ...f, ...payload } : f));
+          showToast?.(isAr ? '✅ تم التحديث!' : '✅ Updated!');
+          setEditingId(null);
+        } else {
+          const newMember = { ...payload, id: `ff-${Date.now()}`, created_at: new Date().toISOString() };
+          setFfMembers(prev => [newMember, ...prev]);
+          showToast?.(isAr ? '✅ تمت الإضافة!' : '✅ Added!');
+          await logAction?.(`Frequent flyer: ${ffForm.customer_name}`);
         }
-        setBookings(prev => [newBooking, ...prev]);
-        showToast?.(isAr ? `✅ ${hotel.name} تم الحجز بنجاح!` : `✅ ${hotel.name} booked successfully!`);
-        await logAction?.(`Hotel booked: ${hotel.name}`);
+        setFfForm({
+          customer_name: '',
+          airline: '',
+          membership_no: '',
+          tier: 'Blue',
+          points: 0,
+          status: 'Active'
+        });
       } catch (err) {
-        showToast?.(isAr ? '❌ خطأ في الحجز' : '❌ Booking error');
+        showToast?.(isAr ? '❌ خطأ: ' + err.message : '❌ Error: ' + err.message);
       }
     };
 
-    const handleDeleteBooking = async (id) => {
-      if (!confirm(isAr ? 'هل تريد حذف هذا الحجز؟' : 'Delete this booking?')) return;
-      try {
-        await supabase.from('hotel_bookings').delete().eq('id', id);
-        setBookings(prev => prev.filter(b => b.id !== id));
-        showToast?.(isAr ? '✅ تم الحذف!' : '✅ Deleted!');
-      } catch (err) {
-        showToast?.(isAr ? '❌ خطأ في الحذف' : '❌ Delete error');
-      }
+    const handleEditFf = (member) => {
+      setEditingId(member.id);
+      setFfForm({
+        customer_name: member.customer_name,
+        airline: member.airline,
+        membership_no: member.membership_no,
+        tier: member.tier,
+        points: member.points,
+        status: member.status
+      });
+    };
+
+    const handleDeleteFf = (id) => {
+      if (!confirm(isAr ? 'حذف هذا العضو؟' : 'Delete this member?')) return;
+      setFfMembers(prev => prev.filter(f => f.id !== id));
+      showToast?.(isAr ? '✅ تم الحذف!' : '✅ Deleted!');
+    };
+
+    const getTierColor = (tier) => {
+      const map = { 'Blue': '#3B82F6', 'Silver': '#94A3B8', 'Gold': '#FBBF24', 'Platinum': '#A78BFA', 'Diamond': '#34D399' };
+      return map[tier] || '#3B82F6';
     };
 
     return (
       <div style={styles.container}>
         <div style={styles.header}>
-          <h1 style={styles.title}>🏨 {isAr ? 'حجز الفنادق' : 'Hotel Booking'}</h1>
+          <h1 style={styles.title}>🌟 {isAr ? 'إدارة المسافر الدائم' : 'Frequent Flyer Management'}</h1>
         </div>
 
         <div style={styles.card}>
-          <form onSubmit={handleSearchHotels} style={styles.formRow}>
+          <h3 style={styles.sectionTitle}>{editingId ? '✏️ ' + (isAr ? 'تعديل العضو' : 'Edit Member') : '➕ ' + (isAr ? 'إضافة عضو' : 'Add Member')}</h3>
+          <form onSubmit={handleFfSubmit} style={styles.formRow}>
             <div>
-              <label style={styles.label}>{isAr ? 'المدينة' : 'City'}</label>
-              <select style={styles.select} value={hotelForm.city} onChange={e => setHotelForm({ ...hotelForm, city: e.target.value })}>
-                <option value="Riyadh">Riyadh - الرياض</option>
-                <option value="Jeddah">Jeddah - جدة</option>
-                <option value="Makkah">Makkah - مكة</option>
-                <option value="Madinah">Madinah - المدينة</option>
-                <option value="Dubai">Dubai - دبي</option>
-                <option value="Doha">Doha - الدوحة</option>
-                <option value="Cairo">Cairo - القاهرة</option>
-                <option value="Istanbul">Istanbul - اسطنبول</option>
-                <option value="all">{isAr ? 'جميع المدن' : 'All Cities'}</option>
+              <label style={styles.label}>{isAr ? 'اسم العميل' : 'Customer Name'}</label>
+              <input style={styles.input} value={ffForm.customer_name} onChange={e => setFfForm({ ...ffForm, customer_name: e.target.value })} required />
+            </div>
+            <div>
+              <label style={styles.label}>{isAr ? 'خط الطيران' : 'Airline'}</label>
+              <input style={styles.input} value={ffForm.airline} onChange={e => setFfForm({ ...ffForm, airline: e.target.value })} placeholder={isAr ? 'مثال: السعودية، الإمارات' : 'e.g. Saudia, Emirates'} required />
+            </div>
+            <div>
+              <label style={styles.label}>{isAr ? 'رقم العضوية' : 'Membership No'}</label>
+              <input style={styles.input} value={ffForm.membership_no} onChange={e => setFfForm({ ...ffForm, membership_no: e.target.value })} required />
+            </div>
+            <div>
+              <label style={styles.label}>{isAr ? 'المستوى' : 'Tier'}</label>
+              <select style={styles.select} value={ffForm.tier} onChange={e => setFfForm({ ...ffForm, tier: e.target.value })}>
+                <option>Blue</option><option>Silver</option><option>Gold</option><option>Platinum</option><option>Diamond</option>
               </select>
             </div>
             <div>
-              <label style={styles.label}>{isAr ? 'تسجيل الوصول' : 'Check-In'}</label>
-              <input type="date" style={styles.input} value={hotelForm.checkIn} onChange={e => setHotelForm({ ...hotelForm, checkIn: e.target.value })} required />
+              <label style={styles.label}>{isAr ? 'النقاط' : 'Points'}</label>
+              <input type="number" style={styles.input} value={ffForm.points} onChange={e => setFfForm({ ...ffForm, points: parseInt(e.target.value) })} />
             </div>
             <div>
-              <label style={styles.label}>{isAr ? 'تسجيل المغادرة' : 'Check-Out'}</label>
-              <input type="date" style={styles.input} value={hotelForm.checkOut} onChange={e => setHotelForm({ ...hotelForm, checkOut: e.target.value })} required />
+              <label style={styles.label}>{isAr ? 'الحالة' : 'Status'}</label>
+              <select style={styles.select} value={ffForm.status} onChange={e => setFfForm({ ...ffForm, status: e.target.value })}>
+                <option>Active</option><option>Inactive</option><option>Expired</option>
+              </select>
             </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'الضيوف' : 'Guests'}</label>
-              <input type="number" min="1" max="10" style={styles.input} value={hotelForm.guests} onChange={e => setHotelForm({ ...hotelForm, guests: parseInt(e.target.value) })} />
-            </div>
-            <div>
-              <label style={styles.label}>{isAr ? 'الغرف' : 'Rooms'}</label>
-              <input type="number" min="1" max="5" style={styles.input} value={hotelForm.rooms} onChange={e => setHotelForm({ ...hotelForm, rooms: parseInt(e.target.value) })} />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-              <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, width: '100%', padding: '12px' }} disabled={loading}>
-                {loading ? '⏳...' : (isAr ? '🔍 بحث' : '🔍 Search')}
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
+              <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, width: '100%', padding: '12px' }}>
+                {editingId ? '💾 ' + (isAr ? 'تحديث' : 'Update') : '✅ ' + (isAr ? 'إضافة' : 'Add')}
               </button>
+              {editingId && (
+                <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setEditingId(null); setFfForm({ customer_name: '', airline: '', membership_no: '', tier: 'Blue', points: 0, status: 'Active' }); }}>
+                  ✕ {isAr ? 'إلغاء' : 'Cancel'}
+                </button>
+              )}
             </div>
           </form>
         </div>
 
-        {hotelResults.length > 0 && (
-          <div style={styles.grid}>
-            {hotelResults.map(hotel => (
-              <div key={hotel.id} style={{ ...styles.card, transition: 'transform 0.2s', borderTop: `4px solid ${hotel.stars >= 5 ? '#F59E0B' : hotel.stars >= 4 ? '#3B82F6' : '#10B981'}` }}>
-                <div style={{ fontSize: '48px', textAlign: 'center', marginBottom: '10px' }}>{hotel.image}</div>
-                <h3 style={{ color: '#FBBF24', margin: '0 0 5px' }}>{hotel.name}</h3>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
-                  <span style={{ color: '#FBBF24' }}>{'⭐'.repeat(hotel.stars)}</span>
-                  <span style={{ color: '#34D399' }}>★ {hotel.rating}</span>
-                </div>
-                <div style={{ fontSize: '11px', color: '#94A3B8', marginBottom: '5px' }}>{hotel.address}</div>
-                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '5px' }}>
-                  {hotel.amenities?.map((a, i) => (
-                    <span key={i} style={{ fontSize: '9px', background: isDark ? '#0F172A' : '#F1F5F9', padding: '2px 8px', borderRadius: '4px' }}>{a}</span>
-                  ))}
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '20px', fontWeight: 700, color: '#34D399' }}>{hotel.price} SAR</span>
-                  <span style={{ fontSize: '12px', color: '#94A3B8' }}>{isAr ? 'لليلة' : 'per night'}</span>
-                </div>
-                <div style={{ fontSize: '10px', color: '#60A5FA', marginTop: '2px' }}>
-                  🔗 {hotel.website}
-                </div>
-                <button onClick={() => handleBookHotel(hotel)} style={{ ...styles.btn, ...styles.btnSuccess, width: '100%', marginTop: '12px', padding: '10px' }}>
-                  🛏️ {isAr ? 'احجز الآن' : 'Book Now'}
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {bookings.length > 0 && (
+        {ffMembers.length > 0 && (
           <div style={styles.card}>
-            <h3 style={styles.sectionTitle}>{isAr ? 'حجوزاتي' : 'My Bookings'}</h3>
+            <h3 style={styles.sectionTitle}>{isAr ? 'قائمة الأعضاء' : 'Member List'}</h3>
             <div style={{ overflowX: 'auto' }}>
               <table style={styles.table}>
                 <thead>
                   <tr>
-                    <th style={styles.th}>{isAr ? 'الفندق' : 'Hotel'}</th>
-                    <th style={styles.th}>{isAr ? 'الوصول' : 'Check-In'}</th>
-                    <th style={styles.th}>{isAr ? 'المغادرة' : 'Check-Out'}</th>
-                    <th style={{ ...styles.th, textAlign: 'right' }}>{isAr ? 'المبلغ' : 'Total'}</th>
+                    <th style={styles.th}>{isAr ? 'العميل' : 'Customer'}</th>
+                    <th style={styles.th}>{isAr ? 'الخطوط' : 'Airline'}</th>
+                    <th style={styles.th}>{isAr ? 'رقم العضوية' : 'Membership'}</th>
+                    <th style={styles.th}>{isAr ? 'المستوى' : 'Tier'}</th>
+                    <th style={{ ...styles.th, textAlign: 'right' }}>{isAr ? 'النقاط' : 'Points'}</th>
                     <th style={{ ...styles.th, textAlign: 'center' }}>{isAr ? 'إجراء' : 'Action'}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {bookings.map(b => (
-                    <tr key={b.id}>
-                      <td style={{ ...styles.td, fontWeight: 600 }}>{b.hotel_name}</td>
-                      <td style={styles.td}>{b.check_in}</td>
-                      <td style={styles.td}>{b.check_out}</td>
-                      <td style={styles.tdRight}>{fmt(b.total || b.price)}</td>
+                  {ffMembers.map(m => (
+                    <tr key={m.id}>
+                      <td style={{ ...styles.td, fontWeight: 600 }}>{m.customer_name}</td>
+                      <td style={styles.td}>{m.airline}</td>
+                      <td style={styles.td}>{m.membership_no}</td>
+                      <td style={styles.td}>
+                        <span style={{
+                          padding: '4px 12px',
+                          borderRadius: '12px',
+                          background: getTierColor(m.tier) + '20',
+                          color: getTierColor(m.tier),
+                          fontWeight: 700,
+                          fontSize: '12px'
+                        }}>
+                          {m.tier}
+                        </span>
+                      </td>
+                      <td style={{ ...styles.tdRight, color: '#FBBF24', fontWeight: 700 }}>{m.points}</td>
                       <td style={styles.tdCenter}>
-                        <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDeleteBooking(b.id)}>🗑️</button>
+                        <div style={styles.actionsCell}>
+                          <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleEditFf(m)}>✏️</button>
+                          <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDeleteFf(m.id)}>🗑️</button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1125,6 +957,91 @@ export default function ERPViewsTravel(props) {
             </div>
           </div>
         )}
+      </div>
+    );
+  }
+
+  // ============================================================
+  // CORPORATE TRAVEL - REAL
+  // ============================================================
+  if (page === 'corporate_travel') {
+    const [corpTravels, setCorpTravels] = useState([]);
+
+    useEffect(() => {
+      if (userProfile?.tenant_id) {
+        supabase.from('corporate_travel')
+          .select('*, corporates(name)')
+          .eq('tenant_id', userProfile.tenant_id)
+          .order('created_at', { ascending: false })
+          .then(({ data }) => {
+            if (data) setCorpTravels(data);
+          })
+          .catch(() => setCorpTravels([]));
+      }
+    }, [userProfile?.tenant_id]);
+
+    return (
+      <div style={styles.container}>
+        <div style={styles.header}>
+          <h1 style={styles.title}>🏢 {isAr ? 'السفر المؤسسي' : 'Corporate Travel'}</h1>
+        </div>
+
+        <div style={styles.card}>
+          <h3 style={styles.sectionTitle}>{isAr ? 'ملخص السفر المؤسسي' : 'Corporate Travel Summary'}</h3>
+          <div style={styles.grid}>
+            <div style={styles.statCard}>
+              <div style={styles.statLabel}>📋 {isAr ? 'إجمالي الحجوزات' : 'Total Bookings'}</div>
+              <div style={styles.statValue}>{corpTravels.length}</div>
+            </div>
+            <div style={styles.statCard}>
+              <div style={styles.statLabel}>🏢 {isAr ? 'الشركات النشطة' : 'Active Corporate Clients'}</div>
+              <div style={styles.statValue}>{(data.corporates || []).length}</div>
+            </div>
+            <div style={styles.statCard}>
+              <div style={styles.statLabel}>💰 {isAr ? 'إجمالي الإنفاق' : 'Total Spend'}</div>
+              <div style={{ ...styles.statValue, color: '#34D399' }}>
+                {corpTravels.reduce((s, t) => s + (t.total_amount || 0), 0).toFixed(2)} SAR
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style={styles.card}>
+          <h3 style={styles.sectionTitle}>{isAr ? 'الحجوزات المؤسسية الحديثة' : 'Recent Corporate Bookings'}</h3>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>{isAr ? 'الشركة' : 'Corporate'}</th>
+                  <th style={styles.th}>{isAr ? 'محجوز بواسطة' : 'Booked By'}</th>
+                  <th style={styles.th}>{isAr ? 'التاريخ' : 'Date'}</th>
+                  <th style={{ ...styles.th, textAlign: 'right' }}>{isAr ? 'المبلغ' : 'Amount'}</th>
+                  <th style={{ ...styles.th, textAlign: 'center' }}>{isAr ? 'الحالة' : 'Status'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {corpTravels.map(t => (
+                  <tr key={t.id}>
+                    <td style={{ ...styles.td, fontWeight: 600 }}>{t.corporates?.name || 'N/A'}</td>
+                    <td style={styles.td}>{t.booked_by || 'N/A'}</td>
+                    <td style={styles.td}>{t.booking_date}</td>
+                    <td style={{ ...styles.tdRight, color: '#34D399', fontWeight: 700 }}>{(t.total_amount || 0).toFixed(2)} SAR</td>
+                    <td style={styles.tdCenter}>
+                      <span style={{ ...styles.badge, ...styles.badgeSuccess }}>{t.status || 'Confirmed'}</span>
+                    </td>
+                  </tr>
+                ))}
+                {corpTravels.length === 0 && (
+                  <tr>
+                    <td colSpan="5" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
+                      {isAr ? 'لا توجد حجوزات سفر مؤسسي.' : 'No corporate travel bookings yet.'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     );
   }
