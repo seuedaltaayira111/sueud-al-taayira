@@ -28,7 +28,8 @@ export default function ERPViewsSales(props) {
     handleAddMistake, handleGenerateContract, handleGenerateOffer,
     contractCorpName, setContractCorpName, contractType, setContractType,
     contractMarkup, setContractMarkup, contractTerms, setContractTerms,
-    downloadPDF, getExpenseHTML, getMistakeHTML, fetchAll, setData, setPreviewHTML
+    downloadPDF, getExpenseHTML, getMistakeHTML, fetchAll, setData, setPreviewHTML,
+    showToast, userProfile
   } = props;
 
   const isAr = lang === 'ar';
