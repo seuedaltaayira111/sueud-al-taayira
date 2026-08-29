@@ -61,8 +61,8 @@ const PAGE_COMPONENT = {
   offer: ERPViewsSystem,
 
   // ===== REPORTS & ADMIN =====
-  reports: ERPViewsSystem,
-  statements: ERPViewsSystem,
+  reports: ERPViewsSales,
+  statements: ERPViewsSales,
   audit: ERPViewsSales,
   superadmin: ERPViewsSystem,
   users: ERPViewsSales,
