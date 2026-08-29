@@ -1221,7 +1221,7 @@ export default function ERPViewsMisc(props) {
   }
 
   // ============================================================
-  // HR – COMPLETE EMPLOYEE 360
+  // HR – COMPLETE EMPLOYEE 360 (with date onBlur fix)
   // ============================================================
   if (page === 'hr' || page === 'hr_advanced') {
     const isBasicHR = page === 'hr';
@@ -1261,15 +1261,16 @@ export default function ERPViewsMisc(props) {
               <form onSubmit={handleAddEditEmp} style={s.formRow}>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Full Name</label>
-                  <input style={s.input} value={empForm.name} onChange={e => setEmpForm(p => ({ ...p, name: e.target.value }))} required />
+                  <input style={s.input} value={empForm.name || ''} onChange={e => setEmpForm(p => ({ ...p, name: e.target.value }))} required />
                 </div>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Job Title</label>
-                  <input style={s.input} value={empForm.job_title} onChange={e => setEmpForm(p => ({ ...p, job_title: e.target.value }))} />
+                  <input style={s.input} value={empForm.job_title || ''} onChange={e => setEmpForm(p => ({ ...p, job_title: e.target.value }))} />
                 </div>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Role</label>
-                  <select style={s.select} value={empForm.role} onChange={e => setEmpForm(p => ({ ...p, role: e.target.value }))}>
+                  <select style={s.select} value={empForm.role || ''} onChange={e => setEmpForm(p => ({ ...p, role: e.target.value }))}>
+                    <option value="">Select</option>
                     <option>Sales</option>
                     <option>Accountant</option>
                     <option>Manager</option>
@@ -1280,43 +1281,73 @@ export default function ERPViewsMisc(props) {
                 </div>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Phone</label>
-                  <input style={s.input} value={empForm.phone} onChange={e => setEmpForm(p => ({ ...p, phone: e.target.value }))} />
+                  <input style={s.input} value={empForm.phone || ''} onChange={e => setEmpForm(p => ({ ...p, phone: e.target.value }))} />
                 </div>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Nationality</label>
-                  <input style={s.input} value={empForm.nationality} onChange={e => setEmpForm(p => ({ ...p, nationality: e.target.value }))} />
+                  <input style={s.input} value={empForm.nationality || ''} onChange={e => setEmpForm(p => ({ ...p, nationality: e.target.value }))} />
                 </div>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Iqama No.</label>
-                  <input style={s.input} value={empForm.iqama_no} onChange={e => setEmpForm(p => ({ ...p, iqama_no: e.target.value }))} />
+                  <input style={s.input} value={empForm.iqama_no || ''} onChange={e => setEmpForm(p => ({ ...p, iqama_no: e.target.value }))} />
                 </div>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Iqama Expiry</label>
-                  <input type="date" style={s.input} value={empForm.iqama_expiry} onChange={e => setEmpForm(p => ({ ...p, iqama_expiry: e.target.value }))} />
+                  <input 
+                    type="date" 
+                    style={s.input} 
+                    value={empForm.iqama_expiry || ''} 
+                    onChange={e => setEmpForm(p => ({ ...p, iqama_expiry: e.target.value }))}
+                    onBlur={(e) => {
+                      if (e.target.value === '') {
+                        setEmpForm(p => ({ ...p, iqama_expiry: null }));
+                      }
+                    }}
+                  />
                 </div>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Labor Office Renewal</label>
-                  <input type="date" style={s.input} value={empForm.labor_office_expiry} onChange={e => setEmpForm(p => ({ ...p, labor_office_expiry: e.target.value }))} />
+                  <input 
+                    type="date" 
+                    style={s.input} 
+                    value={empForm.labor_office_expiry || ''} 
+                    onChange={e => setEmpForm(p => ({ ...p, labor_office_expiry: e.target.value }))}
+                    onBlur={(e) => {
+                      if (e.target.value === '') {
+                        setEmpForm(p => ({ ...p, labor_office_expiry: null }));
+                      }
+                    }}
+                  />
                 </div>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Join Date</label>
-                  <input type="date" style={s.input} value={empForm.join_date} onChange={e => setEmpForm(p => ({ ...p, join_date: e.target.value }))} />
+                  <input 
+                    type="date" 
+                    style={s.input} 
+                    value={empForm.join_date || ''} 
+                    onChange={e => setEmpForm(p => ({ ...p, join_date: e.target.value }))}
+                    onBlur={(e) => {
+                      if (e.target.value === '') {
+                        setEmpForm(p => ({ ...p, join_date: null }));
+                      }
+                    }}
+                  />
                 </div>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Salary (SAR)</label>
-                  <input type="number" style={s.input} value={empForm.salary} onChange={e => setEmpForm(p => ({ ...p, salary: e.target.value }))} />
+                  <input type="number" style={s.input} value={empForm.salary || ''} onChange={e => setEmpForm(p => ({ ...p, salary: e.target.value }))} />
                 </div>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Commission %</label>
-                  <input type="number" style={s.input} value={empForm.commission_rate} onChange={e => setEmpForm(p => ({ ...p, commission_rate: e.target.value }))} />
+                  <input type="number" style={s.input} value={empForm.commission_rate || ''} onChange={e => setEmpForm(p => ({ ...p, commission_rate: e.target.value }))} />
                 </div>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Bank Name</label>
-                  <input style={s.input} value={empForm.bank_name} onChange={e => setEmpForm(p => ({ ...p, bank_name: e.target.value }))} />
+                  <input style={s.input} value={empForm.bank_name || ''} onChange={e => setEmpForm(p => ({ ...p, bank_name: e.target.value }))} />
                 </div>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Bank Account / IBAN</label>
-                  <input style={s.input} value={empForm.bank_account} onChange={e => setEmpForm(p => ({ ...p, bank_account: e.target.value }))} />
+                  <input style={s.input} value={empForm.bank_account || ''} onChange={e => setEmpForm(p => ({ ...p, bank_account: e.target.value }))} />
                 </div>
                 <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px' }}>
                   <button type="submit" style={{ ...s.btn, ...s.btnSuccess }}>
@@ -1397,7 +1428,7 @@ export default function ERPViewsMisc(props) {
               <form onSubmit={handleAddAdvance} style={s.formRow}>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Employee</label>
-                  <select style={s.select} value={advForm.employee_id} onChange={e => setAdvForm(p => ({ ...p, employee_id: e.target.value }))} required>
+                  <select style={s.select} value={advForm.employee_id || ''} onChange={e => setAdvForm(p => ({ ...p, employee_id: e.target.value }))} required>
                     <option value="">— Select —</option>
                     {(data.employees || []).map(emp => (
                       <option key={emp.id} value={emp.id}>{emp.name}</option>
@@ -1406,15 +1437,15 @@ export default function ERPViewsMisc(props) {
                 </div>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Amount (SAR)</label>
-                  <input type="number" step="0.01" style={s.input} value={advForm.amount} onChange={e => setAdvForm(p => ({ ...p, amount: e.target.value }))} required />
+                  <input type="number" step="0.01" style={s.input} value={advForm.amount || ''} onChange={e => setAdvForm(p => ({ ...p, amount: e.target.value }))} required />
                 </div>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Date</label>
-                  <input type="date" style={s.input} value={advForm.date} onChange={e => setAdvForm(p => ({ ...p, date: e.target.value }))} />
+                  <input type="date" style={s.input} value={advForm.date || ''} onChange={e => setAdvForm(p => ({ ...p, date: e.target.value }))} />
                 </div>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Status</label>
-                  <select style={s.select} value={advForm.status} onChange={e => setAdvForm(p => ({ ...p, status: e.target.value }))}>
+                  <select style={s.select} value={advForm.status || 'Pending'} onChange={e => setAdvForm(p => ({ ...p, status: e.target.value }))}>
                     <option>Pending</option>
                     <option>Repaid</option>
                     <option>Deducted from Salary</option>
@@ -1571,7 +1602,7 @@ export default function ERPViewsMisc(props) {
               <form onSubmit={handleProcessPayroll} style={s.formRow}>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Employee</label>
-                  <select style={s.select} value={payForm.employee_id} onChange={e => setPayForm(p => ({ ...p, employee_id: e.target.value }))} required>
+                  <select style={s.select} value={payForm.employee_id || ''} onChange={e => setPayForm(p => ({ ...p, employee_id: e.target.value }))} required>
                     <option value="">— Select —</option>
                     {(data.employees || []).map(emp => (
                       <option key={emp.id} value={emp.id}>{emp.name}</option>
@@ -1580,42 +1611,42 @@ export default function ERPViewsMisc(props) {
                 </div>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Month</label>
-                  <input type="month" style={s.input} value={payForm.month} onChange={e => setPayForm(p => ({ ...p, month: e.target.value }))} />
+                  <input type="month" style={s.input} value={payForm.month || ''} onChange={e => setPayForm(p => ({ ...p, month: e.target.value }))} />
                 </div>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Overtime (SAR)</label>
-                  <input type="number" style={s.input} value={payForm.overtime} onChange={e => setPayForm(p => ({ ...p, overtime: e.target.value }))} />
+                  <input type="number" style={s.input} value={payForm.overtime || ''} onChange={e => setPayForm(p => ({ ...p, overtime: e.target.value }))} />
                 </div>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Gift/Bonus (SAR)</label>
-                  <input type="number" style={s.input} value={payForm.gift} onChange={e => setPayForm(p => ({ ...p, gift: e.target.value }))} />
+                  <input type="number" style={s.input} value={payForm.gift || ''} onChange={e => setPayForm(p => ({ ...p, gift: e.target.value }))} />
                 </div>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Advance Deduction (SAR)</label>
-                  <input type="number" style={s.input} value={payForm.advance} onChange={e => setPayForm(p => ({ ...p, advance: e.target.value }))} />
+                  <input type="number" style={s.input} value={payForm.advance || ''} onChange={e => setPayForm(p => ({ ...p, advance: e.target.value }))} />
                 </div>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Mistakes Deduction (SAR)</label>
-                  <input type="number" style={s.input} value={payForm.mistakes_deduction} onChange={e => setPayForm(p => ({ ...p, mistakes_deduction: e.target.value }))} />
+                  <input type="number" style={s.input} value={payForm.mistakes_deduction || ''} onChange={e => setPayForm(p => ({ ...p, mistakes_deduction: e.target.value }))} />
                 </div>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Other Deduction (SAR)</label>
-                  <input type="number" style={s.input} value={payForm.other_deduction} onChange={e => setPayForm(p => ({ ...p, other_deduction: e.target.value }))} />
+                  <input type="number" style={s.input} value={payForm.other_deduction || ''} onChange={e => setPayForm(p => ({ ...p, other_deduction: e.target.value }))} />
                 </div>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Payment Mode</label>
-                  <select style={s.select} value={payForm.payment_mode} onChange={e => setPayForm(p => ({ ...p, payment_mode: e.target.value }))}>
+                  <select style={s.select} value={payForm.payment_mode || 'Cash'} onChange={e => setPayForm(p => ({ ...p, payment_mode: e.target.value }))}>
                     <option>Cash</option>
                     <option>Bank Transfer</option>
                   </select>
                 </div>
                 <div style={s.formGroup}>
                   <label style={s.formLabel}>Payment Date</label>
-                  <input type="date" style={s.input} value={payForm.payment_date} onChange={e => setPayForm(p => ({ ...p, payment_date: e.target.value }))} />
+                  <input type="date" style={s.input} value={payForm.payment_date || ''} onChange={e => setPayForm(p => ({ ...p, payment_date: e.target.value }))} />
                 </div>
                 <div style={s.formGroup} style={{ gridColumn: '1 / -1' }}>
                   <label style={s.formLabel}>Notes</label>
-                  <input style={s.input} value={payForm.notes} onChange={e => setPayForm(p => ({ ...p, notes: e.target.value }))} placeholder="Optional notes" />
+                  <input style={s.input} value={payForm.notes || ''} onChange={e => setPayForm(p => ({ ...p, notes: e.target.value }))} placeholder="Optional notes" />
                 </div>
                 <div style={{ gridColumn: '1 / -1' }}>
                   <button type="submit" style={{ ...s.btn, ...s.btnSuccess }}>
@@ -1801,7 +1832,7 @@ export default function ERPViewsMisc(props) {
       <div style={s.container}>
         <div style={s.header}>
           <h1 style={s.title}>⚠️ {isAr ? 'स्टाफ मिस्टेक' : 'Staff Mistakes'}</h1>
-          <div style={s.searchBox}>
+          <div style={{ display: 'flex', gap: '10px' }}>
             <input
               style={s.input}
               placeholder={isAr ? '🔍 खोजें...' : '🔍 Search...'}
