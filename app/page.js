@@ -3,6 +3,7 @@
 import useERP from '@/hooks/useERP';
 import ERPLayout from '@/components/ERPLayout';
 import ERPViews from '@/components/ERPViews';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { useEffect, useState, useRef } from 'react';
 
 export default function Home() {
@@ -305,7 +306,9 @@ export default function Home() {
       )}
 
       <ERPLayout {...erp} menu={menu}>
-        <ERPViews {...erp} />
+        <ErrorBoundary lang={erp.lang} onReset={() => erp.setPage?.('dashboard')}>
+          <ERPViews {...erp} />
+        </ErrorBoundary>
       </ERPLayout>
     </div>
   );
