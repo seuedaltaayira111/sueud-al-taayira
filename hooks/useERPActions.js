@@ -888,9 +888,19 @@ export default function useERPActions(state) {
           img.src = b64;
         } catch (e) { console.warn('Image fetch skipped:', e.message); }
       }));
-      div.innerHTML = doc.body.innerHTML;
+      // CRITICAL: every invoice/refund/expense/salary/contract template puts
+      // its <style> rules in <head>, but only doc.body.innerHTML was ever
+      // copied into the capture div — every document was being rasterized
+      // completely unstyled (raw stacked text, oversized uncropped logo,
+      // no layout at all). Carry the <style> and @font-face/<link> tags
+      // over into the div itself so html2canvas actually sees them applied.
+      const headStyles = Array.from(doc.querySelectorAll('style')).map(s => s.outerHTML).join('\n');
+      const headFontLinks = Array.from(doc.querySelectorAll('link[rel="stylesheet"]')).map(l => l.outerHTML).join('\n');
+      div.innerHTML = headFontLinks + headStyles + doc.body.innerHTML;
       document.body.appendChild(div);
-      await new Promise(r => setTimeout(r, 300));
+      // Give Google Fonts + the injected stylesheet a moment to actually
+      // apply before html2canvas takes the snapshot.
+      await new Promise(r => setTimeout(r, 400));
       const canvas = await html2canvas(div, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff', windowWidth: A4_PX_W, windowHeight: Math.max(1123, div.scrollHeight), logging: false });
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
