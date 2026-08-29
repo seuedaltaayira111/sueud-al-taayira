@@ -282,6 +282,21 @@ export default function ERPViewsMisc(props) {
         aiInsights.push(`👤 ${isAr ? 'نسبة الحضور اليوم منخفضة' : 'Today\'s attendance is low'}: ${present}/${totalEmp}. ${isAr ? 'تحقق من الغياب' : 'Check absences.'}`);
       }
     }
+    const daysLeft = (d) => d ? Math.ceil((new Date(d) - new Date(todayStr)) / 86400000) : null;
+    (data.employees || []).forEach(emp => {
+      const iqDays = daysLeft(emp.iqama_expiry);
+      if (iqDays !== null && iqDays <= 30) {
+        aiInsights.push(`🪪 ${emp.name} — ${isAr ? 'إقامة تنتهي' : 'Iqama'} ${iqDays < 0 ? (isAr ? 'منتهية' : 'expired') : (isAr ? `خلال ${iqDays} يوم` : `in ${iqDays} day(s)`)}`);
+      }
+      const laDays = daysLeft(emp.labor_office_expiry);
+      if (laDays !== null && laDays <= 30) {
+        aiInsights.push(`🏢 ${emp.name} — ${isAr ? 'تجديد مكتب العمل' : 'Labor Office renewal'} ${laDays < 0 ? (isAr ? 'منتهي' : 'expired') : (isAr ? `خلال ${laDays} يوم` : `due in ${laDays} day(s)`)}`);
+      }
+    });
+    const overdueCount = invoices.filter(i => i.due_amount > 0 && i.credit_due_date && new Date(i.credit_due_date) < new Date(todayStr)).length;
+    if (overdueCount > 0) {
+      aiInsights.push(`⏰ ${overdueCount} ${isAr ? 'فاتورة تجاوزت تاريخ الاستحقاق' : 'invoice(s) are past their credit due date'}`);
+    }
     if (aiInsights.length === 0) {
       aiInsights.push('✅ ' + (isAr ? 'الأعمال تسير بشكل جيد' : 'Business is running smoothly.'));
     }
