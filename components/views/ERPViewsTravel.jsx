@@ -790,11 +790,14 @@ export default function ERPViewsTravel(props) {
       try {
         const payload = { ...ffForm, tenant_id: userProfile.tenant_id };
         if (editingId) {
-          setFfMembers(prev => prev.map(f => f.id === editingId ? { ...f, ...payload } : f));
+          const { data: up, error } = await supabase.from('frequent_flyer').update(payload).eq('id', editingId).select().single();
+          if (error) throw error;
+          setFfMembers(prev => prev.map(f => f.id === editingId ? up : f));
           showToast?.(isAr ? '✅ تم التحديث!' : '✅ Updated!');
           setEditingId(null);
         } else {
-          const newMember = { ...payload, id: `ff-${Date.now()}`, created_at: new Date().toISOString() };
+          const { data: newMember, error } = await supabase.from('frequent_flyer').insert([payload]).select().single();
+          if (error) throw error;
           setFfMembers(prev => [newMember, ...prev]);
           showToast?.(isAr ? '✅ تمت الإضافة!' : '✅ Added!');
           await logAction?.(`Frequent flyer: ${ffForm.customer_name}`);
@@ -824,10 +827,16 @@ export default function ERPViewsTravel(props) {
       });
     };
 
-    const handleDeleteFf = (id) => {
+    const handleDeleteFf = async (id) => {
       if (!confirm(isAr ? 'حذف هذا العضو؟' : 'Delete this member?')) return;
-      setFfMembers(prev => prev.filter(f => f.id !== id));
-      showToast?.(isAr ? '✅ تم الحذف!' : '✅ Deleted!');
+      try {
+        const { error } = await supabase.from('frequent_flyer').delete().eq('id', id);
+        if (error) throw error;
+        setFfMembers(prev => prev.filter(f => f.id !== id));
+        showToast?.(isAr ? '✅ تم الحذف!' : '✅ Deleted!');
+      } catch (err) {
+        showToast?.(isAr ? '❌ خطأ: ' + err.message : '❌ Error: ' + err.message);
+      }
     };
 
     const getTierColor = (tier) => {
