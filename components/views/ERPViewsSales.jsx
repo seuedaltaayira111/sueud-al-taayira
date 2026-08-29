@@ -34,7 +34,7 @@ export default function ERPViewsSales(props) {
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
 
-  // ===== STYLES =====
+  // ===== STYLES (same as before – unchanged) =====
   const styles = {
     container: {
       padding: '24px',
@@ -1344,12 +1344,26 @@ export default function ERPViewsSales(props) {
   }
 
   // ============================================================
-  // EMPLOYEES – COMPLETE FIXED (with onBlur for date fields)
+  // EMPLOYEES – COMPLETE FIXED (onBlur + submit sanitization)
   // ============================================================
   if (page === 'employees') {
     const filtered = (data.employees || []).filter(e =>
       !searchTerm || e.name?.toLowerCase().includes(searchTerm.toLowerCase()) || e.phone?.includes(searchTerm)
     );
+
+    // Helper to sanitize date fields
+    const sanitizeDateFields = (form) => {
+      const sanitized = { ...form };
+      const dateFields = [
+        'iqama_expiry', 'join_date', 'labor_office_expiry',
+        'date_of_birth', 'passport_expiry', 'insurance_expiry',
+        'termination_date'
+      ];
+      dateFields.forEach(field => {
+        if (sanitized[field] === '') sanitized[field] = null;
+      });
+      return sanitized;
+    };
 
     return (
       <div style={styles.container}>
@@ -1371,7 +1385,18 @@ export default function ERPViewsSales(props) {
 
         <div style={styles.card}>
           <h3 style={styles.sectionTitle}>{editEmpId ? '✏️ ' + (isAr ? 'تعديل موظف' : 'Edit Employee') : '➕ ' + (isAr ? 'إضافة موظف جديد' : 'Add New Employee')}</h3>
-          <form onSubmit={handleAddEditEmp} style={styles.formRow}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const sanitized = sanitizeDateFields(empForm);
+              setEmpForm(sanitized);
+              // Allow state update, then call parent
+              setTimeout(() => {
+                handleAddEditEmp(e);
+              }, 50);
+            }}
+            style={styles.formRow}
+          >
             <div>
               <label style={styles.formLabel}>Full Name</label>
               <input style={styles.input} value={empForm.name || ''} onChange={e => setEmpForm({ ...empForm, name: e.target.value })} required />
