@@ -313,6 +313,12 @@ export default function ERPViewsSales(props) {
   const t = (key, fallback) => tr?.[key] || fallback || key;
 
   // ===== FILTERED INVOICES =====
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [rowsPerPage, setRowsPerPage] = useState(25);
+  const [currentPage, setCurrentPage] = useState(1);
+
   const filteredInvoices = useMemo(() => {
     let inv = data.invoices?.filter(i => !i.invoice_no?.startsWith('REF-')) || [];
     if (searchTerm) {
@@ -341,12 +347,6 @@ export default function ERPViewsSales(props) {
     }
     return ref;
   }, [data.invoices, searchTerm]);
-
-  const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [rowsPerPage, setRowsPerPage] = useState(25);
-  const [currentPage, setCurrentPage] = useState(1);
   const [statementType, setStatementType] = useState('sales');
 
   const paginate = (list) => {
