@@ -1344,6 +1344,274 @@ export default function ERPViewsSales(props) {
   }
 
   // ============================================================
+  // EMPLOYEES – COMPLETE FIXED (with onBlur for date fields)
+  // ============================================================
+  if (page === 'employees') {
+    const filtered = (data.employees || []).filter(e =>
+      !searchTerm || e.name?.toLowerCase().includes(searchTerm.toLowerCase()) || e.phone?.includes(searchTerm)
+    );
+
+    return (
+      <div style={styles.container}>
+        <div style={styles.header}>
+          <h1 style={styles.title}>👨‍💼 {t('employees', 'Employees')}</h1>
+          <div style={styles.searchBox}>
+            <input
+              style={styles.input}
+              placeholder={isAr ? '🔍 بحث عن موظف...' : '🔍 Search employees...'}
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+            <button style={{ ...styles.btn, ...styles.btnPrimary }} onClick={() => {
+              setEmpForm({ name: '', phone: '', iqama_no: '', iqama_expiry: '', role: 'Sales', salary: 0, commission_rate: 0, nationality: '', job_title: '', national_id: '', join_date: '', bank_name: '', bank_account: '', labor_office_expiry: '', email: '', emergency_contact: '', emergency_phone: '', address: '', gender: '', date_of_birth: '', marital_status: '', dependents: '', education: '', experience: '', skills: '', languages: '', certifications: '', work_email: '', work_phone: '', department: '', manager_id: '', leave_balance: 0, target: 0, performance_rating: '', notes: '' });
+              setEditEmpId(null);
+            }}>➕ {isAr ? 'إضافة' : 'Add'}</button>
+          </div>
+        </div>
+
+        <div style={styles.card}>
+          <h3 style={styles.sectionTitle}>{editEmpId ? '✏️ ' + (isAr ? 'تعديل موظف' : 'Edit Employee') : '➕ ' + (isAr ? 'إضافة موظف جديد' : 'Add New Employee')}</h3>
+          <form onSubmit={handleAddEditEmp} style={styles.formRow}>
+            <div>
+              <label style={styles.formLabel}>Full Name</label>
+              <input style={styles.input} value={empForm.name || ''} onChange={e => setEmpForm({ ...empForm, name: e.target.value })} required />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Phone</label>
+              <input style={styles.input} value={empForm.phone || ''} onChange={e => setEmpForm({ ...empForm, phone: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Iqama No.</label>
+              <input style={styles.input} value={empForm.iqama_no || ''} onChange={e => setEmpForm({ ...empForm, iqama_no: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Iqama Expiry</label>
+              <input
+                type="date"
+                style={styles.input}
+                value={empForm.iqama_expiry || ''}
+                onChange={e => setEmpForm({ ...empForm, iqama_expiry: e.target.value })}
+                onBlur={(e) => {
+                  if (e.target.value === '') {
+                    setEmpForm({ ...empForm, iqama_expiry: null });
+                  }
+                }}
+              />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Role</label>
+              <select style={styles.select} value={empForm.role || 'Sales'} onChange={e => setEmpForm({ ...empForm, role: e.target.value })}>
+                <option>Sales</option>
+                <option>Accountant</option>
+                <option>Manager</option>
+                <option>HR</option>
+                <option>Admin</option>
+                <option>Support</option>
+              </select>
+            </div>
+            <div>
+              <label style={styles.formLabel}>Salary (SAR)</label>
+              <input type="number" style={styles.input} value={empForm.salary || ''} onChange={e => setEmpForm({ ...empForm, salary: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Commission %</label>
+              <input type="number" step="0.01" style={styles.input} value={empForm.commission_rate || ''} onChange={e => setEmpForm({ ...empForm, commission_rate: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Nationality</label>
+              <input style={styles.input} value={empForm.nationality || ''} onChange={e => setEmpForm({ ...empForm, nationality: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Job Title</label>
+              <input style={styles.input} value={empForm.job_title || ''} onChange={e => setEmpForm({ ...empForm, job_title: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>National ID</label>
+              <input style={styles.input} value={empForm.national_id || ''} onChange={e => setEmpForm({ ...empForm, national_id: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Join Date</label>
+              <input
+                type="date"
+                style={styles.input}
+                value={empForm.join_date || ''}
+                onChange={e => setEmpForm({ ...empForm, join_date: e.target.value })}
+                onBlur={(e) => {
+                  if (e.target.value === '') {
+                    setEmpForm({ ...empForm, join_date: null });
+                  }
+                }}
+              />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Bank Name</label>
+              <input style={styles.input} value={empForm.bank_name || ''} onChange={e => setEmpForm({ ...empForm, bank_name: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Bank Account / IBAN</label>
+              <input style={styles.input} value={empForm.bank_account || ''} onChange={e => setEmpForm({ ...empForm, bank_account: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Labor Office Renewal</label>
+              <input
+                type="date"
+                style={styles.input}
+                value={empForm.labor_office_expiry || ''}
+                onChange={e => setEmpForm({ ...empForm, labor_office_expiry: e.target.value })}
+                onBlur={(e) => {
+                  if (e.target.value === '') {
+                    setEmpForm({ ...empForm, labor_office_expiry: null });
+                  }
+                }}
+              />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Email</label>
+              <input style={styles.input} value={empForm.email || ''} onChange={e => setEmpForm({ ...empForm, email: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Emergency Contact</label>
+              <input style={styles.input} value={empForm.emergency_contact || ''} onChange={e => setEmpForm({ ...empForm, emergency_contact: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Emergency Phone</label>
+              <input style={styles.input} value={empForm.emergency_phone || ''} onChange={e => setEmpForm({ ...empForm, emergency_phone: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Address</label>
+              <input style={styles.input} value={empForm.address || ''} onChange={e => setEmpForm({ ...empForm, address: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Gender</label>
+              <input style={styles.input} value={empForm.gender || ''} onChange={e => setEmpForm({ ...empForm, gender: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Date of Birth</label>
+              <input
+                type="date"
+                style={styles.input}
+                value={empForm.date_of_birth || ''}
+                onChange={e => setEmpForm({ ...empForm, date_of_birth: e.target.value })}
+                onBlur={(e) => {
+                  if (e.target.value === '') {
+                    setEmpForm({ ...empForm, date_of_birth: null });
+                  }
+                }}
+              />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Marital Status</label>
+              <input style={styles.input} value={empForm.marital_status || ''} onChange={e => setEmpForm({ ...empForm, marital_status: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Dependents</label>
+              <input style={styles.input} value={empForm.dependents || ''} onChange={e => setEmpForm({ ...empForm, dependents: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Education</label>
+              <input style={styles.input} value={empForm.education || ''} onChange={e => setEmpForm({ ...empForm, education: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Experience</label>
+              <input style={styles.input} value={empForm.experience || ''} onChange={e => setEmpForm({ ...empForm, experience: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Skills</label>
+              <input style={styles.input} value={empForm.skills || ''} onChange={e => setEmpForm({ ...empForm, skills: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Languages</label>
+              <input style={styles.input} value={empForm.languages || ''} onChange={e => setEmpForm({ ...empForm, languages: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Certifications</label>
+              <input style={styles.input} value={empForm.certifications || ''} onChange={e => setEmpForm({ ...empForm, certifications: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Work Email</label>
+              <input style={styles.input} value={empForm.work_email || ''} onChange={e => setEmpForm({ ...empForm, work_email: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Work Phone</label>
+              <input style={styles.input} value={empForm.work_phone || ''} onChange={e => setEmpForm({ ...empForm, work_phone: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Department</label>
+              <input style={styles.input} value={empForm.department || ''} onChange={e => setEmpForm({ ...empForm, department: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Manager ID</label>
+              <input style={styles.input} value={empForm.manager_id || ''} onChange={e => setEmpForm({ ...empForm, manager_id: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Leave Balance</label>
+              <input type="number" style={styles.input} value={empForm.leave_balance || ''} onChange={e => setEmpForm({ ...empForm, leave_balance: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Target (SAR)</label>
+              <input type="number" style={styles.input} value={empForm.target || ''} onChange={e => setEmpForm({ ...empForm, target: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Performance Rating</label>
+              <input style={styles.input} value={empForm.performance_rating || ''} onChange={e => setEmpForm({ ...empForm, performance_rating: e.target.value })} />
+            </div>
+            <div>
+              <label style={styles.formLabel}>Notes</label>
+              <input style={styles.input} value={empForm.notes || ''} onChange={e => setEmpForm({ ...empForm, notes: e.target.value })} />
+            </div>
+            <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px' }}>
+              <button type="submit" style={{ ...styles.btn, ...styles.btnSuccess }}>
+                {editEmpId ? '💾 ' + (isAr ? 'تحديث' : 'Update') : '➕ ' + (isAr ? 'إضافة' : 'Add')}
+              </button>
+              {editEmpId && (
+                <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setEditEmpId(null); setEmpForm({ name: '', phone: '', iqama_no: '', iqama_expiry: '', role: 'Sales', salary: 0, commission_rate: 0, nationality: '', job_title: '', national_id: '', join_date: '', bank_name: '', bank_account: '', labor_office_expiry: '', email: '', emergency_contact: '', emergency_phone: '', address: '', gender: '', date_of_birth: '', marital_status: '', dependents: '', education: '', experience: '', skills: '', languages: '', certifications: '', work_email: '', work_phone: '', department: '', manager_id: '', leave_balance: 0, target: 0, performance_rating: '', notes: '' }); }}>
+                  ✕ {isAr ? 'إلغاء' : 'Cancel'}
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+
+        <div style={styles.card}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>👤 Name</th>
+                  <th style={styles.th}>📞 Phone</th>
+                  <th style={styles.th}>📋 Role</th>
+                  <th style={styles.th}>🆔 Iqama</th>
+                  <th style={{ ...styles.th, textAlign: 'right' }}>💰 Salary</th>
+                  <th style={styles.th}>📅 Join Date</th>
+                  <th style={{ ...styles.th, textAlign: 'center' }}>⚡ Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(e => (
+                  <tr key={e.id}>
+                    <td style={{ ...styles.td, fontWeight: 600 }}>{e.name}</td>
+                    <td style={styles.td}>{e.phone || '-'}</td>
+                    <td style={styles.td}>{e.role || '-'}</td>
+                    <td style={styles.td}>{e.iqama_no || '-'}</td>
+                    <td style={styles.tdRight}>{fmt(e.salary)}</td>
+                    <td style={styles.td}>{e.join_date || '-'}</td>
+                    <td style={styles.tdCenter}>
+                      <div style={styles.actionsCell}>
+                        <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleEditEmp(e)}>✏️</button>
+                        <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDelete('employees', e.id)}>🗑️</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================
   // EXPENSES – COMPLETE FIXED
   // ============================================================
   if (page === 'expenses') {
