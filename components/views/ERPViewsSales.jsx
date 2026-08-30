@@ -1720,9 +1720,24 @@ export default function ERPViewsSales(props) {
             .single();
           if (error) throw error;
           result = nExp;
+          // Automatically move real money for this expense — Cash/Bank
+          // out — the same way invoices, refunds, and transfers already
+          // do, so expenses actually affect your balances instead of
+          // just being a record with no financial effect.
+          let newCbEntry = null;
+          if (payload.payment_mode === 'Cash' || payload.payment_mode === 'Bank Transfer') {
+            const cbType = payload.payment_mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
+            const { data: cb } = await supabase.from('cashbook').insert([{
+              trans_date: payload.expense_date || today, type: cbType,
+              description: `Expense: ${payload.description || payload.expense_type}`,
+              amount: totalAmount, tenant_id: userProfile?.tenant_id, reference_id: nExp.id
+            }]).select().single();
+            newCbEntry = cb;
+          }
           setData(prev => ({
             ...prev,
-            expenses: [nExp, ...prev.expenses]
+            expenses: [nExp, ...prev.expenses],
+            cashbook: newCbEntry ? [newCbEntry, ...prev.cashbook] : prev.cashbook
           }));
           showToast?.(isAr ? '✅ खर्चा जोड़ा गया' : '✅ Expense added!');
         }
