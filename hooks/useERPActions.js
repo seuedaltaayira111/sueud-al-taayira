@@ -653,7 +653,24 @@ export default function useERPActions(state) {
           .select()
           .single();
         if (error) throw error;
-        setData(prev => ({ ...prev, expenses: [nExp, ...prev.expenses] }));
+        // Automatically deduct this expense from Cash or Bank, matching
+        // how invoices/refunds/transfers already move real money in
+        // this system — expenses were the one place that wasn't linked.
+        let newCbEntry = null;
+        if (payload.payment_mode === 'Cash' || payload.payment_mode === 'Bank Transfer') {
+          const cbType = payload.payment_mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
+          const { data: cb } = await supabase.from('cashbook').insert([{
+            trans_date: payload.expense_date || today, type: cbType,
+            description: `Expense: ${payload.description || payload.expense_type}`,
+            amount: totalAmount, tenant_id: userProfile.tenant_id, reference_id: nExp.id
+          }]).select().single();
+          newCbEntry = cb;
+        }
+        setData(prev => ({
+          ...prev,
+          expenses: [nExp, ...prev.expenses],
+          cashbook: newCbEntry ? [newCbEntry, ...prev.cashbook] : prev.cashbook
+        }));
         await logAction(`Expense ${totalAmount.toFixed(2)} SAR - ${expForm.description || expForm.expense_type}`);
         showToast(isAr ? '✅ जोड़ा गया' : '✅ Added');
       }
@@ -1393,6 +1410,7 @@ Thank you for choosing us!`;
     e.preventDefault();
     try {
       let cid = null, corpId = null;
+      let newCustomerRecord = null, newCorporateRecord = null;
 
       if (invForm.custType === 'Individual') {
         if (invForm.custId === 'new') {
@@ -1408,6 +1426,7 @@ Thank you for choosing us!`;
             .single();
           if (cErr) throw new Error(isAr ? 'कस्टमर बनाने में विफल: ' + cErr.message : 'Customer creation failed: ' + cErr.message);
           cid = nC.id;
+          newCustomerRecord = nC;
         } else {
           cid = invForm.custId;
         }
@@ -1426,6 +1445,7 @@ Thank you for choosing us!`;
             .single();
           if (corpErr) throw new Error(isAr ? 'कॉर्पोरेट बनाने में विफल: ' + corpErr.message : 'Corporate creation failed: ' + corpErr.message);
           corpId = nCorp.id;
+          newCorporateRecord = nCorp;
         } else {
           corpId = invForm.corpId;
         }
@@ -1597,7 +1617,9 @@ Thank you for choosing us!`;
           ...prev,
           invoices: [newInv, ...prev.invoices],
           portals: prev.portals.map(p => p.id === portal.id ? { ...p, current_balance: newBal } : p),
-          cashbook: newCbEntries.length > 0 ? [...newCbEntries, ...prev.cashbook] : prev.cashbook
+          cashbook: newCbEntries.length > 0 ? [...newCbEntries, ...prev.cashbook] : prev.cashbook,
+          customers: newCustomerRecord ? [newCustomerRecord, ...prev.customers] : prev.customers,
+          corporates: newCorporateRecord ? [newCorporateRecord, ...prev.corporates] : prev.corporates
         }));
         showToast(isAr ? '✅ इनवॉइस बन गई' : '✅ Invoice Generated');
       }
