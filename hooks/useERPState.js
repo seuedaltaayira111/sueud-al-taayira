@@ -378,7 +378,9 @@ export default function useERPState() {
     attendance: [],
     appUsers: [],
     corporateTravel: [],
-    frequentFlyer: []
+    frequentFlyer: [],
+    recharges: [],
+    customerCredits: []
   });
 
   /* ===== INVOICE FORM ===== */
@@ -480,6 +482,7 @@ export default function useERPState() {
   const [settleForm, setSettleForm] = useState({ id: '', date: today, mode: 'Cash', amount: '', reference: '', notes: '' });
   const [refundForm, setRefundForm] = useState({ id: '', date: today, compRefund: 0, custRefund: 0, mode: 'Cash', reason: '', portalId: '', creditBalance: 0, notes: '', refund_to: 'customer' });
   const [transferForm, setTransferForm] = useState({ from: 'Cash', to: 'Bank', amount: '', date: today, description: '', reference: '', category: 'Internal' });
+  const [rechargeForm, setRechargeForm] = useState({ portal_id: '', amount: '', source: 'Cash', recharge_date: today, reference: '', notes: '' });
   const [setForm, setSetForm] = useState({});
   const [userForm, setUserForm] = useState({
     email: '', username: '', role: 'Staff', is_admin: false,
@@ -597,7 +600,9 @@ export default function useERPState() {
       supabase.from('attendance').select('*, employees(name)').eq('tenant_id', tid).order('date', { ascending: false }),
       supabase.from('app_users').select('*').eq('tenant_id', tid),
       supabase.from('corporate_travel').select('*, corporates(name)').eq('tenant_id', tid).order('created_at', { ascending: false }),
-      supabase.from('frequent_flyer').select('*').eq('tenant_id', tid).order('points', { ascending: false })
+      supabase.from('frequent_flyer').select('*').eq('tenant_id', tid).order('points', { ascending: false }),
+      supabase.from('recharges').select('*, portals(name)').eq('tenant_id', tid).order('recharge_date', { ascending: false }),
+      supabase.from('customer_credits').select('*, customers(name)').eq('tenant_id', tid).order('created_at', { ascending: false })
     ];
 
     const results = await Promise.allSettled(queries);
@@ -606,7 +611,7 @@ export default function useERPState() {
       'packages', 'branches', 'portals', 'employees', 'expenses',
       'cashbook', 'payroll', 'staffMistakes', 'auditLogs', 'settings',
       'services', 'empAdvances', 'investments', 'attendance', 'appUsers',
-      'corporateTravel', 'frequentFlyer'
+      'corporateTravel', 'frequentFlyer', 'recharges', 'customerCredits'
     ];
 
     const newData = {};
@@ -742,6 +747,7 @@ export default function useERPState() {
     settleForm, setSettleForm,
     refundForm, setRefundForm,
     transferForm, setTransferForm,
+    rechargeForm, setRechargeForm,
     setForm, setSetForm,
     userForm, setUserForm, editUserId, setEditUserId,
     portalForm, setPortalForm,
