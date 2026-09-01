@@ -815,6 +815,64 @@ export default function useERPActions(state) {
   };
 
   // ============================================================
+  // PORTAL RECHARGE — top up a portal's balance from Cash/Bank, with
+  // a real date, and a matching cashbook entry so it actually shows
+  // up in bank/cash statements. This didn't exist before — the
+  // `recharges` table existed in the database but nothing ever wrote
+  // to it, and portals could only be given an opening balance when
+  // first created, with no way to top one up afterward with a
+  // recorded, dated transaction.
+  // ============================================================
+  const handleRecharge = async (e) => {
+    e.preventDefault();
+    try {
+      const amt = parseFloat(rechargeForm.amount) || 0;
+      if (!rechargeForm.portal_id) throw new Error(isAr ? 'पोर्टल चुनें!' : 'Select a portal!');
+      if (amt <= 0) throw new Error(isAr ? 'सही राशि डालें!' : 'Enter a valid amount!');
+
+      const portal = data.portals.find(p => p.id === rechargeForm.portal_id);
+      if (!portal) throw new Error('Portal not found');
+
+      const rechargeDate = rechargeForm.recharge_date || today;
+      const cbType = rechargeForm.source === 'Cash' ? 'Cash-Out' : 'Bank-Out';
+
+      const { data: rc, error: rcErr } = await supabase.from('recharges').insert([{
+        portal_id: rechargeForm.portal_id,
+        amount: amt,
+        recharge_date: rechargeDate,
+        source: rechargeForm.source,
+        reference: rechargeForm.reference || '',
+        notes: rechargeForm.notes || '',
+        tenant_id: userProfile.tenant_id
+      }]).select().single();
+      if (rcErr) throw new Error(rcErr.message);
+
+      const { data: cb } = await supabase.from('cashbook').insert([{
+        trans_date: rechargeDate, type: cbType,
+        description: `Portal recharge: ${portal.name}${rechargeForm.reference ? ' (' + rechargeForm.reference + ')' : ''}`,
+        amount: amt, tenant_id: userProfile.tenant_id, reference_id: rc?.id
+      }]).select().single();
+
+      const newBal = (portal.current_balance || 0) + amt;
+      const { error: upErr } = await supabase.from('portals').update({ current_balance: newBal }).eq('id', portal.id);
+      if (upErr) throw new Error(upErr.message);
+
+      setData(prev => ({
+        ...prev,
+        portals: prev.portals.map(p => p.id === portal.id ? { ...p, current_balance: newBal } : p),
+        cashbook: cb ? [cb, ...prev.cashbook] : prev.cashbook,
+        recharges: rc ? [rc, ...(prev.recharges || [])] : (prev.recharges || [])
+      }));
+
+      await logAction(`Recharged portal ${portal.name} with ${amt.toFixed(2)} SAR`);
+      showToast(isAr ? `✅ रिचार्ज सफल: ${amt.toFixed(2)} SAR` : `✅ Recharged ${amt.toFixed(2)} SAR`);
+      setRechargeForm({ portal_id: '', amount: '', source: 'Cash', recharge_date: today, reference: '', notes: '' });
+    } catch (err) {
+      showToast('Error: ' + err.message);
+    }
+  };
+
+  // ============================================================
   // INVESTMENTS
   // ============================================================
   const handleAddInvestment = async (e) => {
@@ -1142,6 +1200,7 @@ Thank you for choosing us!`;
       const refundNo = `REF-${Date.now()}`;
 
       // Store Credit for New Booking
+      let creditLedgerEntry = null;
       if (refundForm.mode === 'Credit' && custRef > 0 && origInv.customer_id) {
         const cust = data.customers?.find(c => c.id === origInv.customer_id);
         if (cust) {
@@ -1151,6 +1210,18 @@ Thank you for choosing us!`;
             ...prev,
             customers: prev.customers.map(c => c.id === cust.id ? { ...c, store_credit: nc } : c)
           }));
+          // Itemized credit history — WHERE this credit came from, so it
+          // can be shown on future invoices and in a customer's credit
+          // history, not just as one pooled number.
+          const { data: cle } = await supabase.from('customer_credits').insert([{
+            customer_id: cust.id,
+            source_invoice_no: refundNo,
+            amount: custRef,
+            entry_type: 'Issued',
+            reason: refundForm.reason || '',
+            tenant_id: userProfile.tenant_id
+          }]).select().single();
+          creditLedgerEntry = cle;
           showToast(isAr ? `✅ ${custRef.toFixed(2)} SAR ${origInv.customers?.name} के स्टोर क्रेडिट में जोड़ा गया` : `✅ ${custRef.toFixed(2)} SAR added to ${origInv.customers?.name}'s store credit`);
         }
       }
@@ -1190,6 +1261,7 @@ Thank you for choosing us!`;
         total_cost: 0,
         total_sell: 0,
         profit: compRef - custRef,
+        refund_profit: compRef - custRef,
         vat: 0,
         total: 0,
         paid_amount: 0,
@@ -1238,7 +1310,8 @@ Thank you for choosing us!`;
       setData(prev => ({
         ...prev,
         invoices: [newRef, ...prev.invoices.map(i => i.id === origInv.id ? { ...i, status: 'refunded' } : i)],
-        cashbook: newCb ? [newCb, ...prev.cashbook] : prev.cashbook
+        cashbook: newCb ? [newCb, ...prev.cashbook] : prev.cashbook,
+        customerCredits: creditLedgerEntry ? [creditLedgerEntry, ...(prev.customerCredits || [])] : (prev.customerCredits || [])
       }));
 
       await logAction(`Refund ${refundNo} for ${origInv.invoice_no} (Comp:${compRef}, Cust:${custRef})`);
@@ -1495,6 +1568,7 @@ Thank you for choosing us!`;
       }
 
       // Store Credit usage
+      let creditUsageEntry = null;
       if (invForm.payment === 'Credit Balance' && cid && usedCredit > 0) {
         const cust = data.customers?.find(c => c.id === cid);
         if (cust) {
@@ -1506,6 +1580,20 @@ Thank you for choosing us!`;
             customers: prev.customers.map(c => c.id === cust.id ? { ...c, store_credit: nc } : c)
           }));
           showToast(isAr ? `✅ ${usedCredit.toFixed(2)} SAR ${cust.name} के क्रेडिट से उपयोग किया गया` : `✅ ${usedCredit.toFixed(2)} SAR used from ${cust.name}'s credit`);
+          // Log the usage in the credit ledger, linked to the refund
+          // (invForm.linkedInvId) that originally created this credit
+          // where known — this is what lets an invoice show exactly
+          // which previous booking's credit it used.
+          const { data: cue } = await supabase.from('customer_credits').insert([{
+            customer_id: cust.id,
+            source_invoice_no: invForm.linkedInvId || null,
+            used_invoice_no: null, // filled in after the new invoice is created, below
+            amount: -usedCredit,
+            entry_type: 'Used',
+            reason: 'Applied to new booking',
+            tenant_id: userProfile.tenant_id
+          }]).select().single();
+          creditUsageEntry = cue;
         }
       }
 
@@ -1627,13 +1715,22 @@ Thank you for choosing us!`;
           if (nCU) newCbEntries.push(nCU);
         }
 
+        // Now that the new invoice's real invoice_no exists, backfill
+        // the credit-usage ledger entry with it so the credit's full
+        // trail (issued by refund X → used by invoice Y) is traceable.
+        if (creditUsageEntry) {
+          await supabase.from('customer_credits').update({ used_invoice_no: newInv.invoice_no }).eq('id', creditUsageEntry.id);
+          creditUsageEntry = { ...creditUsageEntry, used_invoice_no: newInv.invoice_no };
+        }
+
         setData(prev => ({
           ...prev,
           invoices: [newInv, ...prev.invoices],
           portals: prev.portals.map(p => p.id === portal.id ? { ...p, current_balance: newBal } : p),
           cashbook: newCbEntries.length > 0 ? [...newCbEntries, ...prev.cashbook] : prev.cashbook,
           customers: newCustomerRecord ? [newCustomerRecord, ...prev.customers] : prev.customers,
-          corporates: newCorporateRecord ? [newCorporateRecord, ...prev.corporates] : prev.corporates
+          corporates: newCorporateRecord ? [newCorporateRecord, ...prev.corporates] : prev.corporates,
+          customerCredits: creditUsageEntry ? [creditUsageEntry, ...(prev.customerCredits || [])] : (prev.customerCredits || [])
         }));
         showToast(isAr ? '✅ इनवॉइस बन गई' : '✅ Invoice Generated');
       }
@@ -2268,6 +2365,7 @@ Thank you for choosing us!`;
     handleDeleteExpense,
     handleAddEditPortal,
     handleTransfer,
+    handleRecharge,
     handleAddInvestment,
     handleAddMistake,
     handlePreviewMistake,
