@@ -407,145 +407,7 @@ export default function ERPViewsPro(props) {
   // ============================================================
   // CUSTOMER STATEMENT
   // ============================================================
-  if (page === 'customer_statement') {
-    const [stmtCustId, setStmtCustId] = useState('');
-    const [statement, setStatement] = useState([]);
-    const [loading, setLoading] = useState(false);
-
-    const loadStatement = async () => {
-      if (!stmtCustId) return showToast(isAr ? 'اختر عميلاً أولاً' : 'Select a customer first');
-      setLoading(true);
-      try {
-        const { data: invs, error } = await supabase
-          .from('invoices')
-          .select('*')
-          .eq('customer_id', stmtCustId)
-          .eq('tenant_id', userProfile.tenant_id)
-          .order('invoice_date', { ascending: true });
-
-        if (error) throw error;
-
-        let runningBalance = 0;
-        const stmtData = (invs || []).map(inv => {
-          const debit = inv.total || 0;
-          const credit = inv.paid_amount || 0;
-          runningBalance += (debit - credit);
-          return {
-            date: inv.invoice_date,
-            invoice_no: inv.invoice_no,
-            description: inv.service_type || inv.sector || 'Invoice',
-            debit: debit,
-            credit: credit,
-            balance: runningBalance
-          };
-        });
-        setStatement(stmtData);
-      } catch (err) {
-        showToast('Error: ' + err.message);
-      }
-      setLoading(false);
-    };
-
-    const handleExportStatement = () => {
-      if (statement.length === 0) return showToast(isAr ? 'لا توجد بيانات للتصدير' : 'No data to export');
-      const cust = data.customers?.find(c => c.id === stmtCustId);
-      handleExportCSV?.(statement.map(s => ({
-        Date: s.date,
-        Invoice: s.invoice_no,
-        Description: s.description,
-        Debit: s.debit,
-        Credit: s.credit,
-        Balance: s.balance
-      })), `Statement_${cust?.name || stmtCustId}`);
-    };
-
-    const cust = data.customers?.find(c => c.id === stmtCustId);
-
-    return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>📊 {isAr ? 'كشف حساب العميل' : 'Customer Statement'}</h1>
-        </div>
-
-        <div style={styles.card}>
-          <div style={styles.formRow}>
-            <div>
-              <label style={styles.formLabel}>{isAr ? 'اختر العميل' : 'Select Customer'}</label>
-              <select style={styles.select} value={stmtCustId} onChange={e => setStmtCustId(e.target.value)}>
-                <option value="">{isAr ? 'اختر العميل لعرض الكشف' : 'Select Customer to View Statement'}</option>
-                {(data.customers || []).map(c => (
-                  <option key={c.id} value={c.id}>{c.name} {c.phone ? `— ${c.phone}` : ''}</option>
-                ))}
-              </select>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
-              <button onClick={loadStatement} style={{ ...styles.btn, ...styles.btnPrimary, padding: '12px 30px' }} disabled={loading}>
-                {loading ? (isAr ? 'جاري التحميل...' : 'Loading...') : (isAr ? '🔍 عرض الكشف' : '🔍 View Statement')}
-              </button>
-              {statement.length > 0 && (
-                <button onClick={handleExportStatement} style={{ ...styles.btn, ...styles.btnSuccess, padding: '12px 20px' }}>
-                  📥 {isAr ? 'تحميل' : 'Download'}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {stmtCustId && statement.length > 0 && (
-          <div style={styles.card}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '15px', borderBottom: isDark ? '1px solid #334155' : '1px solid #E2E8F0', marginBottom: '15px' }}>
-              <h3 style={{ margin: 0, color: '#FBBF24' }}>
-                {isAr ? 'سجل المعاملات -' : 'Transaction History -'} {cust?.name || 'Customer'}
-              </h3>
-              <div style={{ background: isDark ? '#0F172A' : '#F1F5F9', padding: '8px 16px', borderRadius: '8px' }}>
-                <span style={{ color: '#94A3B8', fontSize: '12px' }}>{isAr ? 'الرصيد النهائي' : 'Final Balance'}:</span>
-                <span style={{ fontWeight: 700, color: statement[statement.length - 1]?.balance >= 0 ? '#34D399' : '#FCA5A5', marginLeft: '8px' }}>
-                  {fmt(statement[statement.length - 1]?.balance || 0)}
-                </span>
-              </div>
-            </div>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>{isAr ? 'التاريخ' : 'Date'}</th>
-                    <th style={styles.th}>{isAr ? 'الفاتورة' : 'Invoice'}</th>
-                    <th style={styles.th}>{isAr ? 'الوصف' : 'Description'}</th>
-                    <th style={{ ...styles.th, textAlign: 'right' }}>{isAr ? 'مدين (فاتورة)' : 'Debit (Inv)'}</th>
-                    <th style={{ ...styles.th, textAlign: 'right' }}>{isAr ? 'دائن (مدفوع)' : 'Credit (Paid)'}</th>
-                    <th style={{ ...styles.th, textAlign: 'right' }}>{isAr ? 'الرصيد' : 'Balance'}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {statement.map((s, i) => (
-                    <tr key={i}>
-                      <td style={styles.td}>{s.date}</td>
-                      <td style={{ ...styles.td, color: '#60A5FA' }}>{s.invoice_no}</td>
-                      <td style={styles.td}>{s.description}</td>
-                      <td style={{ ...styles.tdRight, color: '#EF4444' }}>{fmt(s.debit)}</td>
-                      <td style={{ ...styles.tdRight, color: '#34D399' }}>{fmt(s.credit)}</td>
-                      <td style={{ ...styles.tdRight, color: s.balance >= 0 ? '#34D399' : '#FCA5A5', fontWeight: 'bold' }}>
-                        {fmt(s.balance)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {stmtCustId && statement.length === 0 && !loading && (
-          <div style={styles.card}>
-            <div style={styles.emptyState}>
-              <div style={styles.emptyIcon}>📄</div>
-              <p style={{ color: '#94A3B8' }}>{isAr ? 'لا توجد معاملات لهذا العميل.' : 'No transactions for this customer.'}</p>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
+  if (page === 'customer_statement') return <CustomerStatementView {...props} />;
 
   // ============================================================
   // SUPPLIER STATEMENT
@@ -667,196 +529,7 @@ export default function ERPViewsPro(props) {
   // ============================================================
   // RECURRING INVOICES
   // ============================================================
-  if (page === 'recurring_invoices') {
-    const [recForm, setRecForm] = useState({
-      customer_id: '',
-      amount: '',
-      interval: 'Monthly',
-      description: '',
-      start_date: today,
-      end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]
-    });
-    const [recurringInvs, setRecurringInvs] = useState([]);
-    const [loading, setLoading] = useState(false);
-
-    const loadRecurring = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('invoices')
-          .select('*, customers(name)')
-          .eq('is_recurring', true)
-          .eq('tenant_id', userProfile.tenant_id)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        setRecurringInvs(data || []);
-      } catch (err) {
-        showToast('Error: ' + err.message);
-      }
-      setLoading(false);
-    };
-
-    const handleCreateRecurring = async (e) => {
-      e.preventDefault();
-      try {
-        if (!recForm.customer_id) throw new Error(isAr ? 'اختر العميل' : 'Select a customer');
-        const amount = parseFloat(recForm.amount) || 0;
-        if (amount <= 0) throw new Error(isAr ? 'أدخل مبلغاً صالحاً' : 'Enter a valid amount');
-
-        const invNo = `REC-${Date.now()}`;
-        const payload = {
-          invoice_no: invNo,
-          customer_id: recForm.customer_id,
-          total_sell: amount,
-          total: amount,
-          paid_amount: 0,
-          due_amount: amount,
-          invoice_date: recForm.start_date,
-          is_recurring: true,
-          recurring_interval: recForm.interval,
-          recurring_end_date: recForm.end_date,
-          status: 'Recurring',
-          sector: recForm.description || 'Recurring Invoice',
-          tenant_id: userProfile.tenant_id
-        };
-
-        const { data: newInv, error } = await supabase
-          .from('invoices')
-          .insert([payload])
-          .select('*, customers(name)')
-          .single();
-
-        if (error) throw error;
-        setRecurringInvs(prev => [newInv, ...prev]);
-        showToast(isAr ? '✅ تم إنشاء الفاتورة المتكررة!' : '✅ Recurring Profile Created!');
-        setRecForm({
-          customer_id: '',
-          amount: '',
-          interval: 'Monthly',
-          description: '',
-          start_date: today,
-          end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]
-        });
-      } catch (err) {
-        showToast('Error: ' + err.message);
-      }
-    };
-
-    const handleDeleteRecurring = async (id) => {
-      if (!confirm(isAr ? 'حذف هذه الفاتورة المتكررة؟' : 'Delete this recurring invoice?')) return;
-      try {
-        await supabase.from('invoices').delete().eq('id', id);
-        setRecurringInvs(prev => prev.filter(r => r.id !== id));
-        showToast(isAr ? '🗑️ تم الحذف!' : '🗑️ Deleted!');
-      } catch (err) {
-        showToast('Error: ' + err.message);
-      }
-    };
-
-    useEffect(() => {
-      if (page === 'recurring_invoices') {
-        loadRecurring();
-      }
-    }, [page]);
-
-    return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>🔁 {isAr ? 'الفواتير المتكررة' : 'Recurring Invoices'}</h1>
-          <button style={{ ...styles.btn, ...styles.btnInfo }} onClick={loadRecurring}>
-            🔄 {isAr ? 'تحديث' : 'Refresh'}
-          </button>
-        </div>
-
-        <div style={styles.card}>
-          <h3 style={styles.sectionTitle}>{isAr ? 'إعداد فاتورة متكررة' : 'Setup Recurring Profile'}</h3>
-          <form onSubmit={handleCreateRecurring} style={styles.formRow}>
-            <div>
-              <label style={styles.formLabel}>{isAr ? 'العميل' : 'Customer'}</label>
-              <select style={styles.select} value={recForm.customer_id} onChange={e => setRecForm({ ...recForm, customer_id: e.target.value })} required>
-                <option value="">{isAr ? 'اختر العميل' : 'Select Customer'}</option>
-                {(data.customers || []).map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label style={styles.formLabel}>{isAr ? 'المبلغ (ريال)' : 'Amount (SAR)'}</label>
-              <input type="number" step="0.01" style={styles.input} value={recForm.amount} onChange={e => setRecForm({ ...recForm, amount: e.target.value })} required />
-            </div>
-            <div>
-              <label style={styles.formLabel}>{isAr ? 'الفترة' : 'Interval'}</label>
-              <select style={styles.select} value={recForm.interval} onChange={e => setRecForm({ ...recForm, interval: e.target.value })}>
-                <option>Monthly</option>
-                <option>Yearly</option>
-                <option>Weekly</option>
-                <option>Quarterly</option>
-              </select>
-            </div>
-            <div>
-              <label style={styles.formLabel}>{isAr ? 'الوصف' : 'Description'}</label>
-              <input style={styles.input} value={recForm.description} onChange={e => setRecForm({ ...recForm, description: e.target.value })} placeholder={isAr ? 'وصف الفاتورة' : 'Invoice description'} />
-            </div>
-            <div>
-              <label style={styles.formLabel}>{isAr ? 'تاريخ البدء' : 'Start Date'}</label>
-              <input type="date" style={styles.input} value={recForm.start_date} onChange={e => setRecForm({ ...recForm, start_date: e.target.value })} />
-            </div>
-            <div>
-              <label style={styles.formLabel}>{isAr ? 'تاريخ الانتهاء' : 'End Date'}</label>
-              <input type="date" style={styles.input} value={recForm.end_date} onChange={e => setRecForm({ ...recForm, end_date: e.target.value })} />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-              <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, width: '100%' }}>
-                ✅ {isAr ? 'إنشاء' : 'Create'}
-              </button>
-            </div>
-          </form>
-        </div>
-
-        <div style={styles.card}>
-          <h3 style={styles.sectionTitle}>{isAr ? 'الفواتير المتكررة الحالية' : 'Current Recurring Invoices'}</h3>
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: 30, color: '#94A3B8' }}>{isAr ? 'جاري التحميل...' : 'Loading...'}</div>
-          ) : recurringInvs.length === 0 ? (
-            <div style={styles.emptyState}>
-              <div style={styles.emptyIcon}>🔁</div>
-              <p style={{ color: '#94A3B8' }}>{isAr ? 'لا توجد فواتير متكررة.' : 'No recurring invoices found.'}</p>
-            </div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>{isAr ? 'الرقم' : 'Profile ID'}</th>
-                    <th style={styles.th}>{isAr ? 'العميل' : 'Customer'}</th>
-                    <th style={styles.th}>{isAr ? 'الفترة' : 'Interval'}</th>
-                    <th style={{ ...styles.th, textAlign: 'right' }}>{isAr ? 'المبلغ' : 'Amount'}</th>
-                    <th style={{ ...styles.th, textAlign: 'center' }}>{isAr ? 'إجراء' : 'Action'}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recurringInvs.map(r => (
-                    <tr key={r.id}>
-                      <td style={{ ...styles.td, color: '#60A5FA', fontWeight: 600 }}>{r.invoice_no}</td>
-                      <td style={styles.td}>{r.customers?.name || 'N/A'}</td>
-                      <td style={styles.td}>{r.recurring_interval}</td>
-                      <td style={{ ...styles.tdRight, color: '#34D399', fontWeight: 'bold' }}>{fmt(r.total)}</td>
-                      <td style={styles.tdCenter}>
-                        <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDeleteRecurring(r.id)}>
-                          🗑️
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
+  if (page === 'recurring_invoices') return <RecurringInvoicesView {...props} />;
 
   // ============================================================
   // EXPENSE APPROVAL SYSTEM
@@ -1254,3 +927,609 @@ export default function ERPViewsPro(props) {
 
   return null;
 }
+
+// Customer Statement and Recurring Invoices were `if (page === 'X')`
+// blocks calling different numbers of hooks (3 and 4) while sharing
+// one component instance with Notifications, Refund Statement, and
+// Expense Approval (0 hooks each). Switching pages via the sidebar
+// didn't remount the component, so React expected the same hooks
+// every render — a Rules-of-Hooks violation. Extracted both into
+// their own components.
+function useProHelpers(props) {
+  const { lang, theme } = props;
+  const isAr = lang === 'ar';
+  const isDark = theme === 'dark';
+
+  // ===== STYLES =====
+  const styles = {
+    container: {
+      padding: '20px',
+      background: isDark ? '#0F172A' : '#F8FAFC',
+      minHeight: '100vh',
+      color: isDark ? '#E2E8F0' : '#1E293B',
+      transition: 'all 0.3s ease'
+    },
+    card: {
+      background: isDark ? '#1E293B' : '#FFFFFF',
+      borderRadius: '16px',
+      padding: '20px',
+      marginBottom: '20px',
+      border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
+      boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.2)' : '0 4px 6px rgba(0,0,0,0.05)'
+    },
+    header: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: '20px',
+      flexWrap: 'wrap',
+      gap: '10px'
+    },
+    title: {
+      fontSize: '24px',
+      fontWeight: 700,
+      color: '#FBBF24',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      margin: 0
+    },
+    input: {
+      padding: '10px 15px',
+      background: isDark ? '#0F172A' : '#F1F5F9',
+      border: isDark ? '1px solid #475569' : '1px solid #E2E8F0',
+      borderRadius: '8px',
+      color: isDark ? '#E2E8F0' : '#1E293B',
+      fontSize: '14px',
+      outline: 'none',
+      width: '100%',
+      boxSizing: 'border-box',
+      transition: 'all 0.2s'
+    },
+    select: {
+      padding: '10px 15px',
+      background: isDark ? '#0F172A' : '#F1F5F9',
+      border: isDark ? '1px solid #475569' : '1px solid #E2E8F0',
+      borderRadius: '8px',
+      color: isDark ? '#E2E8F0' : '#1E293B',
+      fontSize: '14px',
+      outline: 'none',
+      width: '100%',
+      boxSizing: 'border-box'
+    },
+    btn: {
+      padding: '10px 20px',
+      borderRadius: '8px',
+      border: 'none',
+      cursor: 'pointer',
+      fontWeight: 600,
+      fontSize: '13px',
+      transition: 'all 0.2s'
+    },
+    btnPrimary: {
+      background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+      color: '#fff'
+    },
+    btnSuccess: {
+      background: 'linear-gradient(135deg, #059669, #047857)',
+      color: '#fff'
+    },
+    btnDanger: {
+      background: 'linear-gradient(135deg, #DC2626, #B91C1C)',
+      color: '#fff'
+    },
+    btnWarning: {
+      background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+      color: '#0F172A'
+    },
+    btnGhost: {
+      background: 'transparent',
+      border: isDark ? '1px solid #475569' : '1px solid #E2E8F0',
+      color: isDark ? '#94A3B8' : '#64748B'
+    },
+    btnInfo: {
+      background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
+      color: '#fff'
+    },
+    table: {
+      width: '100%',
+      borderCollapse: 'collapse',
+      fontSize: '13px'
+    },
+    th: {
+      padding: '12px',
+      background: isDark ? '#0F172A' : '#F1F5F9',
+      color: '#FBBF24',
+      textAlign: 'left',
+      fontWeight: 600,
+      fontSize: '11px',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px',
+      borderBottom: isDark ? '2px solid #334155' : '2px solid #E2E8F0'
+    },
+    td: {
+      padding: '12px',
+      borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
+      color: isDark ? '#CBD5E1' : '#1E293B'
+    },
+    tdRight: {
+      padding: '12px',
+      borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
+      color: isDark ? '#CBD5E1' : '#1E293B',
+      textAlign: 'right',
+      fontWeight: 600
+    },
+    tdCenter: {
+      padding: '12px',
+      borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
+      color: isDark ? '#CBD5E1' : '#1E293B',
+      textAlign: 'center'
+    },
+    badge: {
+      padding: '4px 10px',
+      borderRadius: '20px',
+      fontSize: '11px',
+      fontWeight: 600,
+      display: 'inline-block'
+    },
+    badgeSuccess: {
+      background: '#065F46',
+      color: '#34D399'
+    },
+    badgeDanger: {
+      background: '#7F1D1D',
+      color: '#FCA5A5'
+    },
+    badgeWarning: {
+      background: '#78350F',
+      color: '#FBBF24'
+    },
+    badgeInfo: {
+      background: '#1E3A8A',
+      color: '#93C5FD'
+    },
+    statsGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+      gap: '15px',
+      marginBottom: '20px'
+    },
+    statCard: {
+      background: isDark ? 'linear-gradient(135deg, #1E293B, #0F172A)' : 'linear-gradient(135deg, #FFFFFF, #F8FAFC)',
+      padding: '20px',
+      borderRadius: '12px',
+      border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
+      borderTop: '4px solid #2563EB'
+    },
+    statLabel: {
+      fontSize: '12px',
+      color: '#94A3B8',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px'
+    },
+    statValue: {
+      fontSize: '24px',
+      fontWeight: 700,
+      color: '#FBBF24',
+      marginTop: '5px'
+    },
+    formGroup: {
+      marginBottom: '15px'
+    },
+    formLabel: {
+      display: 'block',
+      marginBottom: '5px',
+      color: isDark ? '#94A3B8' : '#64748B',
+      fontSize: '13px',
+      fontWeight: 600
+    },
+    formRow: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+      gap: '15px'
+    },
+    sectionTitle: {
+      color: '#FBBF24',
+      fontSize: '15px',
+      fontWeight: 700,
+      margin: '0 0 15px',
+      paddingBottom: '10px',
+      borderBottom: isDark ? '1px solid #334155' : '1px solid #E2E8F0'
+    },
+    emptyState: {
+      textAlign: 'center',
+      padding: '60px 20px',
+      color: '#64748B'
+    },
+    emptyIcon: {
+      fontSize: '60px',
+      marginBottom: '15px'
+    },
+    actionsCell: {
+      display: 'flex',
+      gap: '5px',
+      flexWrap: 'wrap',
+      justifyContent: 'center'
+    },
+    actionBtn: {
+      padding: '6px 10px',
+      borderRadius: '6px',
+      border: 'none',
+      cursor: 'pointer',
+      fontSize: '11px',
+      fontWeight: 600,
+      transition: 'all 0.2s'
+    },
+    label: {
+      fontSize: '13px',
+      fontWeight: 600,
+      color: isDark ? '#94A3B8' : '#64748B',
+      marginBottom: '6px',
+      display: 'block',
+      marginTop: '12px'
+    },
+    tableHeader: {
+      padding: '12px',
+      background: isDark ? '#0F172A' : '#F1F5F9',
+      color: '#FBBF24',
+      textAlign: 'left',
+      fontWeight: 600,
+      fontSize: '11px',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px',
+      borderBottom: isDark ? '2px solid #334155' : '2px solid #E2E8F0'
+    },
+    tableCell: {
+      padding: '12px',
+      borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
+      color: isDark ? '#CBD5E1' : '#1E293B'
+    },
+    aiBadge: {
+      background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+      color: '#fff',
+      padding: '2px 10px',
+      borderRadius: '12px',
+      fontSize: '10px',
+      fontWeight: 'bold',
+      display: 'inline-block',
+      marginLeft: '8px'
+    }
+  };
+
+  const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
+
+  return { styles, fmt };
+}
+
+function CustomerStatementView(props) {
+  const { page, data, tr, today, userProfile, showToast, setData, handleExportCSV } = props;
+  const { styles, fmt } = useProHelpers(props);
+  const [stmtCustId, setStmtCustId] = useState('');
+  const [statement, setStatement] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const loadStatement = async () => {
+    if (!stmtCustId) return showToast(isAr ? 'اختر عميلاً أولاً' : 'Select a customer first');
+    setLoading(true);
+    try {
+      const { data: invs, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('customer_id', stmtCustId)
+        .eq('tenant_id', userProfile.tenant_id)
+        .order('invoice_date', { ascending: true });
+
+      if (error) throw error;
+
+      let runningBalance = 0;
+      const stmtData = (invs || []).map(inv => {
+        const debit = inv.total || 0;
+        const credit = inv.paid_amount || 0;
+        runningBalance += (debit - credit);
+        return {
+          date: inv.invoice_date,
+          invoice_no: inv.invoice_no,
+          description: inv.service_type || inv.sector || 'Invoice',
+          debit: debit,
+          credit: credit,
+          balance: runningBalance
+        };
+      });
+      setStatement(stmtData);
+    } catch (err) {
+      showToast('Error: ' + err.message);
+    }
+    setLoading(false);
+  };
+
+  const handleExportStatement = () => {
+    if (statement.length === 0) return showToast(isAr ? 'لا توجد بيانات للتصدير' : 'No data to export');
+    const cust = data.customers?.find(c => c.id === stmtCustId);
+    handleExportCSV?.(statement.map(s => ({
+      Date: s.date,
+      Invoice: s.invoice_no,
+      Description: s.description,
+      Debit: s.debit,
+      Credit: s.credit,
+      Balance: s.balance
+    })), `Statement_${cust?.name || stmtCustId}`);
+  };
+
+  const cust = data.customers?.find(c => c.id === stmtCustId);
+
+  return (
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <h1 style={styles.title}>📊 {isAr ? 'كشف حساب العميل' : 'Customer Statement'}</h1>
+      </div>
+
+      <div style={styles.card}>
+        <div style={styles.formRow}>
+          <div>
+            <label style={styles.formLabel}>{isAr ? 'اختر العميل' : 'Select Customer'}</label>
+            <select style={styles.select} value={stmtCustId} onChange={e => setStmtCustId(e.target.value)}>
+              <option value="">{isAr ? 'اختر العميل لعرض الكشف' : 'Select Customer to View Statement'}</option>
+              {(data.customers || []).map(c => (
+                <option key={c.id} value={c.id}>{c.name} {c.phone ? `— ${c.phone}` : ''}</option>
+              ))}
+            </select>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
+            <button onClick={loadStatement} style={{ ...styles.btn, ...styles.btnPrimary, padding: '12px 30px' }} disabled={loading}>
+              {loading ? (isAr ? 'جاري التحميل...' : 'Loading...') : (isAr ? '🔍 عرض الكشف' : '🔍 View Statement')}
+            </button>
+            {statement.length > 0 && (
+              <button onClick={handleExportStatement} style={{ ...styles.btn, ...styles.btnSuccess, padding: '12px 20px' }}>
+                📥 {isAr ? 'تحميل' : 'Download'}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {stmtCustId && statement.length > 0 && (
+        <div style={styles.card}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '15px', borderBottom: isDark ? '1px solid #334155' : '1px solid #E2E8F0', marginBottom: '15px' }}>
+            <h3 style={{ margin: 0, color: '#FBBF24' }}>
+              {isAr ? 'سجل المعاملات -' : 'Transaction History -'} {cust?.name || 'Customer'}
+            </h3>
+            <div style={{ background: isDark ? '#0F172A' : '#F1F5F9', padding: '8px 16px', borderRadius: '8px' }}>
+              <span style={{ color: '#94A3B8', fontSize: '12px' }}>{isAr ? 'الرصيد النهائي' : 'Final Balance'}:</span>
+              <span style={{ fontWeight: 700, color: statement[statement.length - 1]?.balance >= 0 ? '#34D399' : '#FCA5A5', marginLeft: '8px' }}>
+                {fmt(statement[statement.length - 1]?.balance || 0)}
+              </span>
+            </div>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>{isAr ? 'التاريخ' : 'Date'}</th>
+                  <th style={styles.th}>{isAr ? 'الفاتورة' : 'Invoice'}</th>
+                  <th style={styles.th}>{isAr ? 'الوصف' : 'Description'}</th>
+                  <th style={{ ...styles.th, textAlign: 'right' }}>{isAr ? 'مدين (فاتورة)' : 'Debit (Inv)'}</th>
+                  <th style={{ ...styles.th, textAlign: 'right' }}>{isAr ? 'دائن (مدفوع)' : 'Credit (Paid)'}</th>
+                  <th style={{ ...styles.th, textAlign: 'right' }}>{isAr ? 'الرصيد' : 'Balance'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {statement.map((s, i) => (
+                  <tr key={i}>
+                    <td style={styles.td}>{s.date}</td>
+                    <td style={{ ...styles.td, color: '#60A5FA' }}>{s.invoice_no}</td>
+                    <td style={styles.td}>{s.description}</td>
+                    <td style={{ ...styles.tdRight, color: '#EF4444' }}>{fmt(s.debit)}</td>
+                    <td style={{ ...styles.tdRight, color: '#34D399' }}>{fmt(s.credit)}</td>
+                    <td style={{ ...styles.tdRight, color: s.balance >= 0 ? '#34D399' : '#FCA5A5', fontWeight: 'bold' }}>
+                      {fmt(s.balance)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {stmtCustId && statement.length === 0 && !loading && (
+        <div style={styles.card}>
+          <div style={styles.emptyState}>
+            <div style={styles.emptyIcon}>📄</div>
+            <p style={{ color: '#94A3B8' }}>{isAr ? 'لا توجد معاملات لهذا العميل.' : 'No transactions for this customer.'}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );}
+
+function RecurringInvoicesView(props) {
+  const { page, data, tr, today, userProfile, showToast, setData } = props;
+  const { styles, fmt } = useProHelpers(props);
+  const [recForm, setRecForm] = useState({
+    customer_id: '',
+    amount: '',
+    interval: 'Monthly',
+    description: '',
+    start_date: today,
+    end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]
+  });
+  const [recurringInvs, setRecurringInvs] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const loadRecurring = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('*, customers(name)')
+        .eq('is_recurring', true)
+        .eq('tenant_id', userProfile.tenant_id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setRecurringInvs(data || []);
+    } catch (err) {
+      showToast('Error: ' + err.message);
+    }
+    setLoading(false);
+  };
+
+  const handleCreateRecurring = async (e) => {
+    e.preventDefault();
+    try {
+      if (!recForm.customer_id) throw new Error(isAr ? 'اختر العميل' : 'Select a customer');
+      const amount = parseFloat(recForm.amount) || 0;
+      if (amount <= 0) throw new Error(isAr ? 'أدخل مبلغاً صالحاً' : 'Enter a valid amount');
+
+      const invNo = `REC-${Date.now()}`;
+      const payload = {
+        invoice_no: invNo,
+        customer_id: recForm.customer_id,
+        total_sell: amount,
+        total: amount,
+        paid_amount: 0,
+        due_amount: amount,
+        invoice_date: recForm.start_date,
+        is_recurring: true,
+        recurring_interval: recForm.interval,
+        recurring_end_date: recForm.end_date,
+        status: 'Recurring',
+        sector: recForm.description || 'Recurring Invoice',
+        tenant_id: userProfile.tenant_id
+      };
+
+      const { data: newInv, error } = await supabase
+        .from('invoices')
+        .insert([payload])
+        .select('*, customers(name)')
+        .single();
+
+      if (error) throw error;
+      setRecurringInvs(prev => [newInv, ...prev]);
+      showToast(isAr ? '✅ تم إنشاء الفاتورة المتكررة!' : '✅ Recurring Profile Created!');
+      setRecForm({
+        customer_id: '',
+        amount: '',
+        interval: 'Monthly',
+        description: '',
+        start_date: today,
+        end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]
+      });
+    } catch (err) {
+      showToast('Error: ' + err.message);
+    }
+  };
+
+  const handleDeleteRecurring = async (id) => {
+    if (!confirm(isAr ? 'حذف هذه الفاتورة المتكررة؟' : 'Delete this recurring invoice?')) return;
+    try {
+      { const { error: _delErr1 } = await supabase.from('invoices').delete().eq('id', id); if (_delErr1) throw new Error(_delErr1.message); }
+      setRecurringInvs(prev => prev.filter(r => r.id !== id));
+      showToast(isAr ? '🗑️ تم الحذف!' : '🗑️ Deleted!');
+    } catch (err) {
+      showToast('Error: ' + err.message);
+    }
+  };
+
+  useEffect(() => {
+    if (page === 'recurring_invoices') {
+      loadRecurring();
+    }
+  }, [page]);
+
+  return (
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <h1 style={styles.title}>🔁 {isAr ? 'الفواتير المتكررة' : 'Recurring Invoices'}</h1>
+        <button style={{ ...styles.btn, ...styles.btnInfo }} onClick={loadRecurring}>
+          🔄 {isAr ? 'تحديث' : 'Refresh'}
+        </button>
+      </div>
+
+      <div style={styles.card}>
+        <h3 style={styles.sectionTitle}>{isAr ? 'إعداد فاتورة متكررة' : 'Setup Recurring Profile'}</h3>
+        <form onSubmit={handleCreateRecurring} style={styles.formRow}>
+          <div>
+            <label style={styles.formLabel}>{isAr ? 'العميل' : 'Customer'}</label>
+            <select style={styles.select} value={recForm.customer_id} onChange={e => setRecForm({ ...recForm, customer_id: e.target.value })} required>
+              <option value="">{isAr ? 'اختر العميل' : 'Select Customer'}</option>
+              {(data.customers || []).map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label style={styles.formLabel}>{isAr ? 'المبلغ (ريال)' : 'Amount (SAR)'}</label>
+            <input type="number" step="0.01" style={styles.input} value={recForm.amount} onChange={e => setRecForm({ ...recForm, amount: e.target.value })} required />
+          </div>
+          <div>
+            <label style={styles.formLabel}>{isAr ? 'الفترة' : 'Interval'}</label>
+            <select style={styles.select} value={recForm.interval} onChange={e => setRecForm({ ...recForm, interval: e.target.value })}>
+              <option>Monthly</option>
+              <option>Yearly</option>
+              <option>Weekly</option>
+              <option>Quarterly</option>
+            </select>
+          </div>
+          <div>
+            <label style={styles.formLabel}>{isAr ? 'الوصف' : 'Description'}</label>
+            <input style={styles.input} value={recForm.description} onChange={e => setRecForm({ ...recForm, description: e.target.value })} placeholder={isAr ? 'وصف الفاتورة' : 'Invoice description'} />
+          </div>
+          <div>
+            <label style={styles.formLabel}>{isAr ? 'تاريخ البدء' : 'Start Date'}</label>
+            <input type="date" style={styles.input} value={recForm.start_date} onChange={e => setRecForm({ ...recForm, start_date: e.target.value })} />
+          </div>
+          <div>
+            <label style={styles.formLabel}>{isAr ? 'تاريخ الانتهاء' : 'End Date'}</label>
+            <input type="date" style={styles.input} value={recForm.end_date} onChange={e => setRecForm({ ...recForm, end_date: e.target.value })} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+            <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, width: '100%' }}>
+              ✅ {isAr ? 'إنشاء' : 'Create'}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div style={styles.card}>
+        <h3 style={styles.sectionTitle}>{isAr ? 'الفواتير المتكررة الحالية' : 'Current Recurring Invoices'}</h3>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: 30, color: '#94A3B8' }}>{isAr ? 'جاري التحميل...' : 'Loading...'}</div>
+        ) : recurringInvs.length === 0 ? (
+          <div style={styles.emptyState}>
+            <div style={styles.emptyIcon}>🔁</div>
+            <p style={{ color: '#94A3B8' }}>{isAr ? 'لا توجد فواتير متكررة.' : 'No recurring invoices found.'}</p>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>{isAr ? 'الرقم' : 'Profile ID'}</th>
+                  <th style={styles.th}>{isAr ? 'العميل' : 'Customer'}</th>
+                  <th style={styles.th}>{isAr ? 'الفترة' : 'Interval'}</th>
+                  <th style={{ ...styles.th, textAlign: 'right' }}>{isAr ? 'المبلغ' : 'Amount'}</th>
+                  <th style={{ ...styles.th, textAlign: 'center' }}>{isAr ? 'إجراء' : 'Action'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recurringInvs.map(r => (
+                  <tr key={r.id}>
+                    <td style={{ ...styles.td, color: '#60A5FA', fontWeight: 600 }}>{r.invoice_no}</td>
+                    <td style={styles.td}>{r.customers?.name || 'N/A'}</td>
+                    <td style={styles.td}>{r.recurring_interval}</td>
+                    <td style={{ ...styles.tdRight, color: '#34D399', fontWeight: 'bold' }}>{fmt(r.total)}</td>
+                    <td style={styles.tdCenter}>
+                      <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDeleteRecurring(r.id)}>
+                        🗑️
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );}
