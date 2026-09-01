@@ -1336,6 +1336,7 @@ export default function ERPViewsSales(props) {
   // ============================================================
   if (page === 'portals') {
     const totalBalance = (data.portals || []).reduce((s, p) => s + (p.current_balance || 0), 0);
+    const { rechargeForm, setRechargeForm, handleRecharge } = props;
 
     return (
       <div style={styles.container}>
@@ -1399,6 +1400,71 @@ export default function ERPViewsSales(props) {
             </div>
           </form>
         </div>
+
+        <div style={{ ...styles.card, border: '1px solid #059669' }}>
+          <h3 style={{ ...styles.sectionTitle, color: '#059669' }}>💵 {isAr ? 'إعادة شحن البوابة' : 'Recharge Portal'}</h3>
+          <form onSubmit={handleRecharge} style={styles.formRow}>
+            <div>
+              <label style={styles.formLabel}>{isAr ? 'البوابة' : 'Portal'}</label>
+              <select style={styles.select} value={rechargeForm.portal_id} onChange={e => setRechargeForm(p => ({ ...p, portal_id: e.target.value }))} required>
+                <option value="">— {isAr ? 'اختر' : 'Select'} —</option>
+                {(data.portals || []).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.formLabel}>{isAr ? 'المبلغ' : 'Amount'} (SAR)</label>
+              <input type="number" step="0.01" style={styles.input} value={rechargeForm.amount} onChange={e => setRechargeForm(p => ({ ...p, amount: e.target.value }))} required />
+            </div>
+            <div>
+              <label style={styles.formLabel}>{isAr ? 'التاريخ' : 'Date'}</label>
+              <input type="date" style={styles.input} value={rechargeForm.recharge_date} onChange={e => setRechargeForm(p => ({ ...p, recharge_date: e.target.value }))} required />
+            </div>
+            <div>
+              <label style={styles.formLabel}>{isAr ? 'المصدر' : 'Paid From'}</label>
+              <select style={styles.select} value={rechargeForm.source} onChange={e => setRechargeForm(p => ({ ...p, source: e.target.value }))}>
+                <option>Cash</option>
+                <option>Bank Transfer</option>
+              </select>
+            </div>
+            <div>
+              <label style={styles.formLabel}>{isAr ? 'المرجع' : 'Reference'}</label>
+              <input style={styles.input} value={rechargeForm.reference} onChange={e => setRechargeForm(p => ({ ...p, reference: e.target.value }))} placeholder={isAr ? 'رقم التحويل...' : 'Transfer ref...'} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+              <button type="submit" style={{ ...styles.btn, ...styles.btnSuccess, width: '100%' }}>💵 {isAr ? 'إعادة شحن' : 'Recharge'}</button>
+            </div>
+          </form>
+        </div>
+
+        {(data.recharges || []).length > 0 && (
+          <div style={styles.card}>
+            <h3 style={styles.sectionTitle}>📋 {isAr ? 'سجل إعادة الشحن' : 'Recharge History'}</h3>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>📅 {isAr ? 'التاريخ' : 'Date'}</th>
+                    <th style={styles.th}>🛫 {isAr ? 'البوابة' : 'Portal'}</th>
+                    <th style={{ ...styles.th, textAlign: 'right' }}>💰 {isAr ? 'المبلغ' : 'Amount'}</th>
+                    <th style={styles.th}>💳 {isAr ? 'المصدر' : 'Source'}</th>
+                    <th style={styles.th}>🔖 {isAr ? 'المرجع' : 'Reference'}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(data.recharges || []).map(r => (
+                    <tr key={r.id}>
+                      <td style={styles.td}>{r.recharge_date}</td>
+                      <td style={styles.td}>{r.portals?.name || '-'}</td>
+                      <td style={{ ...styles.td, textAlign: 'right', fontWeight: 600, color: '#059669' }}>{fmt(r.amount)}</td>
+                      <td style={styles.td}>{r.source}</td>
+                      <td style={styles.td}>{r.reference || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         <div style={styles.card}>
           <div style={{ overflowX: 'auto' }}>
