@@ -3,6 +3,294 @@
 import { useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 
+
+// Shared styles/formatting helper — used by the main component and by
+// ExpensesView / StaffMistakesView (which are separate components so
+// that switching pages doesn't change how many hooks get called on a
+// shared instance — see the note near the bottom of this file).
+function useSalesHelpers(props) {
+  const { lang, theme, today } = props;
+  const isAr = lang === 'ar';
+  const isDark = theme === 'dark';
+  const styles = {
+    container: {
+      padding: '24px',
+      background: isDark ? '#0F172A' : '#F8FAFC',
+      minHeight: '100vh',
+      color: isDark ? '#E2E8F0' : '#0F172A',
+      transition: 'all 0.3s ease'
+    },
+    card: {
+      background: isDark ? '#1E293B' : '#FFFFFF',
+      borderRadius: '16px',
+      padding: '24px',
+      marginBottom: '20px',
+      border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
+      boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.2)' : '0 1px 3px rgba(0,0,0,0.06)'
+    },
+    header: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: '24px',
+      flexWrap: 'wrap',
+      gap: '12px'
+    },
+    title: {
+      fontSize: '24px',
+      fontWeight: 700,
+      color: '#1E3A8A',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      margin: 0
+    },
+    searchBox: {
+      display: 'flex',
+      gap: '10px',
+      alignItems: 'center',
+      flexWrap: 'wrap'
+    },
+    input: {
+      padding: '10px 16px',
+      background: isDark ? '#0F172A' : '#F1F5F9',
+      border: isDark ? '1px solid #475569' : '1px solid #E2E8F0',
+      borderRadius: '10px',
+      color: isDark ? '#E2E8F0' : '#1E293B',
+      fontSize: '14px',
+      outline: 'none',
+      minWidth: '180px',
+      transition: 'all 0.2s'
+    },
+    select: {
+      padding: '10px 16px',
+      background: isDark ? '#0F172A' : '#F1F5F9',
+      border: isDark ? '1px solid #475569' : '1px solid #E2E8F0',
+      borderRadius: '10px',
+      color: isDark ? '#E2E8F0' : '#1E293B',
+      fontSize: '14px',
+      outline: 'none'
+    },
+    textarea: {
+      padding: '10px 16px',
+      background: isDark ? '#0F172A' : '#F1F5F9',
+      border: isDark ? '1px solid #475569' : '1px solid #E2E8F0',
+      borderRadius: '10px',
+      color: isDark ? '#E2E8F0' : '#1E293B',
+      fontSize: '14px',
+      outline: 'none',
+      width: '100%',
+      minHeight: '80px',
+      resize: 'vertical',
+      fontFamily: 'inherit'
+    },
+    btn: {
+      padding: '10px 20px',
+      borderRadius: '10px',
+      border: 'none',
+      cursor: 'pointer',
+      fontWeight: 600,
+      fontSize: '13px',
+      transition: 'all 0.2s',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '6px'
+    },
+    btnPrimary: {
+      background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+      color: '#fff',
+      boxShadow: '0 2px 8px rgba(37, 99, 235, 0.2)'
+    },
+    btnSuccess: {
+      background: 'linear-gradient(135deg, #059669, #047857)',
+      color: '#fff',
+      boxShadow: '0 2px 8px rgba(5, 150, 105, 0.2)'
+    },
+    btnDanger: {
+      background: 'linear-gradient(135deg, #DC2626, #B91C1C)',
+      color: '#fff',
+      boxShadow: '0 2px 8px rgba(220, 38, 38, 0.2)'
+    },
+    btnWarning: {
+      background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+      color: '#fff',
+      boxShadow: '0 2px 8px rgba(245, 158, 11, 0.2)'
+    },
+    btnGhost: {
+      background: 'transparent',
+      border: isDark ? '1px solid #475569' : '1px solid #E2E8F0',
+      color: isDark ? '#94A3B8' : '#64748B'
+    },
+    btnInfo: {
+      background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+      color: '#fff',
+      boxShadow: '0 2px 8px rgba(139, 92, 246, 0.2)'
+    },
+    table: {
+      width: '100%',
+      borderCollapse: 'collapse',
+      fontSize: '13px'
+    },
+    th: {
+      padding: '12px 16px',
+      background: isDark ? '#0F172A' : '#F8FAFC',
+      color: isDark ? '#FBBF24' : '#1E293B',
+      textAlign: 'left',
+      fontWeight: 600,
+      fontSize: '11px',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px',
+      borderBottom: isDark ? '2px solid #334155' : '2px solid #E2E8F0'
+    },
+    td: {
+      padding: '12px 16px',
+      borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
+      color: isDark ? '#CBD5E1' : '#1E293B'
+    },
+    tdRight: {
+      padding: '12px 16px',
+      borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
+      color: isDark ? '#CBD5E1' : '#1E293B',
+      textAlign: 'right',
+      fontWeight: 600
+    },
+    tdCenter: {
+      padding: '12px 16px',
+      borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
+      color: isDark ? '#CBD5E1' : '#1E293B',
+      textAlign: 'center'
+    },
+    badge: {
+      padding: '4px 12px',
+      borderRadius: '20px',
+      fontSize: '11px',
+      fontWeight: 600,
+      display: 'inline-block'
+    },
+    badgePaid: {
+      background: '#D1FAE5',
+      color: '#065F46'
+    },
+    badgeUnpaid: {
+      background: '#FEF3C7',
+      color: '#92400E'
+    },
+    badgeRefunded: {
+      background: '#FEE2E2',
+      color: '#991B1B'
+    },
+    statsGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+      gap: '16px',
+      marginBottom: '24px'
+    },
+    statCard: {
+      background: isDark ? 'linear-gradient(135deg, #1E293B, #0F172A)' : '#FFFFFF',
+      padding: '20px',
+      borderRadius: '12px',
+      border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
+      boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.2)' : '0 1px 3px rgba(0,0,0,0.06)'
+    },
+    statLabel: {
+      fontSize: '12px',
+      color: '#94A3B8',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px',
+      fontWeight: 600
+    },
+    statValue: {
+      fontSize: '24px',
+      fontWeight: 700,
+      color: '#1E3A8A',
+      marginTop: '4px'
+    },
+    pagination: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: '16px',
+      paddingTop: '16px',
+      borderTop: isDark ? '1px solid #334155' : '1px solid #E2E8F0'
+    },
+    pageBtn: {
+      padding: '8px 16px',
+      background: isDark ? '#1E293B' : '#FFFFFF',
+      border: isDark ? '1px solid #475569' : '1px solid #E2E8F0',
+      borderRadius: '8px',
+      color: isDark ? '#E2E8F0' : '#1E293B',
+      cursor: 'pointer',
+      transition: 'all 0.2s'
+    },
+    actionsCell: {
+      display: 'flex',
+      gap: '4px',
+      flexWrap: 'wrap',
+      justifyContent: 'center'
+    },
+    actionBtn: {
+      padding: '6px 10px',
+      borderRadius: '8px',
+      border: 'none',
+      cursor: 'pointer',
+      fontSize: '12px',
+      fontWeight: 600,
+      transition: 'all 0.2s',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '4px'
+    },
+    formRow: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+      gap: '15px'
+    },
+    formLabel: {
+      display: 'block',
+      marginBottom: '5px',
+      color: isDark ? '#94A3B8' : '#64748B',
+      fontSize: '13px',
+      fontWeight: 600
+    },
+    sectionTitle: {
+      color: '#FBBF24',
+      fontSize: '15px',
+      fontWeight: 700,
+      margin: '0 0 15px',
+      paddingBottom: '10px',
+      borderBottom: isDark ? '1px solid #334155' : '1px solid #E2E8F0'
+    },
+    emptyState: {
+      textAlign: 'center',
+      padding: '60px 20px',
+      color: '#64748B'
+    },
+    emptyIcon: {
+      fontSize: '60px',
+      marginBottom: '15px'
+    },
+    tabBtn: {
+      padding: '10px 20px',
+      borderRadius: '8px',
+      border: 'none',
+      cursor: 'pointer',
+      fontWeight: 600,
+      background: isDark ? '#334155' : '#E2E8F0',
+      color: isDark ? '#94A3B8' : '#64748B',
+      transition: 'all 0.2s'
+    },
+    tabBtnActive: {
+      background: 'linear-gradient(135deg, #1E3A8A, #2563EB)',
+      color: 'white',
+      boxShadow: '0 4px 6px rgba(37, 99, 235, 0.3)'
+    }
+  };
+
+  const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
+
+  return { styles, fmt, today, isAr, isDark };
+}
+
 export default function ERPViewsSales(props) {
   const {
     page, data, tr, modal, setModal, setPage,
@@ -1640,320 +1928,7 @@ export default function ERPViewsSales(props) {
   // ============================================================
   // EXPENSES – COMPLETE FIXED
   // ============================================================
-  if (page === 'expenses') {
-    const [expFormLocal, setExpFormLocal] = useState({
-      expense_type: 'Office Expense',
-      payment_mode: 'Cash',
-      description: '',
-      expense_date: today,
-      vendor_name: '',
-      items: [{ name: '', qty: 1, price: 0 }],
-      approval_status: 'Approved'
-    });
-    const [editingExpId, setEditingExpId] = useState(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [dateFilter, setDateFilter] = useState('');
-
-    const handleAddExpItemLocal = () => {
-      setExpFormLocal(prev => ({
-        ...prev,
-        items: [...prev.items, { name: '', qty: 1, price: 0 }]
-      }));
-    };
-    const handleRemoveExpItemLocal = (i) => {
-      setExpFormLocal(prev => ({
-        ...prev,
-        items: prev.items.filter((_, idx) => idx !== i)
-      }));
-    };
-    const handleExpItemChangeLocal = (i, field, val) => {
-      setExpFormLocal(prev => {
-        const items = [...prev.items];
-        items[i] = { ...items[i], [field]: field === 'price' || field === 'qty' ? parseFloat(val) || 0 : val };
-        return { ...prev, items };
-      });
-    };
-
-    const handleExpenseSubmit = async (e) => {
-      e.preventDefault();
-      const totalAmount = expFormLocal.items.reduce((s, item) => s + ((parseFloat(item.qty) || 1) * (parseFloat(item.price) || 0)), 0);
-      if (totalAmount <= 0) {
-        showToast?.(isAr ? '⚠️ कम से कम एक आइटम डालें' : '⚠️ Please add at least one item');
-        return;
-      }
-
-      try {
-        const payload = {
-          expense_date: expFormLocal.expense_date,
-          expense_type: expFormLocal.expense_type,
-          description: expFormLocal.description,
-          payment_mode: expFormLocal.payment_mode,
-          vendor_name: expFormLocal.vendor_name,
-          amount: totalAmount,
-          total_amount: totalAmount,
-          items: expFormLocal.items,
-          approval_status: expFormLocal.approval_status,
-          tenant_id: userProfile?.tenant_id
-        };
-
-        let result;
-        if (editingExpId) {
-          const { data: up, error } = await supabase
-            .from('expenses')
-            .update(payload)
-            .eq('id', editingExpId)
-            .select()
-            .single();
-          if (error) throw error;
-          result = up;
-          setData(prev => ({
-            ...prev,
-            expenses: prev.expenses.map(ex => ex.id === editingExpId ? up : ex)
-          }));
-          showToast?.(isAr ? '✅ अपडेट हो गया' : '✅ Updated!');
-          setEditingExpId(null);
-        } else {
-          const { data: nExp, error } = await supabase
-            .from('expenses')
-            .insert([payload])
-            .select()
-            .single();
-          if (error) throw error;
-          result = nExp;
-          // Automatically move real money for this expense — Cash/Bank
-          // out — the same way invoices, refunds, and transfers already
-          // do, so expenses actually affect your balances instead of
-          // just being a record with no financial effect.
-          let newCbEntry = null;
-          if (payload.payment_mode === 'Cash' || payload.payment_mode === 'Bank Transfer') {
-            const cbType = payload.payment_mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
-            const { data: cb } = await supabase.from('cashbook').insert([{
-              trans_date: payload.expense_date || today, type: cbType,
-              description: `Expense: ${payload.description || payload.expense_type}`,
-              amount: totalAmount, tenant_id: userProfile?.tenant_id, reference_id: nExp.id
-            }]).select().single();
-            newCbEntry = cb;
-          }
-          setData(prev => ({
-            ...prev,
-            expenses: [nExp, ...prev.expenses],
-            cashbook: newCbEntry ? [newCbEntry, ...prev.cashbook] : prev.cashbook
-          }));
-          showToast?.(isAr ? '✅ खर्चा जोड़ा गया' : '✅ Expense added!');
-        }
-
-        setExpFormLocal({
-          expense_type: 'Office Expense',
-          payment_mode: 'Cash',
-          description: '',
-          expense_date: today,
-          vendor_name: '',
-          items: [{ name: '', qty: 1, price: 0 }],
-          approval_status: 'Approved'
-        });
-        fetchAll?.();
-      } catch (err) {
-        showToast?.(isAr ? '❌ त्रुटि: ' + err.message : '❌ Error: ' + err.message);
-      }
-    };
-
-    const handleDeleteExpenseLocal = async (exp) => {
-      if (!confirm(isAr ? 'क्या आप इस खर्च को हटाना चाहते हैं?' : 'Delete this expense?')) return;
-      try {
-        await supabase.from('expenses').delete().eq('id', exp.id);
-        setData(prev => ({
-          ...prev,
-          expenses: prev.expenses.filter(ex => ex.id !== exp.id)
-        }));
-        showToast?.(isAr ? '✅ हटा दिया' : '✅ Deleted');
-      } catch (err) {
-        showToast?.(isAr ? '❌ त्रुटि: ' + err.message : '❌ Error: ' + err.message);
-      }
-    };
-
-    const handlePreviewExpense = (exp) => {
-      const html = getExpenseHTML?.(exp, data.settings, lang);
-      if (!html) return showToast?.(isAr ? '❌ HTML नहीं बना' : '❌ HTML not generated');
-      setPreviewHTML?.(html);
-      setModal?.({ type: 'preview', data: exp });
-    };
-
-    const handleDownloadExpensePDF = async (exp) => {
-      const html = getExpenseHTML?.(exp, data.settings, lang);
-      if (!html) return showToast?.(isAr ? '❌ HTML नहीं बना' : '❌ HTML not generated');
-      await downloadPDF?.(html, `Expense_${exp.id || 'voucher'}.pdf`);
-    };
-
-    const handleEditExpense = (exp) => {
-      setEditingExpId(exp.id);
-      setExpFormLocal({
-        expense_type: exp.expense_type || 'Office Expense',
-        payment_mode: exp.payment_mode || 'Cash',
-        description: exp.description || '',
-        expense_date: exp.expense_date || today,
-        vendor_name: exp.vendor_name || '',
-        items: exp.items || [{ name: '', qty: 1, price: 0 }],
-        approval_status: exp.approval_status || 'Approved'
-      });
-    };
-
-    const filtered = (data.expenses || []).filter(e =>
-      !searchTerm ||
-      e.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      e.expense_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      e.vendor_name?.toLowerCase().includes(searchTerm.toLowerCase())
-    ).filter(e => !dateFilter || e.expense_date === dateFilter);
-
-    const totalExp = filtered.reduce((s, e) => s + (e.amount || 0), 0);
-
-    return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>💸 {t('expenses', 'Expenses')}</h1>
-          <div style={styles.searchBox}>
-            <input
-              style={styles.input}
-              placeholder={isAr ? '🔍 खर्चा खोजें...' : '🔍 Search expenses...'}
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
-            <input
-              type="date"
-              style={styles.input}
-              value={dateFilter}
-              onChange={e => setDateFilter(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div style={styles.statsGrid}>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>💸 {isAr ? 'कुल खर्च' : 'Total Expenses'}</div>
-            <div style={{ ...styles.statValue, color: '#EF4444' }}>{fmt(totalExp)}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>📄 {isAr ? 'संख्या' : 'Count'}</div>
-            <div style={styles.statValue}>{filtered.length}</div>
-          </div>
-        </div>
-
-        <div style={styles.card}>
-          <h3 style={styles.sectionTitle}>{editingExpId ? '✏️ ' + (isAr ? 'संपादित करें' : 'Edit') : '📝 ' + (isAr ? 'नया खर्चा' : 'Add New Expense')}</h3>
-          <form onSubmit={handleExpenseSubmit} style={styles.formRow}>
-            <div>
-              <label style={styles.formLabel}>{isAr ? 'तारीख' : 'Date'}</label>
-              <input type="date" style={styles.input} value={expFormLocal.expense_date} onChange={e => setExpFormLocal({ ...expFormLocal, expense_date: e.target.value })} required />
-            </div>
-            <div>
-              <label style={styles.formLabel}>{isAr ? 'प्रकार' : 'Type'}</label>
-              <select style={styles.select} value={expFormLocal.expense_type} onChange={e => setExpFormLocal({ ...expFormLocal, expense_type: e.target.value })}>
-                <option>Office Expense</option>
-                <option>Travel Expense</option>
-                <option>Supplies</option>
-                <option>Utilities</option>
-                <option>Rent</option>
-                <option>Salary</option>
-                <option>Other</option>
-              </select>
-            </div>
-            <div>
-              <label style={styles.formLabel}>{isAr ? 'विक्रेता' : 'Vendor'}</label>
-              <input style={styles.input} value={expFormLocal.vendor_name} onChange={e => setExpFormLocal({ ...expFormLocal, vendor_name: e.target.value })} />
-            </div>
-            <div>
-              <label style={styles.formLabel}>{isAr ? 'भुगतान विधि' : 'Payment'}</label>
-              <select style={styles.select} value={expFormLocal.payment_mode} onChange={e => setExpFormLocal({ ...expFormLocal, payment_mode: e.target.value })}>
-                <option>Cash</option>
-                <option>Bank Transfer</option>
-                <option>Card</option>
-              </select>
-            </div>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={styles.formLabel}>{isAr ? 'विवरण' : 'Description'}</label>
-              <input style={styles.input} value={expFormLocal.description} onChange={e => setExpFormLocal({ ...expFormLocal, description: e.target.value })} />
-            </div>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={styles.formLabel}>{isAr ? 'आइटम' : 'Items'}</label>
-              {expFormLocal.items.map((item, idx) => (
-                <div key={idx} style={{ display: 'flex', gap: '10px', marginBottom: '8px', alignItems: 'center' }}>
-                  <input style={{ ...styles.input, flex: 2 }} placeholder={isAr ? 'आइटम नाम' : 'Item name'} value={item.name} onChange={e => handleExpItemChangeLocal(idx, 'name', e.target.value)} />
-                  <input type="number" style={{ ...styles.input, flex: 1 }} placeholder={isAr ? 'मात्रा' : 'Qty'} value={item.qty} onChange={e => handleExpItemChangeLocal(idx, 'qty', e.target.value)} min="1" />
-                  <input type="number" step="0.01" style={{ ...styles.input, flex: 1 }} placeholder={isAr ? 'कीमत' : 'Price'} value={item.price} onChange={e => handleExpItemChangeLocal(idx, 'price', e.target.value)} min="0" />
-                  {expFormLocal.items.length > 1 && (
-                    <button type="button" style={{ ...styles.btn, ...styles.btnDanger, padding: '6px 12px' }} onClick={() => handleRemoveExpItemLocal(idx)}>✕</button>
-                  )}
-                </div>
-              ))}
-              <button type="button" style={{ ...styles.btn, ...styles.btnGhost, padding: '6px 12px' }} onClick={handleAddExpItemLocal}>
-                ➕ {isAr ? 'आइटम जोड़ें' : 'Add Item'}
-              </button>
-              <div style={{ marginTop: '10px', padding: '10px', background: isDark ? '#0F172A' : '#F1F5F9', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontWeight: 600 }}>{isAr ? 'कुल' : 'Total'}</span>
-                <span style={{ fontWeight: 700, color: '#059669' }}>
-                  {expFormLocal.items.reduce((s, item) => s + ((parseFloat(item.qty) || 1) * (parseFloat(item.price) || 0)), 0).toFixed(2)} SAR
-                </span>
-              </div>
-            </div>
-            <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px' }}>
-              <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, padding: '12px 30px' }}>
-                {editingExpId ? '💾 ' + (isAr ? 'अपडेट करें' : 'Update') : '✅ ' + (isAr ? 'खर्चा जोड़ें' : 'Add Expense')}
-              </button>
-              {editingExpId && (
-                <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setEditingExpId(null); setExpFormLocal({ expense_type: 'Office Expense', payment_mode: 'Cash', description: '', expense_date: today, vendor_name: '', items: [{ name: '', qty: 1, price: 0 }], approval_status: 'Approved' }); }}>
-                  ✕ {isAr ? 'रद्द करें' : 'Cancel'}
-                </button>
-              )}
-            </div>
-          </form>
-        </div>
-
-        <div style={styles.card}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>📅 Date</th>
-                  <th style={styles.th}>📋 Type</th>
-                  <th style={styles.th}>🏢 Vendor</th>
-                  <th style={styles.th}>📝 Description</th>
-                  <th style={styles.th}>💳 Payment</th>
-                  <th style={{ ...styles.th, textAlign: 'right' }}>💰 Amount</th>
-                  <th style={{ ...styles.th, textAlign: 'center' }}>⚡ Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(e => (
-                  <tr key={e.id}>
-                    <td style={styles.td}>{e.expense_date || '-'}</td>
-                    <td style={styles.td}>{e.expense_type || '-'}</td>
-                    <td style={styles.td}>{e.vendor_name || '-'}</td>
-                    <td style={styles.td}>{e.description || '-'}</td>
-                    <td style={styles.td}>{e.payment_mode || 'Cash'}</td>
-                    <td style={{ ...styles.tdRight, color: '#EF4444' }}>{fmt(e.amount)}</td>
-                    <td style={styles.tdCenter}>
-                      <div style={styles.actionsCell}>
-                        <button style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }} onClick={() => handlePreviewExpense(e)} title={isAr ? 'पूर्वावलोकन' : 'Preview'}>👁️</button>
-                        <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleDownloadExpensePDF(e)} title={isAr ? 'डाउनलोड' : 'Download'}>⬇️</button>
-                        <button style={{ ...styles.actionBtn, background: '#FEF3C7', color: '#92400E' }} onClick={() => handleEditExpense(e)} title={isAr ? 'संपादित करें' : 'Edit'}>✏️</button>
-                        <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDeleteExpenseLocal(e)} title={isAr ? 'हटाएं' : 'Delete'}>🗑️</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan="7" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
-                      {isAr ? 'कोई खर्चा नहीं' : 'No expenses found'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (page === 'expenses') return <ExpensesView {...props} />;
 
   // ============================================================
   // CREDIT
@@ -2010,258 +1985,7 @@ export default function ERPViewsSales(props) {
   // ============================================================
   // STAFF MISTAKES
   // ============================================================
-  if (page === 'staff_mistakes') {
-    const [mistakeForm, setMistakeForm] = useState({
-      employee_id: '',
-      old_ticket_no: '',
-      new_ticket_no: '',
-      loss_amount: 0,
-      paid_by_employee: false,
-      reason: '',
-      date: today
-    });
-    const [editingId, setEditingId] = useState(null);
-    const [searchTerm, setSearchTerm] = useState('');
-
-    const handleMistakeSubmit = async (e) => {
-      e.preventDefault();
-      try {
-        const payload = {
-          ...mistakeForm,
-          tenant_id: userProfile?.tenant_id,
-          loss_amount: parseFloat(mistakeForm.loss_amount) || 0
-        };
-
-        let result;
-        if (editingId) {
-          const { data: up, error } = await supabase
-            .from('staff_mistakes')
-            .update(payload)
-            .eq('id', editingId)
-            .select('*, employees(name)')
-            .single();
-          if (error) throw error;
-          result = up;
-          setData(prev => ({
-            ...prev,
-            staffMistakes: prev.staffMistakes.map(m => m.id === editingId ? up : m)
-          }));
-          showToast?.(isAr ? '✅ अपडेट हो गया' : '✅ Updated!');
-          setEditingId(null);
-        } else {
-          const { data: newM, error } = await supabase
-            .from('staff_mistakes')
-            .insert([payload])
-            .select('*, employees(name)')
-            .single();
-          if (error) throw error;
-          result = newM;
-          setData(prev => ({
-            ...prev,
-            staffMistakes: [newM, ...(prev.staffMistakes || [])]
-          }));
-          showToast?.(isAr ? '✅ मिस्टेक लॉग हो गया' : '✅ Mistake Logged!');
-        }
-
-        setMistakeForm({
-          employee_id: '',
-          old_ticket_no: '',
-          new_ticket_no: '',
-          loss_amount: 0,
-          paid_by_employee: false,
-          reason: '',
-          date: today
-        });
-        fetchAll?.();
-      } catch (err) {
-        showToast?.(isAr ? '❌ त्रुटि: ' + err.message : '❌ Error: ' + err.message);
-      }
-    };
-
-    const handlePreviewMistakeLocal = (m) => {
-      const html = getMistakeHTML?.(m, data.settings, lang);
-      if (!html) return showToast?.(isAr ? '❌ HTML नहीं बना' : '❌ HTML not generated');
-      setPreviewHTML?.(html);
-      setModal?.({ type: 'preview', data: m });
-    };
-
-    const handleDownloadMistakePDF = async (m) => {
-      const html = getMistakeHTML?.(m, data.settings, lang);
-      if (!html) return showToast?.(isAr ? '❌ HTML नहीं बना' : '❌ HTML not generated');
-      await downloadPDF?.(html, `Mistake_${m.id || 'voucher'}.pdf`);
-    };
-
-    const handleDeleteMistakeLocal = async (m) => {
-      if (!confirm(isAr ? 'क्या आप हटाना चाहते हैं?' : 'Delete?')) return;
-      try {
-        await supabase.from('staff_mistakes').delete().eq('id', m.id);
-        setData(prev => ({
-          ...prev,
-          staffMistakes: prev.staffMistakes.filter(x => x.id !== m.id)
-        }));
-        showToast?.(isAr ? '✅ हटा दिया' : '✅ Deleted');
-      } catch (err) {
-        showToast?.(isAr ? '❌ त्रुटि: ' + err.message : '❌ Error: ' + err.message);
-      }
-    };
-
-    const handleEditMistake = (m) => {
-      setEditingId(m.id);
-      setMistakeForm({
-        employee_id: m.employee_id || '',
-        old_ticket_no: m.old_ticket_no || '',
-        new_ticket_no: m.new_ticket_no || '',
-        loss_amount: m.loss_amount || 0,
-        paid_by_employee: m.paid_by_employee || false,
-        reason: m.reason || '',
-        date: m.date || today
-      });
-    };
-
-    const totalLoss = (data.staffMistakes || []).reduce((s, m) => s + (m.loss_amount || 0), 0);
-    const paidByEmp = (data.staffMistakes || []).filter(m => m.paid_by_employee).reduce((s, m) => s + (m.loss_amount || 0), 0);
-
-    const filteredMistakes = (data.staffMistakes || []).filter(m =>
-      !searchTerm ||
-      m.employees?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.old_ticket_no?.includes(searchTerm) ||
-      m.new_ticket_no?.includes(searchTerm)
-    );
-
-    return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>⚠️ {t('staff_mistakes', 'Staff Mistakes')}</h1>
-          <div style={styles.searchBox}>
-            <input
-              style={styles.input}
-              placeholder={isAr ? '🔍 खोजें...' : '🔍 Search...'}
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div style={styles.statsGrid}>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>⚠️ {isAr ? 'कुल मिस्टेक' : 'Total Mistakes'}</div>
-            <div style={styles.statValue}>{data.staffMistakes?.length || 0}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>💰 {isAr ? 'कुल नुकसान' : 'Total Loss'}</div>
-            <div style={{ ...styles.statValue, color: '#EF4444' }}>{fmt(totalLoss)}</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={styles.statLabel}>✅ {isAr ? 'कर्मचारी द्वारा भुगतान' : 'Paid by Employee'}</div>
-            <div style={{ ...styles.statValue, color: '#059669' }}>{fmt(paidByEmp)}</div>
-          </div>
-        </div>
-
-        <div style={styles.card}>
-          <h3 style={styles.sectionTitle}>{editingId ? '✏️ ' + (isAr ? 'संपादित करें' : 'Edit') : '⚠️ ' + (isAr ? 'नई मिस्टेक लॉग करें' : 'Log New Mistake')}</h3>
-          <form onSubmit={handleMistakeSubmit} style={styles.formRow}>
-            <div>
-              <label style={styles.formLabel}>{isAr ? 'कर्मचारी' : 'Employee'}</label>
-              <select style={styles.select} value={mistakeForm.employee_id} onChange={e => setMistakeForm({ ...mistakeForm, employee_id: e.target.value })} required>
-                <option value="">{isAr ? 'चुनें' : 'Select'}</option>
-                {(data.employees || []).map(e => (
-                  <option key={e.id} value={e.id}>{e.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label style={styles.formLabel}>{isAr ? 'पुराना टिकट नं.' : 'Old Ticket No'}</label>
-              <input style={styles.input} value={mistakeForm.old_ticket_no} onChange={e => setMistakeForm({ ...mistakeForm, old_ticket_no: e.target.value })} />
-            </div>
-            <div>
-              <label style={styles.formLabel}>{isAr ? 'नया टिकट नं.' : 'New Ticket No'}</label>
-              <input style={styles.input} value={mistakeForm.new_ticket_no} onChange={e => setMistakeForm({ ...mistakeForm, new_ticket_no: e.target.value })} />
-            </div>
-            <div>
-              <label style={styles.formLabel}>{isAr ? 'नुकसान (SAR)' : 'Loss Amount (SAR)'}</label>
-              <input type="number" step="0.01" style={styles.input} value={mistakeForm.loss_amount} onChange={e => setMistakeForm({ ...mistakeForm, loss_amount: e.target.value })} required />
-            </div>
-            <div>
-              <label style={styles.formLabel}>{isAr ? 'कारण' : 'Reason'}</label>
-              <input style={styles.input} value={mistakeForm.reason} onChange={e => setMistakeForm({ ...mistakeForm, reason: e.target.value })} />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: isDark ? '#CBD5E1' : '#1E293B', fontSize: '13px' }}>
-                <input type="checkbox" checked={mistakeForm.paid_by_employee} onChange={e => setMistakeForm({ ...mistakeForm, paid_by_employee: e.target.checked })} />
-                {isAr ? 'वेतन से काटें' : 'Deduct from Salary'}
-              </label>
-            </div>
-            <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px' }}>
-              <button type="submit" style={{ ...styles.btn, ...styles.btnWarning, padding: '12px 30px' }}>
-                {editingId ? '💾 ' + (isAr ? 'अपडेट करें' : 'Update') : '⚠️ ' + (isAr ? 'लॉग करें' : 'Log Mistake')}
-              </button>
-              {editingId && (
-                <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setEditingId(null); setMistakeForm({ employee_id: '', old_ticket_no: '', new_ticket_no: '', loss_amount: 0, paid_by_employee: false, reason: '', date: today }); }}>
-                  ✕ {isAr ? 'रद्द करें' : 'Cancel'}
-                </button>
-              )}
-            </div>
-          </form>
-        </div>
-
-        <div style={styles.card}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>📅 Date</th>
-                  <th style={styles.th}>👤 Employee</th>
-                  <th style={styles.th}>🎫 Old Ticket</th>
-                  <th style={styles.th}>🎫 New Ticket</th>
-                  <th style={{ ...styles.th, textAlign: 'right' }}>💰 Loss</th>
-                  <th style={{ ...styles.th, textAlign: 'center' }}>✅ Paid by Emp?</th>
-                  <th style={{ ...styles.th, textAlign: 'center' }}>⚡ Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredMistakes.map(m => (
-                  <tr key={m.id} style={{ background: '#FFFBEB' }}>
-                    <td style={styles.td}>{m.date}</td>
-                    <td style={{ ...styles.td, fontWeight: 600 }}>{m.employees?.name || 'N/A'}</td>
-                    <td style={styles.td}>{m.old_ticket_no}</td>
-                    <td style={styles.td}>{m.new_ticket_no}</td>
-                    <td style={{ ...styles.tdRight, fontWeight: 'bold', color: '#EF4444' }}>{fmt(m.loss_amount)}</td>
-                    <td style={styles.tdCenter}>
-                      <span style={{
-                        padding: '4px 10px',
-                        borderRadius: '12px',
-                        fontSize: '11px',
-                        fontWeight: 'bold',
-                        color: m.paid_by_employee ? '#34D399' : '#94A3B8',
-                        background: m.paid_by_employee ? '#065F46' : '#1E293B'
-                      }}>
-                        {m.paid_by_employee ? (isAr ? 'हाँ' : 'Yes') : (isAr ? 'नहीं' : 'No')}
-                      </span>
-                    </td>
-                    <td style={styles.tdCenter}>
-                      <div style={styles.actionsCell}>
-                        <button style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }} onClick={() => handlePreviewMistakeLocal(m)} title={isAr ? 'पूर्वावलोकन' : 'Preview'}>👁️</button>
-                        <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleDownloadMistakePDF(m)} title={isAr ? 'डाउनलोड' : 'Download'}>⬇️</button>
-                        <button style={{ ...styles.actionBtn, background: '#FEF3C7', color: '#92400E' }} onClick={() => handleEditMistake(m)} title={isAr ? 'संपादित करें' : 'Edit'}>✏️</button>
-                        <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDeleteMistakeLocal(m)} title={isAr ? 'हटाएं' : 'Delete'}>🗑️</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {filteredMistakes.length === 0 && (
-                  <tr>
-                    <td colSpan="7" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
-                      {isAr ? 'कोई मिस्टेक नहीं' : 'No mistakes logged.'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (page === 'staff_mistakes') return <StaffMistakesView {...props} />;
 
   // ============================================================
   // AUDIT LOGS
@@ -2626,3 +2350,606 @@ export default function ERPViewsSales(props) {
 
   return null;
 }
+
+
+// ═══════════════════════════════════════════════════════════════════
+// Expenses and Staff Mistakes were previously `if (page === 'X') { }`
+// blocks sharing this same component instance with 12+ other pages
+// that call zero hooks of their own. Switching between, say, the
+// Invoice List and Expenses pages changed how many hooks got called
+// mid-life of the same component (0 vs 4) — a React Rules-of-Hooks
+// violation that surfaces as "Cannot read properties of undefined"
+// and other unpredictable crashes, "fixed" only by a full page reload
+// (a fresh mount only ever calls the hooks for whichever page loaded
+// first). Extracted both into their own components so React properly
+// mounts/unmounts them instead of reusing a mismatched hook list.
+// ═══════════════════════════════════════════════════════════════════
+
+function ExpensesView(props) {
+  const {
+    page, data, lang, tr, modal, setModal, setPage,
+    handleEditInvoice, handleDeleteInvoice, openPreview, openRefundModal,
+    handleQuickSettle, handleDownloadPDF, printInvoice, shareWhatsApp, shareEmail,
+    handleEditCust, handleDelete, handleEditCorp, handleEditCred, handleEditVend,
+    handleEditPkg, handleEditBrn, handleEditEmp, handleEditExp,
+    handleDeletePayroll, handleGenerateSlip, handlePreviewMistake, handleDeleteMistake,
+    handleAddEditUser, handleEditUser, handleDeleteUser, userForm, setUserForm,
+    editUserId, setEditUserId, handleTransfer, transferForm, setTransferForm,
+    handleAddEditPortal, portalForm, setPortalForm,
+    downloadPDF, getExpenseHTML, getMistakeHTML, fetchAll, setData, setPreviewHTML,
+    showToast, userProfile
+  } = props;
+  const isAr = lang === 'ar';
+  const isDark = props.theme === 'dark';
+  const { styles, fmt, today } = useSalesHelpers(props);
+  const [expFormLocal, setExpFormLocal] = useState({
+    expense_type: 'Office Expense',
+    payment_mode: 'Cash',
+    description: '',
+    expense_date: today,
+    vendor_name: '',
+    items: [{ name: '', qty: 1, price: 0 }],
+    approval_status: 'Approved'
+  });
+  const [editingExpId, setEditingExpId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
+
+  const handleAddExpItemLocal = () => {
+    setExpFormLocal(prev => ({
+      ...prev,
+      items: [...prev.items, { name: '', qty: 1, price: 0 }]
+    }));
+  };
+  const handleRemoveExpItemLocal = (i) => {
+    setExpFormLocal(prev => ({
+      ...prev,
+      items: prev.items.filter((_, idx) => idx !== i)
+    }));
+  };
+  const handleExpItemChangeLocal = (i, field, val) => {
+    setExpFormLocal(prev => {
+      const items = [...prev.items];
+      items[i] = { ...items[i], [field]: field === 'price' || field === 'qty' ? parseFloat(val) || 0 : val };
+      return { ...prev, items };
+    });
+  };
+
+  const handleExpenseSubmit = async (e) => {
+    e.preventDefault();
+    const totalAmount = expFormLocal.items.reduce((s, item) => s + ((parseFloat(item.qty) || 1) * (parseFloat(item.price) || 0)), 0);
+    if (totalAmount <= 0) {
+      showToast?.(isAr ? '⚠️ कम से कम एक आइटम डालें' : '⚠️ Please add at least one item');
+      return;
+    }
+
+    try {
+      const payload = {
+        expense_date: expFormLocal.expense_date,
+        expense_type: expFormLocal.expense_type,
+        description: expFormLocal.description,
+        payment_mode: expFormLocal.payment_mode,
+        vendor_name: expFormLocal.vendor_name,
+        amount: totalAmount,
+        total_amount: totalAmount,
+        items: expFormLocal.items,
+        approval_status: expFormLocal.approval_status,
+        tenant_id: userProfile?.tenant_id
+      };
+
+      let result;
+      if (editingExpId) {
+        const { data: up, error } = await supabase
+          .from('expenses')
+          .update(payload)
+          .eq('id', editingExpId)
+          .select()
+          .single();
+        if (error) throw error;
+        result = up;
+        setData(prev => ({
+          ...prev,
+          expenses: prev.expenses.map(ex => ex.id === editingExpId ? up : ex)
+        }));
+        showToast?.(isAr ? '✅ अपडेट हो गया' : '✅ Updated!');
+        setEditingExpId(null);
+      } else {
+        const { data: nExp, error } = await supabase
+          .from('expenses')
+          .insert([payload])
+          .select()
+          .single();
+        if (error) throw error;
+        result = nExp;
+        // Automatically move real money for this expense — Cash/Bank
+        // out — the same way invoices, refunds, and transfers already
+        // do, so expenses actually affect your balances instead of
+        // just being a record with no financial effect.
+        let newCbEntry = null;
+        if (payload.payment_mode === 'Cash' || payload.payment_mode === 'Bank Transfer') {
+          const cbType = payload.payment_mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
+          const { data: cb } = await supabase.from('cashbook').insert([{
+            trans_date: payload.expense_date || today, type: cbType,
+            description: `Expense: ${payload.description || payload.expense_type}`,
+            amount: totalAmount, tenant_id: userProfile?.tenant_id, reference_id: nExp.id
+          }]).select().single();
+          newCbEntry = cb;
+        }
+        setData(prev => ({
+          ...prev,
+          expenses: [nExp, ...prev.expenses],
+          cashbook: newCbEntry ? [newCbEntry, ...prev.cashbook] : prev.cashbook
+        }));
+        showToast?.(isAr ? '✅ खर्चा जोड़ा गया' : '✅ Expense added!');
+      }
+
+      setExpFormLocal({
+        expense_type: 'Office Expense',
+        payment_mode: 'Cash',
+        description: '',
+        expense_date: today,
+        vendor_name: '',
+        items: [{ name: '', qty: 1, price: 0 }],
+        approval_status: 'Approved'
+      });
+      fetchAll?.();
+    } catch (err) {
+      showToast?.(isAr ? '❌ त्रुटि: ' + err.message : '❌ Error: ' + err.message);
+    }
+  };
+
+  const handleDeleteExpenseLocal = async (exp) => {
+    if (!confirm(isAr ? 'क्या आप इस खर्च को हटाना चाहते हैं?' : 'Delete this expense?')) return;
+    try {
+      { const { error: _delErr1 } = await supabase.from('expenses').delete().eq('id', exp.id); if (_delErr1) throw new Error(_delErr1.message); }
+      setData(prev => ({
+        ...prev,
+        expenses: prev.expenses.filter(ex => ex.id !== exp.id)
+      }));
+      showToast?.(isAr ? '✅ हटा दिया' : '✅ Deleted');
+    } catch (err) {
+      showToast?.(isAr ? '❌ त्रुटि: ' + err.message : '❌ Error: ' + err.message);
+    }
+  };
+
+  const handlePreviewExpense = (exp) => {
+    const html = getExpenseHTML?.(exp, data.settings, lang);
+    if (!html) return showToast?.(isAr ? '❌ HTML नहीं बना' : '❌ HTML not generated');
+    setPreviewHTML?.(html);
+    setModal?.({ type: 'preview', data: exp });
+  };
+
+  const handleDownloadExpensePDF = async (exp) => {
+    const html = getExpenseHTML?.(exp, data.settings, lang);
+    if (!html) return showToast?.(isAr ? '❌ HTML नहीं बना' : '❌ HTML not generated');
+    await downloadPDF?.(html, `Expense_${exp.id || 'voucher'}.pdf`);
+  };
+
+  const handleEditExpense = (exp) => {
+    setEditingExpId(exp.id);
+    setExpFormLocal({
+      expense_type: exp.expense_type || 'Office Expense',
+      payment_mode: exp.payment_mode || 'Cash',
+      description: exp.description || '',
+      expense_date: exp.expense_date || today,
+      vendor_name: exp.vendor_name || '',
+      items: exp.items || [{ name: '', qty: 1, price: 0 }],
+      approval_status: exp.approval_status || 'Approved'
+    });
+  };
+
+  const filtered = (data.expenses || []).filter(e =>
+    !searchTerm ||
+    e.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    e.expense_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    e.vendor_name?.toLowerCase().includes(searchTerm.toLowerCase())
+  ).filter(e => !dateFilter || e.expense_date === dateFilter);
+
+  const totalExp = filtered.reduce((s, e) => s + (e.amount || 0), 0);
+
+  return (
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <h1 style={styles.title}>💸 {t('expenses', 'Expenses')}</h1>
+        <div style={styles.searchBox}>
+          <input
+            style={styles.input}
+            placeholder={isAr ? '🔍 खर्चा खोजें...' : '🔍 Search expenses...'}
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+          <input
+            type="date"
+            style={styles.input}
+            value={dateFilter}
+            onChange={e => setDateFilter(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div style={styles.statsGrid}>
+        <div style={styles.statCard}>
+          <div style={styles.statLabel}>💸 {isAr ? 'कुल खर्च' : 'Total Expenses'}</div>
+          <div style={{ ...styles.statValue, color: '#EF4444' }}>{fmt(totalExp)}</div>
+        </div>
+        <div style={styles.statCard}>
+          <div style={styles.statLabel}>📄 {isAr ? 'संख्या' : 'Count'}</div>
+          <div style={styles.statValue}>{filtered.length}</div>
+        </div>
+      </div>
+
+      <div style={styles.card}>
+        <h3 style={styles.sectionTitle}>{editingExpId ? '✏️ ' + (isAr ? 'संपादित करें' : 'Edit') : '📝 ' + (isAr ? 'नया खर्चा' : 'Add New Expense')}</h3>
+        <form onSubmit={handleExpenseSubmit} style={styles.formRow}>
+          <div>
+            <label style={styles.formLabel}>{isAr ? 'तारीख' : 'Date'}</label>
+            <input type="date" style={styles.input} value={expFormLocal.expense_date} onChange={e => setExpFormLocal({ ...expFormLocal, expense_date: e.target.value })} required />
+          </div>
+          <div>
+            <label style={styles.formLabel}>{isAr ? 'प्रकार' : 'Type'}</label>
+            <select style={styles.select} value={expFormLocal.expense_type} onChange={e => setExpFormLocal({ ...expFormLocal, expense_type: e.target.value })}>
+              <option>Office Expense</option>
+              <option>Travel Expense</option>
+              <option>Supplies</option>
+              <option>Utilities</option>
+              <option>Rent</option>
+              <option>Salary</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div>
+            <label style={styles.formLabel}>{isAr ? 'विक्रेता' : 'Vendor'}</label>
+            <input style={styles.input} value={expFormLocal.vendor_name} onChange={e => setExpFormLocal({ ...expFormLocal, vendor_name: e.target.value })} />
+          </div>
+          <div>
+            <label style={styles.formLabel}>{isAr ? 'भुगतान विधि' : 'Payment'}</label>
+            <select style={styles.select} value={expFormLocal.payment_mode} onChange={e => setExpFormLocal({ ...expFormLocal, payment_mode: e.target.value })}>
+              <option>Cash</option>
+              <option>Bank Transfer</option>
+              <option>Card</option>
+            </select>
+          </div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={styles.formLabel}>{isAr ? 'विवरण' : 'Description'}</label>
+            <input style={styles.input} value={expFormLocal.description} onChange={e => setExpFormLocal({ ...expFormLocal, description: e.target.value })} />
+          </div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={styles.formLabel}>{isAr ? 'आइटम' : 'Items'}</label>
+            {expFormLocal.items.map((item, idx) => (
+              <div key={idx} style={{ display: 'flex', gap: '10px', marginBottom: '8px', alignItems: 'center' }}>
+                <input style={{ ...styles.input, flex: 2 }} placeholder={isAr ? 'आइटम नाम' : 'Item name'} value={item.name} onChange={e => handleExpItemChangeLocal(idx, 'name', e.target.value)} />
+                <input type="number" style={{ ...styles.input, flex: 1 }} placeholder={isAr ? 'मात्रा' : 'Qty'} value={item.qty} onChange={e => handleExpItemChangeLocal(idx, 'qty', e.target.value)} min="1" />
+                <input type="number" step="0.01" style={{ ...styles.input, flex: 1 }} placeholder={isAr ? 'कीमत' : 'Price'} value={item.price} onChange={e => handleExpItemChangeLocal(idx, 'price', e.target.value)} min="0" />
+                {expFormLocal.items.length > 1 && (
+                  <button type="button" style={{ ...styles.btn, ...styles.btnDanger, padding: '6px 12px' }} onClick={() => handleRemoveExpItemLocal(idx)}>✕</button>
+                )}
+              </div>
+            ))}
+            <button type="button" style={{ ...styles.btn, ...styles.btnGhost, padding: '6px 12px' }} onClick={handleAddExpItemLocal}>
+              ➕ {isAr ? 'आइटम जोड़ें' : 'Add Item'}
+            </button>
+            <div style={{ marginTop: '10px', padding: '10px', background: isDark ? '#0F172A' : '#F1F5F9', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontWeight: 600 }}>{isAr ? 'कुल' : 'Total'}</span>
+              <span style={{ fontWeight: 700, color: '#059669' }}>
+                {expFormLocal.items.reduce((s, item) => s + ((parseFloat(item.qty) || 1) * (parseFloat(item.price) || 0)), 0).toFixed(2)} SAR
+              </span>
+            </div>
+          </div>
+          <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px' }}>
+            <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, padding: '12px 30px' }}>
+              {editingExpId ? '💾 ' + (isAr ? 'अपडेट करें' : 'Update') : '✅ ' + (isAr ? 'खर्चा जोड़ें' : 'Add Expense')}
+            </button>
+            {editingExpId && (
+              <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setEditingExpId(null); setExpFormLocal({ expense_type: 'Office Expense', payment_mode: 'Cash', description: '', expense_date: today, vendor_name: '', items: [{ name: '', qty: 1, price: 0 }], approval_status: 'Approved' }); }}>
+                ✕ {isAr ? 'रद्द करें' : 'Cancel'}
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
+
+      <div style={styles.card}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th style={styles.th}>📅 Date</th>
+                <th style={styles.th}>📋 Type</th>
+                <th style={styles.th}>🏢 Vendor</th>
+                <th style={styles.th}>📝 Description</th>
+                <th style={styles.th}>💳 Payment</th>
+                <th style={{ ...styles.th, textAlign: 'right' }}>💰 Amount</th>
+                <th style={{ ...styles.th, textAlign: 'center' }}>⚡ Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(e => (
+                <tr key={e.id}>
+                  <td style={styles.td}>{e.expense_date || '-'}</td>
+                  <td style={styles.td}>{e.expense_type || '-'}</td>
+                  <td style={styles.td}>{e.vendor_name || '-'}</td>
+                  <td style={styles.td}>{e.description || '-'}</td>
+                  <td style={styles.td}>{e.payment_mode || 'Cash'}</td>
+                  <td style={{ ...styles.tdRight, color: '#EF4444' }}>{fmt(e.amount)}</td>
+                  <td style={styles.tdCenter}>
+                    <div style={styles.actionsCell}>
+                      <button style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }} onClick={() => handlePreviewExpense(e)} title={isAr ? 'पूर्वावलोकन' : 'Preview'}>👁️</button>
+                      <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleDownloadExpensePDF(e)} title={isAr ? 'डाउनलोड' : 'Download'}>⬇️</button>
+                      <button style={{ ...styles.actionBtn, background: '#FEF3C7', color: '#92400E' }} onClick={() => handleEditExpense(e)} title={isAr ? 'संपादित करें' : 'Edit'}>✏️</button>
+                      <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDeleteExpenseLocal(e)} title={isAr ? 'हटाएं' : 'Delete'}>🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan="7" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
+                    {isAr ? 'कोई खर्चा नहीं' : 'No expenses found'}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );}
+
+function StaffMistakesView(props) {
+  const {
+    page, data, lang, tr, modal, setModal, setPage,
+    handleAddMistake, handlePreviewMistake, handleDeleteMistake,
+    showToast, userProfile
+  } = props;
+  const isAr = lang === 'ar';
+  const { styles, fmt, today } = useSalesHelpers(props);
+  const [mistakeForm, setMistakeForm] = useState({
+    employee_id: '',
+    old_ticket_no: '',
+    new_ticket_no: '',
+    loss_amount: 0,
+    paid_by_employee: false,
+    reason: '',
+    date: today
+  });
+  const [editingId, setEditingId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const handleMistakeSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        ...mistakeForm,
+        tenant_id: userProfile?.tenant_id,
+        loss_amount: parseFloat(mistakeForm.loss_amount) || 0
+      };
+
+      let result;
+      if (editingId) {
+        const { data: up, error } = await supabase
+          .from('staff_mistakes')
+          .update(payload)
+          .eq('id', editingId)
+          .select('*, employees(name)')
+          .single();
+        if (error) throw error;
+        result = up;
+        setData(prev => ({
+          ...prev,
+          staffMistakes: prev.staffMistakes.map(m => m.id === editingId ? up : m)
+        }));
+        showToast?.(isAr ? '✅ अपडेट हो गया' : '✅ Updated!');
+        setEditingId(null);
+      } else {
+        const { data: newM, error } = await supabase
+          .from('staff_mistakes')
+          .insert([payload])
+          .select('*, employees(name)')
+          .single();
+        if (error) throw error;
+        result = newM;
+        setData(prev => ({
+          ...prev,
+          staffMistakes: [newM, ...(prev.staffMistakes || [])]
+        }));
+        showToast?.(isAr ? '✅ मिस्टेक लॉग हो गया' : '✅ Mistake Logged!');
+      }
+
+      setMistakeForm({
+        employee_id: '',
+        old_ticket_no: '',
+        new_ticket_no: '',
+        loss_amount: 0,
+        paid_by_employee: false,
+        reason: '',
+        date: today
+      });
+      fetchAll?.();
+    } catch (err) {
+      showToast?.(isAr ? '❌ त्रुटि: ' + err.message : '❌ Error: ' + err.message);
+    }
+  };
+
+  const handlePreviewMistakeLocal = (m) => {
+    const html = getMistakeHTML?.(m, data.settings, lang);
+    if (!html) return showToast?.(isAr ? '❌ HTML नहीं बना' : '❌ HTML not generated');
+    setPreviewHTML?.(html);
+    setModal?.({ type: 'preview', data: m });
+  };
+
+  const handleDownloadMistakePDF = async (m) => {
+    const html = getMistakeHTML?.(m, data.settings, lang);
+    if (!html) return showToast?.(isAr ? '❌ HTML नहीं बना' : '❌ HTML not generated');
+    await downloadPDF?.(html, `Mistake_${m.id || 'voucher'}.pdf`);
+  };
+
+  const handleDeleteMistakeLocal = async (m) => {
+    if (!confirm(isAr ? 'क्या आप हटाना चाहते हैं?' : 'Delete?')) return;
+    try {
+      { const { error: _delErr2 } = await supabase.from('staff_mistakes').delete().eq('id', m.id); if (_delErr2) throw new Error(_delErr2.message); }
+      setData(prev => ({
+        ...prev,
+        staffMistakes: prev.staffMistakes.filter(x => x.id !== m.id)
+      }));
+      showToast?.(isAr ? '✅ हटा दिया' : '✅ Deleted');
+    } catch (err) {
+      showToast?.(isAr ? '❌ त्रुटि: ' + err.message : '❌ Error: ' + err.message);
+    }
+  };
+
+  const handleEditMistake = (m) => {
+    setEditingId(m.id);
+    setMistakeForm({
+      employee_id: m.employee_id || '',
+      old_ticket_no: m.old_ticket_no || '',
+      new_ticket_no: m.new_ticket_no || '',
+      loss_amount: m.loss_amount || 0,
+      paid_by_employee: m.paid_by_employee || false,
+      reason: m.reason || '',
+      date: m.date || today
+    });
+  };
+
+  const totalLoss = (data.staffMistakes || []).reduce((s, m) => s + (m.loss_amount || 0), 0);
+  const paidByEmp = (data.staffMistakes || []).filter(m => m.paid_by_employee).reduce((s, m) => s + (m.loss_amount || 0), 0);
+
+  const filteredMistakes = (data.staffMistakes || []).filter(m =>
+    !searchTerm ||
+    m.employees?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.old_ticket_no?.includes(searchTerm) ||
+    m.new_ticket_no?.includes(searchTerm)
+  );
+
+  return (
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <h1 style={styles.title}>⚠️ {t('staff_mistakes', 'Staff Mistakes')}</h1>
+        <div style={styles.searchBox}>
+          <input
+            style={styles.input}
+            placeholder={isAr ? '🔍 खोजें...' : '🔍 Search...'}
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div style={styles.statsGrid}>
+        <div style={styles.statCard}>
+          <div style={styles.statLabel}>⚠️ {isAr ? 'कुल मिस्टेक' : 'Total Mistakes'}</div>
+          <div style={styles.statValue}>{data.staffMistakes?.length || 0}</div>
+        </div>
+        <div style={styles.statCard}>
+          <div style={styles.statLabel}>💰 {isAr ? 'कुल नुकसान' : 'Total Loss'}</div>
+          <div style={{ ...styles.statValue, color: '#EF4444' }}>{fmt(totalLoss)}</div>
+        </div>
+        <div style={styles.statCard}>
+          <div style={styles.statLabel}>✅ {isAr ? 'कर्मचारी द्वारा भुगतान' : 'Paid by Employee'}</div>
+          <div style={{ ...styles.statValue, color: '#059669' }}>{fmt(paidByEmp)}</div>
+        </div>
+      </div>
+
+      <div style={styles.card}>
+        <h3 style={styles.sectionTitle}>{editingId ? '✏️ ' + (isAr ? 'संपादित करें' : 'Edit') : '⚠️ ' + (isAr ? 'नई मिस्टेक लॉग करें' : 'Log New Mistake')}</h3>
+        <form onSubmit={handleMistakeSubmit} style={styles.formRow}>
+          <div>
+            <label style={styles.formLabel}>{isAr ? 'कर्मचारी' : 'Employee'}</label>
+            <select style={styles.select} value={mistakeForm.employee_id} onChange={e => setMistakeForm({ ...mistakeForm, employee_id: e.target.value })} required>
+              <option value="">{isAr ? 'चुनें' : 'Select'}</option>
+              {(data.employees || []).map(e => (
+                <option key={e.id} value={e.id}>{e.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label style={styles.formLabel}>{isAr ? 'पुराना टिकट नं.' : 'Old Ticket No'}</label>
+            <input style={styles.input} value={mistakeForm.old_ticket_no} onChange={e => setMistakeForm({ ...mistakeForm, old_ticket_no: e.target.value })} />
+          </div>
+          <div>
+            <label style={styles.formLabel}>{isAr ? 'नया टिकट नं.' : 'New Ticket No'}</label>
+            <input style={styles.input} value={mistakeForm.new_ticket_no} onChange={e => setMistakeForm({ ...mistakeForm, new_ticket_no: e.target.value })} />
+          </div>
+          <div>
+            <label style={styles.formLabel}>{isAr ? 'नुकसान (SAR)' : 'Loss Amount (SAR)'}</label>
+            <input type="number" step="0.01" style={styles.input} value={mistakeForm.loss_amount} onChange={e => setMistakeForm({ ...mistakeForm, loss_amount: e.target.value })} required />
+          </div>
+          <div>
+            <label style={styles.formLabel}>{isAr ? 'कारण' : 'Reason'}</label>
+            <input style={styles.input} value={mistakeForm.reason} onChange={e => setMistakeForm({ ...mistakeForm, reason: e.target.value })} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: isDark ? '#CBD5E1' : '#1E293B', fontSize: '13px' }}>
+              <input type="checkbox" checked={mistakeForm.paid_by_employee} onChange={e => setMistakeForm({ ...mistakeForm, paid_by_employee: e.target.checked })} />
+              {isAr ? 'वेतन से काटें' : 'Deduct from Salary'}
+            </label>
+          </div>
+          <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px' }}>
+            <button type="submit" style={{ ...styles.btn, ...styles.btnWarning, padding: '12px 30px' }}>
+              {editingId ? '💾 ' + (isAr ? 'अपडेट करें' : 'Update') : '⚠️ ' + (isAr ? 'लॉग करें' : 'Log Mistake')}
+            </button>
+            {editingId && (
+              <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setEditingId(null); setMistakeForm({ employee_id: '', old_ticket_no: '', new_ticket_no: '', loss_amount: 0, paid_by_employee: false, reason: '', date: today }); }}>
+                ✕ {isAr ? 'रद्द करें' : 'Cancel'}
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
+
+      <div style={styles.card}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th style={styles.th}>📅 Date</th>
+                <th style={styles.th}>👤 Employee</th>
+                <th style={styles.th}>🎫 Old Ticket</th>
+                <th style={styles.th}>🎫 New Ticket</th>
+                <th style={{ ...styles.th, textAlign: 'right' }}>💰 Loss</th>
+                <th style={{ ...styles.th, textAlign: 'center' }}>✅ Paid by Emp?</th>
+                <th style={{ ...styles.th, textAlign: 'center' }}>⚡ Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredMistakes.map(m => (
+                <tr key={m.id} style={{ background: '#FFFBEB' }}>
+                  <td style={styles.td}>{m.date}</td>
+                  <td style={{ ...styles.td, fontWeight: 600 }}>{m.employees?.name || 'N/A'}</td>
+                  <td style={styles.td}>{m.old_ticket_no}</td>
+                  <td style={styles.td}>{m.new_ticket_no}</td>
+                  <td style={{ ...styles.tdRight, fontWeight: 'bold', color: '#EF4444' }}>{fmt(m.loss_amount)}</td>
+                  <td style={styles.tdCenter}>
+                    <span style={{
+                      padding: '4px 10px',
+                      borderRadius: '12px',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      color: m.paid_by_employee ? '#34D399' : '#94A3B8',
+                      background: m.paid_by_employee ? '#065F46' : '#1E293B'
+                    }}>
+                      {m.paid_by_employee ? (isAr ? 'हाँ' : 'Yes') : (isAr ? 'नहीं' : 'No')}
+                    </span>
+                  </td>
+                  <td style={styles.tdCenter}>
+                    <div style={styles.actionsCell}>
+                      <button style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }} onClick={() => handlePreviewMistakeLocal(m)} title={isAr ? 'पूर्वावलोकन' : 'Preview'}>👁️</button>
+                      <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleDownloadMistakePDF(m)} title={isAr ? 'डाउनलोड' : 'Download'}>⬇️</button>
+                      <button style={{ ...styles.actionBtn, background: '#FEF3C7', color: '#92400E' }} onClick={() => handleEditMistake(m)} title={isAr ? 'संपादित करें' : 'Edit'}>✏️</button>
+                      <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDeleteMistakeLocal(m)} title={isAr ? 'हटाएं' : 'Delete'}>🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filteredMistakes.length === 0 && (
+                <tr>
+                  <td colSpan="7" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
+                    {isAr ? 'कोई मिस्टेक नहीं' : 'No mistakes logged.'}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );}
