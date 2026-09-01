@@ -195,7 +195,17 @@ export default function useERPActions(state) {
   const handleDelete = async (table, id) => {
     if (!confirm(isAr ? 'क्या आप हटाना चाहते हैं?' : 'Delete?')) return;
     try {
-      await supabase.from(table).delete().eq('id', id);
+      // BUG: this call's result was never checked. Supabase does not
+      // throw on a failed delete (e.g. blocked by a foreign key
+      // constraint — a portal that still has invoices/expenses
+      // pointing at it, for example) — it just returns { error }. That
+      // meant a blocked delete silently did nothing in the database,
+      // while the UI removed the row from view and showed "Deleted!"
+      // anyway. Reloading the page (or anything that re-fetches data)
+      // would then bring the "deleted" row right back, which is
+      // exactly the "problem after delete" pattern being reported.
+      const { error } = await supabase.from(table).delete().eq('id', id);
+      if (error) throw new Error(error.message);
       setData(prev => ({
         ...prev,
         [table]: Array.isArray(prev[table]) ? prev[table].filter(i => i.id !== id) : []
@@ -203,7 +213,12 @@ export default function useERPActions(state) {
       showToast(isAr ? '✅ हटा दिया' : '✅ Deleted');
       await logAction(`Deleted from ${table}`);
     } catch (err) {
-      showToast('Error: ' + err.message);
+      showToast(
+        (isAr ? '❌ हटाने में विफल: ' : '❌ Delete failed: ') +
+        (err.message?.includes('foreign key')
+          ? (isAr ? 'यह रिकॉर्ड अन्य जगह उपयोग हो रहा है और हटाया नहीं जा सकता।' : 'This record is still referenced elsewhere and cannot be deleted.')
+          : err.message)
+      );
     }
   };
 
@@ -697,7 +712,7 @@ export default function useERPActions(state) {
   const handleDeleteExpense = async (exp) => {
     if (!confirm(isAr ? 'क्या आप इस खर्च को हटाना चाहते हैं?' : 'Delete this expense?')) return;
     try {
-      await supabase.from('expenses').delete().eq('id', exp.id);
+      { const { error: _delErr1 } = await supabase.from('expenses').delete().eq('id', exp.id); if (_delErr1) throw new Error(_delErr1.message); }
       setData(prev => ({
         ...prev,
         expenses: prev.expenses.filter(ex => ex.id !== exp.id)
@@ -1269,7 +1284,7 @@ Thank you for choosing us!`;
         }
         const cbs = data.cashbook?.filter(c => c.reference_id === inv.id || c.description?.includes(inv.invoice_no)) || [];
         for (const cb of cbs) await supabase.from('cashbook').delete().eq('id', cb.id);
-        await supabase.from('invoices').delete().eq('id', inv.id);
+        { const { error: _delErr2 } = await supabase.from('invoices').delete().eq('id', inv.id); if (_delErr2) throw new Error(_delErr2.message); }
         setData(prev => ({
           ...prev,
           invoices: prev.invoices.filter(i => i.id !== inv.id),
@@ -1304,8 +1319,7 @@ Thank you for choosing us!`;
         c.description?.includes('Credit Balance used for ' + inv.invoice_no)
       ) || [];
       for (const cb of cbs) await supabase.from('cashbook').delete().eq('id', cb.id);
-      await supabase.from('invoices').delete().eq('id', inv.id);
-
+      { const { error: _delErr3 } = await supabase.from('invoices').delete().eq('id', inv.id); if (_delErr3) throw new Error(_delErr3.message); }
       setData(prev => ({
         ...prev,
         invoices: prev.invoices.filter(i => i.id !== inv.id),
@@ -1727,7 +1741,7 @@ Thank you for choosing us!`;
   const handleDeleteMistake = async (m) => {
     if (!confirm(isAr ? 'क्या आप इस मिस्टेक को हटाना चाहते हैं?' : 'Delete this mistake?')) return;
     try {
-      await supabase.from('staff_mistakes').delete().eq('id', m.id);
+      { const { error: _delErr4 } = await supabase.from('staff_mistakes').delete().eq('id', m.id); if (_delErr4) throw new Error(_delErr4.message); }
       setData(prev => ({ ...prev, staffMistakes: prev.staffMistakes.filter(x => x.id !== m.id) }));
       showToast(isAr ? '✅ हटा दिया' : '✅ Deleted');
     } catch (err) {
@@ -1749,7 +1763,7 @@ Thank you for choosing us!`;
     try {
       const cbs = data.cashbook?.filter(c => c.reference_id === pay.id) || [];
       for (const cb of cbs) await supabase.from('cashbook').delete().eq('id', cb.id);
-      await supabase.from('payroll').delete().eq('id', pay.id);
+      { const { error: _delErr5 } = await supabase.from('payroll').delete().eq('id', pay.id); if (_delErr5) throw new Error(_delErr5.message); }
       setData(prev => ({
         ...prev,
         payroll: prev.payroll.filter(p => p.id !== pay.id),
@@ -1922,7 +1936,7 @@ Thank you for choosing us!`;
   const handleDeleteAdvance = async (adv) => {
     if (!confirm(isAr ? 'हटाएं?' : 'Delete?')) return;
     try {
-      await supabase.from('emp_advances').delete().eq('id', adv.id);
+      { const { error: _delErr6 } = await supabase.from('emp_advances').delete().eq('id', adv.id); if (_delErr6) throw new Error(_delErr6.message); }
       setData(prev => ({
         ...prev,
         empAdvances: prev.empAdvances.filter(a => a.id !== adv.id)
@@ -2016,7 +2030,7 @@ Thank you for choosing us!`;
   const handleDeleteTenant = async (id) => {
     if (!confirm(isAr ? 'क्या आप इस एजेंसी को हटाना चाहते हैं?' : 'Delete this Agency permanently?')) return;
     try {
-      await supabase.from('tenants').delete().eq('id', id);
+      { const { error: _delErr7 } = await supabase.from('tenants').delete().eq('id', id); if (_delErr7) throw new Error(_delErr7.message); }
       showToast(isAr ? '✅ एजेंसी हटा दी' : '✅ Agency Deleted');
       fetchAll();
     } catch (err) {
@@ -2195,7 +2209,7 @@ Thank you for choosing us!`;
   const handleDeleteUser = async (u) => {
     if (!confirm(`Delete user ${u.email}? This cannot be undone.`)) return;
     try {
-      await supabase.from('app_users').delete().eq('id', u.id);
+      { const { error: _delErr8 } = await supabase.from('app_users').delete().eq('id', u.id); if (_delErr8) throw new Error(_delErr8.message); }
       setData(prev => ({ ...prev, appUsers: prev.appUsers.filter(x => x.id !== u.id) }));
       showToast('User deleted');
     } catch (err) { showToast('Error: ' + err.message); }
