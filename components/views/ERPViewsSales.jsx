@@ -2,13 +2,9 @@
 
 import { useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
-import { getRechargeHTML } from '@/lib/invoiceHTML'; // ✅ Added for recharge slip
+import { getRechargeHTML } from '@/lib/invoiceHTML';
 
-
-// Shared styles/formatting helper — used by the main component and by
-// ExpensesView / StaffMistakesView (which are separate components so
-// that switching pages doesn't change how many hooks get called on a
-// shared instance — see the note near the bottom of this file).
+// Shared styles/formatting helper
 function useSalesHelpers(props) {
   const { lang, theme, today } = props;
   const isAr = lang === 'ar';
@@ -319,15 +315,18 @@ export default function ERPViewsSales(props) {
     contractMarkup, setContractMarkup, contractTerms, setContractTerms,
     downloadPDF, getExpenseHTML, getMistakeHTML, fetchAll, setData, setPreviewHTML,
     showToast, userProfile,
-    mistakeForm, setMistakeForm, // ✅ added for staff mistakes
-    rechargeForm, setRechargeForm, handleRecharge, // ✅ added for recharge
-    getInvoiceHTML, getRefundHTML // added for completeness
+    mistakeForm, setMistakeForm,
+    rechargeForm, setRechargeForm, handleRecharge,
+    getInvoiceHTML, getRefundHTML
   } = props;
 
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
 
-  // ===== STYLES (same as before – unchanged) =====
+  // Translation helper for main component
+  const t = (key, fallback) => tr?.[key] || fallback || key;
+
+  // ===== STYLES (same as before) =====
   const styles = {
     container: {
       padding: '24px',
@@ -603,7 +602,6 @@ export default function ERPViewsSales(props) {
   };
 
   const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
-  const t = (key, fallback) => tr?.[key] || fallback || key;
 
   // ===== FILTERED INVOICES =====
   const [searchTerm, setSearchTerm] = useState('');
@@ -1428,7 +1426,7 @@ export default function ERPViewsSales(props) {
               <select style={styles.select} value={rechargeForm.source} onChange={e => setRechargeForm(p => ({ ...p, source: e.target.value }))}>
                 <option>Cash</option>
                 <option>Bank Transfer</option>
-                <option>Investor</option> {/* ✅ Added Investor */}
+                <option>Investor</option>
               </select>
             </div>
             <div>
@@ -1505,7 +1503,6 @@ export default function ERPViewsSales(props) {
                     <td style={{ ...styles.tdRight, color: (p.current_balance || 0) < 1000 ? '#EF4444' : '#059669' }}>{fmt(p.current_balance)}</td>
                     <td style={styles.tdCenter}>
                       <div style={styles.actionsCell}>
-                        {/* ✅ Edit - opens modal */}
                         <button
                           style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }}
                           onClick={() => {
@@ -2457,14 +2454,12 @@ export default function ERPViewsSales(props) {
   return null;
 }
 
-
-// ═══════════════════════════════════════════════════════════════════
-// Expenses and Staff Mistakes – Extracted Components
-// ═══════════════════════════════════════════════════════════════════
-
+// ============================================================
+// ExpensesView Component (Fixed: added isDark and t)
+// ============================================================
 function ExpensesView(props) {
   const {
-    page, data, lang, tr, modal, setModal, setPage,
+    data, lang, tr, modal, setModal, setPage,
     handleEditInvoice, handleDeleteInvoice, openPreview, openRefundModal,
     handleQuickSettle, handleDownloadPDF, printInvoice, shareWhatsApp, shareEmail,
     handleEditCust, handleDelete, handleEditCorp, handleEditCred, handleEditVend,
@@ -2474,18 +2469,22 @@ function ExpensesView(props) {
     editUserId, setEditUserId, handleTransfer, transferForm, setTransferForm,
     handleAddEditPortal, portalForm, setPortalForm,
     downloadPDF, getExpenseHTML, getMistakeHTML, fetchAll, setData, setPreviewHTML,
-    showToast, userProfile
+    showToast, userProfile, theme, today
   } = props;
+
   const isAr = lang === 'ar';
-  const isDark = props.theme === 'dark';
-  const { styles, fmt, today } = useSalesHelpers(props);
+  const isDark = theme === 'dark';
+  const t = (key, fallback) => tr?.[key] || fallback || key;
+
+  const { styles, fmt } = useSalesHelpers({ lang, theme, today });
+
   const [expFormLocal, setExpFormLocal] = useState({
     expense_type: 'Office Expense',
     payment_mode: 'Cash',
     description: '',
     expense_date: today,
     vendor_name: '',
-    vendor_id: '',  // ✅ added vendor_id
+    vendor_id: '',
     items: [{ name: '', qty: 1, price: 0 }],
     approval_status: 'Approved'
   });
@@ -2528,7 +2527,7 @@ function ExpensesView(props) {
         description: expFormLocal.description,
         payment_mode: expFormLocal.payment_mode,
         vendor_name: expFormLocal.vendor_name,
-        vendor_id: expFormLocal.vendor_id || null, // ✅ added
+        vendor_id: expFormLocal.vendor_id || null,
         amount: totalAmount,
         total_amount: totalAmount,
         items: expFormLocal.items,
@@ -2630,7 +2629,7 @@ function ExpensesView(props) {
       description: exp.description || '',
       expense_date: exp.expense_date || today,
       vendor_name: exp.vendor_name || '',
-      vendor_id: exp.vendor_id || '', // ✅ added
+      vendor_id: exp.vendor_id || '',
       items: exp.items || [{ name: '', qty: 1, price: 0 }],
       approval_status: exp.approval_status || 'Approved'
     });
@@ -2800,24 +2799,27 @@ function ExpensesView(props) {
 }
 
 // ============================================================
-// STAFF MISTAKES VIEW (controlled form)
+// StaffMistakesView Component (Fixed: added isDark and t)
 // ============================================================
 function StaffMistakesView(props) {
   const {
-    page, data, lang, tr, modal, setModal, setPage,
+    data, lang, tr, modal, setModal, setPage,
     handleAddMistake, handlePreviewMistake, handleDeleteMistake,
     showToast, userProfile,
     setData, fetchAll, getMistakeHTML, setPreviewHTML, downloadPDF,
-    mistakeForm, setMistakeForm // ✅ added
+    mistakeForm, setMistakeForm, theme, today
   } = props;
+
   const isAr = lang === 'ar';
-  const { styles, fmt, today } = useSalesHelpers(props);
+  const isDark = theme === 'dark';
+  const t = (key, fallback) => tr?.[key] || fallback || key;
+
+  const { styles, fmt } = useSalesHelpers({ lang, theme, today });
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleMistakeSubmit = async (e) => {
     e.preventDefault();
-    // Use the passed mistakeForm and handleAddMistake
     await handleAddMistake(e);
   };
 
