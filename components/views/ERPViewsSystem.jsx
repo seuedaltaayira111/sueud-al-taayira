@@ -25,6 +25,9 @@ export default function ERPViewsSystem(props) {
 
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
+  const t = (key, fallback) => tr?.[key] || fallback || key;
+  const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
+
   const [reportTab, setReportTab] = useState('sales');
   const [repDate, setRepDate] = useState({ from: '', to: '' });
   const [statementType, setStatementType] = useState('sales');
@@ -262,8 +265,6 @@ export default function ERPViewsSystem(props) {
     }
   };
 
-  const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
-
   // ============================================================
   // PROFITABILITY ANALYZER
   // ============================================================
@@ -396,7 +397,7 @@ export default function ERPViewsSystem(props) {
     return (
       <div style={styles.container}>
         <div style={styles.header}>
-          <h1 style={styles.title}>👤 {tr?.profile || 'Profile'}</h1>
+          <h1 style={styles.title}>👤 {t('profile', 'Profile')}</h1>
         </div>
 
         <div style={{ ...styles.card, maxWidth: '600px', margin: '0 auto' }}>
@@ -620,7 +621,7 @@ export default function ERPViewsSystem(props) {
     return (
       <div style={styles.container}>
         <div style={styles.header}>
-          <h1 style={styles.title}>⚙️ {tr?.settings || 'Settings'}</h1>
+          <h1 style={styles.title}>⚙️ {t('settings', 'Settings')}</h1>
         </div>
 
         <div style={styles.card}>
