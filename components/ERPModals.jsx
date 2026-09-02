@@ -6,7 +6,13 @@ export default function ERPModals({
   modal, setModal, passForm, setPassForm, handleChangePassword,
   settleForm, setSettleForm, handleSettlePayment,
   refundForm, setRefundForm, handleRefund,
-  previewHTML, downloadPDF, lang, theme, data, showToast
+  previewHTML, downloadPDF, lang, theme, data, showToast,
+  // Portal Edit props
+  portalForm, setPortalForm, handleAddEditPortal,
+  // Cashbook Edit props
+  cashbookEditForm, setCashbookEditForm, setData, userProfile,
+  // Additional
+  setForm, setSetForm, handleSaveSettings,
 }) {
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
@@ -15,12 +21,11 @@ export default function ERPModals({
   useEffect(() => {
     if (modal.type === 'refund' && modal.data) {
       const inv = modal.data;
-      // Suggest refund amount = due amount or total
       const suggested = inv.due_amount || inv.total || 0;
       setRefundForm(prev => ({
         ...prev,
         custRefund: suggested,
-        compRefund: 0 // not auto-filled; user can adjust
+        compRefund: 0
       }));
     }
   }, [modal.type, modal.data]);
@@ -36,7 +41,7 @@ export default function ERPModals({
     }
   }, [modal.type, modal.data]);
 
-  // ===== STYLES (same as before, with AI accent) =====
+  // ===== STYLES =====
   const styles = {
     input: {
       width: '100%',
@@ -216,6 +221,28 @@ export default function ERPModals({
     } catch (e) {
       console.error('Download error:', e);
       showToast?.(isAr ? 'خطأ في التحميل' : 'Download error');
+    }
+  };
+
+  // ===== CASHBOOK EDIT HANDLER =====
+  const handleCashbookEditSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const { data: up, error } = await supabase
+        .from('cashbook')
+        .update(cashbookEditForm)
+        .eq('id', modal.data.id)
+        .select()
+        .single();
+      if (error) throw error;
+      setData(prev => ({
+        ...prev,
+        cashbook: prev.cashbook.map(c => c.id === modal.data.id ? up : c)
+      }));
+      showToast(isAr ? '✅ تم تحديث قيد الدفتر' : '✅ Cashbook entry updated');
+      setModal({ type: null, data: null });
+    } catch (err) {
+      showToast('Error: ' + err.message);
     }
   };
 
@@ -519,10 +546,135 @@ export default function ERPModals({
                   borderRadius: '8px',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
                 }}
-                title="Invoice Preview"
+                title="Document Preview"
                 sandbox="allow-scripts allow-same-origin"
               />
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================
+          PORTAL EDIT MODAL
+          ============================================================ */}
+      {modal.type === 'portalEdit' && (
+        <div style={overlay}>
+          <div style={styles.card}>
+            <h3 style={{ color: '#FBBF24', marginTop: 0, marginBottom: '20px', fontSize: '20px' }}>
+              ✏️ {isAr ? 'تعديل البوابة' : 'Edit Portal'}
+            </h3>
+            <form onSubmit={handleAddEditPortal}>
+              <label style={styles.label}>{isAr ? 'اسم البوابة' : 'Portal Name'}</label>
+              <input style={styles.input} value={portalForm.name} onChange={e => setPortalForm({ ...portalForm, name: e.target.value })} required />
+
+              <label style={styles.label}>{isAr ? 'النوع' : 'Type'}</label>
+              <select style={styles.select} value={portalForm.portal_type} onChange={e => setPortalForm({ ...portalForm, portal_type: e.target.value })}>
+                <option>GDS</option>
+                <option>Airline Direct</option>
+                <option>Consolidator</option>
+                <option>Hotel Supplier</option>
+                <option>Other</option>
+              </select>
+
+              <label style={styles.label}>{isAr ? 'الرصيد الافتتاحي' : 'Opening Balance'}</label>
+              <input type="number" step="0.01" style={styles.input} value={portalForm.initial_balance} onChange={e => setPortalForm({ ...portalForm, initial_balance: e.target.value })} />
+
+              <label style={styles.label}>{isAr ? 'الرصيد الحالي' : 'Current Balance'}</label>
+              <input type="number" step="0.01" style={styles.input} value={portalForm.current_balance} onChange={e => setPortalForm({ ...portalForm, current_balance: e.target.value })} />
+
+              <label style={styles.label}>{isAr ? 'جهة الاتصال' : 'Contact Person'}</label>
+              <input style={styles.input} value={portalForm.contact_person} onChange={e => setPortalForm({ ...portalForm, contact_person: e.target.value })} />
+
+              <label style={styles.label}>{isAr ? 'الهاتف' : 'Phone'}</label>
+              <input style={styles.input} value={portalForm.phone} onChange={e => setPortalForm({ ...portalForm, phone: e.target.value })} />
+
+              <label style={styles.label}>{isAr ? 'حد الائتمان' : 'Credit Limit'}</label>
+              <input type="number" step="0.01" style={styles.input} value={portalForm.credit_limit} onChange={e => setPortalForm({ ...portalForm, credit_limit: e.target.value })} />
+
+              <button type="submit" style={{ ...styles.btnPrimary, marginTop: '20px' }}>
+                {isAr ? 'حفظ التغييرات' : 'Save Changes'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setModal({ type: null, data: null });
+                  setPortalForm({ name: '', portal_type: 'GDS', current_balance: 0, initial_balance: 0, phone: '', contact_person: '', credit_limit: 0 });
+                }}
+                style={{ ...styles.btnDanger, width: '100%', marginTop: '10px' }}
+              >
+                {isAr ? 'إلغاء' : 'Cancel'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================
+          CASHBOOK EDIT MODAL
+          ============================================================ */}
+      {modal.type === 'cashbookEdit' && (
+        <div style={overlay}>
+          <div style={styles.card}>
+            <h3 style={{ color: '#FBBF24', marginTop: 0, marginBottom: '20px', fontSize: '20px' }}>
+              ✏️ {isAr ? 'تعديل قيد الدفتر' : 'Edit Cashbook Entry'}
+            </h3>
+            <form onSubmit={handleCashbookEditSubmit}>
+              <label style={styles.label}>{isAr ? 'التاريخ' : 'Date'}</label>
+              <input
+                type="date"
+                style={styles.input}
+                value={cashbookEditForm?.trans_date || ''}
+                onChange={e => setCashbookEditForm({ ...cashbookEditForm, trans_date: e.target.value })}
+                required
+              />
+
+              <label style={styles.label}>{isAr ? 'النوع' : 'Type'}</label>
+              <select
+                style={styles.select}
+                value={cashbookEditForm?.type || ''}
+                onChange={e => setCashbookEditForm({ ...cashbookEditForm, type: e.target.value })}
+                required
+              >
+                <option value="Cash-In">💰 Cash-In</option>
+                <option value="Cash-Out">💰 Cash-Out</option>
+                <option value="Bank-In">🏦 Bank-In</option>
+                <option value="Bank-Out">🏦 Bank-Out</option>
+                <option value="Investor-In">📈 Investor-In</option>
+                <option value="Investor-Out">📈 Investor-Out</option>
+              </select>
+
+              <label style={styles.label}>{isAr ? 'الوصف' : 'Description'}</label>
+              <input
+                style={styles.input}
+                value={cashbookEditForm?.description || ''}
+                onChange={e => setCashbookEditForm({ ...cashbookEditForm, description: e.target.value })}
+                required
+              />
+
+              <label style={styles.label}>{isAr ? 'المبلغ' : 'Amount'}</label>
+              <input
+                type="number"
+                step="0.01"
+                style={styles.input}
+                value={cashbookEditForm?.amount || 0}
+                onChange={e => setCashbookEditForm({ ...cashbookEditForm, amount: e.target.value })}
+                required
+              />
+
+              <button type="submit" style={{ ...styles.btnPrimary, marginTop: '20px' }}>
+                {isAr ? 'حفظ التغييرات' : 'Save Changes'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setModal({ type: null, data: null });
+                  setCashbookEditForm({});
+                }}
+                style={{ ...styles.btnDanger, width: '100%', marginTop: '10px' }}
+              >
+                {isAr ? 'إلغاء' : 'Cancel'}
+              </button>
+            </form>
           </div>
         </div>
       )}
