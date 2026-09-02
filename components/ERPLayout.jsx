@@ -35,7 +35,15 @@ export default function ERPLayout({
   previewHTML,
   downloadPDF,
   data,
-  showToast
+  showToast,
+  // ===== ADDED missing props =====
+  portalForm,
+  setPortalForm,
+  handleAddEditPortal,
+  cashbookEditForm,
+  setCashbookEditForm,
+  setData,
+  // ===== END added props =====
 }) {
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
@@ -209,6 +217,7 @@ export default function ERPLayout({
         theme={theme}
         data={data}
         showToast={showToast}
+        // ===== PASS missing props =====
         portalForm={portalForm}
         setPortalForm={setPortalForm}
         handleAddEditPortal={handleAddEditPortal}
@@ -216,6 +225,7 @@ export default function ERPLayout({
         setCashbookEditForm={setCashbookEditForm}
         setData={setData}
         userProfile={userProfile}
+        // ===== END =====
       />
 
       {/* ===== MOBILE HEADER ===== */}
