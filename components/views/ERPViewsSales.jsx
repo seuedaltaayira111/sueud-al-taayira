@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
+import { getRechargeHTML } from '@/lib/invoiceHTML'; // ✅ Added for recharge slip
 
 
 // Shared styles/formatting helper — used by the main component and by
@@ -317,7 +318,10 @@ export default function ERPViewsSales(props) {
     contractCorpName, setContractCorpName, contractType, setContractType,
     contractMarkup, setContractMarkup, contractTerms, setContractTerms,
     downloadPDF, getExpenseHTML, getMistakeHTML, fetchAll, setData, setPreviewHTML,
-    showToast, userProfile
+    showToast, userProfile,
+    mistakeForm, setMistakeForm, // ✅ added for staff mistakes
+    rechargeForm, setRechargeForm, handleRecharge, // ✅ added for recharge
+    getInvoiceHTML, getRefundHTML // added for completeness
   } = props;
 
   const isAr = lang === 'ar';
@@ -1332,7 +1336,7 @@ export default function ERPViewsSales(props) {
   }
 
   // ============================================================
-  // PORTALS
+  // PORTALS (with edit modal and recharge slip)
   // ============================================================
   if (page === 'portals') {
     const totalBalance = (data.portals || []).reduce((s, p) => s + (p.current_balance || 0), 0);
@@ -1424,6 +1428,7 @@ export default function ERPViewsSales(props) {
               <select style={styles.select} value={rechargeForm.source} onChange={e => setRechargeForm(p => ({ ...p, source: e.target.value }))}>
                 <option>Cash</option>
                 <option>Bank Transfer</option>
+                <option>Investor</option> {/* ✅ Added Investor */}
               </select>
             </div>
             <div>
@@ -1448,6 +1453,7 @@ export default function ERPViewsSales(props) {
                     <th style={{ ...styles.th, textAlign: 'right' }}>💰 {isAr ? 'المبلغ' : 'Amount'}</th>
                     <th style={styles.th}>💳 {isAr ? 'المصدر' : 'Source'}</th>
                     <th style={styles.th}>🔖 {isAr ? 'المرجع' : 'Reference'}</th>
+                    <th style={{ ...styles.th, textAlign: 'center' }}>⚡ {isAr ? 'إجراء' : 'Action'}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1458,6 +1464,18 @@ export default function ERPViewsSales(props) {
                       <td style={{ ...styles.td, textAlign: 'right', fontWeight: 600, color: '#059669' }}>{fmt(r.amount)}</td>
                       <td style={styles.td}>{r.source}</td>
                       <td style={styles.td}>{r.reference || '-'}</td>
+                      <td style={styles.tdCenter}>
+                        <button
+                          style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }}
+                          onClick={() => {
+                            const html = getRechargeHTML(r, r.portals, data.settings, lang);
+                            downloadPDF(html, `Recharge_${r.id}.pdf`);
+                          }}
+                          title={isAr ? 'تحميل سند' : 'Download Slip'}
+                        >
+                          ⬇️
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -1487,8 +1505,30 @@ export default function ERPViewsSales(props) {
                     <td style={{ ...styles.tdRight, color: (p.current_balance || 0) < 1000 ? '#EF4444' : '#059669' }}>{fmt(p.current_balance)}</td>
                     <td style={styles.tdCenter}>
                       <div style={styles.actionsCell}>
-                        <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => { setPortalForm({ name: p.name, portal_type: p.portal_type || 'GDS', current_balance: p.current_balance || 0, initial_balance: p.initial_balance || 0, phone: p.phone || '', contact_person: p.contact_person || '', credit_limit: p.credit_limit || 0 }); setModal({ type: 'editPortal', data: p }); }}>✏️</button>
-                        <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDelete('portals', p.id)}>🗑️</button>
+                        {/* ✅ Edit - opens modal */}
+                        <button
+                          style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }}
+                          onClick={() => {
+                            setPortalForm({
+                              name: p.name,
+                              portal_type: p.portal_type || 'GDS',
+                              current_balance: p.current_balance || 0,
+                              initial_balance: p.initial_balance || 0,
+                              phone: p.phone || '',
+                              contact_person: p.contact_person || '',
+                              credit_limit: p.credit_limit || 0
+                            });
+                            setModal({ type: 'portalEdit', data: p });
+                          }}
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }}
+                          onClick={() => handleDelete('portals', p.id)}
+                        >
+                          🗑️
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -1992,7 +2032,7 @@ export default function ERPViewsSales(props) {
   }
 
   // ============================================================
-  // EXPENSES – COMPLETE FIXED
+  // EXPENSES – COMPLETE FIXED (vendor dropdown)
   // ============================================================
   if (page === 'expenses') return <ExpensesView {...props} />;
 
@@ -2049,7 +2089,7 @@ export default function ERPViewsSales(props) {
   }
 
   // ============================================================
-  // STAFF MISTAKES
+  // STAFF MISTAKES – FIXED (controlled form)
   // ============================================================
   if (page === 'staff_mistakes') return <StaffMistakesView {...props} />;
 
@@ -2419,16 +2459,7 @@ export default function ERPViewsSales(props) {
 
 
 // ═══════════════════════════════════════════════════════════════════
-// Expenses and Staff Mistakes were previously `if (page === 'X') { }`
-// blocks sharing this same component instance with 12+ other pages
-// that call zero hooks of their own. Switching between, say, the
-// Invoice List and Expenses pages changed how many hooks got called
-// mid-life of the same component (0 vs 4) — a React Rules-of-Hooks
-// violation that surfaces as "Cannot read properties of undefined"
-// and other unpredictable crashes, "fixed" only by a full page reload
-// (a fresh mount only ever calls the hooks for whichever page loaded
-// first). Extracted both into their own components so React properly
-// mounts/unmounts them instead of reusing a mismatched hook list.
+// Expenses and Staff Mistakes – Extracted Components
 // ═══════════════════════════════════════════════════════════════════
 
 function ExpensesView(props) {
@@ -2454,6 +2485,7 @@ function ExpensesView(props) {
     description: '',
     expense_date: today,
     vendor_name: '',
+    vendor_id: '',  // ✅ added vendor_id
     items: [{ name: '', qty: 1, price: 0 }],
     approval_status: 'Approved'
   });
@@ -2496,6 +2528,7 @@ function ExpensesView(props) {
         description: expFormLocal.description,
         payment_mode: expFormLocal.payment_mode,
         vendor_name: expFormLocal.vendor_name,
+        vendor_id: expFormLocal.vendor_id || null, // ✅ added
         amount: totalAmount,
         total_amount: totalAmount,
         items: expFormLocal.items,
@@ -2527,10 +2560,6 @@ function ExpensesView(props) {
           .single();
         if (error) throw error;
         result = nExp;
-        // Automatically move real money for this expense — Cash/Bank
-        // out — the same way invoices, refunds, and transfers already
-        // do, so expenses actually affect your balances instead of
-        // just being a record with no financial effect.
         let newCbEntry = null;
         if (payload.payment_mode === 'Cash' || payload.payment_mode === 'Bank Transfer') {
           const cbType = payload.payment_mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
@@ -2555,6 +2584,7 @@ function ExpensesView(props) {
         description: '',
         expense_date: today,
         vendor_name: '',
+        vendor_id: '',
         items: [{ name: '', qty: 1, price: 0 }],
         approval_status: 'Approved'
       });
@@ -2567,7 +2597,8 @@ function ExpensesView(props) {
   const handleDeleteExpenseLocal = async (exp) => {
     if (!confirm(isAr ? 'هل تريد حذف هذا المصروف؟' : 'Delete this expense?')) return;
     try {
-      { const { error: _delErr1 } = await supabase.from('expenses').delete().eq('id', exp.id); if (_delErr1) throw new Error(_delErr1.message); }
+      const { error } = await supabase.from('expenses').delete().eq('id', exp.id);
+      if (error) throw new Error(error.message);
       setData(prev => ({
         ...prev,
         expenses: prev.expenses.filter(ex => ex.id !== exp.id)
@@ -2599,6 +2630,7 @@ function ExpensesView(props) {
       description: exp.description || '',
       expense_date: exp.expense_date || today,
       vendor_name: exp.vendor_name || '',
+      vendor_id: exp.vendor_id || '', // ✅ added
       items: exp.items || [{ name: '', qty: 1, price: 0 }],
       approval_status: exp.approval_status || 'Approved'
     });
@@ -2665,7 +2697,12 @@ function ExpensesView(props) {
           </div>
           <div>
             <label style={styles.formLabel}>{isAr ? 'المورد' : 'Vendor'}</label>
-            <input style={styles.input} value={expFormLocal.vendor_name} onChange={e => setExpFormLocal({ ...expFormLocal, vendor_name: e.target.value })} />
+            <select style={styles.select} value={expFormLocal.vendor_id} onChange={e => setExpFormLocal({ ...expFormLocal, vendor_id: e.target.value })}>
+              <option value="">{isAr ? 'اختر مورد' : 'Select Vendor'}</option>
+              {(data.vendors || []).map(v => (
+                <option key={v.id} value={v.id}>{v.name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label style={styles.formLabel}>{isAr ? 'طريقة الدفع' : 'Payment'}</label>
@@ -2706,7 +2743,7 @@ function ExpensesView(props) {
               {editingExpId ? '💾 ' + (isAr ? 'تحديث' : 'Update') : '✅ ' + (isAr ? 'إضافة مصروف' : 'Add Expense')}
             </button>
             {editingExpId && (
-              <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setEditingExpId(null); setExpFormLocal({ expense_type: 'Office Expense', payment_mode: 'Cash', description: '', expense_date: today, vendor_name: '', items: [{ name: '', qty: 1, price: 0 }], approval_status: 'Approved' }); }}>
+              <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setEditingExpId(null); setExpFormLocal({ expense_type: 'Office Expense', payment_mode: 'Cash', description: '', expense_date: today, vendor_name: '', vendor_id: '', items: [{ name: '', qty: 1, price: 0 }], approval_status: 'Approved' }); }}>
                 ✕ {isAr ? 'إلغاء' : 'Cancel'}
               </button>
             )}
@@ -2759,109 +2796,29 @@ function ExpensesView(props) {
         </div>
       </div>
     </div>
-  );}
+  );
+}
 
+// ============================================================
+// STAFF MISTAKES VIEW (controlled form)
+// ============================================================
 function StaffMistakesView(props) {
   const {
     page, data, lang, tr, modal, setModal, setPage,
     handleAddMistake, handlePreviewMistake, handleDeleteMistake,
     showToast, userProfile,
-    setData, fetchAll, getMistakeHTML, setPreviewHTML, downloadPDF
+    setData, fetchAll, getMistakeHTML, setPreviewHTML, downloadPDF,
+    mistakeForm, setMistakeForm // ✅ added
   } = props;
   const isAr = lang === 'ar';
   const { styles, fmt, today } = useSalesHelpers(props);
-  const [mistakeForm, setMistakeForm] = useState({
-    employee_id: '',
-    old_ticket_no: '',
-    new_ticket_no: '',
-    loss_amount: 0,
-    paid_by_employee: false,
-    reason: '',
-    date: today
-  });
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleMistakeSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const payload = {
-        ...mistakeForm,
-        tenant_id: userProfile?.tenant_id,
-        loss_amount: parseFloat(mistakeForm.loss_amount) || 0
-      };
-
-      let result;
-      if (editingId) {
-        const { data: up, error } = await supabase
-          .from('staff_mistakes')
-          .update(payload)
-          .eq('id', editingId)
-          .select('*, employees(name)')
-          .single();
-        if (error) throw error;
-        result = up;
-        setData(prev => ({
-          ...prev,
-          staffMistakes: prev.staffMistakes.map(m => m.id === editingId ? up : m)
-        }));
-        showToast?.(isAr ? '✅ تم التحديث' : '✅ Updated!');
-        setEditingId(null);
-      } else {
-        const { data: newM, error } = await supabase
-          .from('staff_mistakes')
-          .insert([payload])
-          .select('*, employees(name)')
-          .single();
-        if (error) throw error;
-        result = newM;
-        setData(prev => ({
-          ...prev,
-          staffMistakes: [newM, ...(prev.staffMistakes || [])]
-        }));
-        showToast?.(isAr ? '✅ تم تسجيل الخطأ' : '✅ Mistake Logged!');
-      }
-
-      setMistakeForm({
-        employee_id: '',
-        old_ticket_no: '',
-        new_ticket_no: '',
-        loss_amount: 0,
-        paid_by_employee: false,
-        reason: '',
-        date: today
-      });
-      fetchAll?.();
-    } catch (err) {
-      showToast?.(isAr ? '❌ خطأ: ' + err.message : '❌ Error: ' + err.message);
-    }
-  };
-
-  const handlePreviewMistakeLocal = (m) => {
-    const html = getMistakeHTML?.(m, data.settings, lang);
-    if (!html) return showToast?.(isAr ? '❌ لم يتم إنشاء HTML' : '❌ HTML not generated');
-    setPreviewHTML?.(html);
-    setModal?.({ type: 'preview', data: m });
-  };
-
-  const handleDownloadMistakePDF = async (m) => {
-    const html = getMistakeHTML?.(m, data.settings, lang);
-    if (!html) return showToast?.(isAr ? '❌ لم يتم إنشاء HTML' : '❌ HTML not generated');
-    await downloadPDF?.(html, `Mistake_${m.id || 'voucher'}.pdf`);
-  };
-
-  const handleDeleteMistakeLocal = async (m) => {
-    if (!confirm(isAr ? 'هل تريد الحذف؟' : 'Delete?')) return;
-    try {
-      { const { error: _delErr2 } = await supabase.from('staff_mistakes').delete().eq('id', m.id); if (_delErr2) throw new Error(_delErr2.message); }
-      setData(prev => ({
-        ...prev,
-        staffMistakes: prev.staffMistakes.filter(x => x.id !== m.id)
-      }));
-      showToast?.(isAr ? '✅ تم الحذف' : '✅ Deleted');
-    } catch (err) {
-      showToast?.(isAr ? '❌ خطأ: ' + err.message : '❌ Error: ' + err.message);
-    }
+    // Use the passed mistakeForm and handleAddMistake
+    await handleAddMistake(e);
   };
 
   const handleEditMistake = (m) => {
@@ -2875,6 +2832,15 @@ function StaffMistakesView(props) {
       reason: m.reason || '',
       date: m.date || today
     });
+  };
+
+  const handleDeleteMistakeLocal = async (m) => {
+    await handleDeleteMistake(m);
+    setEditingId(null);
+  };
+
+  const handlePreviewMistakeLocal = (m) => {
+    handlePreviewMistake(m);
   };
 
   const totalLoss = (data.staffMistakes || []).reduce((s, m) => s + (m.loss_amount || 0), 0);
@@ -3000,7 +2966,7 @@ function StaffMistakesView(props) {
                   <td style={styles.tdCenter}>
                     <div style={styles.actionsCell}>
                       <button style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }} onClick={() => handlePreviewMistakeLocal(m)} title={isAr ? 'معاينة' : 'Preview'}>👁️</button>
-                      <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleDownloadMistakePDF(m)} title={isAr ? 'تنزيل' : 'Download'}>⬇️</button>
+                      <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => downloadPDF(getMistakeHTML(m, data.settings, lang), `Mistake_${m.id}.pdf`)} title={isAr ? 'تنزيل' : 'Download'}>⬇️</button>
                       <button style={{ ...styles.actionBtn, background: '#FEF3C7', color: '#92400E' }} onClick={() => handleEditMistake(m)} title={isAr ? 'تعديل' : 'Edit'}>✏️</button>
                       <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDeleteMistakeLocal(m)} title={isAr ? 'حذف' : 'Delete'}>🗑️</button>
                     </div>
@@ -3019,4 +2985,5 @@ function StaffMistakesView(props) {
         </div>
       </div>
     </div>
-  );}
+  );
+}
