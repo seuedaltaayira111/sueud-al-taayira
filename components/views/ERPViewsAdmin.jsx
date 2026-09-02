@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export default function ERPViewsAdmin(props) {
   const {
     page, data, tr, today, userProfile, showToast, setData, logAction,
-    lang,           // ✅ FIXED: added lang
-    theme,          // ✅ FIXED: added theme
+    lang, theme,
     expForm, setExpForm, editExpId, setEditExpId,
     handleAddExpItem, handleRemoveExpItem, handleExpItemChange,
     handleAddEditExpense, handleEditExp, handleDeleteExpense,
@@ -22,7 +22,9 @@ export default function ERPViewsAdmin(props) {
     handleGenerateSlip, handleDeletePayroll,
     handleAddMistake, handlePreviewMistake, handleDeleteMistake,
     handleProcessPayroll, payForm, setPayForm,
-    advForm, setAdvForm, employees
+    advForm, setAdvForm, employees,
+    // For cashbook edit
+    cashbookEditForm, setCashbookEditForm, setModal,
   } = props;
 
   const [cashbookFilter, setCashbookFilter] = useState('All');
@@ -309,7 +311,7 @@ export default function ERPViewsAdmin(props) {
   if (page === 'vendors') return <VendorsView {...props} />;
 
   // ============================================================
-  // BANK & CASH
+  // BANK & CASH (with edit button)
   // ============================================================
   if (page === 'bank') return <BankView {...props} />;
 
@@ -501,62 +503,20 @@ export default function ERPViewsAdmin(props) {
   return null;
 }
 
-// Vendors and Bank were `if (page === 'X')` blocks calling different
-// numbers of hooks while sharing one component instance with Invest
-// and Services. Switching between them via the sidebar didn't remount
-// the component, so React expected the same hooks every render — a
-// Rules-of-Hooks violation. Extracted both into their own components.
-function useAdminHelpers(props) {
-  const { lang, theme, expForm, setExpForm } = props;
+// ============================================================
+// VendorsView Component (used when page === 'vendors')
+// ============================================================
+function VendorsView(props) {
+  const {
+    page, data, tr, today, userProfile, showToast, setData, logAction,
+    lang, theme,
+    handleAddEditVend, vendorForm, setVendorForm, editVendId, setEditVendId, handleEditVend,
+    handleDelete, handleExportCSV
+  } = props;
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
 
-  // AI – Auto-suggest expense category based on description
-  const suggestCategory = (desc) => {
-    const keywords = {
-      'office': 'Office Expense',
-      'travel': 'Travel Expense',
-      'supply': 'Supplies',
-      'utility': 'Utilities',
-      'rent': 'Rent',
-      'salary': 'Salary',
-      'food': 'Meals',
-      'transport': 'Transport',
-      'maintenance': 'Maintenance',
-      'marketing': 'Marketing',
-      'software': 'Software',
-      'hardware': 'Hardware',
-      'training': 'Training',
-      'insurance': 'Insurance',
-      'tax': 'Tax',
-      'legal': 'Legal',
-      'medical': 'Medical',
-      'stationery': 'Stationery',
-      'cleaning': 'Cleaning',
-      'security': 'Security',
-      'communication': 'Communication',
-      'printing': 'Printing',
-      'repair': 'Repair'
-    };
-    if (!desc) return 'Other';
-    const lower = desc.toLowerCase();
-    for (const [key, cat] of Object.entries(keywords)) {
-      if (lower.includes(key)) return cat;
-    }
-    return 'Other';
-  };
-
-  // Auto-update category when description changes
-  useEffect(() => {
-    if (expForm.description && expForm.expense_type === 'Other') {
-      const suggested = suggestCategory(expForm.description);
-      if (suggested !== 'Other') {
-        setExpForm(prev => ({ ...prev, expense_type: suggested }));
-      }
-    }
-  }, [expForm.description]);
-
-  // ===== STYLES =====
+  // Styles (reused)
   const styles = {
     container: {
       padding: '20px',
@@ -784,19 +744,6 @@ function useAdminHelpers(props) {
   };
 
   const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
-
-  return { styles, fmt };
-}
-
-function VendorsView(props) {
-  const {
-    page, data, tr, today, userProfile, showToast, setData, logAction,
-    lang, theme,
-    handleAddEditVend, vendorForm, setVendorForm, editVendId, setEditVendId, handleEditVend,
-    handleDelete, handleExportCSV
-  } = props;
-  const isAr = lang === 'ar';
-  const { styles, fmt } = useAdminHelpers(props);
   const [searchTerm, setSearchTerm] = useState('');
   const filtered = (data.vendors || []).filter(v =>
     !searchTerm || v.name?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -884,17 +831,251 @@ function VendorsView(props) {
         </div>
       </div>
     </div>
-  );}
+  );
+}
 
+// ============================================================
+// BankView Component (used when page === 'bank')
+// ============================================================
 function BankView(props) {
   const {
     page, data, tr, today, userProfile, showToast, setData, logAction,
     lang, theme,
     handleTransfer, transferForm, setTransferForm,
-    handleDelete, handleExportCSV
+    handleDelete, handleExportCSV,
+    cashbookEditForm, setCashbookEditForm, setModal
   } = props;
   const isAr = lang === 'ar';
-  const { styles, fmt } = useAdminHelpers(props);
+  const isDark = theme === 'dark';
+
+  // Styles (reused)
+  const styles = {
+    container: {
+      padding: '20px',
+      background: isDark ? '#0F172A' : '#F8FAFC',
+      minHeight: '100vh',
+      color: isDark ? '#E2E8F0' : '#1E293B',
+      transition: 'all 0.3s ease'
+    },
+    card: {
+      background: isDark ? '#1E293B' : '#FFFFFF',
+      borderRadius: '16px',
+      padding: '20px',
+      marginBottom: '20px',
+      border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
+      boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.2)' : '0 4px 6px rgba(0,0,0,0.05)'
+    },
+    header: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: '20px',
+      flexWrap: 'wrap',
+      gap: '10px'
+    },
+    title: {
+      fontSize: '24px',
+      fontWeight: 700,
+      color: '#FBBF24',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      margin: 0
+    },
+    input: {
+      padding: '10px 15px',
+      background: isDark ? '#0F172A' : '#F1F5F9',
+      border: isDark ? '1px solid #475569' : '1px solid #E2E8F0',
+      borderRadius: '8px',
+      color: isDark ? '#E2E8F0' : '#1E293B',
+      fontSize: '14px',
+      outline: 'none',
+      width: '100%',
+      boxSizing: 'border-box',
+      transition: 'all 0.2s'
+    },
+    select: {
+      padding: '10px 15px',
+      background: isDark ? '#0F172A' : '#F1F5F9',
+      border: isDark ? '1px solid #475569' : '1px solid #E2E8F0',
+      borderRadius: '8px',
+      color: isDark ? '#E2E8F0' : '#1E293B',
+      fontSize: '14px',
+      outline: 'none',
+      width: '100%',
+      boxSizing: 'border-box'
+    },
+    btn: {
+      padding: '10px 20px',
+      borderRadius: '8px',
+      border: 'none',
+      cursor: 'pointer',
+      fontWeight: 600,
+      fontSize: '13px',
+      transition: 'all 0.2s'
+    },
+    btnPrimary: {
+      background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+      color: '#fff'
+    },
+    btnSuccess: {
+      background: 'linear-gradient(135deg, #059669, #047857)',
+      color: '#fff'
+    },
+    btnDanger: {
+      background: 'linear-gradient(135deg, #DC2626, #B91C1C)',
+      color: '#fff'
+    },
+    btnWarning: {
+      background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+      color: '#0F172A'
+    },
+    btnGhost: {
+      background: 'transparent',
+      border: isDark ? '1px solid #475569' : '1px solid #E2E8F0',
+      color: isDark ? '#94A3B8' : '#64748B'
+    },
+    btnInfo: {
+      background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
+      color: '#fff'
+    },
+    table: {
+      width: '100%',
+      borderCollapse: 'collapse',
+      fontSize: '13px'
+    },
+    th: {
+      padding: '12px',
+      background: isDark ? '#0F172A' : '#F1F5F9',
+      color: '#FBBF24',
+      textAlign: 'left',
+      fontWeight: 600,
+      fontSize: '11px',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px',
+      borderBottom: isDark ? '2px solid #334155' : '2px solid #E2E8F0'
+    },
+    td: {
+      padding: '12px',
+      borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
+      color: isDark ? '#CBD5E1' : '#1E293B'
+    },
+    tdRight: {
+      padding: '12px',
+      borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
+      color: isDark ? '#CBD5E1' : '#1E293B',
+      textAlign: 'right',
+      fontWeight: 600
+    },
+    tdCenter: {
+      padding: '12px',
+      borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
+      color: isDark ? '#CBD5E1' : '#1E293B',
+      textAlign: 'center'
+    },
+    badge: {
+      padding: '4px 10px',
+      borderRadius: '20px',
+      fontSize: '11px',
+      fontWeight: 600,
+      display: 'inline-block'
+    },
+    badgeSuccess: {
+      background: '#065F46',
+      color: '#34D399'
+    },
+    badgeDanger: {
+      background: '#7F1D1D',
+      color: '#FCA5A5'
+    },
+    badgeWarning: {
+      background: '#78350F',
+      color: '#FBBF24'
+    },
+    statsGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+      gap: '15px',
+      marginBottom: '20px'
+    },
+    statCard: {
+      background: isDark ? 'linear-gradient(135deg, #1E293B, #0F172A)' : 'linear-gradient(135deg, #FFFFFF, #F8FAFC)',
+      padding: '18px',
+      borderRadius: '12px',
+      border: isDark ? '1px solid #334155' : '1px solid #E2E8F0'
+    },
+    statLabel: {
+      fontSize: '11px',
+      color: '#94A3B8',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px'
+    },
+    statValue: {
+      fontSize: '22px',
+      fontWeight: 700,
+      color: '#FBBF24',
+      marginTop: '5px'
+    },
+    formGroup: {
+      marginBottom: '15px'
+    },
+    formLabel: {
+      display: 'block',
+      marginBottom: '5px',
+      color: isDark ? '#94A3B8' : '#64748B',
+      fontSize: '13px',
+      fontWeight: 600
+    },
+    formRow: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+      gap: '15px'
+    },
+    sectionTitle: {
+      color: '#FBBF24',
+      fontSize: '15px',
+      fontWeight: 700,
+      margin: '0 0 15px',
+      paddingBottom: '10px',
+      borderBottom: isDark ? '1px solid #334155' : '1px solid #E2E8F0'
+    },
+    emptyState: {
+      textAlign: 'center',
+      padding: '60px 20px',
+      color: '#64748B'
+    },
+    emptyIcon: {
+      fontSize: '60px',
+      marginBottom: '15px'
+    },
+    actionsCell: {
+      display: 'flex',
+      gap: '5px',
+      flexWrap: 'wrap',
+      justifyContent: 'center'
+    },
+    actionBtn: {
+      padding: '6px 10px',
+      borderRadius: '6px',
+      border: 'none',
+      cursor: 'pointer',
+      fontSize: '11px',
+      fontWeight: 600,
+      transition: 'all 0.2s'
+    },
+    aiBadge: {
+      background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+      color: '#fff',
+      padding: '2px 10px',
+      borderRadius: '12px',
+      fontSize: '10px',
+      fontWeight: 'bold',
+      display: 'inline-block',
+      marginLeft: '8px'
+    }
+  };
+
+  const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
   const [cashFilter, setCashFilter] = useState('All');
   const cashIn = (data.cashbook || []).filter(c => c.type === 'Cash-In').reduce((s, c) => s + (c.amount || 0), 0);
   const cashOut = (data.cashbook || []).filter(c => c.type === 'Cash-Out').reduce((s, c) => s + (c.amount || 0), 0);
@@ -1019,7 +1200,25 @@ function BankView(props) {
                   <td style={styles.td}>{c.description}</td>
                   <td style={{ ...styles.tdRight, color: c.type?.includes('In') ? '#34D399' : '#FCA5A5' }}>{fmt(c.amount)}</td>
                   <td style={styles.tdCenter}>
-                    <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDelete('cashbook', c.id)}>🗑️</button>
+                    <div style={styles.actionsCell}>
+                      {/* ✅ Edit button added */}
+                      <button
+                        style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }}
+                        onClick={() => {
+                          setCashbookEditForm({
+                            trans_date: c.trans_date,
+                            type: c.type,
+                            description: c.description,
+                            amount: c.amount
+                          });
+                          setModal({ type: 'cashbookEdit', data: c });
+                        }}
+                        title={isAr ? 'تعديل' : 'Edit'}
+                      >
+                        ✏️
+                      </button>
+                      <button style={{ ...styles.actionBtn, background: '#991B1B', color: '#FECACA' }} onClick={() => handleDelete('cashbook', c.id)}>🗑️</button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -1035,4 +1234,5 @@ function BankView(props) {
         </div>
       </div>
     </div>
-  );}
+  );
+}
