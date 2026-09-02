@@ -522,6 +522,14 @@ export default function useERPState() {
     tax: 0, social_security: 0, insurance: 0, loan: 0, other_deductions: 0,
   });
 
+  /* ===== CASHBOOK EDIT FORM – NEW ===== */
+  const [cashbookEditForm, setCashbookEditForm] = useState({
+    trans_date: '',
+    type: '',
+    description: '',
+    amount: 0
+  });
+
   /* ===== EDIT IDS ===== */
   const [editInvId, setEditInvId] = useState(null);
   const [editExpId, setEditExpId] = useState(null);
@@ -764,6 +772,8 @@ export default function useERPState() {
     contractType, setContractType,
     contractMarkup, setContractMarkup,
     contractTerms, setContractTerms,
+    // Added cashbookEditForm
+    cashbookEditForm, setCashbookEditForm,
     getInvoiceHTML, getRefundHTML, getExpenseHTML,
     getSalarySlipHTML, getContractHTML, getMistakeHTML
   };
