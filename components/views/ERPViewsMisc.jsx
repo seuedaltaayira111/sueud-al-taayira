@@ -19,6 +19,7 @@ export default function ERPViewsMisc(props) {
 
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
+  const t = (key, fallback) => tr?.[key] || fallback || key;
 
   // ===== STYLES =====
   const s = {
@@ -240,7 +241,6 @@ export default function ERPViewsMisc(props) {
   };
 
   const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
-  const t = (key, fallback) => tr?.[key] || fallback || key;
 
   // ============================================================
   // DASHBOARD – with AI Insights
@@ -473,7 +473,7 @@ export default function ERPViewsMisc(props) {
   }
 
   // ============================================================
-  // CREATE / EDIT INVOICE – with AI auto-fill
+  // CREATE / EDIT INVOICE – with AI auto-fill, Previous Booking, Credit Balance fixes
   // ============================================================
   if (page === 'create') return <CreateInvoiceView {...props} />;
 
@@ -483,7 +483,7 @@ export default function ERPViewsMisc(props) {
   if (page === 'my_attendance') return <MyAttendanceView {...props} />;
 
   // ============================================================
-  // HR – COMPLETE EMPLOYEE 360 (with ALL fields)
+  // HR – COMPLETE EMPLOYEE 360
   // ============================================================
   if (page === 'hr' || page === 'hr_advanced') return <HRView {...props} />;
 
@@ -497,6 +497,7 @@ function useMiscHelpers(props) {
   const { lang, theme, tr } = props;
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
+  const t = (key, fallback) => tr?.[key] || fallback || key;
 
   const s = {
     container: {
@@ -717,22 +718,28 @@ function useMiscHelpers(props) {
   };
 
   const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
-  const t = (key, fallback) => tr?.[key] || fallback || key;
 
   return { s, fmt, t, isAr, isDark };
 }
 
 // ============================================================
-// CREATE INVOICE VIEW
+// CREATE INVOICE VIEW – FIXED (Previous Booking + Credit Balance)
 // ============================================================
 function CreateInvoiceView(props) {
   const {
     page, data, tr, setPage, showToast, today, userProfile,
-    invForm, setInvForm, editInvId, setEditInvId, handleCreateInvoice
+    invForm, setInvForm, editInvId, setEditInvId, handleCreateInvoice,
+    lang, theme
   } = props;
+
+  // Get helper values
   const { s, fmt, t, isAr, isDark } = useMiscHelpers(props);
   const f = invForm || {};
   const passengers = f.passengers?.length ? f.passengers : [''];
+
+  // State for remaining due payment method when using credit balance
+  const [remainingPaymentMethod, setRemainingPaymentMethod] = useState('Cash');
+  const [remainingAmount, setRemainingAmount] = useState(0);
 
   const addPassenger = () => setInvForm({ ...f, passengers: [...passengers, ''] });
   const removePassenger = (idx) => setInvForm({ ...f, passengers: passengers.filter((_, i) => i !== idx) });
@@ -747,8 +754,15 @@ function CreateInvoiceView(props) {
   const vat = sellAfterDiscount * (taxRate / 100);
   const grandTotal = sellAfterDiscount + vat;
   const profit = sellAfterDiscount - cost;
+  const creditUsed = parseFloat(f.useCredit) || 0;
   const paid = parseFloat(f.paid) || 0;
-  const dueAmount = Math.max(grandTotal - paid, 0);
+  const totalPaid = paid + creditUsed;
+  const dueAmount = Math.max(grandTotal - totalPaid, 0);
+
+  // Update remaining amount when due changes
+  useEffect(() => {
+    setRemainingAmount(dueAmount);
+  }, [dueAmount]);
 
   // AI auto-fill: if customer selected and has previous bookings, suggest sector/airline
   useEffect(() => {
@@ -761,6 +775,85 @@ function CreateInvoiceView(props) {
       }
     }
   }, [f.custId, f.service]);
+
+  // ============================================================
+  // CREDIT BALANCE PAYMENT METHOD FIX
+  // When credit balance is used, the remaining due can be paid via Cash/Bank/Card
+  // ============================================================
+  const renderCreditBalancePayment = () => {
+    const cust = data.customers?.find(c => c.id === f.custId);
+    const available = cust?.store_credit || 0;
+    const creditUsedVal = parseFloat(f.useCredit) || 0;
+    const over = creditUsedVal > available;
+
+    // Calculate remaining due after credit
+    const remaining = dueAmount;
+
+    return (
+      <div style={s.formGroup}>
+        <label style={s.formLabel}>
+          {isAr ? 'العميل' : 'Customer'}: <strong>{cust?.name || 'N/A'}</strong>
+          <span style={{ marginLeft: '10px', color: '#34D399' }}>
+            {isAr ? 'الرصيد المتاح' : 'Available Credit'}: {available.toFixed(2)} SAR
+          </span>
+        </label>
+        <input
+          type="number"
+          step="0.01"
+          max={available}
+          style={{ ...s.input, borderColor: over ? '#DC2626' : '#475569' }}
+          value={f.useCredit}
+          onChange={e => setInvForm({ ...f, useCredit: e.target.value })}
+          placeholder={isAr ? 'كم رصيد تريد استخدامه؟' : 'How much credit to use?'}
+        />
+        {over && <div style={{ color: '#FCA5A5', fontSize: '12px', marginTop: '4px' }}>
+          ⚠️ {isAr ? 'يتجاوز الرصيد المتاح' : 'Exceeds available credit'}
+        </div>}
+        <button
+          type="button"
+          style={{ ...s.btn, ...s.btnGhost, marginTop: '6px', fontSize: '11px', padding: '6px 10px' }}
+          onClick={() => setInvForm({ ...f, useCredit: Math.min(available, grandTotal) })}
+        >
+          {isAr ? 'استخدام الحد الأقصى المتاح' : 'Use max available'}
+        </button>
+
+        {/* ✅ NEW: Show remaining due with payment method options */}
+        {remaining > 0 && creditUsedVal > 0 && (
+          <div style={{
+            marginTop: '12px',
+            padding: '12px',
+            background: isDark ? '#0F172A' : '#F1F5F9',
+            borderRadius: '8px',
+            border: '1px solid #F59E0B'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <span style={{ fontWeight: 600 }}>{isAr ? 'المبلغ المتبقي' : 'Remaining Amount'}:</span>
+              <span style={{ color: '#F59E0B', fontWeight: 700 }}>{fmt(remaining)}</span>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '13px', color: '#94A3B8' }}>
+                {isAr ? 'طريقة الدفع للباقي' : 'Payment method for remaining'}:
+              </span>
+              <select
+                style={{ ...s.select, width: 'auto', minWidth: '120px', padding: '6px 10px' }}
+                value={remainingPaymentMethod}
+                onChange={e => {
+                  const method = e.target.value;
+                  setRemainingPaymentMethod(method);
+                  // Update the main payment method for the remaining amount
+                  setInvForm({ ...f, payment: method });
+                }}
+              >
+                <option value="Cash">💰 {isAr ? 'نقداً' : 'Cash'}</option>
+                <option value="Bank Transfer">🏦 {isAr ? 'تحويل بنكي' : 'Bank Transfer'}</option>
+                <option value="Card">💳 {isAr ? 'بطاقة' : 'Card'}</option>
+              </select>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div style={s.container}>
@@ -882,10 +975,12 @@ function CreateInvoiceView(props) {
           )}
         </div>
 
-        {/* ===== PREVIOUS BOOKING / CREDIT CHAIN ===== */}
+        {/* ===== PREVIOUS BOOKING / CREDIT CHAIN – FIXED ===== */}
         {f.custType === 'Individual' && f.custId && f.custId !== 'new' && (() => {
           const cust = data.customers?.find(c => c.id === f.custId);
           const custRefunds = (data.invoices || []).filter(i => i.customer_id === f.custId && i.invoice_no?.startsWith('REF-'));
+          const selectedRefund = custRefunds.find(r => r.invoice_no === f.linkedInvId);
+
           return (
             <div style={{ ...s.card, border: '1px solid #F59E0B' }}>
               <h3 style={{ ...s.sectionTitle, color: '#F59E0B' }}>🔗 {isAr ? 'حجز سابق / رصيد مخزن' : 'Previous Booking / Store Credit'}</h3>
@@ -901,22 +996,39 @@ function CreateInvoiceView(props) {
                   <label style={s.formLabel}>{isAr ? 'ربط استرجاع سابق' : 'Link a previous refund'}</label>
                   <select
                     style={s.select}
-                    value={f.linkedInvId}
+                    value={f.linkedInvId || ''}
                     onChange={e => {
                       const r = custRefunds.find(x => x.invoice_no === e.target.value);
-                      if (!r) { setInvForm({ ...f, linkedInvId: '' }); return; }
+                      if (!r) {
+                        setInvForm({
+                          ...f,
+                          linkedInvId: '',
+                          oldTicketNo: '',
+                          oldPnr: '',
+                          oldAirline: '',
+                          oldSector: '',
+                          oldSellPrice: 0,
+                          oldBookingDate: '',
+                          oldPassengers: '',
+                          oldFlightType: '',
+                          oldPaymentMethod: '',
+                          refundReason: '',
+                          bookingType: 'New Booking'
+                        });
+                        return;
+                      }
                       setInvForm({
                         ...f,
                         linkedInvId: r.invoice_no,
-                        oldTicketNo: r.old_ticket_no || '',
-                        oldPnr: r.old_pnr || '',
-                        oldAirline: r.old_airline || '',
-                        oldSector: r.old_sector || '',
-                        oldSellPrice: r.old_sell_price || 0,
-                        oldBookingDate: r.old_booking_date || '',
-                        oldPassengers: r.old_passengers || '',
-                        oldFlightType: r.old_flight_type || '',
-                        oldPaymentMethod: r.old_payment_method || '',
+                        oldTicketNo: r.old_ticket_no || r.ticket_no || '',
+                        oldPnr: r.old_pnr || r.pnr || '',
+                        oldAirline: r.old_airline || r.airline || '',
+                        oldSector: r.old_sector || r.flight_sector || r.sector || '',
+                        oldSellPrice: r.old_sell_price || r.total_sell || 0,
+                        oldBookingDate: r.old_booking_date || r.invoice_date || '',
+                        oldPassengers: r.old_passengers || r.passenger_names || '',
+                        oldFlightType: r.old_flight_type || r.flight_type || '',
+                        oldPaymentMethod: r.old_payment_method || r.payment_method || '',
                         refundReason: r.refund_reason || '',
                         bookingType: 'Reissue'
                       });
@@ -932,12 +1044,31 @@ function CreateInvoiceView(props) {
                 </div>
               )}
 
-              {f.linkedInvId && (
+              {/* ✅ FIXED: Show full previous booking details when linked */}
+              {f.linkedInvId && selectedRefund && (
                 <div style={{ background: isDark ? '#0F172A' : '#F8FAFC', padding: '12px 16px', borderRadius: '8px', fontSize: '13px', color: '#94A3B8', lineHeight: 1.8 }}>
-                  <div>{isAr ? 'التذكرة القديمة' : 'Old ticket'}: <b style={{ color: isDark ? '#CBD5E1' : '#1E293B' }}>{f.oldTicketNo || '-'}</b> ({f.oldAirline || '-'}, {f.oldSector || '-'})</div>
-                  <div>{isAr ? 'السعر الأصلي' : 'Original price'}: <b style={{ color: isDark ? '#CBD5E1' : '#1E293B' }}>{fmt(f.oldSellPrice)}</b></div>
-                  <div>{isAr ? 'المسترد للعميل' : 'Refunded to customer'}: <b style={{ color: '#FBBF24' }}>{fmt(custRefunds.find(r => r.invoice_no === f.linkedInvId)?.refund_customer || 0)}</b></div>
-                  <div>{isAr ? 'السبب' : 'Reason'}: {f.refundReason || '-'}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div><strong>{isAr ? 'التذكرة القديمة' : 'Old Ticket'}:</strong> <b style={{ color: isDark ? '#CBD5E1' : '#1E293B' }}>{f.oldTicketNo || '-'}</b></div>
+                    <div><strong>{isAr ? 'شركة الطيران' : 'Airline'}:</strong> <b style={{ color: isDark ? '#CBD5E1' : '#1E293B' }}>{f.oldAirline || '-'}</b></div>
+                    <div><strong>{isAr ? 'القطاع' : 'Sector'}:</strong> <b style={{ color: isDark ? '#CBD5E1' : '#1E293B' }}>{f.oldSector || '-'}</b></div>
+                    <div><strong>PNR:</strong> <b style={{ color: isDark ? '#CBD5E1' : '#1E293B' }}>{f.oldPnr || '-'}</b></div>
+                    <div><strong>{isAr ? 'التاريخ' : 'Date'}:</strong> <b style={{ color: isDark ? '#CBD5E1' : '#1E293B' }}>{f.oldBookingDate || '-'}</b></div>
+                    <div><strong>{isAr ? 'السعر الأصلي' : 'Original Price'}:</strong> <b style={{ color: '#FBBF24' }}>{fmt(f.oldSellPrice)}</b></div>
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <strong>{isAr ? 'الركاب' : 'Passengers'}:</strong>
+                      <b style={{ color: isDark ? '#CBD5E1' : '#1E293B', display: 'block', fontSize: '12px', marginTop: '2px' }}>
+                        {f.oldPassengers || '-'}
+                      </b>
+                    </div>
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <strong>{isAr ? 'المسترد للعميل' : 'Refunded to customer'}:</strong>
+                      <b style={{ color: '#FBBF24' }}>{fmt(selectedRefund?.refund_customer || 0)}</b>
+                    </div>
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <strong>{isAr ? 'السبب' : 'Reason'}:</strong>
+                      <b style={{ color: isDark ? '#CBD5E1' : '#1E293B' }}>{f.refundReason || '-'}</b>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -1178,7 +1309,7 @@ function CreateInvoiceView(props) {
           </div>
         </div>
 
-        {/* ===== PAYMENT ===== */}
+        {/* ===== PAYMENT – FIXED ===== */}
         <div style={s.card}>
           <h3 style={s.sectionTitle}>💳 {isAr ? 'الدفع' : 'Payment'}</h3>
           <div style={s.formRow}>
@@ -1217,40 +1348,8 @@ function CreateInvoiceView(props) {
               </>
             )}
 
-            {f.payment === 'Credit Balance' && (() => {
-              const cust = data.customers?.find(c => c.id === f.custId);
-              const available = cust?.store_credit || 0;
-              const over = (parseFloat(f.useCredit) || 0) > available;
-              return (
-                <div style={s.formGroup}>
-                  <label style={s.formLabel}>
-                    {isAr ? 'العميل' : 'Customer'}: <strong>{cust?.name || 'N/A'}</strong>
-                    <span style={{ marginLeft: '10px', color: '#34D399' }}>
-                      {isAr ? 'الرصيد المتاح' : 'Available Credit'}: {available.toFixed(2)} SAR
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    max={available}
-                    style={{ ...s.input, borderColor: over ? '#DC2626' : '#475569' }}
-                    value={f.useCredit}
-                    onChange={e => setInvForm({ ...f, useCredit: e.target.value })}
-                    placeholder={isAr ? 'كم رصيد تريد استخدامه؟' : 'How much credit to use?'}
-                  />
-                  {over && <div style={{ color: '#FCA5A5', fontSize: '12px', marginTop: '4px' }}>
-                    ⚠️ {isAr ? 'يتجاوز الرصيد المتاح' : 'Exceeds available credit'}
-                  </div>}
-                  <button
-                    type="button"
-                    style={{ ...s.btn, ...s.btnGhost, marginTop: '6px', fontSize: '11px', padding: '6px 10px' }}
-                    onClick={() => setInvForm({ ...f, useCredit: Math.min(available, grandTotal) })}
-                  >
-                    {isAr ? 'استخدام الحد الأقصى المتاح' : 'Use max available'}
-                  </button>
-                </div>
-              );
-            })()}
+            {/* ✅ FIXED: Credit Balance with remaining payment method options */}
+            {f.payment === 'Credit Balance' && renderCreditBalancePayment()}
 
             {f.payment === 'Tabby' && (
               <div style={s.formGroup}>
@@ -1285,7 +1384,7 @@ function CreateInvoiceView(props) {
 // MY ATTENDANCE VIEW
 // ============================================================
 function MyAttendanceView(props) {
-  const { page, data, tr, setPage, showToast, today, userProfile } = props;
+  const { page, data, tr, setPage, showToast, today, userProfile, lang, theme } = props;
   const { s, fmt, t, isAr, isDark } = useMiscHelpers(props);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1478,7 +1577,7 @@ function MyAttendanceView(props) {
 }
 
 // ============================================================
-// HR VIEW – COMPLETE EMPLOYEE 360 WITH ALL FIELDS
+// HR VIEW – COMPLETE EMPLOYEE 360
 // ============================================================
 function HRView(props) {
   const {
@@ -1487,8 +1586,10 @@ function HRView(props) {
     empForm, setEmpForm, editEmpId, setEditEmpId,
     advForm, setAdvForm, handleAddAdvance, handleUpdateAdvanceStatus, handleDeleteAdvance,
     handleAddMistake, handlePreviewMistake, handleDeleteMistake,
-    payForm, setPayForm, handleProcessPayroll, handleGenerateSlip, handleDeletePayroll
+    payForm, setPayForm, handleProcessPayroll, handleGenerateSlip, handleDeletePayroll,
+    lang, theme
   } = props;
+
   const { s, fmt, t, isAr, isDark } = useMiscHelpers(props);
   const isBasicHR = page === 'hr';
   const [tab, setTab] = useState('directory');
