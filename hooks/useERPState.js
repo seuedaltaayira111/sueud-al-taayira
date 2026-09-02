@@ -581,13 +581,15 @@ export default function useERPState() {
     }
   }, [user?.email, userProfile?.tenant_id]);
 
-  /* ===== FETCH ALL – ONLY EXISTING TABLES (Promise.allSettled) ===== */
+  /* ===== FETCH ALL – FIXED: removed .order() to avoid 400 errors ===== */
   const fetchAll = useCallback(async () => {
     if (!userProfile?.tenant_id) return;
     const tid = userProfile.tenant_id;
 
+    // We'll fetch without ordering, then sort in frontend if needed.
+    // This avoids 400 errors on tables without 'created_at' column.
     const queries = [
-      supabase.from('invoices').select('*, customers(name,phone,store_credit), corporates(name,vat_no,phone), employees(name,phone)').eq('tenant_id', tid).order('created_at', { ascending: false }),
+      supabase.from('invoices').select('*, customers(name,phone,store_credit), corporates(name,vat_no,phone), employees(name,phone)').eq('tenant_id', tid),
       supabase.from('customers').select('*').eq('tenant_id', tid),
       supabase.from('corporates').select('*').eq('tenant_id', tid),
       supabase.from('creditors').select('*').eq('tenant_id', tid),
@@ -596,21 +598,21 @@ export default function useERPState() {
       supabase.from('branches').select('*').eq('tenant_id', tid),
       supabase.from('portals').select('*').eq('tenant_id', tid),
       supabase.from('employees').select('*').eq('tenant_id', tid),
-      supabase.from('expenses').select('*').eq('tenant_id', tid).order('created_at', { ascending: false }),
-      supabase.from('cashbook').select('*').eq('tenant_id', tid).order('created_at', { ascending: false }),
-      supabase.from('payroll').select('*, employees(name)').eq('tenant_id', tid).order('created_at', { ascending: false }),
-      supabase.from('staff_mistakes').select('*, employees(name)').eq('tenant_id', tid).order('created_at', { ascending: false }),
-      supabase.from('audit_logs').select('*').eq('tenant_id', tid).order('created_at', { ascending: false }).limit(200),
+      supabase.from('expenses').select('*').eq('tenant_id', tid),
+      supabase.from('cashbook').select('*').eq('tenant_id', tid),
+      supabase.from('payroll').select('*, employees(name)').eq('tenant_id', tid),
+      supabase.from('staff_mistakes').select('*, employees(name)').eq('tenant_id', tid),
+      supabase.from('audit_logs').select('*').eq('tenant_id', tid).limit(200),
       supabase.from('settings').select('*').eq('tenant_id', tid).maybeSingle(),
       supabase.from('services').select('*').eq('tenant_id', tid),
       supabase.from('emp_advances').select('*, employees(name)').eq('tenant_id', tid),
-      supabase.from('investments').select('*').eq('tenant_id', tid).order('created_at', { ascending: false }),
-      supabase.from('attendance').select('*, employees(name)').eq('tenant_id', tid).order('date', { ascending: false }),
+      supabase.from('investments').select('*').eq('tenant_id', tid),
+      supabase.from('attendance').select('*, employees(name)').eq('tenant_id', tid),
       supabase.from('app_users').select('*').eq('tenant_id', tid),
-      supabase.from('corporate_travel').select('*, corporates(name)').eq('tenant_id', tid).order('created_at', { ascending: false }),
-      supabase.from('frequent_flyer').select('*').eq('tenant_id', tid).order('points', { ascending: false }),
-      supabase.from('recharges').select('*, portals(name)').eq('tenant_id', tid).order('recharge_date', { ascending: false }),
-      supabase.from('customer_credits').select('*, customers(name)').eq('tenant_id', tid).order('created_at', { ascending: false })
+      supabase.from('corporate_travel').select('*, corporates(name)').eq('tenant_id', tid),
+      supabase.from('frequent_flyer').select('*').eq('tenant_id', tid),
+      supabase.from('recharges').select('*, portals(name)').eq('tenant_id', tid),
+      supabase.from('customer_credits').select('*, customers(name)').eq('tenant_id', tid)
     ];
 
     const results = await Promise.allSettled(queries);
@@ -634,6 +636,25 @@ export default function useERPState() {
         }
       }
     });
+
+    // Sort relevant arrays by created_at or date fields to maintain order
+    // We'll sort in frontend for safety
+    const sortByDate = (arr, field = 'created_at') => {
+      if (!arr || !arr.length) return arr;
+      return [...arr].sort((a, b) => new Date(b[field] || b.created_at) - new Date(a[field] || a.created_at));
+    };
+    // Apply sorting to arrays that need it
+    newData.invoices = sortByDate(newData.invoices, 'created_at');
+    newData.expenses = sortByDate(newData.expenses, 'created_at');
+    newData.cashbook = sortByDate(newData.cashbook, 'created_at');
+    newData.payroll = sortByDate(newData.payroll, 'created_at');
+    newData.staffMistakes = sortByDate(newData.staffMistakes, 'created_at');
+    newData.auditLogs = sortByDate(newData.auditLogs, 'created_at');
+    newData.investments = sortByDate(newData.investments, 'created_at');
+    newData.attendance = sortByDate(newData.attendance, 'date');
+    newData.corporateTravel = sortByDate(newData.corporateTravel, 'booking_date');
+    newData.recharges = sortByDate(newData.recharges, 'recharge_date');
+    newData.customerCredits = sortByDate(newData.customerCredits, 'created_at');
 
     setData(prev => ({ ...prev, ...newData }));
   }, [userProfile?.tenant_id]);
@@ -772,7 +793,6 @@ export default function useERPState() {
     contractType, setContractType,
     contractMarkup, setContractMarkup,
     contractTerms, setContractTerms,
-    // Added cashbookEditForm
     cashbookEditForm, setCashbookEditForm,
     getInvoiceHTML, getRefundHTML, getExpenseHTML,
     getSalarySlipHTML, getContractHTML, getMistakeHTML
