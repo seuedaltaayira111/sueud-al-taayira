@@ -2485,7 +2485,7 @@ function ExpensesView(props) {
     e.preventDefault();
     const totalAmount = expFormLocal.items.reduce((s, item) => s + ((parseFloat(item.qty) || 1) * (parseFloat(item.price) || 0)), 0);
     if (totalAmount <= 0) {
-      showToast?.(isAr ? '⚠️ कम से कम एक आइटम डालें' : '⚠️ Please add at least one item');
+      showToast?.(isAr ? '⚠️ أضف عنصرًا واحدًا على الأقل' : '⚠️ Please add at least one item');
       return;
     }
 
@@ -2517,7 +2517,7 @@ function ExpensesView(props) {
           ...prev,
           expenses: prev.expenses.map(ex => ex.id === editingExpId ? up : ex)
         }));
-        showToast?.(isAr ? '✅ अपडेट हो गया' : '✅ Updated!');
+        showToast?.(isAr ? '✅ تم التحديث' : '✅ Updated!');
         setEditingExpId(null);
       } else {
         const { data: nExp, error } = await supabase
@@ -2546,7 +2546,7 @@ function ExpensesView(props) {
           expenses: [nExp, ...prev.expenses],
           cashbook: newCbEntry ? [newCbEntry, ...prev.cashbook] : prev.cashbook
         }));
-        showToast?.(isAr ? '✅ खर्चा जोड़ा गया' : '✅ Expense added!');
+        showToast?.(isAr ? '✅ تمت إضافة المصروف' : '✅ Expense added!');
       }
 
       setExpFormLocal({
@@ -2560,34 +2560,34 @@ function ExpensesView(props) {
       });
       fetchAll?.();
     } catch (err) {
-      showToast?.(isAr ? '❌ त्रुटि: ' + err.message : '❌ Error: ' + err.message);
+      showToast?.(isAr ? '❌ خطأ: ' + err.message : '❌ Error: ' + err.message);
     }
   };
 
   const handleDeleteExpenseLocal = async (exp) => {
-    if (!confirm(isAr ? 'क्या आप इस खर्च को हटाना चाहते हैं?' : 'Delete this expense?')) return;
+    if (!confirm(isAr ? 'هل تريد حذف هذا المصروف؟' : 'Delete this expense?')) return;
     try {
       { const { error: _delErr1 } = await supabase.from('expenses').delete().eq('id', exp.id); if (_delErr1) throw new Error(_delErr1.message); }
       setData(prev => ({
         ...prev,
         expenses: prev.expenses.filter(ex => ex.id !== exp.id)
       }));
-      showToast?.(isAr ? '✅ हटा दिया' : '✅ Deleted');
+      showToast?.(isAr ? '✅ تم الحذف' : '✅ Deleted');
     } catch (err) {
-      showToast?.(isAr ? '❌ त्रुटि: ' + err.message : '❌ Error: ' + err.message);
+      showToast?.(isAr ? '❌ خطأ: ' + err.message : '❌ Error: ' + err.message);
     }
   };
 
   const handlePreviewExpense = (exp) => {
     const html = getExpenseHTML?.(exp, data.settings, lang);
-    if (!html) return showToast?.(isAr ? '❌ HTML नहीं बना' : '❌ HTML not generated');
+    if (!html) return showToast?.(isAr ? '❌ لم يتم إنشاء HTML' : '❌ HTML not generated');
     setPreviewHTML?.(html);
     setModal?.({ type: 'preview', data: exp });
   };
 
   const handleDownloadExpensePDF = async (exp) => {
     const html = getExpenseHTML?.(exp, data.settings, lang);
-    if (!html) return showToast?.(isAr ? '❌ HTML नहीं बना' : '❌ HTML not generated');
+    if (!html) return showToast?.(isAr ? '❌ لم يتم إنشاء HTML' : '❌ HTML not generated');
     await downloadPDF?.(html, `Expense_${exp.id || 'voucher'}.pdf`);
   };
 
@@ -2620,7 +2620,7 @@ function ExpensesView(props) {
         <div style={styles.searchBox}>
           <input
             style={styles.input}
-            placeholder={isAr ? '🔍 खर्चा खोजें...' : '🔍 Search expenses...'}
+            placeholder={isAr ? '🔍 البحث عن مصروف...' : '🔍 Search expenses...'}
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
@@ -2635,24 +2635,24 @@ function ExpensesView(props) {
 
       <div style={styles.statsGrid}>
         <div style={styles.statCard}>
-          <div style={styles.statLabel}>💸 {isAr ? 'कुल खर्च' : 'Total Expenses'}</div>
+          <div style={styles.statLabel}>💸 {isAr ? 'إجمالي المصاريف' : 'Total Expenses'}</div>
           <div style={{ ...styles.statValue, color: '#EF4444' }}>{fmt(totalExp)}</div>
         </div>
         <div style={styles.statCard}>
-          <div style={styles.statLabel}>📄 {isAr ? 'संख्या' : 'Count'}</div>
+          <div style={styles.statLabel}>📄 {isAr ? 'العدد' : 'Count'}</div>
           <div style={styles.statValue}>{filtered.length}</div>
         </div>
       </div>
 
       <div style={styles.card}>
-        <h3 style={styles.sectionTitle}>{editingExpId ? '✏️ ' + (isAr ? 'संपादित करें' : 'Edit') : '📝 ' + (isAr ? 'नया खर्चा' : 'Add New Expense')}</h3>
+        <h3 style={styles.sectionTitle}>{editingExpId ? '✏️ ' + (isAr ? 'تعديل' : 'Edit') : '📝 ' + (isAr ? 'مصروف جديد' : 'Add New Expense')}</h3>
         <form onSubmit={handleExpenseSubmit} style={styles.formRow}>
           <div>
-            <label style={styles.formLabel}>{isAr ? 'तारीख' : 'Date'}</label>
+            <label style={styles.formLabel}>{isAr ? 'التاريخ' : 'Date'}</label>
             <input type="date" style={styles.input} value={expFormLocal.expense_date} onChange={e => setExpFormLocal({ ...expFormLocal, expense_date: e.target.value })} required />
           </div>
           <div>
-            <label style={styles.formLabel}>{isAr ? 'प्रकार' : 'Type'}</label>
+            <label style={styles.formLabel}>{isAr ? 'النوع' : 'Type'}</label>
             <select style={styles.select} value={expFormLocal.expense_type} onChange={e => setExpFormLocal({ ...expFormLocal, expense_type: e.target.value })}>
               <option>Office Expense</option>
               <option>Travel Expense</option>
@@ -2664,11 +2664,11 @@ function ExpensesView(props) {
             </select>
           </div>
           <div>
-            <label style={styles.formLabel}>{isAr ? 'विक्रेता' : 'Vendor'}</label>
+            <label style={styles.formLabel}>{isAr ? 'المورد' : 'Vendor'}</label>
             <input style={styles.input} value={expFormLocal.vendor_name} onChange={e => setExpFormLocal({ ...expFormLocal, vendor_name: e.target.value })} />
           </div>
           <div>
-            <label style={styles.formLabel}>{isAr ? 'भुगतान विधि' : 'Payment'}</label>
+            <label style={styles.formLabel}>{isAr ? 'طريقة الدفع' : 'Payment'}</label>
             <select style={styles.select} value={expFormLocal.payment_mode} onChange={e => setExpFormLocal({ ...expFormLocal, payment_mode: e.target.value })}>
               <option>Cash</option>
               <option>Bank Transfer</option>
@@ -2676,26 +2676,26 @@ function ExpensesView(props) {
             </select>
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
-            <label style={styles.formLabel}>{isAr ? 'विवरण' : 'Description'}</label>
+            <label style={styles.formLabel}>{isAr ? 'الوصف' : 'Description'}</label>
             <input style={styles.input} value={expFormLocal.description} onChange={e => setExpFormLocal({ ...expFormLocal, description: e.target.value })} />
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
-            <label style={styles.formLabel}>{isAr ? 'आइटम' : 'Items'}</label>
+            <label style={styles.formLabel}>{isAr ? 'العناصر' : 'Items'}</label>
             {expFormLocal.items.map((item, idx) => (
               <div key={idx} style={{ display: 'flex', gap: '10px', marginBottom: '8px', alignItems: 'center' }}>
-                <input style={{ ...styles.input, flex: 2 }} placeholder={isAr ? 'आइटम नाम' : 'Item name'} value={item.name} onChange={e => handleExpItemChangeLocal(idx, 'name', e.target.value)} />
-                <input type="number" style={{ ...styles.input, flex: 1 }} placeholder={isAr ? 'मात्रा' : 'Qty'} value={item.qty} onChange={e => handleExpItemChangeLocal(idx, 'qty', e.target.value)} min="1" />
-                <input type="number" step="0.01" style={{ ...styles.input, flex: 1 }} placeholder={isAr ? 'कीमत' : 'Price'} value={item.price} onChange={e => handleExpItemChangeLocal(idx, 'price', e.target.value)} min="0" />
+                <input style={{ ...styles.input, flex: 2 }} placeholder={isAr ? 'اسم العنصر' : 'Item name'} value={item.name} onChange={e => handleExpItemChangeLocal(idx, 'name', e.target.value)} />
+                <input type="number" style={{ ...styles.input, flex: 1 }} placeholder={isAr ? 'الكمية' : 'Qty'} value={item.qty} onChange={e => handleExpItemChangeLocal(idx, 'qty', e.target.value)} min="1" />
+                <input type="number" step="0.01" style={{ ...styles.input, flex: 1 }} placeholder={isAr ? 'السعر' : 'Price'} value={item.price} onChange={e => handleExpItemChangeLocal(idx, 'price', e.target.value)} min="0" />
                 {expFormLocal.items.length > 1 && (
                   <button type="button" style={{ ...styles.btn, ...styles.btnDanger, padding: '6px 12px' }} onClick={() => handleRemoveExpItemLocal(idx)}>✕</button>
                 )}
               </div>
             ))}
             <button type="button" style={{ ...styles.btn, ...styles.btnGhost, padding: '6px 12px' }} onClick={handleAddExpItemLocal}>
-              ➕ {isAr ? 'आइटम जोड़ें' : 'Add Item'}
+              ➕ {isAr ? 'إضافة عنصر' : 'Add Item'}
             </button>
             <div style={{ marginTop: '10px', padding: '10px', background: isDark ? '#0F172A' : '#F1F5F9', borderRadius: '8px', display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontWeight: 600 }}>{isAr ? 'कुल' : 'Total'}</span>
+              <span style={{ fontWeight: 600 }}>{isAr ? 'الإجمالي' : 'Total'}</span>
               <span style={{ fontWeight: 700, color: '#059669' }}>
                 {expFormLocal.items.reduce((s, item) => s + ((parseFloat(item.qty) || 1) * (parseFloat(item.price) || 0)), 0).toFixed(2)} SAR
               </span>
@@ -2703,11 +2703,11 @@ function ExpensesView(props) {
           </div>
           <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px' }}>
             <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, padding: '12px 30px' }}>
-              {editingExpId ? '💾 ' + (isAr ? 'अपडेट करें' : 'Update') : '✅ ' + (isAr ? 'खर्चा जोड़ें' : 'Add Expense')}
+              {editingExpId ? '💾 ' + (isAr ? 'تحديث' : 'Update') : '✅ ' + (isAr ? 'إضافة مصروف' : 'Add Expense')}
             </button>
             {editingExpId && (
               <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setEditingExpId(null); setExpFormLocal({ expense_type: 'Office Expense', payment_mode: 'Cash', description: '', expense_date: today, vendor_name: '', items: [{ name: '', qty: 1, price: 0 }], approval_status: 'Approved' }); }}>
-                ✕ {isAr ? 'रद्द करें' : 'Cancel'}
+                ✕ {isAr ? 'إلغاء' : 'Cancel'}
               </button>
             )}
           </div>
@@ -2739,10 +2739,10 @@ function ExpensesView(props) {
                   <td style={{ ...styles.tdRight, color: '#EF4444' }}>{fmt(e.amount)}</td>
                   <td style={styles.tdCenter}>
                     <div style={styles.actionsCell}>
-                      <button style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }} onClick={() => handlePreviewExpense(e)} title={isAr ? 'पूर्वावलोकन' : 'Preview'}>👁️</button>
-                      <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleDownloadExpensePDF(e)} title={isAr ? 'डाउनलोड' : 'Download'}>⬇️</button>
-                      <button style={{ ...styles.actionBtn, background: '#FEF3C7', color: '#92400E' }} onClick={() => handleEditExpense(e)} title={isAr ? 'संपादित करें' : 'Edit'}>✏️</button>
-                      <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDeleteExpenseLocal(e)} title={isAr ? 'हटाएं' : 'Delete'}>🗑️</button>
+                      <button style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }} onClick={() => handlePreviewExpense(e)} title={isAr ? 'معاينة' : 'Preview'}>👁️</button>
+                      <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleDownloadExpensePDF(e)} title={isAr ? 'تنزيل' : 'Download'}>⬇️</button>
+                      <button style={{ ...styles.actionBtn, background: '#FEF3C7', color: '#92400E' }} onClick={() => handleEditExpense(e)} title={isAr ? 'تعديل' : 'Edit'}>✏️</button>
+                      <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDeleteExpenseLocal(e)} title={isAr ? 'حذف' : 'Delete'}>🗑️</button>
                     </div>
                   </td>
                 </tr>
@@ -2750,7 +2750,7 @@ function ExpensesView(props) {
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan="7" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
-                    {isAr ? 'कोई खर्चा नहीं' : 'No expenses found'}
+                    {isAr ? 'لا توجد مصاريف' : 'No expenses found'}
                   </td>
                 </tr>
               )}
@@ -2765,7 +2765,8 @@ function StaffMistakesView(props) {
   const {
     page, data, lang, tr, modal, setModal, setPage,
     handleAddMistake, handlePreviewMistake, handleDeleteMistake,
-    showToast, userProfile
+    showToast, userProfile,
+    setData, fetchAll, getMistakeHTML, setPreviewHTML, downloadPDF
   } = props;
   const isAr = lang === 'ar';
   const { styles, fmt, today } = useSalesHelpers(props);
@@ -2804,7 +2805,7 @@ function StaffMistakesView(props) {
           ...prev,
           staffMistakes: prev.staffMistakes.map(m => m.id === editingId ? up : m)
         }));
-        showToast?.(isAr ? '✅ अपडेट हो गया' : '✅ Updated!');
+        showToast?.(isAr ? '✅ تم التحديث' : '✅ Updated!');
         setEditingId(null);
       } else {
         const { data: newM, error } = await supabase
@@ -2818,7 +2819,7 @@ function StaffMistakesView(props) {
           ...prev,
           staffMistakes: [newM, ...(prev.staffMistakes || [])]
         }));
-        showToast?.(isAr ? '✅ मिस्टेक लॉग हो गया' : '✅ Mistake Logged!');
+        showToast?.(isAr ? '✅ تم تسجيل الخطأ' : '✅ Mistake Logged!');
       }
 
       setMistakeForm({
@@ -2832,34 +2833,34 @@ function StaffMistakesView(props) {
       });
       fetchAll?.();
     } catch (err) {
-      showToast?.(isAr ? '❌ त्रुटि: ' + err.message : '❌ Error: ' + err.message);
+      showToast?.(isAr ? '❌ خطأ: ' + err.message : '❌ Error: ' + err.message);
     }
   };
 
   const handlePreviewMistakeLocal = (m) => {
     const html = getMistakeHTML?.(m, data.settings, lang);
-    if (!html) return showToast?.(isAr ? '❌ HTML नहीं बना' : '❌ HTML not generated');
+    if (!html) return showToast?.(isAr ? '❌ لم يتم إنشاء HTML' : '❌ HTML not generated');
     setPreviewHTML?.(html);
     setModal?.({ type: 'preview', data: m });
   };
 
   const handleDownloadMistakePDF = async (m) => {
     const html = getMistakeHTML?.(m, data.settings, lang);
-    if (!html) return showToast?.(isAr ? '❌ HTML नहीं बना' : '❌ HTML not generated');
+    if (!html) return showToast?.(isAr ? '❌ لم يتم إنشاء HTML' : '❌ HTML not generated');
     await downloadPDF?.(html, `Mistake_${m.id || 'voucher'}.pdf`);
   };
 
   const handleDeleteMistakeLocal = async (m) => {
-    if (!confirm(isAr ? 'क्या आप हटाना चाहते हैं?' : 'Delete?')) return;
+    if (!confirm(isAr ? 'هل تريد الحذف؟' : 'Delete?')) return;
     try {
       { const { error: _delErr2 } = await supabase.from('staff_mistakes').delete().eq('id', m.id); if (_delErr2) throw new Error(_delErr2.message); }
       setData(prev => ({
         ...prev,
         staffMistakes: prev.staffMistakes.filter(x => x.id !== m.id)
       }));
-      showToast?.(isAr ? '✅ हटा दिया' : '✅ Deleted');
+      showToast?.(isAr ? '✅ تم الحذف' : '✅ Deleted');
     } catch (err) {
-      showToast?.(isAr ? '❌ त्रुटि: ' + err.message : '❌ Error: ' + err.message);
+      showToast?.(isAr ? '❌ خطأ: ' + err.message : '❌ Error: ' + err.message);
     }
   };
 
@@ -2893,7 +2894,7 @@ function StaffMistakesView(props) {
         <div style={styles.searchBox}>
           <input
             style={styles.input}
-            placeholder={isAr ? '🔍 खोजें...' : '🔍 Search...'}
+            placeholder={isAr ? '🔍 بحث...' : '🔍 Search...'}
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
@@ -2902,60 +2903,60 @@ function StaffMistakesView(props) {
 
       <div style={styles.statsGrid}>
         <div style={styles.statCard}>
-          <div style={styles.statLabel}>⚠️ {isAr ? 'कुल मिस्टेक' : 'Total Mistakes'}</div>
+          <div style={styles.statLabel}>⚠️ {isAr ? 'إجمالي الأخطاء' : 'Total Mistakes'}</div>
           <div style={styles.statValue}>{data.staffMistakes?.length || 0}</div>
         </div>
         <div style={styles.statCard}>
-          <div style={styles.statLabel}>💰 {isAr ? 'कुल नुकसान' : 'Total Loss'}</div>
+          <div style={styles.statLabel}>💰 {isAr ? 'إجمالي الخسارة' : 'Total Loss'}</div>
           <div style={{ ...styles.statValue, color: '#EF4444' }}>{fmt(totalLoss)}</div>
         </div>
         <div style={styles.statCard}>
-          <div style={styles.statLabel}>✅ {isAr ? 'कर्मचारी द्वारा भुगतान' : 'Paid by Employee'}</div>
+          <div style={styles.statLabel}>✅ {isAr ? 'مدفوع من الموظف' : 'Paid by Employee'}</div>
           <div style={{ ...styles.statValue, color: '#059669' }}>{fmt(paidByEmp)}</div>
         </div>
       </div>
 
       <div style={styles.card}>
-        <h3 style={styles.sectionTitle}>{editingId ? '✏️ ' + (isAr ? 'संपादित करें' : 'Edit') : '⚠️ ' + (isAr ? 'नई मिस्टेक लॉग करें' : 'Log New Mistake')}</h3>
+        <h3 style={styles.sectionTitle}>{editingId ? '✏️ ' + (isAr ? 'تعديل' : 'Edit') : '⚠️ ' + (isAr ? 'تسجيل خطأ جديد' : 'Log New Mistake')}</h3>
         <form onSubmit={handleMistakeSubmit} style={styles.formRow}>
           <div>
-            <label style={styles.formLabel}>{isAr ? 'कर्मचारी' : 'Employee'}</label>
+            <label style={styles.formLabel}>{isAr ? 'الموظف' : 'Employee'}</label>
             <select style={styles.select} value={mistakeForm.employee_id} onChange={e => setMistakeForm({ ...mistakeForm, employee_id: e.target.value })} required>
-              <option value="">{isAr ? 'चुनें' : 'Select'}</option>
+              <option value="">{isAr ? 'اختر' : 'Select'}</option>
               {(data.employees || []).map(e => (
                 <option key={e.id} value={e.id}>{e.name}</option>
               ))}
             </select>
           </div>
           <div>
-            <label style={styles.formLabel}>{isAr ? 'पुराना टिकट नं.' : 'Old Ticket No'}</label>
+            <label style={styles.formLabel}>{isAr ? 'رقم التذكرة القديم' : 'Old Ticket No'}</label>
             <input style={styles.input} value={mistakeForm.old_ticket_no} onChange={e => setMistakeForm({ ...mistakeForm, old_ticket_no: e.target.value })} />
           </div>
           <div>
-            <label style={styles.formLabel}>{isAr ? 'नया टिकट नं.' : 'New Ticket No'}</label>
+            <label style={styles.formLabel}>{isAr ? 'رقم التذكرة الجديد' : 'New Ticket No'}</label>
             <input style={styles.input} value={mistakeForm.new_ticket_no} onChange={e => setMistakeForm({ ...mistakeForm, new_ticket_no: e.target.value })} />
           </div>
           <div>
-            <label style={styles.formLabel}>{isAr ? 'नुकसान (SAR)' : 'Loss Amount (SAR)'}</label>
+            <label style={styles.formLabel}>{isAr ? 'الخسارة (ريال)' : 'Loss Amount (SAR)'}</label>
             <input type="number" step="0.01" style={styles.input} value={mistakeForm.loss_amount} onChange={e => setMistakeForm({ ...mistakeForm, loss_amount: e.target.value })} required />
           </div>
           <div>
-            <label style={styles.formLabel}>{isAr ? 'कारण' : 'Reason'}</label>
+            <label style={styles.formLabel}>{isAr ? 'السبب' : 'Reason'}</label>
             <input style={styles.input} value={mistakeForm.reason} onChange={e => setMistakeForm({ ...mistakeForm, reason: e.target.value })} />
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: isDark ? '#CBD5E1' : '#1E293B', fontSize: '13px' }}>
               <input type="checkbox" checked={mistakeForm.paid_by_employee} onChange={e => setMistakeForm({ ...mistakeForm, paid_by_employee: e.target.checked })} />
-              {isAr ? 'वेतन से काटें' : 'Deduct from Salary'}
+              {isAr ? 'خصم من الراتب' : 'Deduct from Salary'}
             </label>
           </div>
           <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px' }}>
             <button type="submit" style={{ ...styles.btn, ...styles.btnWarning, padding: '12px 30px' }}>
-              {editingId ? '💾 ' + (isAr ? 'अपडेट करें' : 'Update') : '⚠️ ' + (isAr ? 'लॉग करें' : 'Log Mistake')}
+              {editingId ? '💾 ' + (isAr ? 'تحديث' : 'Update') : '⚠️ ' + (isAr ? 'تسجيل' : 'Log Mistake')}
             </button>
             {editingId && (
               <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setEditingId(null); setMistakeForm({ employee_id: '', old_ticket_no: '', new_ticket_no: '', loss_amount: 0, paid_by_employee: false, reason: '', date: today }); }}>
-                ✕ {isAr ? 'रद्द करें' : 'Cancel'}
+                ✕ {isAr ? 'إلغاء' : 'Cancel'}
               </button>
             )}
           </div>
@@ -2993,15 +2994,15 @@ function StaffMistakesView(props) {
                       color: m.paid_by_employee ? '#34D399' : '#94A3B8',
                       background: m.paid_by_employee ? '#065F46' : '#1E293B'
                     }}>
-                      {m.paid_by_employee ? (isAr ? 'हाँ' : 'Yes') : (isAr ? 'नहीं' : 'No')}
+                      {m.paid_by_employee ? (isAr ? 'نعم' : 'Yes') : (isAr ? 'لا' : 'No')}
                     </span>
                   </td>
                   <td style={styles.tdCenter}>
                     <div style={styles.actionsCell}>
-                      <button style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }} onClick={() => handlePreviewMistakeLocal(m)} title={isAr ? 'पूर्वावलोकन' : 'Preview'}>👁️</button>
-                      <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleDownloadMistakePDF(m)} title={isAr ? 'डाउनलोड' : 'Download'}>⬇️</button>
-                      <button style={{ ...styles.actionBtn, background: '#FEF3C7', color: '#92400E' }} onClick={() => handleEditMistake(m)} title={isAr ? 'संपादित करें' : 'Edit'}>✏️</button>
-                      <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDeleteMistakeLocal(m)} title={isAr ? 'हटाएं' : 'Delete'}>🗑️</button>
+                      <button style={{ ...styles.actionBtn, background: '#DBEAFE', color: '#1D4ED8' }} onClick={() => handlePreviewMistakeLocal(m)} title={isAr ? 'معاينة' : 'Preview'}>👁️</button>
+                      <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleDownloadMistakePDF(m)} title={isAr ? 'تنزيل' : 'Download'}>⬇️</button>
+                      <button style={{ ...styles.actionBtn, background: '#FEF3C7', color: '#92400E' }} onClick={() => handleEditMistake(m)} title={isAr ? 'تعديل' : 'Edit'}>✏️</button>
+                      <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDeleteMistakeLocal(m)} title={isAr ? 'حذف' : 'Delete'}>🗑️</button>
                     </div>
                   </td>
                 </tr>
@@ -3009,7 +3010,7 @@ function StaffMistakesView(props) {
               {filteredMistakes.length === 0 && (
                 <tr>
                   <td colSpan="7" style={{ ...styles.td, textAlign: 'center', padding: 30, color: '#94A3B8' }}>
-                    {isAr ? 'कोई मिस्टेक नहीं' : 'No mistakes logged.'}
+                    {isAr ? 'لا توجد أخطاء مسجلة' : 'No mistakes logged.'}
                   </td>
                 </tr>
               )}
