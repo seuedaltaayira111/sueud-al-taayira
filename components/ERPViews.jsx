@@ -30,6 +30,7 @@ const PAGE_COMPONENT = {
 
   // ===== REAL TRAVEL FEATURES =====
   flight_status: ERPViewsTravel,      // ✅ REAL - Ticket Generator
+  visa_processing: ERPViewsTravel,    // ✅ NEW - Visa Processing
   frequent_flyer: ERPViewsTravel,     // ✅ REAL - Frequent Flyer Management
   corporate_travel: ERPViewsTravel,   // ✅ REAL - Corporate Travel
 
