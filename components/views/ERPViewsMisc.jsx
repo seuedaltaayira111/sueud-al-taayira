@@ -483,30 +483,21 @@ export default function ERPViewsMisc(props) {
   if (page === 'my_attendance') return <MyAttendanceView {...props} />;
 
   // ============================================================
-  // HR – COMPLETE EMPLOYEE 360 (with date onBlur fix)
+  // HR – COMPLETE EMPLOYEE 360 (with ALL fields)
   // ============================================================
   if (page === 'hr' || page === 'hr_advanced') return <HRView {...props} />;
-
 
   return null;
 }
 
-// Shared styles/formatting helper for the pages in this file. Create
-// Invoice, My Attendance, and HR were previously `if (page === 'X')`
-// blocks calling different numbers of hooks (1, 6, and 1) while
-// sharing one component instance with Dashboard (0 hooks). Switching
-// between them via the sidebar didn't remount the component, so React
-// kept expecting the same hooks in the same order every render — a
-// Rules-of-Hooks violation that surfaces as "Cannot read properties of
-// undefined" and similar crashes, and only "fixes itself" on a full
-// reload. Each is now its own component so React mounts/unmounts them
-// properly instead of reusing a mismatched hook list.
+// ============================================================
+// Shared styles/formatting helper for the pages in this file.
+// ============================================================
 function useMiscHelpers(props) {
   const { lang, theme, tr } = props;
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
 
-  // ===== STYLES =====
   const s = {
     container: {
       padding: '20px',
@@ -731,6 +722,9 @@ function useMiscHelpers(props) {
   return { s, fmt, t, isAr, isDark };
 }
 
+// ============================================================
+// CREATE INVOICE VIEW
+// ============================================================
 function CreateInvoiceView(props) {
   const {
     page, data, tr, setPage, showToast, today, userProfile,
@@ -1284,8 +1278,12 @@ function CreateInvoiceView(props) {
         </div>
       </form>
     </div>
-  );}
+  );
+}
 
+// ============================================================
+// MY ATTENDANCE VIEW
+// ============================================================
 function MyAttendanceView(props) {
   const { page, data, tr, setPage, showToast, today, userProfile } = props;
   const { s, fmt, t, isAr, isDark } = useMiscHelpers(props);
@@ -1476,8 +1474,12 @@ function MyAttendanceView(props) {
         </>
       )}
     </div>
-  );}
+  );
+}
 
+// ============================================================
+// HR VIEW – COMPLETE EMPLOYEE 360 WITH ALL FIELDS
+// ============================================================
 function HRView(props) {
   const {
     page, data, tr, setPage, showToast, today, userProfile,
@@ -1523,6 +1525,7 @@ function HRView(props) {
           <div style={s.card}>
             <h3 style={s.sectionTitle}>{editEmpId ? '✏️ Edit Employee' : '+ Add Employee'}</h3>
             <form onSubmit={handleAddEditEmp} style={s.formRow}>
+              {/* Full employee form – all fields from empForm */}
               <div style={s.formGroup}>
                 <label style={s.formLabel}>Full Name</label>
                 <input style={s.input} value={empForm.name || ''} onChange={e => setEmpForm(p => ({ ...p, name: e.target.value }))} required />
@@ -1606,12 +1609,110 @@ function HRView(props) {
                 <input type="number" style={s.input} value={empForm.commission_rate || ''} onChange={e => setEmpForm(p => ({ ...p, commission_rate: e.target.value }))} />
               </div>
               <div style={s.formGroup}>
+                <label style={s.formLabel}>National ID</label>
+                <input style={s.input} value={empForm.national_id || ''} onChange={e => setEmpForm(p => ({ ...p, national_id: e.target.value }))} />
+              </div>
+              <div style={s.formGroup}>
                 <label style={s.formLabel}>Bank Name</label>
                 <input style={s.input} value={empForm.bank_name || ''} onChange={e => setEmpForm(p => ({ ...p, bank_name: e.target.value }))} />
               </div>
               <div style={s.formGroup}>
                 <label style={s.formLabel}>Bank Account / IBAN</label>
                 <input style={s.input} value={empForm.bank_account || ''} onChange={e => setEmpForm(p => ({ ...p, bank_account: e.target.value }))} />
+              </div>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Email</label>
+                <input style={s.input} value={empForm.email || ''} onChange={e => setEmpForm(p => ({ ...p, email: e.target.value }))} />
+              </div>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Emergency Contact</label>
+                <input style={s.input} value={empForm.emergency_contact || ''} onChange={e => setEmpForm(p => ({ ...p, emergency_contact: e.target.value }))} />
+              </div>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Emergency Phone</label>
+                <input style={s.input} value={empForm.emergency_phone || ''} onChange={e => setEmpForm(p => ({ ...p, emergency_phone: e.target.value }))} />
+              </div>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Address</label>
+                <input style={s.input} value={empForm.address || ''} onChange={e => setEmpForm(p => ({ ...p, address: e.target.value }))} />
+              </div>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Gender</label>
+                <input style={s.input} value={empForm.gender || ''} onChange={e => setEmpForm(p => ({ ...p, gender: e.target.value }))} />
+              </div>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Date of Birth</label>
+                <input 
+                  type="date" 
+                  style={s.input} 
+                  value={empForm.date_of_birth || ''} 
+                  onChange={e => setEmpForm(p => ({ ...p, date_of_birth: e.target.value }))}
+                  onBlur={(e) => {
+                    if (e.target.value === '') {
+                      setEmpForm(p => ({ ...p, date_of_birth: null }));
+                    }
+                  }}
+                />
+              </div>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Marital Status</label>
+                <input style={s.input} value={empForm.marital_status || ''} onChange={e => setEmpForm(p => ({ ...p, marital_status: e.target.value }))} />
+              </div>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Dependents</label>
+                <input style={s.input} value={empForm.dependents || ''} onChange={e => setEmpForm(p => ({ ...p, dependents: e.target.value }))} />
+              </div>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Education</label>
+                <input style={s.input} value={empForm.education || ''} onChange={e => setEmpForm(p => ({ ...p, education: e.target.value }))} />
+              </div>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Experience</label>
+                <input style={s.input} value={empForm.experience || ''} onChange={e => setEmpForm(p => ({ ...p, experience: e.target.value }))} />
+              </div>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Skills</label>
+                <input style={s.input} value={empForm.skills || ''} onChange={e => setEmpForm(p => ({ ...p, skills: e.target.value }))} />
+              </div>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Languages</label>
+                <input style={s.input} value={empForm.languages || ''} onChange={e => setEmpForm(p => ({ ...p, languages: e.target.value }))} />
+              </div>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Certifications</label>
+                <input style={s.input} value={empForm.certifications || ''} onChange={e => setEmpForm(p => ({ ...p, certifications: e.target.value }))} />
+              </div>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Work Email</label>
+                <input style={s.input} value={empForm.work_email || ''} onChange={e => setEmpForm(p => ({ ...p, work_email: e.target.value }))} />
+              </div>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Work Phone</label>
+                <input style={s.input} value={empForm.work_phone || ''} onChange={e => setEmpForm(p => ({ ...p, work_phone: e.target.value }))} />
+              </div>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Department</label>
+                <input style={s.input} value={empForm.department || ''} onChange={e => setEmpForm(p => ({ ...p, department: e.target.value }))} />
+              </div>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Manager ID</label>
+                <input style={s.input} value={empForm.manager_id || ''} onChange={e => setEmpForm(p => ({ ...p, manager_id: e.target.value }))} />
+              </div>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Leave Balance</label>
+                <input type="number" style={s.input} value={empForm.leave_balance || ''} onChange={e => setEmpForm(p => ({ ...p, leave_balance: e.target.value }))} />
+              </div>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Target (SAR)</label>
+                <input type="number" style={s.input} value={empForm.target || ''} onChange={e => setEmpForm(p => ({ ...p, target: e.target.value }))} />
+              </div>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Performance Rating</label>
+                <input style={s.input} value={empForm.performance_rating || ''} onChange={e => setEmpForm(p => ({ ...p, performance_rating: e.target.value }))} />
+              </div>
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>Notes</label>
+                <input style={s.input} value={empForm.notes || ''} onChange={e => setEmpForm(p => ({ ...p, notes: e.target.value }))} />
               </div>
               <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px' }}>
                 <button type="submit" style={{ ...s.btn, ...s.btnSuccess }}>
@@ -1968,4 +2069,5 @@ function HRView(props) {
         </>
       )}
     </div>
-  );}
+  );
+}
