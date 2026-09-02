@@ -4,25 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
 // ═══════════════════════════════════════════════════════════════════
-// Each page below used to be an `if (page === 'X') { ...hooks... }`
-// block inside ONE shared component. Since all three pages route to
-// the same component instance in the dispatcher, switching between
-// them (Flight Status → Frequent Flyer → Corporate Travel) via the
-// sidebar changed which hooks got called mid-life of that instance —
-// a React Rules-of-Hooks violation. React does not remount a
-// component just because a prop changed; it keeps the same fiber and
-// expects the exact same hooks, in the exact same order, on every
-// render. Flight Status called 6 hooks, Frequent Flyer called 4,
-// Corporate Travel called 2 — moving between them corrupted React's
-// internal hook bookkeeping, which is what surfaced as "Cannot read
-// properties of undefined" and only "fixed itself" on a full reload
-// (a fresh mount only ever calls the hooks for whichever page loaded
-// first, so no mismatch could occur).
-//
-// Fix: each page is now its OWN component. The dispatcher below picks
-// which one to render as a real, distinct component type, so React
-// properly unmounts the previous page's hooks and mounts a clean set
-// for the new one — no shared instance, no mismatch possible.
+// Each page is now its OWN component to avoid hook mismatch errors.
 // ═══════════════════════════════════════════════════════════════════
 
 export default function ERPViewsTravel(props) {
@@ -38,10 +20,10 @@ export default function ERPViewsTravel(props) {
 // SHARED HELPERS
 // ============================================================
 function useTravelHelpers(props) {
-  const { page, data, tr, today, userProfile, showToast, setData, logAction, lang, theme } = props;
-
+  const { lang, theme, tr } = props;
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
+  const t = (key, fallback) => tr?.[key] || fallback || key;
 
   const styles = {
     container: {
@@ -261,12 +243,21 @@ function useTravelHelpers(props) {
       fontSize: '11px',
       fontWeight: 600,
       transition: 'all 0.2s'
+    },
+    emptyState: {
+      textAlign: 'center',
+      padding: '60px 20px',
+      color: '#64748B'
+    },
+    emptyIcon: {
+      fontSize: '60px',
+      marginBottom: '15px'
     }
   };
 
   const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
 
-  return { isAr, isDark, styles, fmt };
+  return { isAr, isDark, styles, fmt, t };
 }
 
 // ============================================================
@@ -274,7 +265,7 @@ function useTravelHelpers(props) {
 // ============================================================
 function FlightStatusView(props) {
   const { data, tr, today, userProfile, showToast, setData, logAction, lang, theme } = props;
-  const { isAr, isDark, styles, fmt } = useTravelHelpers(props);
+  const { isAr, isDark, styles, fmt, t } = useTravelHelpers(props);
   const [ticketForm, setTicketForm] = useState({
     passenger_name: '',
     passenger_phone: '',
@@ -299,7 +290,7 @@ function FlightStatusView(props) {
     fare: 0,
     tax: 0,
     total: 0,
-    airline_name: '' // for display
+    airline_name: ''
   });
   const [tickets, setTickets] = useState([]);
   const [editingId, setEditingId] = useState(null);
@@ -307,7 +298,7 @@ function FlightStatusView(props) {
   const [pnrResult, setPnrResult] = useState(null);
 
   const airlines = [
-    { code: 'SV', name: 'Saudia' },
+    { code: 'SV', name: 'Saudi Airline' },
     { code: 'XY', name: 'Flynas' },
     { code: 'F3', name: 'Flyadeal' },
     { code: 'EK', name: 'Emirates' },
@@ -530,7 +521,7 @@ function FlightStatusView(props) {
   };
 
   // ============================================================
-  // PRINT TICKET – matching the PDF sample
+  // PRINT TICKET – matching the PDF sample exactly
   // ============================================================
   const handlePrintTicket = (ticket) => {
     // Build the detailed HTML exactly like the sample
@@ -543,13 +534,13 @@ function FlightStatusView(props) {
     body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
     .ticket { border: 2px solid #1E3A8A; border-radius: 16px; padding: 20px; max-width: 800px; margin: auto; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
     .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1E3A8A; padding-bottom: 10px; }
-    .header .left { font-weight: bold; }
-    .header .right { text-align: right; }
+    .header .left { font-weight: bold; font-size: 14px; }
+    .header .right { text-align: right; font-size: 12px; }
     .ref-no { font-size: 12px; color: #666; }
     .status { display: inline-block; background: #D1FAE5; color: #065F46; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-top: 5px; }
     .flight-details { margin: 15px 0; padding: 10px; background: #F8FAFC; border-radius: 8px; border: 1px solid #E2E8F0; }
-    .flight-details h3 { margin: 0 0 10px; color: #1E3A8A; }
-    .flight-details .route { font-size: 18px; font-weight: bold; color: #1E3A8A; }
+    .flight-details h3 { margin: 0 0 10px; color: #1E3A8A; font-size: 18px; }
+    .flight-details .route { font-size: 16px; font-weight: bold; color: #1E3A8A; }
     .flight-details .airline-ref { font-size: 12px; color: #64748B; }
     .flight-details .crs-ref { font-size: 12px; color: #64748B; }
     .flight-details table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
@@ -575,7 +566,7 @@ function FlightStatusView(props) {
 <div class="ticket">
   <div class="header">
     <div class="left">
-      <strong>Name:</strong> SUEUD AL TAAYIRA<br>
+      <strong>Name :</strong> SUEUD AL TAAYIRA<br>
       <span class="ref-no">Ref.No: ${ticket.ticket_number || 'N/A'}</span>
     </div>
     <div class="right">
@@ -628,8 +619,8 @@ function FlightStatusView(props) {
   </div>
 
   <div class="note">
-    <strong>Important Note:</strong> Transit Visa is a mandatory requirement if there are via TWO Schengen countries or TWO stop in same countries<br>
-    <strong>Important Note:</strong> Refund/date change penalties upto 100% may apply.
+    <strong>Important Note :</strong> Transit Visa is a mandatory requirement if there are via TWO Schengen countries or TWO stop in same countries<br>
+    <strong>Important Note :</strong> Refund/date change penalties upto 100% may apply.
   </div>
 
   <div class="footer">
@@ -708,7 +699,7 @@ function FlightStatusView(props) {
           </div>
           <div>
             <label style={styles.label}>{isAr ? 'شركة الطيران *' : 'Airline *'}</label>
-            <select style={styles.select} value={ticketForm.airline} onChange={e => {
+            <select style={styles.select} value={ticketForm.airline} onChange={(e) => {
               const selected = airlines.find(a => a.code === e.target.value);
               setTicketForm({ ...ticketForm, airline: e.target.value, airline_name: selected?.name || '' });
             }} required>
@@ -862,7 +853,7 @@ function FlightStatusView(props) {
 // ============================================================
 function FrequentFlyerView(props) {
   const { data, tr, today, userProfile, showToast, setData, logAction, lang, theme } = props;
-  const { isAr, isDark, styles, fmt } = useTravelHelpers(props);
+  const { isAr, isDark, styles, fmt, t } = useTravelHelpers(props);
   const [ffMembers, setFfMembers] = useState([]);
   const [ffForm, setFfForm] = useState({
     customer_name: '',
@@ -1052,7 +1043,7 @@ function FrequentFlyerView(props) {
 // ============================================================
 function CorporateTravelView(props) {
   const { data, tr, today, userProfile, showToast, setData, logAction, lang, theme } = props;
-  const { isAr, isDark, styles, fmt } = useTravelHelpers(props);
+  const { isAr, isDark, styles, fmt, t } = useTravelHelpers(props);
   const [corpTravels, setCorpTravels] = useState([]);
 
   useEffect(() => {
@@ -1139,7 +1130,7 @@ function CorporateTravelView(props) {
 // ============================================================
 function VisaProcessingView(props) {
   const { data, tr, today, userProfile, showToast, setData, logAction, lang, theme } = props;
-  const { isAr, isDark, styles, fmt } = useTravelHelpers(props);
+  const { isAr, isDark, styles, fmt, t } = useTravelHelpers(props);
   const [visaApps, setVisaApps] = useState([]);
   const [visaForm, setVisaForm] = useState({
     applicant_name: '',
@@ -1150,16 +1141,12 @@ function VisaProcessingView(props) {
     application_date: today,
     status: 'Pending',
     notes: '',
-    customer_id: '' // optional link to customer
+    customer_id: ''
   });
   const [editingId, setEditingId] = useState(null);
 
-  // Load visa applications from database (use 'invoices' with service_type='Visa' or a dedicated table)
-  // For simplicity, we'll use a separate table 'visa_applications' – if not exists, we'll fallback to invoices.
-  // We'll assume the table exists with columns: id, applicant_name, passport_no, nationality, visa_type, destination, application_date, status, notes, tenant_id, customer_id.
   useEffect(() => {
     if (userProfile?.tenant_id) {
-      // Try to fetch from 'visa_applications'
       supabase.from('visa_applications')
         .select('*')
         .eq('tenant_id', userProfile.tenant_id)
@@ -1168,9 +1155,8 @@ function VisaProcessingView(props) {
           if (!error && data) {
             setVisaApps(data);
           } else {
-            // Fallback: if table doesn't exist, use invoices with service_type='Visa'
+            // Fallback to invoices with service_type 'Visa'
             const visaInvs = (data.invoices || []).filter(i => i.service_type === 'Visa');
-            // Map to visa app structure
             const mapped = visaInvs.map(inv => ({
               id: inv.id,
               applicant_name: inv.customers?.name || inv.old_customer_name || 'N/A',
@@ -1263,9 +1249,9 @@ function VisaProcessingView(props) {
       <div style={styles.header}>
         <h1 style={styles.title}>🛂 {isAr ? 'معالجة التأشيرات' : 'Visa Processing'}</h1>
         <button style={{ ...styles.btn, ...styles.btnInfo }} onClick={() => {
-          // Quick filter: show only pending
           const pending = visaApps.filter(v => v.status === 'Pending');
           if (pending.length === 0) showToast(isAr ? 'لا توجد طلبات معلقة' : 'No pending applications');
+          else showToast(`📋 ${pending.length} ${isAr ? 'طلب معلق' : 'pending applications'}`);
         }}>
           {isAr ? 'عرض المعلقة' : 'Show Pending'}
         </button>
