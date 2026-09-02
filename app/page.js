@@ -193,8 +193,9 @@ export default function Home() {
     { id: 'refunds', label: t('refunds', '🔄 Refunds'), show: canAccessInvoices, section: 'Travel Sales' },
     { id: 'quotations', label: t('quotations', '📄 Quotations'), show: canAccessInvoices, section: 'Travel Sales' },
     
-    // Flight Operations (only these – removed Hotel, Visa, Insurance, Hajj/Umrah)
+    // Flight Operations (with Visa Processing added)
     { id: 'flight_status', label: '🛫 Flight Status', show: canAccessInvoices, section: 'Flight Operations' },
+    { id: 'visa_processing', label: '🛂 Visa Processing', show: canAccessInvoices, section: 'Flight Operations' }, // ✅ Added
     { id: 'corporate_travel', label: '🏢 Corporate Travel', show: canAccessInvoices, section: 'Flight Operations' },
     { id: 'frequent_flyer', label: '🌟 Frequent Flyer', show: canAccessInvoices, section: 'Flight Operations' },
 
