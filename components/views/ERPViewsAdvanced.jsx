@@ -14,409 +14,22 @@ export default function ERPViewsAdvanced(props) {
     handleExportCSV
   } = props;
 
-  const isAr = lang === 'ar';
-  const isDark = theme === 'dark';
-
-  // ===== STYLES =====
-  const styles = {
-    container: {
-      padding: '20px',
-      background: isDark ? '#0F172A' : '#F8FAFC',
-      minHeight: '100vh',
-      color: isDark ? '#E2E8F0' : '#1E293B',
-      transition: 'all 0.3s ease'
-    },
-    card: {
-      background: isDark ? '#1E293B' : '#FFFFFF',
-      borderRadius: '16px',
-      padding: '20px',
-      marginBottom: '20px',
-      border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
-      boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.2)' : '0 4px 6px rgba(0,0,0,0.05)'
-    },
-    header: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: '20px',
-      flexWrap: 'wrap',
-      gap: '10px'
-    },
-    title: {
-      fontSize: '24px',
-      fontWeight: 700,
-      color: '#FBBF24',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '10px',
-      margin: 0
-    },
-    input: {
-      padding: '10px 15px',
-      background: isDark ? '#0F172A' : '#F1F5F9',
-      border: isDark ? '1px solid #475569' : '1px solid #E2E8F0',
-      borderRadius: '8px',
-      color: isDark ? '#E2E8F0' : '#1E293B',
-      fontSize: '14px',
-      outline: 'none',
-      width: '100%',
-      boxSizing: 'border-box',
-      transition: 'all 0.2s'
-    },
-    select: {
-      padding: '10px 15px',
-      background: isDark ? '#0F172A' : '#F1F5F9',
-      border: isDark ? '1px solid #475569' : '1px solid #E2E8F0',
-      borderRadius: '8px',
-      color: isDark ? '#E2E8F0' : '#1E293B',
-      fontSize: '14px',
-      outline: 'none',
-      width: '100%',
-      boxSizing: 'border-box'
-    },
-    btn: {
-      padding: '10px 20px',
-      borderRadius: '8px',
-      border: 'none',
-      cursor: 'pointer',
-      fontWeight: 600,
-      fontSize: '13px',
-      transition: 'all 0.2s'
-    },
-    btnPrimary: {
-      background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
-      color: '#fff'
-    },
-    btnSuccess: {
-      background: 'linear-gradient(135deg, #059669, #047857)',
-      color: '#fff'
-    },
-    btnDanger: {
-      background: 'linear-gradient(135deg, #DC2626, #B91C1C)',
-      color: '#fff'
-    },
-    btnWarning: {
-      background: 'linear-gradient(135deg, #F59E0B, #D97706)',
-      color: '#0F172A'
-    },
-    btnGhost: {
-      background: 'transparent',
-      border: isDark ? '1px solid #475569' : '1px solid #E2E8F0',
-      color: isDark ? '#94A3B8' : '#64748B'
-    },
-    btnInfo: {
-      background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
-      color: '#fff'
-    },
-    table: {
-      width: '100%',
-      borderCollapse: 'collapse',
-      fontSize: '13px'
-    },
-    th: {
-      padding: '12px',
-      background: isDark ? '#0F172A' : '#F1F5F9',
-      color: '#FBBF24',
-      textAlign: 'left',
-      fontWeight: 600,
-      fontSize: '11px',
-      textTransform: 'uppercase',
-      letterSpacing: '0.5px',
-      borderBottom: isDark ? '2px solid #334155' : '2px solid #E2E8F0'
-    },
-    td: {
-      padding: '12px',
-      borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
-      color: isDark ? '#CBD5E1' : '#1E293B'
-    },
-    tdRight: {
-      padding: '12px',
-      borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
-      color: isDark ? '#CBD5E1' : '#1E293B',
-      textAlign: 'right',
-      fontWeight: 600
-    },
-    tdCenter: {
-      padding: '12px',
-      borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9',
-      color: isDark ? '#CBD5E1' : '#1E293B',
-      textAlign: 'center'
-    },
-    badge: {
-      padding: '4px 10px',
-      borderRadius: '20px',
-      fontSize: '11px',
-      fontWeight: 600,
-      display: 'inline-block'
-    },
-    badgeSuccess: {
-      background: '#065F46',
-      color: '#34D399'
-    },
-    badgeDanger: {
-      background: '#7F1D1D',
-      color: '#FCA5A5'
-    },
-    badgeWarning: {
-      background: '#78350F',
-      color: '#FBBF24'
-    },
-    badgeInfo: {
-      background: '#1E3A8A',
-      color: '#93C5FD'
-    },
-    statsGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-      gap: '15px',
-      marginBottom: '20px'
-    },
-    statCard: {
-      background: isDark ? 'linear-gradient(135deg, #1E293B, #0F172A)' : 'linear-gradient(135deg, #FFFFFF, #F8FAFC)',
-      padding: '18px',
-      borderRadius: '12px',
-      border: isDark ? '1px solid #334155' : '1px solid #E2E8F0'
-    },
-    statLabel: {
-      fontSize: '11px',
-      color: '#94A3B8',
-      textTransform: 'uppercase',
-      letterSpacing: '0.5px'
-    },
-    statValue: {
-      fontSize: '22px',
-      fontWeight: 700,
-      color: '#FBBF24',
-      marginTop: '5px'
-    },
-    formGroup: {
-      marginBottom: '15px'
-    },
-    formLabel: {
-      display: 'block',
-      marginBottom: '5px',
-      color: isDark ? '#94A3B8' : '#64748B',
-      fontSize: '13px',
-      fontWeight: 600
-    },
-    formRow: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-      gap: '15px'
-    },
-    sectionTitle: {
-      color: '#FBBF24',
-      fontSize: '15px',
-      fontWeight: 700,
-      margin: '0 0 15px',
-      paddingBottom: '10px',
-      borderBottom: isDark ? '1px solid #334155' : '1px solid #E2E8F0'
-    },
-    emptyState: {
-      textAlign: 'center',
-      padding: '60px 20px',
-      color: '#64748B'
-    },
-    emptyIcon: {
-      fontSize: '60px',
-      marginBottom: '15px'
-    },
-    actionsCell: {
-      display: 'flex',
-      gap: '5px',
-      flexWrap: 'wrap',
-      justifyContent: 'center'
-    },
-    actionBtn: {
-      padding: '6px 10px',
-      borderRadius: '6px',
-      border: 'none',
-      cursor: 'pointer',
-      fontSize: '11px',
-      fontWeight: 600,
-      transition: 'all 0.2s'
-    },
-    aiBadge: {
-      background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
-      color: '#fff',
-      padding: '2px 10px',
-      borderRadius: '12px',
-      fontSize: '10px',
-      fontWeight: 'bold',
-      display: 'inline-block',
-      marginLeft: '8px'
-    }
-  };
-
-  const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
-
-  // ============================================================
-  // AI DASHBOARD
-  // ============================================================
-  if (page === 'ai_dashboard') {
-    const activeInvoices = (data.invoices || []).filter(i => !i.invoice_no?.startsWith('REF-') && i.status !== 'Draft');
-    const tSales = activeInvoices.reduce((s, i) => s + (i.total || 0), 0);
-    const tProfit = activeInvoices.reduce((s, i) => s + (i.profit || 0), 0);
-    const pendingPayments = activeInvoices.filter(i => i.due_amount > 0);
-    const totalDue = pendingPayments.reduce((s, i) => s + i.due_amount, 0);
-
-    // Employee performance
-    const empProfits = {};
-    activeInvoices.forEach(inv => {
-      const empName = inv.employees?.name || 'Unknown';
-      if (!empProfits[empName]) empProfits[empName] = 0;
-      empProfits[empName] += inv.profit || 0;
-    });
-    const topEmployee = Object.keys(empProfits).map(k => ({ name: k, profit: empProfits[k] })).sort((a, b) => b.profit - a.profit)[0];
-
-    // Airline performance
-    const airlineData = {};
-    activeInvoices.forEach(inv => {
-      const airline = inv.airline || 'Unknown';
-      if (!airlineData[airline]) airlineData[airline] = { revenue: 0, profit: 0, count: 0 };
-      airlineData[airline].revenue += inv.total || 0;
-      airlineData[airline].profit += inv.profit || 0;
-      airlineData[airline].count += 1;
-    });
-    const topAirlines = Object.keys(airlineData).map(k => ({ name: k, ...airlineData[k] })).sort((a, b) => b.profit - a.profit).slice(0, 5);
-
-    // AI Insights
-    const aiInsights = [];
-    if (totalDue > 0) {
-      aiInsights.push({
-        icon: '⚠️',
-        text: isAr ? `لديك ${totalDue.toFixed(2)} ريال مستحقة من ${pendingPayments.length} عميل. متابعة مطلوبة.` : `You have ${totalDue.toFixed(2)} SAR pending from ${pendingPayments.length} customers. Follow up needed.`
-      });
-    }
-    if (topEmployee) {
-      aiInsights.push({
-        icon: '🏆',
-        text: isAr ? `${topEmployee.name} هو أفضل موظف لديك بربح ${topEmployee.profit.toFixed(2)} ريال.` : `${topEmployee.name} is your top performer with ${topEmployee.profit.toFixed(2)} SAR in profit.`
-      });
-    }
-    if (tProfit < 1000 && tSales > 0) {
-      aiInsights.push({
-        icon: '📉',
-        text: isAr ? 'الأرباح منخفضة هذا الشهر. فكر في دفع باقات السياحة أو خدمات التأشيرات.' : 'Profits are low this month. Consider pushing tour packages or visa services.'
-      });
-    }
-    if (topAirlines.length > 0) {
-      aiInsights.push({
-        icon: '✈️',
-        text: isAr ? `أفضل خطوط الطيران من حيث الربح: ${topAirlines[0].name} (${topAirlines[0].profit.toFixed(2)} ريال)` : `Top airline by profit: ${topAirlines[0].name} (${topAirlines[0].profit.toFixed(2)} SAR)`
-      });
-    }
-    if (aiInsights.length === 0) {
-      aiInsights.push({
-        icon: '✅',
-        text: isAr ? 'لا توجد تنبيهات حرجة. الأعمال تسير بسلاسة!' : 'No critical alerts. Business is running smoothly!'
-      });
-    }
-
-    return (
-      <div style={styles.container}>
-        <div style={{
-          background: 'linear-gradient(135deg, #0F172A, #1E293B)',
-          color: 'white',
-          padding: '30px',
-          borderRadius: '16px',
-          marginBottom: '20px',
-          boxShadow: '0 10px 15px rgba(0,0,0,0.1)',
-          border: '1px solid #334155'
-        }}>
-          <h2 style={{ margin: 0, fontSize: '28px', color: '#FBBF24' }}>
-            🤖 {isAr ? 'لوحة التحكم الذكية' : 'AI Dashboard'}
-          </h2>
-          <p style={{ margin: '5px 0 0', opacity: 0.9, fontSize: '16px' }}>
-            {isAr ? 'رؤى الأعمال في الوقت الفعلي بناءً على بياناتك.' : 'Real-time business insights based on your data.'}
-          </p>
-        </div>
-
-        <div style={styles.statsGrid}>
-          <div style={{ ...styles.statCard, borderTop: '4px solid #34D399' }}>
-            <div style={styles.statLabel}>{isAr ? 'المبيعات الشهرية' : 'Monthly Sales'}</div>
-            <div style={{ ...styles.statValue, color: '#34D399' }}>{fmt(tSales)}</div>
-          </div>
-          <div style={{ ...styles.statCard, borderTop: '4px solid #FBBF24' }}>
-            <div style={styles.statLabel}>{isAr ? 'صافي الربح' : 'Net Profit'}</div>
-            <div style={{ ...styles.statValue, color: '#FBBF24' }}>{fmt(tProfit)}</div>
-          </div>
-          <div style={{ ...styles.statCard, borderTop: '4px solid #FCA5A5' }}>
-            <div style={styles.statLabel}>{isAr ? 'المستحقات المتأخرة' : 'Pending Dues'}</div>
-            <div style={{ ...styles.statValue, color: '#FCA5A5' }}>{fmt(totalDue)}</div>
-          </div>
-          <div style={{ ...styles.statCard, borderTop: '4px solid #60A5FA' }}>
-            <div style={styles.statLabel}>{isAr ? 'إجمالي الفواتير' : 'Total Invoices'}</div>
-            <div style={styles.statValue}>{activeInvoices.length}</div>
-          </div>
-        </div>
-
-        <div style={styles.card}>
-          <h3 style={styles.sectionTitle}>🧠 {isAr ? 'رؤى الذكاء الاصطناعي والإجراءات' : 'AI Insights & Action Items'}</h3>
-          {aiInsights.map((ins, i) => (
-            <div key={i} style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '12px',
-              padding: '12px 0',
-              borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9'
-            }}>
-              <span style={{ fontSize: '24px' }}>{ins.icon}</span>
-              <span style={{ fontSize: '14px', color: isDark ? '#CBD5E1' : '#1E293B', lineHeight: '1.5' }}>{ins.text}</span>
-            </div>
-          ))}
-        </div>
-
-        {topAirlines.length > 0 && (
-          <div style={styles.card}>
-            <h3 style={styles.sectionTitle}>✈️ {isAr ? 'أفضل خطوط الطيران' : 'Top Airlines'}</h3>
-            {topAirlines.map((a, i) => (
-              <div key={i} style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '8px 0',
-                borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9'
-              }}>
-                <span style={{ fontWeight: 600, color: isDark ? '#CBD5E1' : '#1E293B' }}>
-                  {i + 1}. {a.name}
-                </span>
-                <span style={{ color: '#34D399', fontWeight: 700 }}>
-                  {a.profit.toFixed(2)} SAR ({a.count} {isAr ? 'فواتير' : 'invoices'})
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // ============================================================
-  // QUOTATIONS
-  // ============================================================
+  // Route to appropriate component
+  if (page === 'ai_dashboard') return <AIDashboardView {...props} />;
   if (page === 'quotations') return <QuotationsView {...props} />;
-
-  // ============================================================
-  // HR ADVANCED - COMPLETE
-  // ============================================================
   if (page === 'hr_advanced') return <HRAdvancedView {...props} />;
-
   return null;
 }
 
-// Quotations and HR Advanced were `if (page === 'X')` blocks calling
-// different numbers of hooks (1 and 6) while sharing one component
-// instance with AI Dashboard (0 hooks). Switching between them via
-// the sidebar didn't remount the component, so React expected the
-// same hooks every render — a Rules-of-Hooks violation. Extracted
-// both into their own components.
+// ============================================================
+// SHARED HELPERS
+// ============================================================
 function useAdvancedHelpers(props) {
-  const { lang, theme } = props;
+  const { lang, theme, tr } = props;
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
+  const t = (key, fallback) => tr?.[key] || fallback || key;
 
-  // ===== STYLES =====
   const styles = {
     container: {
       padding: '20px',
@@ -649,13 +262,160 @@ function useAdvancedHelpers(props) {
 
   const fmt = (n) => (n || 0).toFixed(2) + ' SAR';
 
-  return { styles, fmt };
+  return { styles, fmt, t, isAr, isDark };
 }
 
+// ============================================================
+// 1. AI DASHBOARD VIEW
+// ============================================================
+function AIDashboardView(props) {
+  const { data, tr, lang, theme } = props;
+  const { styles, fmt, t, isAr, isDark } = useAdvancedHelpers(props);
+
+  const activeInvoices = (data.invoices || []).filter(i => !i.invoice_no?.startsWith('REF-') && i.status !== 'Draft');
+  const tSales = activeInvoices.reduce((s, i) => s + (i.total || 0), 0);
+  const tProfit = activeInvoices.reduce((s, i) => s + (i.profit || 0), 0);
+  const pendingPayments = activeInvoices.filter(i => i.due_amount > 0);
+  const totalDue = pendingPayments.reduce((s, i) => s + i.due_amount, 0);
+
+  // Employee performance
+  const empProfits = {};
+  activeInvoices.forEach(inv => {
+    const empName = inv.employees?.name || 'Unknown';
+    if (!empProfits[empName]) empProfits[empName] = 0;
+    empProfits[empName] += inv.profit || 0;
+  });
+  const topEmployee = Object.keys(empProfits).map(k => ({ name: k, profit: empProfits[k] })).sort((a, b) => b.profit - a.profit)[0];
+
+  // Airline performance
+  const airlineData = {};
+  activeInvoices.forEach(inv => {
+    const airline = inv.airline || 'Unknown';
+    if (!airlineData[airline]) airlineData[airline] = { revenue: 0, profit: 0, count: 0 };
+    airlineData[airline].revenue += inv.total || 0;
+    airlineData[airline].profit += inv.profit || 0;
+    airlineData[airline].count += 1;
+  });
+  const topAirlines = Object.keys(airlineData).map(k => ({ name: k, ...airlineData[k] })).sort((a, b) => b.profit - a.profit).slice(0, 5);
+
+  // AI Insights
+  const aiInsights = [];
+  if (totalDue > 0) {
+    aiInsights.push({
+      icon: '⚠️',
+      text: isAr ? `لديك ${totalDue.toFixed(2)} ريال مستحقة من ${pendingPayments.length} عميل. متابعة مطلوبة.` : `You have ${totalDue.toFixed(2)} SAR pending from ${pendingPayments.length} customers. Follow up needed.`
+    });
+  }
+  if (topEmployee) {
+    aiInsights.push({
+      icon: '🏆',
+      text: isAr ? `${topEmployee.name} هو أفضل موظف لديك بربح ${topEmployee.profit.toFixed(2)} ريال.` : `${topEmployee.name} is your top performer with ${topEmployee.profit.toFixed(2)} SAR in profit.`
+    });
+  }
+  if (tProfit < 1000 && tSales > 0) {
+    aiInsights.push({
+      icon: '📉',
+      text: isAr ? 'الأرباح منخفضة هذا الشهر. فكر في دفع باقات السياحة أو خدمات التأشيرات.' : 'Profits are low this month. Consider pushing tour packages or visa services.'
+    });
+  }
+  if (topAirlines.length > 0) {
+    aiInsights.push({
+      icon: '✈️',
+      text: isAr ? `أفضل خطوط الطيران من حيث الربح: ${topAirlines[0].name} (${topAirlines[0].profit.toFixed(2)} ريال)` : `Top airline by profit: ${topAirlines[0].name} (${topAirlines[0].profit.toFixed(2)} SAR)`
+    });
+  }
+  if (aiInsights.length === 0) {
+    aiInsights.push({
+      icon: '✅',
+      text: isAr ? 'لا توجد تنبيهات حرجة. الأعمال تسير بسلاسة!' : 'No critical alerts. Business is running smoothly!'
+    });
+  }
+
+  return (
+    <div style={styles.container}>
+      <div style={{
+        background: 'linear-gradient(135deg, #0F172A, #1E293B)',
+        color: 'white',
+        padding: '30px',
+        borderRadius: '16px',
+        marginBottom: '20px',
+        boxShadow: '0 10px 15px rgba(0,0,0,0.1)',
+        border: '1px solid #334155'
+      }}>
+        <h2 style={{ margin: 0, fontSize: '28px', color: '#FBBF24' }}>
+          🤖 {isAr ? 'لوحة التحكم الذكية' : 'AI Dashboard'}
+        </h2>
+        <p style={{ margin: '5px 0 0', opacity: 0.9, fontSize: '16px' }}>
+          {isAr ? 'رؤى الأعمال في الوقت الفعلي بناءً على بياناتك.' : 'Real-time business insights based on your data.'}
+        </p>
+      </div>
+
+      <div style={styles.statsGrid}>
+        <div style={{ ...styles.statCard, borderTop: '4px solid #34D399' }}>
+          <div style={styles.statLabel}>{isAr ? 'المبيعات الشهرية' : 'Monthly Sales'}</div>
+          <div style={{ ...styles.statValue, color: '#34D399' }}>{fmt(tSales)}</div>
+        </div>
+        <div style={{ ...styles.statCard, borderTop: '4px solid #FBBF24' }}>
+          <div style={styles.statLabel}>{isAr ? 'صافي الربح' : 'Net Profit'}</div>
+          <div style={{ ...styles.statValue, color: '#FBBF24' }}>{fmt(tProfit)}</div>
+        </div>
+        <div style={{ ...styles.statCard, borderTop: '4px solid #FCA5A5' }}>
+          <div style={styles.statLabel}>{isAr ? 'المستحقات المتأخرة' : 'Pending Dues'}</div>
+          <div style={{ ...styles.statValue, color: '#FCA5A5' }}>{fmt(totalDue)}</div>
+        </div>
+        <div style={{ ...styles.statCard, borderTop: '4px solid #60A5FA' }}>
+          <div style={styles.statLabel}>{isAr ? 'إجمالي الفواتير' : 'Total Invoices'}</div>
+          <div style={styles.statValue}>{activeInvoices.length}</div>
+        </div>
+      </div>
+
+      <div style={styles.card}>
+        <h3 style={styles.sectionTitle}>🧠 {isAr ? 'رؤى الذكاء الاصطناعي والإجراءات' : 'AI Insights & Action Items'}</h3>
+        {aiInsights.map((ins, i) => (
+          <div key={i} style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '12px',
+            padding: '12px 0',
+            borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9'
+          }}>
+            <span style={{ fontSize: '24px' }}>{ins.icon}</span>
+            <span style={{ fontSize: '14px', color: isDark ? '#CBD5E1' : '#1E293B', lineHeight: '1.5' }}>{ins.text}</span>
+          </div>
+        ))}
+      </div>
+
+      {topAirlines.length > 0 && (
+        <div style={styles.card}>
+          <h3 style={styles.sectionTitle}>✈️ {isAr ? 'أفضل خطوط الطيران' : 'Top Airlines'}</h3>
+          {topAirlines.map((a, i) => (
+            <div key={i} style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '8px 0',
+              borderBottom: isDark ? '1px solid #1E293B' : '1px solid #F1F5F9'
+            }}>
+              <span style={{ fontWeight: 600, color: isDark ? '#CBD5E1' : '#1E293B' }}>
+                {i + 1}. {a.name}
+              </span>
+              <span style={{ color: '#34D399', fontWeight: 700 }}>
+                {a.profit.toFixed(2)} SAR ({a.count} {isAr ? 'فواتير' : 'invoices'})
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// 2. QUOTATIONS VIEW
+// ============================================================
 function QuotationsView(props) {
-  const { page, data, tr, today, userProfile, showToast, setData, lang, theme } = props;
-  const isAr = lang === 'ar';
-  const { styles, fmt } = useAdvancedHelpers(props);
+  const { data, tr, today, userProfile, showToast, setData, lang, theme } = props;
+  const { styles, fmt, t, isAr, isDark } = useAdvancedHelpers(props);
   const [quoteForm, setQuoteForm] = useState({
     customer_name: '',
     service_type: 'Flight Ticket',
@@ -703,7 +463,8 @@ function QuotationsView(props) {
   const deleteQuote = async (quote) => {
     if (!confirm(isAr ? 'حذف عرض السعر هذا؟' : 'Delete this quotation?')) return;
     try {
-      { const { error: _delErr1 } = await supabase.from('invoices').delete().eq('id', quote.id); if (_delErr1) throw new Error(_delErr1.message); }
+      const { error } = await supabase.from('invoices').delete().eq('id', quote.id);
+      if (error) throw error;
       setData(prev => ({ ...prev, invoices: prev.invoices.filter(i => i.id !== quote.id) }));
       showToast(isAr ? '🗑️ تم حذف عرض السعر!' : '🗑️ Quotation deleted!');
     } catch (err) {
@@ -808,18 +569,22 @@ function QuotationsView(props) {
         </div>
       </div>
     </div>
-  );}
+  );
+}
 
+// ============================================================
+// 3. HR ADVANCED VIEW
+// ============================================================
 function HRAdvancedView(props) {
   const {
     page, data, tr, today, userProfile, showToast, setData,
     lang, theme,
     handleProcessPayroll, handleGenerateSlip, handleDeletePayroll,
-    employees, payForm, setPayForm, handleExportCSV
+    employees, payForm, setPayForm, handleExportCSV,
+    handleAddAdvance, handleUpdateAdvanceStatus, handleDeleteAdvance,
+    handleAddMistake, handlePreviewMistake, handleDeleteMistake
   } = props;
-  const isAr = lang === 'ar';
-  const isDark = theme === 'dark';
-  const { styles, fmt } = useAdvancedHelpers(props);
+  const { styles, fmt, t, isAr, isDark } = useAdvancedHelpers(props);
   const [editTargetId, setEditTargetId] = useState(null);
   const [targetVal, setTargetVal] = useState(0);
   const [attForm, setAttForm] = useState({
@@ -1268,4 +1033,5 @@ function HRAdvancedView(props) {
         </div>
       </div>
     </div>
-  );}
+  );
+}
