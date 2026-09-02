@@ -207,6 +207,15 @@ export default function ERPLayout({
         downloadPDF={downloadPDF}
         lang={lang}
         theme={theme}
+        data={data}
+        showToast={showToast}
+        portalForm={portalForm}
+        setPortalForm={setPortalForm}
+        handleAddEditPortal={handleAddEditPortal}
+        cashbookEditForm={cashbookEditForm}
+        setCashbookEditForm={setCashbookEditForm}
+        setData={setData}
+        userProfile={userProfile}
       />
 
       {/* ===== MOBILE HEADER ===== */}
