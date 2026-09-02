@@ -1202,7 +1202,9 @@ function useProHelpers(props) {
 }
 
 function CustomerStatementView(props) {
-  const { page, data, tr, today, userProfile, showToast, setData, handleExportCSV } = props;
+  const { page, data, tr, today, userProfile, showToast, setData, handleExportCSV, lang, theme } = props;
+  const isAr = lang === 'ar';
+  const isDark = theme === 'dark';
   const { styles, fmt } = useProHelpers(props);
   const [stmtCustId, setStmtCustId] = useState('');
   const [statement, setStatement] = useState([]);
@@ -1343,7 +1345,8 @@ function CustomerStatementView(props) {
   );}
 
 function RecurringInvoicesView(props) {
-  const { page, data, tr, today, userProfile, showToast, setData } = props;
+  const { page, data, tr, today, userProfile, showToast, setData, lang, theme } = props;
+  const isAr = lang === 'ar';
   const { styles, fmt } = useProHelpers(props);
   const [recForm, setRecForm] = useState({
     customer_id: '',
