@@ -30,9 +30,13 @@ export default function ERPViewsTravel(props) {
   if (page === 'flight_status') return <FlightStatusView {...props} />;
   if (page === 'frequent_flyer') return <FrequentFlyerView {...props} />;
   if (page === 'corporate_travel') return <CorporateTravelView {...props} />;
+  if (page === 'visa_processing') return <VisaProcessingView {...props} />;
   return null;
 }
 
+// ============================================================
+// SHARED HELPERS
+// ============================================================
 function useTravelHelpers(props) {
   const { page, data, tr, today, userProfile, showToast, setData, logAction, lang, theme } = props;
 
@@ -265,6 +269,9 @@ function useTravelHelpers(props) {
   return { isAr, isDark, styles, fmt };
 }
 
+// ============================================================
+// FLIGHT STATUS VIEW – Ticket Generator with Print matching sample
+// ============================================================
 function FlightStatusView(props) {
   const { data, tr, today, userProfile, showToast, setData, logAction, lang, theme } = props;
   const { isAr, isDark, styles, fmt } = useTravelHelpers(props);
@@ -291,13 +298,13 @@ function FlightStatusView(props) {
     special_requests: '',
     fare: 0,
     tax: 0,
-    total: 0
+    total: 0,
+    airline_name: '' // for display
   });
   const [tickets, setTickets] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [pnrCheck, setPnrCheck] = useState('');
   const [pnrResult, setPnrResult] = useState(null);
-  const [notifications, setNotifications] = useState([]);
 
   const airlines = [
     { code: 'SV', name: 'Saudia' },
@@ -332,9 +339,6 @@ function FlightStatusView(props) {
   const classes = ['Economy', 'Business', 'First Class'];
   const terminals = ['1', '2', '3', '4', '5'];
   const gates = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-
-  // ✅ REMOVED: supabase query for flight_tickets – using local state only
-  // No useEffect for loading tickets from DB.
 
   // Generate random ticket
   const generateRandomTicket = () => {
@@ -390,6 +394,7 @@ function FlightStatusView(props) {
       passenger_phone: ticket.passenger_phone,
       passenger_email: ticket.passenger_email,
       airline: ticket.airline,
+      airline_name: ticket.airline_name,
       flight_number: ticket.flight_number,
       origin: ticket.origin,
       destination: ticket.destination,
@@ -445,6 +450,7 @@ function FlightStatusView(props) {
         passenger_phone: '',
         passenger_email: '',
         airline: '',
+        airline_name: '',
         flight_number: '',
         origin: '',
         destination: '',
@@ -477,6 +483,7 @@ function FlightStatusView(props) {
       passenger_phone: ticket.passenger_phone || '',
       passenger_email: ticket.passenger_email || '',
       airline: ticket.airline || '',
+      airline_name: ticket.airline_name || '',
       flight_number: ticket.flight_number || '',
       origin: ticket.origin || '',
       destination: ticket.destination || '',
@@ -512,64 +519,122 @@ function FlightStatusView(props) {
       showToast?.(isAr ? '⚠️ الرجاء إدخال رقم الحجز' : '⚠️ Please enter PNR');
       return;
     }
-
     const found = tickets.find(t => t.booking_reference?.toUpperCase() === pnrCheck.toUpperCase());
     if (!found) {
       showToast?.(isAr ? '❌ لا توجد تذكرة بهذا الرقم' : '❌ No ticket found with this PNR');
       setPnrResult(null);
       return;
     }
-
     setPnrResult(found);
     showToast?.(isAr ? '✅ تم العثور على التذكرة!' : '✅ Ticket found!');
   };
 
-  // Print Ticket
+  // ============================================================
+  // PRINT TICKET – matching the PDF sample
+  // ============================================================
   const handlePrintTicket = (ticket) => {
+    // Build the detailed HTML exactly like the sample
     const printContent = `<!DOCTYPE html>
 <html>
-<head><title>Ticket ${ticket.flight_number}</title>
-<style>
-body { font-family: Arial, sans-serif; padding: 40px; background: #f5f5f5; }
-.ticket { border: 2px solid #1E3A8A; border-radius: 16px; padding: 30px; max-width: 750px; margin: auto; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-.header { background: linear-gradient(135deg, #1E3A8A, #2563EB); color: white; padding: 20px; border-radius: 12px 12px 0 0; text-align: center; }
-.header h1 { margin: 0; font-size: 28px; letter-spacing: 2px; }
-.body { padding: 25px; }
-.row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
-.label { font-weight: bold; color: #555; width: 40%; }
-.value { font-weight: 600; color: #1E3A8A; width: 60%; text-align: right; }
-.status { display: inline-block; padding: 4px 16px; border-radius: 20px; font-weight: bold; }
-.status-confirmed { background: #D1FAE5; color: #065F46; }
-.status-boarding { background: #FEF3C7; color: #92400E; }
-.status-departed { background: #DBEAFE; color: #1D4ED8; }
-.status-arrived { background: #D1FAE5; color: #065F46; }
-.status-delayed { background: #FEE2E2; color: #991B1B; }
-.status-cancelled { background: #FEE2E2; color: #991B1B; }
-.footer { text-align: center; padding: 15px; background: #F8FAFC; border-radius: 0 0 12px 12px; color: #666; font-size: 12px; }
-.route { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; }
-.route .city { font-size: 20px; font-weight: 700; color: #1E3A8A; }
-.route .arrow { font-size: 24px; color: #F59E0B; }
-@media print { body { padding: 0; background: white; } .ticket { border: none; box-shadow: none; } }
-</style>
+<head>
+  <meta charset="UTF-8">
+  <title>Ticket ${ticket.flight_number}</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+    .ticket { border: 2px solid #1E3A8A; border-radius: 16px; padding: 20px; max-width: 800px; margin: auto; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1E3A8A; padding-bottom: 10px; }
+    .header .left { font-weight: bold; }
+    .header .right { text-align: right; }
+    .ref-no { font-size: 12px; color: #666; }
+    .status { display: inline-block; background: #D1FAE5; color: #065F46; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-top: 5px; }
+    .flight-details { margin: 15px 0; padding: 10px; background: #F8FAFC; border-radius: 8px; border: 1px solid #E2E8F0; }
+    .flight-details h3 { margin: 0 0 10px; color: #1E3A8A; }
+    .flight-details .route { font-size: 18px; font-weight: bold; color: #1E3A8A; }
+    .flight-details .airline-ref { font-size: 12px; color: #64748B; }
+    .flight-details .crs-ref { font-size: 12px; color: #64748B; }
+    .flight-details table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+    .flight-details th { background: #1E3A8A; color: white; padding: 8px; text-align: left; }
+    .flight-details td { padding: 6px 8px; border-bottom: 1px solid #E2E8F0; }
+    .traveler-info { margin: 15px 0; padding: 10px; background: #F8FAFC; border-radius: 8px; border: 1px solid #E2E8F0; }
+    .traveler-info h3 { margin: 0 0 10px; color: #1E3A8A; }
+    .traveler-info .row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #E2E8F0; }
+    .traveler-info .row:last-child { border-bottom: none; }
+    .baggage { margin: 15px 0; padding: 10px; background: #F8FAFC; border-radius: 8px; border: 1px solid #E2E8F0; }
+    .baggage h3 { margin: 0 0 10px; color: #1E3A8A; }
+    .baggage .item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #E2E8F0; }
+    .baggage .item:last-child { border-bottom: none; }
+    .note { margin: 15px 0; padding: 10px; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; color: #991B1B; font-size: 12px; }
+    .note strong { color: #DC2626; }
+    .footer { margin-top: 15px; text-align: center; font-size: 10px; color: #94A3B8; border-top: 1px solid #E2E8F0; padding-top: 10px; }
+    .web-checkin { background: #EFF6FF; padding: 8px 12px; border-radius: 8px; display: inline-block; margin-top: 5px; }
+    .web-checkin a { color: #2563EB; text-decoration: none; font-weight: bold; }
+    @media print { body { background: white; padding: 0; } .ticket { border: none; box-shadow: none; } }
+  </style>
 </head>
 <body>
 <div class="ticket">
-<div class="header"><h1>✈️ BOARDING PASS</h1><p>${ticket.flight_number} | ${ticket.airline}</p></div>
-<div class="body">
-  <div class="route"><div class="city">${ticket.origin}</div><div class="arrow">✈️ →</div><div class="city">${ticket.destination}</div></div>
-  <div class="row"><span class="label">Passenger Name</span><span class="value">${ticket.passenger_name}</span></div>
-  <div class="row"><span class="label">Flight</span><span class="value">${ticket.flight_number}</span></div>
-  <div class="row"><span class="label">Date</span><span class="value">${ticket.departure_date}</span></div>
-  <div class="row"><span class="label">Departure</span><span class="value">${ticket.departure_time}</span></div>
-  <div class="row"><span class="label">Arrival</span><span class="value">${ticket.arrival_time || 'N/A'}</span></div>
-  <div class="row"><span class="label">Seat</span><span class="value">${ticket.seat_number || 'N/A'}</span></div>
-  <div class="row"><span class="label">Booking Ref</span><span class="value">${ticket.booking_reference}</span></div>
-  <div class="row"><span class="label">Class</span><span class="value">${ticket.class}</span></div>
-  <div class="row"><span class="label">Status</span><span class="value"><span class="status status-${ticket.status?.toLowerCase()}">${ticket.status}</span></span></div>
-  <div class="row"><span class="label">Fare</span><span class="value">${(ticket.fare || 0).toFixed(2)} SAR</span></div>
-  <div class="row"><span class="label">Total</span><span class="value" style="font-size:18px;color:#059669;">${(ticket.total || 0).toFixed(2)} SAR</span></div>
-</div>
-<div class="footer">Computer-generated ticket. Valid without signature.</div>
+  <div class="header">
+    <div class="left">
+      <strong>Name:</strong> SUEUD AL TAAYIRA<br>
+      <span class="ref-no">Ref.No: ${ticket.ticket_number || 'N/A'}</span>
+    </div>
+    <div class="right">
+      <strong>Date of Booking:</strong> ${ticket.departure_date}<br>
+      <span class="status">${ticket.status}</span>
+    </div>
+  </div>
+
+  <div class="flight-details">
+    <h3>ONWARD ${ticket.origin} → ${ticket.destination}</h3>
+    <div class="route">${ticket.departure_date} | Non Stop | 01 hrs 50 mins</div>
+    <div class="airline-ref">Airline Ref : ${ticket.booking_reference || 'N/A'}</div>
+    <div class="crs-ref">CRS Ref : ${ticket.pnr || 'N/A'}</div>
+    <div style="margin-top:5px;"><strong>${ticket.airline_name || ticket.airline}</strong></div>
+    <div>Travel Class: ${ticket.class}</div>
+    <div>Check-In Baggage: Adult - 2 PC | 1 Piece equal 23 Kg</div>
+    <div>Cabin Baggage: Adult 1 PC : 1 Piece equal 7 Kg</div>
+    <table>
+      <tr>
+        <th>Flight Number</th>
+        <th>From (Terminal)</th>
+        <th>Departure date &amp; time</th>
+        <th>Stops</th>
+        <th>To (Terminal)</th>
+        <th>Arrival date &amp; time</th>
+      </tr>
+      <tr>
+        <td>${ticket.flight_number} (AIRBUS JET 320)</td>
+        <td>${ticket.origin} [${ticket.origin.match(/\(([^)]+)\)/)?.[1] || 'JED'}]<br>${ticket.origin}<br>Saudi Arabia<br>Terminal ${ticket.terminal || '1'}</td>
+        <td>${ticket.departure_time}<br>${ticket.departure_date}</td>
+        <td>Non Stop<br>(01h:50m)</td>
+        <td>${ticket.destination} [${ticket.destination.match(/\(([^)]+)\)/)?.[1] || 'RAE'}]<br>${ticket.destination}<br>Saudi Arabia</td>
+        <td>${ticket.arrival_time}<br>${ticket.departure_date}</td>
+      </tr>
+    </table>
+    ${ticket.booking_reference ? `<div class="web-checkin"><a href="https://www.google.com/search?q=${encodeURIComponent(ticket.airline_name + ' online check in ' + ticket.booking_reference)}" target="_blank">🌐 Web check-in</a></div>` : ''}
+  </div>
+
+  <div class="traveler-info">
+    <h3>Traveler(s) Information</h3>
+    <div class="row"><span><strong>Code</strong></span><span><strong>Name</strong></span><span><strong>Ticket No.</strong></span></div>
+    <div class="row"><span>Mr.</span><span>${ticket.passenger_name}</span><span>${ticket.ticket_number || 'N/A'}</span></div>
+  </div>
+
+  <div class="baggage">
+    <h3>Baggage</h3>
+    <div class="item"><span>Carry-On : Adult 1 PC : 1 Piece equal 7 Kg</span><span>Bag 1 Chgs May Apply if Bags Exceed Ttl Wt Allowance</span></div>
+    <div class="item"><span>Baggage Allowance : Adult - 2 PC | 1 Piece equal 23 Kg</span><span>Bag 2 Chgs May Apply if Bags Exceed Ttl Wt Allowance</span></div>
+    <div class="item" style="font-size:10px;color:#64748B;">Refer to airline baggage policy for further details.</div>
+  </div>
+
+  <div class="note">
+    <strong>Important Note:</strong> Transit Visa is a mandatory requirement if there are via TWO Schengen countries or TWO stop in same countries<br>
+    <strong>Important Note:</strong> Refund/date change penalties upto 100% may apply.
+  </div>
+
+  <div class="footer">
+    Computer-generated ticket. Valid without signature.
+  </div>
 </div>
 </body>
 </html>`;
@@ -643,7 +708,10 @@ body { font-family: Arial, sans-serif; padding: 40px; background: #f5f5f5; }
           </div>
           <div>
             <label style={styles.label}>{isAr ? 'شركة الطيران *' : 'Airline *'}</label>
-            <select style={styles.select} value={ticketForm.airline} onChange={e => setTicketForm({ ...ticketForm, airline: e.target.value })} required>
+            <select style={styles.select} value={ticketForm.airline} onChange={e => {
+              const selected = airlines.find(a => a.code === e.target.value);
+              setTicketForm({ ...ticketForm, airline: e.target.value, airline_name: selected?.name || '' });
+            }} required>
               <option value="">{isAr ? 'اختر الخطوط' : 'Select Airline'}</option>
               {airlines.map(a => <option key={a.code} value={a.code}>{a.code} - {a.name}</option>)}
             </select>
@@ -733,7 +801,7 @@ body { font-family: Arial, sans-serif; padding: 40px; background: #f5f5f5; }
               {editingId ? '💾 ' + (isAr ? 'تحديث' : 'Update') : '✅ ' + (isAr ? 'حفظ التذكرة' : 'Save Ticket')}
             </button>
             {editingId && (
-              <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setEditingId(null); setTicketForm({ passenger_name: '', passenger_phone: '', passenger_email: '', airline: '', flight_number: '', origin: '', destination: '', departure_date: today, departure_time: '08:00', arrival_time: '12:00', seat_number: '', booking_reference: '', ticket_number: '', status: 'Confirmed', class: 'Economy', gate: '', terminal: '', baggage: '30 Kg', meal: 'Standard', special_requests: '', fare: 0, tax: 0, total: 0 }); }}>
+              <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setEditingId(null); setTicketForm({ passenger_name: '', passenger_phone: '', passenger_email: '', airline: '', airline_name: '', flight_number: '', origin: '', destination: '', departure_date: today, departure_time: '08:00', arrival_time: '12:00', seat_number: '', booking_reference: '', ticket_number: '', status: 'Confirmed', class: 'Economy', gate: '', terminal: '', baggage: '30 Kg', meal: 'Standard', special_requests: '', fare: 0, tax: 0, total: 0 }); }}>
                 ✕ {isAr ? 'إلغاء' : 'Cancel'}
               </button>
             )}
@@ -789,6 +857,9 @@ body { font-family: Arial, sans-serif; padding: 40px; background: #f5f5f5; }
   );
 }
 
+// ============================================================
+// FREQUENT FLYER VIEW
+// ============================================================
 function FrequentFlyerView(props) {
   const { data, tr, today, userProfile, showToast, setData, logAction, lang, theme } = props;
   const { isAr, isDark, styles, fmt } = useTravelHelpers(props);
@@ -976,6 +1047,9 @@ function FrequentFlyerView(props) {
   );
 }
 
+// ============================================================
+// CORPORATE TRAVEL VIEW
+// ============================================================
 function CorporateTravelView(props) {
   const { data, tr, today, userProfile, showToast, setData, logAction, lang, theme } = props;
   const { isAr, isDark, styles, fmt } = useTravelHelpers(props);
@@ -1055,6 +1129,253 @@ function CorporateTravelView(props) {
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// VISA PROCESSING VIEW – NEW
+// ============================================================
+function VisaProcessingView(props) {
+  const { data, tr, today, userProfile, showToast, setData, logAction, lang, theme } = props;
+  const { isAr, isDark, styles, fmt } = useTravelHelpers(props);
+  const [visaApps, setVisaApps] = useState([]);
+  const [visaForm, setVisaForm] = useState({
+    applicant_name: '',
+    passport_no: '',
+    nationality: '',
+    visa_type: 'Tourist',
+    destination: '',
+    application_date: today,
+    status: 'Pending',
+    notes: '',
+    customer_id: '' // optional link to customer
+  });
+  const [editingId, setEditingId] = useState(null);
+
+  // Load visa applications from database (use 'invoices' with service_type='Visa' or a dedicated table)
+  // For simplicity, we'll use a separate table 'visa_applications' – if not exists, we'll fallback to invoices.
+  // We'll assume the table exists with columns: id, applicant_name, passport_no, nationality, visa_type, destination, application_date, status, notes, tenant_id, customer_id.
+  useEffect(() => {
+    if (userProfile?.tenant_id) {
+      // Try to fetch from 'visa_applications'
+      supabase.from('visa_applications')
+        .select('*')
+        .eq('tenant_id', userProfile.tenant_id)
+        .order('application_date', { ascending: false })
+        .then(({ data, error }) => {
+          if (!error && data) {
+            setVisaApps(data);
+          } else {
+            // Fallback: if table doesn't exist, use invoices with service_type='Visa'
+            const visaInvs = (data.invoices || []).filter(i => i.service_type === 'Visa');
+            // Map to visa app structure
+            const mapped = visaInvs.map(inv => ({
+              id: inv.id,
+              applicant_name: inv.customers?.name || inv.old_customer_name || 'N/A',
+              passport_no: inv.ticket_no || 'N/A',
+              nationality: inv.flight_type || 'N/A',
+              visa_type: inv.sector || 'Tourist',
+              destination: inv.flight_sector || 'N/A',
+              application_date: inv.invoice_date,
+              status: inv.status === 'Paid' ? 'Approved' : 'Pending',
+              notes: inv.notes || '',
+              customer_id: inv.customer_id
+            }));
+            setVisaApps(mapped);
+          }
+        });
+    }
+  }, [userProfile?.tenant_id]);
+
+  const handleVisaSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = { ...visaForm, tenant_id: userProfile.tenant_id };
+      if (editingId) {
+        const { data: up, error } = await supabase
+          .from('visa_applications')
+          .update(payload)
+          .eq('id', editingId)
+          .select()
+          .single();
+        if (error) throw error;
+        setVisaApps(prev => prev.map(v => v.id === editingId ? up : v));
+        showToast(isAr ? '✅ تم تحديث طلب التأشيرة' : '✅ Visa application updated');
+        setEditingId(null);
+      } else {
+        const { data: newApp, error } = await supabase
+          .from('visa_applications')
+          .insert([payload])
+          .select()
+          .single();
+        if (error) throw error;
+        setVisaApps(prev => [newApp, ...prev]);
+        showToast(isAr ? '✅ تم إنشاء طلب تأشيرة جديد' : '✅ New visa application created');
+        await logAction(`Visa application for ${visaForm.applicant_name}`);
+      }
+      setVisaForm({
+        applicant_name: '',
+        passport_no: '',
+        nationality: '',
+        visa_type: 'Tourist',
+        destination: '',
+        application_date: today,
+        status: 'Pending',
+        notes: '',
+        customer_id: ''
+      });
+    } catch (err) {
+      showToast('Error: ' + err.message);
+    }
+  };
+
+  const handleEditVisa = (app) => {
+    setEditingId(app.id);
+    setVisaForm({
+      applicant_name: app.applicant_name || '',
+      passport_no: app.passport_no || '',
+      nationality: app.nationality || '',
+      visa_type: app.visa_type || 'Tourist',
+      destination: app.destination || '',
+      application_date: app.application_date || today,
+      status: app.status || 'Pending',
+      notes: app.notes || '',
+      customer_id: app.customer_id || ''
+    });
+  };
+
+  const handleDeleteVisa = async (app) => {
+    if (!confirm(isAr ? 'حذف طلب التأشيرة هذا؟' : 'Delete this visa application?')) return;
+    try {
+      const { error } = await supabase.from('visa_applications').delete().eq('id', app.id);
+      if (error) throw error;
+      setVisaApps(prev => prev.filter(v => v.id !== app.id));
+      showToast(isAr ? '✅ تم الحذف' : '✅ Deleted');
+    } catch (err) {
+      showToast('Error: ' + err.message);
+    }
+  };
+
+  return (
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <h1 style={styles.title}>🛂 {isAr ? 'معالجة التأشيرات' : 'Visa Processing'}</h1>
+        <button style={{ ...styles.btn, ...styles.btnInfo }} onClick={() => {
+          // Quick filter: show only pending
+          const pending = visaApps.filter(v => v.status === 'Pending');
+          if (pending.length === 0) showToast(isAr ? 'لا توجد طلبات معلقة' : 'No pending applications');
+        }}>
+          {isAr ? 'عرض المعلقة' : 'Show Pending'}
+        </button>
+      </div>
+
+      <div style={styles.card}>
+        <h3 style={styles.sectionTitle}>{editingId ? '✏️ ' + (isAr ? 'تعديل الطلب' : 'Edit Application') : '📝 ' + (isAr ? 'طلب تأشيرة جديد' : 'New Visa Application')}</h3>
+        <form onSubmit={handleVisaSubmit} style={styles.formRow}>
+          <div>
+            <label style={styles.label}>{isAr ? 'اسم مقدم الطلب' : 'Applicant Name'}</label>
+            <input style={styles.input} value={visaForm.applicant_name} onChange={e => setVisaForm({ ...visaForm, applicant_name: e.target.value })} required />
+          </div>
+          <div>
+            <label style={styles.label}>{isAr ? 'رقم جواز السفر' : 'Passport No'}</label>
+            <input style={styles.input} value={visaForm.passport_no} onChange={e => setVisaForm({ ...visaForm, passport_no: e.target.value })} required />
+          </div>
+          <div>
+            <label style={styles.label}>{isAr ? 'الجنسية' : 'Nationality'}</label>
+            <input style={styles.input} value={visaForm.nationality} onChange={e => setVisaForm({ ...visaForm, nationality: e.target.value })} />
+          </div>
+          <div>
+            <label style={styles.label}>{isAr ? 'نوع التأشيرة' : 'Visa Type'}</label>
+            <select style={styles.select} value={visaForm.visa_type} onChange={e => setVisaForm({ ...visaForm, visa_type: e.target.value })}>
+              <option>Tourist</option><option>Business</option><option>Work</option><option>Transit</option><option>Hajj</option><option>Umrah</option>
+            </select>
+          </div>
+          <div>
+            <label style={styles.label}>{isAr ? 'الوجهة' : 'Destination'}</label>
+            <input style={styles.input} value={visaForm.destination} onChange={e => setVisaForm({ ...visaForm, destination: e.target.value })} />
+          </div>
+          <div>
+            <label style={styles.label}>{isAr ? 'تاريخ التقديم' : 'Application Date'}</label>
+            <input type="date" style={styles.input} value={visaForm.application_date} onChange={e => setVisaForm({ ...visaForm, application_date: e.target.value })} required />
+          </div>
+          <div>
+            <label style={styles.label}>{isAr ? 'الحالة' : 'Status'}</label>
+            <select style={styles.select} value={visaForm.status} onChange={e => setVisaForm({ ...visaForm, status: e.target.value })}>
+              <option>Pending</option><option>Processing</option><option>Approved</option><option>Rejected</option><option>Issued</option>
+            </select>
+          </div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={styles.label}>{isAr ? 'ملاحظات' : 'Notes'}</label>
+            <textarea style={styles.textarea} value={visaForm.notes} onChange={e => setVisaForm({ ...visaForm, notes: e.target.value })} rows={2} />
+          </div>
+          <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px' }}>
+            <button type="submit" style={{ ...styles.btn, ...styles.btnPrimary, padding: '12px 30px' }}>
+              {editingId ? '💾 ' + (isAr ? 'تحديث' : 'Update') : '✅ ' + (isAr ? 'إنشاء' : 'Create')}
+            </button>
+            {editingId && (
+              <button type="button" style={{ ...styles.btn, ...styles.btnGhost }} onClick={() => { setEditingId(null); setVisaForm({ applicant_name: '', passport_no: '', nationality: '', visa_type: 'Tourist', destination: '', application_date: today, status: 'Pending', notes: '', customer_id: '' }); }}>
+                ✕ {isAr ? 'إلغاء' : 'Cancel'}
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
+
+      <div style={styles.card}>
+        <h3 style={styles.sectionTitle}>{isAr ? 'قائمة طلبات التأشيرة' : 'Visa Applications'}</h3>
+        {visaApps.length === 0 ? (
+          <div style={styles.emptyState}>
+            <div style={styles.emptyIcon}>🛂</div>
+            <p style={{ color: '#94A3B8' }}>{isAr ? 'لا توجد طلبات تأشيرة.' : 'No visa applications found.'}</p>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>{isAr ? 'مقدم الطلب' : 'Applicant'}</th>
+                  <th style={styles.th}>{isAr ? 'جواز السفر' : 'Passport'}</th>
+                  <th style={styles.th}>{isAr ? 'النوع' : 'Type'}</th>
+                  <th style={styles.th}>{isAr ? 'الوجهة' : 'Destination'}</th>
+                  <th style={styles.th}>{isAr ? 'التاريخ' : 'Date'}</th>
+                  <th style={styles.th}>{isAr ? 'الحالة' : 'Status'}</th>
+                  <th style={{ ...styles.th, textAlign: 'center' }}>{isAr ? 'إجراء' : 'Action'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visaApps.map(a => (
+                  <tr key={a.id}>
+                    <td style={{ ...styles.td, fontWeight: 600 }}>{a.applicant_name}</td>
+                    <td style={styles.td}>{a.passport_no}</td>
+                    <td style={styles.td}>{a.visa_type}</td>
+                    <td style={styles.td}>{a.destination}</td>
+                    <td style={styles.td}>{a.application_date}</td>
+                    <td style={styles.td}>
+                      <span style={{
+                        padding: '4px 10px',
+                        borderRadius: '12px',
+                        fontWeight: 'bold',
+                        fontSize: '11px',
+                        background: a.status === 'Approved' ? '#065F46' : a.status === 'Rejected' ? '#7F1D1D' : '#78350F',
+                        color: a.status === 'Approved' ? '#34D399' : a.status === 'Rejected' ? '#FCA5A5' : '#FBBF24'
+                      }}>
+                        {a.status}
+                      </span>
+                    </td>
+                    <td style={styles.tdCenter}>
+                      <div style={styles.actionsCell}>
+                        <button style={{ ...styles.actionBtn, background: '#D1FAE5', color: '#065F46' }} onClick={() => handleEditVisa(a)}>✏️</button>
+                        <button style={{ ...styles.actionBtn, background: '#FEE2E2', color: '#991B1B' }} onClick={() => handleDeleteVisa(a)}>🗑️</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
