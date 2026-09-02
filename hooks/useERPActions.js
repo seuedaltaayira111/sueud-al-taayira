@@ -27,7 +27,7 @@ export default function useERPActions(state) {
     contractMarkup, contractTerms, payForm, setPayForm,
     advForm, setAdvForm, mistakeForm, setMistakeForm,
     leaveForm, setLeaveForm, contractForm, setContractForm,
-    setPage // added to switch pages
+    setPage
   } = state;
 
   const isAr = lang === 'ar';
@@ -1834,7 +1834,7 @@ Thank you for choosing us!`;
   };
 
   // ============================================================
-  // PAYROLL
+  // PAYROLL – FIXED (handles synthetic events properly)
   // ============================================================
   const handleGenerateSlip = (pay) => {
     const html = getSalarySlipHTML(pay, data.settings, lang);
@@ -1860,17 +1860,31 @@ Thank you for choosing us!`;
     }
   };
 
+  // ============================================================
+  // handleProcessPayroll – FIXED to handle synthetic events
+  // ============================================================
   const handleProcessPayroll = async (e) => {
     e.preventDefault();
     try {
-      const empId = payForm.employee_id;
+      // Get values from event target (works for both real form events and synthetic events)
+      const empId = e.target?.emp?.value || e.target?.employee_id || payForm.employee_id;
+      const month = e.target?.month?.value || payForm.month || today.slice(0, 7);
+      const overtime = parseFloat(e.target?.overtime?.value || payForm.overtime || 0);
+      const gift = parseFloat(e.target?.gift?.value || payForm.gift || 0);
+      const advance = parseFloat(e.target?.adv_ded?.value || payForm.advance || 0);
+      const mistakesDed = parseFloat(e.target?.mistakes_deduction?.value || payForm.mistakes_deduction || 0);
+      const otherDed = parseFloat(e.target?.other_deduction?.value || payForm.other_deduction || 0);
+      const paymentMode = e.target?.mode?.value || payForm.payment_mode || 'Cash';
+      const paymentDate = payForm.payment_date || today;
+      const notes = payForm.notes || '';
+
       if (!empId) throw new Error(isAr ? 'اختر الموظف' : 'Select employee');
       const emp = data.employees?.find(em => em.id === empId);
       if (!emp) throw new Error(isAr ? 'الموظف غير موجود' : 'Employee not found');
 
-      const month = payForm.month || today.slice(0, 7);
       const base = parseFloat(emp.salary) || 0;
 
+      // Commission from invoices
       const monthInvoices = data.invoices?.filter(i =>
         i.employee_id === empId &&
         i.invoice_date?.startsWith(month) &&
@@ -1880,15 +1894,11 @@ Thank you for choosing us!`;
       const commissionRate = parseFloat(emp.commission_rate) || 0;
       const commissionAmt = commissionBase * (commissionRate / 100);
 
+      // Auto-deduct pending advances
       const pendingAdvances = (data.empAdvances || []).filter(a => a.employee_id === empId && a.status === 'Pending');
       const totalPendingAdvance = pendingAdvances.reduce((sum, a) => sum + (a.amount || 0), 0);
 
-      const overtime = parseFloat(payForm.overtime) || 0;
-      const gift = parseFloat(payForm.gift) || 0;
-      const mistakesDed = parseFloat(payForm.mistakes_deduction) || 0;
-      const otherDed = parseFloat(payForm.other_deduction) || 0;
-
-      let advanceDed = parseFloat(payForm.advance) || 0;
+      let advanceDed = advance;
       if (advanceDed === 0 && totalPendingAdvance > 0) {
         advanceDed = totalPendingAdvance;
         for (const adv of pendingAdvances) {
@@ -1921,9 +1931,9 @@ Thank you for choosing us!`;
           gross_salary: gross,
           total_deductions: totalDed,
           amount: netPay,
-          payment_mode: payForm.payment_mode || 'Cash',
-          payment_date: payForm.payment_date || today,
-          notes: payForm.notes || '',
+          payment_mode: paymentMode,
+          payment_date: paymentDate,
+          notes: notes,
           tenant_id: userProfile.tenant_id
         }])
         .select('*, employees(name, role)')
@@ -1931,9 +1941,9 @@ Thank you for choosing us!`;
 
       if (error) throw new Error('Payroll failed: ' + error.message);
 
-      const cbType = payForm.payment_mode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
+      const cbType = paymentMode === 'Cash' ? 'Cash-Out' : 'Bank-Out';
       const { data: nCb } = await supabase.from('cashbook').insert([{
-        trans_date: payForm.payment_date || today,
+        trans_date: paymentDate,
         type: cbType,
         description: `Salary - ${emp.name} (${month})`,
         amount: netPay,
