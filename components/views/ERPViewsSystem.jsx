@@ -20,7 +20,7 @@ export default function ERPViewsSystem(props) {
     handleAddCustomField, handleRemoveCustomField, handleCustomFieldChange,
     setModal, setPage, showToast, handleExportCSV,
     handleAddEditUser, handleEditUser, handleDeleteUser,
-    today      // ✅ ensure today is passed
+    today
   } = props;
 
   const isAr = lang === 'ar';
@@ -728,9 +728,6 @@ export default function ERPViewsSystem(props) {
       } else {
         setIsGenerating(true);
         setTimeout(() => {
-          const terms = `${aiData.payment_terms || '100% advance payment required'}\nValidity: ${aiData.validity_days || 30} days from issue date\nRefund Policy: All cancellations subject to airline/hotel policies\nPrices subject to change based on availability\nPassenger names must match passport/ID exactly\n${aiData.special_terms || ''}`;
-          const html = handleGenerateContract?.({ preventDefault: () => {} }) || handleGenerateOffer?.({ preventDefault: () => {} });
-          // Actually call the proper function
           if (isContract) {
             handleGenerateContract({ preventDefault: () => {} });
           } else {
