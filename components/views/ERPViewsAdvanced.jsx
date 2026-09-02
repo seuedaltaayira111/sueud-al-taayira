@@ -653,7 +653,8 @@ function useAdvancedHelpers(props) {
 }
 
 function QuotationsView(props) {
-  const { page, data, tr, today, userProfile, showToast, setData } = props;
+  const { page, data, tr, today, userProfile, showToast, setData, lang, theme } = props;
+  const isAr = lang === 'ar';
   const { styles, fmt } = useAdvancedHelpers(props);
   const [quoteForm, setQuoteForm] = useState({
     customer_name: '',
@@ -812,9 +813,12 @@ function QuotationsView(props) {
 function HRAdvancedView(props) {
   const {
     page, data, tr, today, userProfile, showToast, setData,
+    lang, theme,
     handleProcessPayroll, handleGenerateSlip, handleDeletePayroll,
     employees, payForm, setPayForm, handleExportCSV
   } = props;
+  const isAr = lang === 'ar';
+  const isDark = theme === 'dark';
   const { styles, fmt } = useAdvancedHelpers(props);
   const [editTargetId, setEditTargetId] = useState(null);
   const [targetVal, setTargetVal] = useState(0);
