@@ -14,7 +14,7 @@ export default function ERPViewsAdmin(props) {
     handleAddEditPkg, pkgForm, setPkgForm, editPkgId, handleEditPkg,
     handleAddEditBrn, brnForm, setBrnForm, editBrnId, handleEditBrn,
     handleAddEditEmp, empForm, setEmpForm, editEmpId, handleEditEmp,
-    handleAddEditSrv, srvForm, setSrvForm, editSrvId, handleEditSrv,
+    handleAddEditSrv, srvForm, setSrvForm, editSrvId, setEditSrvId, handleEditSrv,
     handleAddInvestment, investForm, setInvestForm,
     handleTransfer, transferForm, setTransferForm,
     handleDelete, handleExportCSV, handleAddEditPortal, portalForm, setPortalForm,
@@ -507,7 +507,7 @@ export default function ERPViewsAdmin(props) {
 // the component, so React expected the same hooks every render — a
 // Rules-of-Hooks violation. Extracted both into their own components.
 function useAdminHelpers(props) {
-  const { lang, theme } = props;
+  const { lang, theme, expForm, setExpForm } = props;
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
 
@@ -791,9 +791,11 @@ function useAdminHelpers(props) {
 function VendorsView(props) {
   const {
     page, data, tr, today, userProfile, showToast, setData, logAction,
-    handleAddEditVend, vendorForm, setVendorForm, editVendId, handleEditVend,
+    lang, theme,
+    handleAddEditVend, vendorForm, setVendorForm, editVendId, setEditVendId, handleEditVend,
     handleDelete, handleExportCSV
   } = props;
+  const isAr = lang === 'ar';
   const { styles, fmt } = useAdminHelpers(props);
   const [searchTerm, setSearchTerm] = useState('');
   const filtered = (data.vendors || []).filter(v =>
@@ -887,9 +889,11 @@ function VendorsView(props) {
 function BankView(props) {
   const {
     page, data, tr, today, userProfile, showToast, setData, logAction,
+    lang, theme,
     handleTransfer, transferForm, setTransferForm,
     handleDelete, handleExportCSV
   } = props;
+  const isAr = lang === 'ar';
   const { styles, fmt } = useAdminHelpers(props);
   const [cashFilter, setCashFilter] = useState('All');
   const cashIn = (data.cashbook || []).filter(c => c.type === 'Cash-In').reduce((s, c) => s + (c.amount || 0), 0);
