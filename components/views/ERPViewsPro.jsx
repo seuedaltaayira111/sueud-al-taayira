@@ -272,6 +272,8 @@ function RefundStatementView(props) {
   const { data, tr, lang, theme, handleExportCSV, showToast } = props;
   const { styles, fmt } = useProHelpers(props);
   const isAr = lang === 'ar';
+  const isDark = theme === 'dark';
+  const t = (key, fallback) => tr?.[key] || fallback || key;
 
   const refunds = (data.invoices || []).filter(i => i.invoice_no?.startsWith('REF-'));
   const totalCompRefund = refunds.reduce((s, r) => s + (r.refund_company || 0), 0);
@@ -410,6 +412,7 @@ function CustomerStatementView(props) {
   const { styles, fmt } = useProHelpers(props);
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
+  const t = (key, fallback) => tr?.[key] || fallback || key;
   const [stmtCustId, setStmtCustId] = useState('');
   const [statement, setStatement] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -557,6 +560,7 @@ function SupplierStatementView(props) {
   const { styles, fmt } = useProHelpers(props);
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
+  const t = (key, fallback) => tr?.[key] || fallback || key;
   const [stmtVendorId, setStmtVendorId] = useState('');
   const [vendorStatement, setVendorStatement] = useState([]);
 
@@ -694,6 +698,7 @@ function RecurringInvoicesView(props) {
   const { styles, fmt } = useProHelpers(props);
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
+  const t = (key, fallback) => tr?.[key] || fallback || key;
   const [recForm, setRecForm] = useState({
     customer_id: '',
     amount: '',
@@ -888,6 +893,7 @@ function ExpenseApprovalView(props) {
   const { styles, fmt } = useProHelpers(props);
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
+  const t = (key, fallback) => tr?.[key] || fallback || key;
 
   const pendingExpenses = (data.expenses || []).filter(e => e.approval_status === 'Pending');
 
@@ -981,6 +987,7 @@ function NotificationsView(props) {
   const { styles, fmt } = useProHelpers(props);
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
+  const t = (key, fallback) => tr?.[key] || fallback || key;
 
   const pendingInv = (data.invoices || []).filter(i => i.due_amount > 0 && !i.invoice_no?.startsWith('REF-'));
   const pendingExp = (data.expenses || []).filter(e => e.approval_status === 'Pending');
@@ -1141,6 +1148,7 @@ function StaffMistakesView(props) {
   const { styles, fmt } = useProHelpers(props);
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
+  const t = (key, fallback) => tr?.[key] || fallback || key;
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
