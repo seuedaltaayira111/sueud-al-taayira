@@ -41,11 +41,11 @@ export default function useERPActions(state) {
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
-    if (!passForm.newPass) return showToast(isAr ? 'नई पासवर्ड डालें' : 'Enter new password');
-    if (passForm.newPass.length < 6) return showToast(isAr ? 'कम से कम 6 अक्षर' : 'Minimum 6 characters');
+    if (!passForm.newPass) return showToast(isAr ? 'أدخل كلمة المرور الجديدة' : 'Enter new password');
+    if (passForm.newPass.length < 6) return showToast(isAr ? '6 أحرف على الأقل' : 'Minimum 6 characters');
     const { error } = await supabase.auth.updateUser({ password: passForm.newPass });
     if (error) return showToast('Error: ' + error.message);
-    showToast(isAr ? '✅ पासवर्ड बदल गया' : '✅ Password updated');
+    showToast(isAr ? '✅ تم تغيير كلمة المرور' : '✅ Password updated');
     setModal({ type: null, data: null });
     setPassForm({ newPass: '' });
   };
@@ -61,7 +61,7 @@ export default function useERPActions(state) {
 
     setTimeout(() => {
       let reply = isAr
-        ? 'मैं फ़्लाइट, इनवॉइस, कस्टमर, हज/उमरा, होटल, वीज़ा आदि में मदद कर सकता हूँ।'
+        ? 'يمكنني المساعدة في الطيران والفواتير والعملاء والحج/العمرة والفنادق والتأشيرات وغيرها.'
         : "I can help with flights, invoices, customers, Hajj/Umrah, hotels, visas, etc.";
 
       const totalInv = data.invoices?.length || 0;
@@ -70,18 +70,18 @@ export default function useERPActions(state) {
 
       if (input.includes('invoice') || input.includes('فاتورة')) {
         reply = isAr
-          ? `📄 आपके पास ${totalInv} इनवॉइस हैं, कुल ${totalRev.toFixed(2)} SAR, ${unpaidCount} अनपेड हैं।`
+          ? `📄 لديك ${totalInv} فاتورة بإجمالي ${totalRev.toFixed(2)} ريال، منها ${unpaidCount} غير مدفوعة.`
           : `📄 You have ${totalInv} invoices totaling ${totalRev.toFixed(2)} SAR, ${unpaidCount} unpaid.`;
       } else if (input.includes('customer') || input.includes('عميل')) {
         const totalCust = data.customers?.length || 0;
-        reply = isAr ? `👤 आपके पास ${totalCust} ग्राहक हैं।` : `👤 You have ${totalCust} customers.`;
+        reply = isAr ? `👤 لديك ${totalCust} عميل.` : `👤 You have ${totalCust} customers.`;
       } else if (input.includes('help') || input.includes('مساعدة')) {
         reply = isAr
-          ? '🤖 मैं मदद कर सकता हूँ: इनवॉइस, ग्राहक, फ़्लाइट, लाभ, खर्च, वेतन, कर्मचारी, होटल, वीज़ा, हज/उमरा, पोर्टल, पैकेज।'
+          ? '🤖 يمكنني المساعدة في: الفواتير، العملاء، الطيران، الأرباح، المصاريف، الرواتب، الموظفين، الفنادق، التأشيرات، الحج/العمرة، البوابات، الباقات.'
           : '🤖 I can help with: invoices, customers, flights, profit, expenses, salary, employees, hotels, visas, hajj/umrah, portals, packages.';
       } else {
         reply = isAr
-          ? '📋 मैं फ़्लाइट, इनवॉइस, कस्टमर, हज/उमरा, होटल, वीज़ा आदि में मदद कर सकता हूँ। "help" टाइप करें।'
+          ? '📋 يمكنني المساعدة في الطيران والفواتير والعملاء والحج/العمرة والفنادق والتأشيرات وغيرها. اكتب "help" للمساعدة.'
           : '📋 I can help with flights, invoices, customers, Hajj/Umrah, hotels, visas, etc. Type "help".';
       }
       setChatMessages(prev => [...prev, { sender: 'bot', text: reply }]);
@@ -100,7 +100,7 @@ export default function useERPActions(state) {
       if (error) throw error;
       const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName);
       setProfileForm(prev => ({ ...prev, avatar_url: urlData.publicUrl }));
-      showToast(isAr ? '✅ प्रोफाइल फोटो अपलोड हो गई' : '✅ Profile photo uploaded');
+      showToast(isAr ? '✅ تم رفع صورة الملف الشخصي' : '✅ Profile photo uploaded');
     } catch (err) {
       showToast('Error: ' + err.message);
     }
@@ -119,7 +119,7 @@ export default function useERPActions(state) {
         })
         .eq('id', userProfile.id);
       if (error) throw error;
-      showToast(isAr ? '✅ प्रोफाइल अपडेट हो गया' : '✅ Profile updated');
+      showToast(isAr ? '✅ تم تحديث الملف الشخصي' : '✅ Profile updated');
       fetchAll();
     } catch (err) {
       showToast('Error: ' + err.message);
@@ -135,7 +135,7 @@ export default function useERPActions(state) {
       if (error) throw error;
       const { data: urlData } = supabase.storage.from('logos').getPublicUrl(fileName);
       setSetForm(prev => ({ ...prev, logo_url: urlData.publicUrl }));
-      showToast(isAr ? '✅ लोगो अपलोड हो गया' : '✅ Logo uploaded');
+      showToast(isAr ? '✅ تم رفع الشعار' : '✅ Logo uploaded');
     } catch (err) {
       showToast('Error: ' + err.message);
     }
@@ -162,7 +162,7 @@ export default function useERPActions(state) {
           .insert([{ tenant_id: userProfile.tenant_id, ...setForm }]);
         if (error) throw error;
       }
-      showToast(isAr ? '✅ सेटिंग्स सेव हो गईं' : '✅ Settings saved');
+      showToast(isAr ? '✅ تم حفظ الإعدادات' : '✅ Settings saved');
       fetchAll();
     } catch (err) {
       showToast('Error: ' + err.message);
@@ -193,7 +193,7 @@ export default function useERPActions(state) {
   // GENERIC DELETE
   // ============================================================
   const handleDelete = async (table, id) => {
-    if (!confirm(isAr ? 'क्या आप हटाना चाहते हैं?' : 'Delete?')) return;
+    if (!confirm(isAr ? 'هل تريد الحذف؟' : 'Delete?')) return;
     try {
       // BUG: this call's result was never checked. Supabase does not
       // throw on a failed delete (e.g. blocked by a foreign key
@@ -210,13 +210,13 @@ export default function useERPActions(state) {
         ...prev,
         [table]: Array.isArray(prev[table]) ? prev[table].filter(i => i.id !== id) : []
       }));
-      showToast(isAr ? '✅ हटा दिया' : '✅ Deleted');
+      showToast(isAr ? '✅ تم الحذف' : '✅ Deleted');
       await logAction(`Deleted from ${table}`);
     } catch (err) {
       showToast(
-        (isAr ? '❌ हटाने में विफल: ' : '❌ Delete failed: ') +
+        (isAr ? '❌ فشل الحذف: ' : '❌ Delete failed: ') +
         (err.message?.includes('foreign key')
-          ? (isAr ? 'यह रिकॉर्ड अन्य जगह उपयोग हो रहा है और हटाया नहीं जा सकता।' : 'This record is still referenced elsewhere and cannot be deleted.')
+          ? (isAr ? 'هذا السجل مستخدم في مكان آخر ولا يمكن حذفه.' : 'This record is still referenced elsewhere and cannot be deleted.')
           : err.message)
       );
     }
@@ -247,7 +247,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, customers: prev.customers.map(c => c.id === editCustId ? up : c) }));
-        showToast(isAr ? '✅ अपडेट हो गया' : '✅ Updated');
+        showToast(isAr ? '✅ تم التحديث' : '✅ Updated');
         setEditCustId(null);
       } else {
         const { data: nItem, error } = await supabase
@@ -257,7 +257,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, customers: [...prev.customers, nItem] }));
-        showToast(isAr ? '✅ जोड़ा गया' : '✅ Added');
+        showToast(isAr ? '✅ تمت الإضافة' : '✅ Added');
       }
       setCustForm({ name: '', phone: '', store_credit: 0 });
     } catch (err) {
@@ -285,7 +285,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, corporates: prev.corporates.map(c => c.id === editCorpId ? up : c) }));
-        showToast(isAr ? '✅ अपडेट हो गया' : '✅ Updated');
+        showToast(isAr ? '✅ تم التحديث' : '✅ Updated');
         setEditCorpId(null);
       } else {
         const { data: nItem, error } = await supabase
@@ -295,7 +295,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, corporates: [...prev.corporates, nItem] }));
-        showToast(isAr ? '✅ जोड़ा गया' : '✅ Added');
+        showToast(isAr ? '✅ تمت الإضافة' : '✅ Added');
       }
       setCorpForm({ name: '', vat_no: '', phone: '', address: '' });
     } catch (err) {
@@ -323,7 +323,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, creditors: prev.creditors.map(c => c.id === editCredId ? up : c) }));
-        showToast(isAr ? '✅ अपडेट हो गया' : '✅ Updated');
+        showToast(isAr ? '✅ تم التحديث' : '✅ Updated');
         setEditCredId(null);
       } else {
         const { data: nItem, error } = await supabase
@@ -333,7 +333,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, creditors: [...prev.creditors, nItem] }));
-        showToast(isAr ? '✅ जोड़ा गया' : '✅ Added');
+        showToast(isAr ? '✅ تمت الإضافة' : '✅ Added');
       }
       setCreditorForm({ name: '', phone: '', address: '' });
     } catch (err) {
@@ -366,7 +366,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, vendors: prev.vendors.map(c => c.id === editVendId ? up : c) }));
-        showToast(isAr ? '✅ अपडेट हो गया' : '✅ Updated');
+        showToast(isAr ? '✅ تم التحديث' : '✅ Updated');
         setEditVendId(null);
       } else {
         const { data: nItem, error } = await supabase
@@ -376,7 +376,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, vendors: [...prev.vendors, nItem] }));
-        showToast(isAr ? '✅ जोड़ा गया' : '✅ Added');
+        showToast(isAr ? '✅ تمت الإضافة' : '✅ Added');
       }
       setVendorForm({ name: '', phone: '', balance: 0 });
     } catch (err) {
@@ -417,7 +417,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, packages: prev.packages.map(c => c.id === editPkgId ? up : c) }));
-        showToast(isAr ? '✅ अपडेट हो गया' : '✅ Updated');
+        showToast(isAr ? '✅ تم التحديث' : '✅ Updated');
         setEditPkgId(null);
       } else {
         const { data: nItem, error } = await supabase
@@ -427,7 +427,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, packages: [...prev.packages, nItem] }));
-        showToast(isAr ? '✅ जोड़ा गया' : '✅ Added');
+        showToast(isAr ? '✅ تمت الإضافة' : '✅ Added');
       }
       setPkgForm({ name: '', price: '', desc: '', duration: '', inclusions: '' });
     } catch (err) {
@@ -463,7 +463,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, branches: prev.branches.map(c => c.id === editBrnId ? up : c) }));
-        showToast(isAr ? '✅ अपडेट हो गया' : '✅ Updated');
+        showToast(isAr ? '✅ تم التحديث' : '✅ Updated');
         setEditBrnId(null);
       } else {
         const { data: nItem, error } = await supabase
@@ -473,7 +473,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, branches: [...prev.branches, nItem] }));
-        showToast(isAr ? '✅ जोड़ा गया' : '✅ Added');
+        showToast(isAr ? '✅ تمت الإضافة' : '✅ Added');
       }
       setBrnForm({
         name: '', location: '', phone: '', manager: '',
@@ -524,7 +524,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, employees: prev.employees.map(c => c.id === editEmpId ? up : c) }));
-        showToast(isAr ? '✅ अपडेट हो गया' : '✅ Updated');
+        showToast(isAr ? '✅ تم التحديث' : '✅ Updated');
         setEditEmpId(null);
       } else {
         const { data: nItem, error } = await supabase
@@ -534,7 +534,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, employees: [...prev.employees, nItem] }));
-        showToast(isAr ? '✅ जोड़ा गया' : '✅ Added');
+        showToast(isAr ? '✅ تمت الإضافة' : '✅ Added');
       }
       setEmpForm({
         name: '', role: 'Sales', salary: 0, phone: '', commission_rate: 0,
@@ -567,7 +567,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, services: prev.services.map(s => s.id === editSrvId ? up : s) }));
-        showToast(isAr ? '✅ अपडेट हो गया' : '✅ Updated');
+        showToast(isAr ? '✅ تم التحديث' : '✅ Updated');
         setEditSrvId(null);
       } else {
         const { data: nItem, error } = await supabase
@@ -577,7 +577,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, services: [...prev.services, nItem] }));
-        showToast(isAr ? '✅ जोड़ा गया' : '✅ Added');
+        showToast(isAr ? '✅ تمت الإضافة' : '✅ Added');
       }
       setSrvForm({ name: '' });
     } catch (err) {
@@ -629,7 +629,7 @@ export default function useERPActions(state) {
     e.preventDefault();
     try {
       const totalAmount = expForm.items.reduce((s, item) => s + ((parseFloat(item.qty) || 1) * (parseFloat(item.price) || 0)), 0);
-      if (totalAmount <= 0) throw new Error(isAr ? 'कम से कम एक आइटम जोड़ें!' : 'Add at least one expense item!');
+      if (totalAmount <= 0) throw new Error(isAr ? 'أضف عنصرًا واحدًا على الأقل!' : 'Add at least one expense item!');
 
       const payload = {
         expense_date: expForm.expense_date,
@@ -659,7 +659,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, expenses: prev.expenses.map(ex => ex.id === editExpId ? up : ex) }));
-        showToast(isAr ? '✅ अपडेट हो गया' : '✅ Updated');
+        showToast(isAr ? '✅ تم التحديث' : '✅ Updated');
         setEditExpId(null);
       } else {
         const { data: nExp, error } = await supabase
@@ -687,7 +687,7 @@ export default function useERPActions(state) {
           cashbook: newCbEntry ? [newCbEntry, ...prev.cashbook] : prev.cashbook
         }));
         await logAction(`Expense ${totalAmount.toFixed(2)} SAR - ${expForm.description || expForm.expense_type}`);
-        showToast(isAr ? '✅ जोड़ा गया' : '✅ Added');
+        showToast(isAr ? '✅ تمت الإضافة' : '✅ Added');
       }
       setExpForm({
         expense_type: 'Office Expense',
@@ -710,14 +710,14 @@ export default function useERPActions(state) {
     }
   };
   const handleDeleteExpense = async (exp) => {
-    if (!confirm(isAr ? 'क्या आप इस खर्च को हटाना चाहते हैं?' : 'Delete this expense?')) return;
+    if (!confirm(isAr ? 'هل تريد حذف هذا المصروف؟' : 'Delete this expense?')) return;
     try {
       { const { error: _delErr1 } = await supabase.from('expenses').delete().eq('id', exp.id); if (_delErr1) throw new Error(_delErr1.message); }
       setData(prev => ({
         ...prev,
         expenses: prev.expenses.filter(ex => ex.id !== exp.id)
       }));
-      showToast(isAr ? '✅ हटा दिया' : '✅ Deleted');
+      showToast(isAr ? '✅ تم الحذف' : '✅ Deleted');
     } catch (err) {
       showToast('Error: ' + err.message);
     }
@@ -749,7 +749,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, portals: prev.portals.map(p => p.id === modal.data.id ? up : p) }));
-        showToast(isAr ? '✅ अपडेट हो गया' : '✅ Updated');
+        showToast(isAr ? '✅ تم التحديث' : '✅ Updated');
       } else {
         const { data: nP, error } = await supabase
           .from('portals')
@@ -758,7 +758,7 @@ export default function useERPActions(state) {
           .single();
         if (error) throw error;
         setData(prev => ({ ...prev, portals: [...prev.portals, nP] }));
-        showToast(isAr ? '✅ जोड़ा गया' : '✅ Added');
+        showToast(isAr ? '✅ تمت الإضافة' : '✅ Added');
       }
       setModal({ type: null, data: null });
       setPortalForm({
@@ -777,8 +777,8 @@ export default function useERPActions(state) {
     e.preventDefault();
     try {
       const amt = parseFloat(transferForm.amount) || 0;
-      if (amt <= 0) throw new Error(isAr ? 'सही राशि डालें!' : 'Enter a valid amount!');
-      if (transferForm.from === transferForm.to) throw new Error(isAr ? 'दोनों एक जैसे नहीं होने चाहिए!' : 'From and To must be different!');
+      if (amt <= 0) throw new Error(isAr ? 'أدخل مبلغًا صحيحًا!' : 'Enter a valid amount!');
+      if (transferForm.from === transferForm.to) throw new Error(isAr ? 'يجب ألا يكون الحسابان متطابقين!' : 'From and To must be different!');
 
       const outType = (acc) => acc === 'Cash' ? 'Cash-Out' : acc === 'Bank' ? 'Bank-Out' : 'Investor-Out';
       const inType = (acc) => acc === 'Cash' ? 'Cash-In' : acc === 'Bank' ? 'Bank-In' : 'Investor-In';
@@ -805,7 +805,7 @@ export default function useERPActions(state) {
       }));
 
       await logAction(`Transfer ${amt.toFixed(2)} SAR: ${transferForm.from} → ${transferForm.to}`);
-      showToast(isAr ? `✅ ${amt.toFixed(2)} SAR ट्रांसफर हो गया` : `✅ Transferred ${amt.toFixed(2)} SAR`);
+      showToast(isAr ? `✅ تم تحويل ${amt.toFixed(2)} ريال` : `✅ Transferred ${amt.toFixed(2)} SAR`);
 
       setTransferForm({ from: 'Cash', to: 'Bank', amount: '', date: today, description: '' });
       setModal({ type: null, data: null });
@@ -827,8 +827,8 @@ export default function useERPActions(state) {
     e.preventDefault();
     try {
       const amt = parseFloat(rechargeForm.amount) || 0;
-      if (!rechargeForm.portal_id) throw new Error(isAr ? 'पोर्टल चुनें!' : 'Select a portal!');
-      if (amt <= 0) throw new Error(isAr ? 'सही राशि डालें!' : 'Enter a valid amount!');
+      if (!rechargeForm.portal_id) throw new Error(isAr ? 'اختر البوابة!' : 'Select a portal!');
+      if (amt <= 0) throw new Error(isAr ? 'أدخل مبلغًا صحيحًا!' : 'Enter a valid amount!');
 
       const portal = data.portals.find(p => p.id === rechargeForm.portal_id);
       if (!portal) throw new Error('Portal not found');
@@ -865,7 +865,7 @@ export default function useERPActions(state) {
       }));
 
       await logAction(`Recharged portal ${portal.name} with ${amt.toFixed(2)} SAR`);
-      showToast(isAr ? `✅ रिचार्ज सफल: ${amt.toFixed(2)} SAR` : `✅ Recharged ${amt.toFixed(2)} SAR`);
+      showToast(isAr ? `✅ تمت إعادة الشحن: ${amt.toFixed(2)} ريال` : `✅ Recharged ${amt.toFixed(2)} SAR`);
       setRechargeForm({ portal_id: '', amount: '', source: 'Cash', recharge_date: today, reference: '', notes: '' });
     } catch (err) {
       showToast('Error: ' + err.message);
@@ -879,7 +879,7 @@ export default function useERPActions(state) {
     e.preventDefault();
     try {
       const amount = parseFloat(investForm.amount) || 0;
-      if (amount <= 0) throw new Error(isAr ? 'सही राशि डालें!' : 'Enter a valid amount');
+      if (amount <= 0) throw new Error(isAr ? 'أدخل مبلغًا صحيحًا!' : 'Enter a valid amount');
 
       const finalReason = investForm.reason === 'Other' ? (investForm.otherReason || 'Other') : investForm.reason;
 
@@ -916,7 +916,7 @@ export default function useERPActions(state) {
       }));
 
       await logAction(`Investment of ${amount.toFixed(2)} SAR from ${investForm.name}`);
-      showToast(isAr ? '✅ निवेश दर्ज किया गया' : '✅ Investment recorded');
+      showToast(isAr ? '✅ تم تسجيل الاستثمار' : '✅ Investment recorded');
 
       setInvestForm({
         name: '', amount: '', date: today, mode: 'Cash',
@@ -1010,10 +1010,10 @@ export default function useERPActions(state) {
       }
       pdf.save(filename);
       document.body.removeChild(div);
-      showToast(isAr ? '✅ PDF डाउनलोड हो गया' : '✅ PDF Downloaded');
+      showToast(isAr ? '✅ تم تنزيل PDF' : '✅ PDF Downloaded');
     } catch (err) {
       console.error('PDF Error:', err);
-      showToast(isAr ? '❌ PDF एरर: ' + err.message : '❌ PDF Error: ' + err.message);
+      showToast(isAr ? '❌ خطأ في PDF: ' + err.message : '❌ PDF Error: ' + err.message);
       try {
         const win = window.open('', '_blank');
         if (win) {
@@ -1055,7 +1055,7 @@ export default function useERPActions(state) {
       }
       if (!html) throw new Error('HTML generation failed');
       const win = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
-      if (!win) { showToast(isAr ? '⚠️ पॉपअप ब्लॉक हो गया' : '⚠️ Popup blocked'); return; }
+      if (!win) { showToast(isAr ? '⚠️ تم حظر النافذة المنبثقة' : '⚠️ Popup blocked'); return; }
       win.document.write(html);
       win.document.close();
       win.focus();
@@ -1088,7 +1088,7 @@ export default function useERPActions(state) {
   const shareWhatsApp = (inv) => {
     try {
       if (inv.invoice_no?.startsWith('REF-')) {
-        return showToast(isAr ? '⚠️ रिफंड इनवॉइस WhatsApp पर शेयर नहीं हो सकती' : '⚠️ Refund invoices cannot be shared via WhatsApp');
+        return showToast(isAr ? '⚠️ لا يمكن مشاركة فاتورة الاسترداد عبر واتساب' : '⚠️ Refund invoices cannot be shared via WhatsApp');
       }
       const phone = inv.customers?.phone || '';
       const cleanPhone = phone.replace(/[^0-9]/g, '');
@@ -1107,7 +1107,7 @@ Due: ${(inv.due_amount || 0).toFixed(2)} SAR`;
   const shareEmail = (inv) => {
     try {
       if (inv.invoice_no?.startsWith('REF-')) {
-        return showToast(isAr ? '⚠️ रिफंड इनवॉइस Email पर शेयर नहीं हो सकती' : '⚠️ Refund invoices cannot be shared via Email');
+        return showToast(isAr ? '⚠️ لا يمكن مشاركة فاتورة الاسترداد عبر البريد الإلكتروني' : '⚠️ Refund invoices cannot be shared via Email');
       }
       const email = inv.customers?.email || inv.corporates?.email || '';
       const subject = `Invoice ${inv.invoice_no}`;
@@ -1158,7 +1158,7 @@ Thank you for choosing us!`;
     e.preventDefault();
     try {
       const inv = modal.data || data.invoices?.find(i => i.id === settleForm.id);
-      if (!inv) throw new Error(isAr ? 'इनवॉइस नहीं मिला' : 'Invoice not found');
+      if (!inv) throw new Error(isAr ? 'الفاتورة غير موجودة' : 'Invoice not found');
       const settleAmt = inv.due_amount || 0;
       const newPaid = (inv.paid_amount || 0) + settleAmt;
       const { data: upInv, error } = await supabase
@@ -1183,7 +1183,7 @@ Thank you for choosing us!`;
         cashbook: nC ? [nC, ...prev.cashbook] : prev.cashbook
       }));
       await logAction(`Settled ${settleAmt.toFixed(2)} SAR for ${inv.invoice_no}`);
-      showToast(isAr ? '✅ भुगतान सेटल हो गया' : '✅ Payment Settled');
+      showToast(isAr ? '✅ تمت تسوية الدفع' : '✅ Payment Settled');
       setModal({ type: null, data: null });
     } catch (err) {
       showToast('Error: ' + err.message);
@@ -1194,7 +1194,7 @@ Thank you for choosing us!`;
     e.preventDefault();
     try {
       const origInv = modal.data;
-      if (!origInv) throw new Error(isAr ? 'मूल इनवॉइस नहीं मिली' : 'Original invoice not found');
+      if (!origInv) throw new Error(isAr ? 'الفاتورة الأصلية غير موجودة' : 'Original invoice not found');
       const compRef = parseFloat(refundForm.compRefund) || 0;
       const custRef = parseFloat(refundForm.custRefund) || 0;
       const refundNo = `REF-${Date.now()}`;
@@ -1222,7 +1222,7 @@ Thank you for choosing us!`;
             tenant_id: userProfile.tenant_id
           }]).select().single();
           creditLedgerEntry = cle;
-          showToast(isAr ? `✅ ${custRef.toFixed(2)} SAR ${origInv.customers?.name} के स्टोर क्रेडिट में जोड़ा गया` : `✅ ${custRef.toFixed(2)} SAR added to ${origInv.customers?.name}'s store credit`);
+          showToast(isAr ? `✅ تمت إضافة ${custRef.toFixed(2)} ريال إلى رصيد ${origInv.customers?.name}` : `✅ ${custRef.toFixed(2)} SAR added to ${origInv.customers?.name}'s store credit`);
         }
       }
 
@@ -1315,7 +1315,7 @@ Thank you for choosing us!`;
       }));
 
       await logAction(`Refund ${refundNo} for ${origInv.invoice_no} (Comp:${compRef}, Cust:${custRef})`);
-      showToast(isAr ? '✅ रिफंड प्रोसेस हो गया' : '✅ Refund Processed');
+      showToast(isAr ? '✅ تمت معالجة الاسترداد' : '✅ Refund Processed');
       setModal({ type: null, data: null });
     } catch (err) {
       showToast('Error: ' + err.message);
@@ -1326,7 +1326,7 @@ Thank you for choosing us!`;
   // DELETE INVOICE (with reversal)
   // ============================================================
   const handleDeleteInvoice = async (inv) => {
-    if (!confirm(isAr ? 'क्या आप सुनिश्चित हैं? सभी एंट्री रिवर्स हो जाएंगी।' : 'Delete permanently? All entries will be reversed.')) return;
+    if (!confirm(isAr ? 'هل أنت متأكد؟ سيتم عكس جميع القيود.' : 'Delete permanently? All entries will be reversed.')) return;
     try {
       if (inv.invoice_no?.startsWith('REF-')) {
         if (inv.payment_method === 'Credit' && inv.refund_customer > 0 && inv.customer_id) {
@@ -1363,7 +1363,7 @@ Thank you for choosing us!`;
           invoices: prev.invoices.filter(i => i.id !== inv.id),
           cashbook: prev.cashbook.filter(c => !cbs.find(x => x.id === c.id))
         }));
-        showToast(isAr ? '✅ रिफंड हटा दिया' : '✅ Refund Deleted');
+        showToast(isAr ? '✅ تم حذف الاسترداد' : '✅ Refund Deleted');
         return;
       }
 
@@ -1398,7 +1398,7 @@ Thank you for choosing us!`;
         invoices: prev.invoices.filter(i => i.id !== inv.id),
         cashbook: prev.cashbook.filter(c => !cbs.find(x => x.id === c.id))
       }));
-      showToast(isAr ? '✅ इनवॉइस हटा दी' : '✅ Invoice Deleted');
+      showToast(isAr ? '✅ تم حذف الفاتورة' : '✅ Invoice Deleted');
     } catch (err) {
       showToast('Error: ' + err.message);
     }
@@ -1511,7 +1511,7 @@ Thank you for choosing us!`;
             }])
             .select()
             .single();
-          if (cErr) throw new Error(isAr ? 'कस्टमर बनाने में विफल: ' + cErr.message : 'Customer creation failed: ' + cErr.message);
+          if (cErr) throw new Error(isAr ? 'فشل إنشاء العميل: ' + cErr.message : 'Customer creation failed: ' + cErr.message);
           cid = nC.id;
           newCustomerRecord = nC;
         } else {
@@ -1530,7 +1530,7 @@ Thank you for choosing us!`;
             }])
             .select()
             .single();
-          if (corpErr) throw new Error(isAr ? 'कॉर्पोरेट बनाने में विफल: ' + corpErr.message : 'Corporate creation failed: ' + corpErr.message);
+          if (corpErr) throw new Error(isAr ? 'فشل إنشاء الشركة: ' + corpErr.message : 'Corporate creation failed: ' + corpErr.message);
           corpId = nCorp.id;
           newCorporateRecord = nCorp;
         } else {
@@ -1562,9 +1562,9 @@ Thank you for choosing us!`;
       const profit = sell - cost;
 
       const portal = data.portals?.find(p => p.id === invForm.portalId);
-      if (!portal) throw new Error(isAr ? 'पोर्टल चुनें!' : 'Select a Portal');
+      if (!portal) throw new Error(isAr ? 'اختر البوابة!' : 'Select a Portal');
       if ((portal.current_balance || 0) < cost) {
-        showToast(isAr ? `⚠️ पोर्टल बैलेंस कम है: ${(portal.current_balance || 0).toFixed(2)} SAR (जरूरत: ${cost.toFixed(2)} SAR)` : `⚠️ Low portal balance: ${(portal.current_balance || 0).toFixed(2)} SAR (Need: ${cost.toFixed(2)} SAR)`);
+        showToast(isAr ? `⚠️ رصيد البوابة منخفض: ${(portal.current_balance || 0).toFixed(2)} ريال (المطلوب: ${cost.toFixed(2)} ريال)` : `⚠️ Low portal balance: ${(portal.current_balance || 0).toFixed(2)} SAR (Need: ${cost.toFixed(2)} SAR)`);
       }
 
       // Store Credit usage
@@ -1573,13 +1573,13 @@ Thank you for choosing us!`;
         const cust = data.customers?.find(c => c.id === cid);
         if (cust) {
           const nc = (cust.store_credit || 0) - usedCredit;
-          if (nc < 0) throw new Error(isAr ? 'पर्याप्त क्रेडिट बैलेंस नहीं!' : 'Insufficient credit balance!');
+          if (nc < 0) throw new Error(isAr ? 'رصيد الائتمان غير كافٍ!' : 'Insufficient credit balance!');
           await supabase.from('customers').update({ store_credit: nc }).eq('id', cust.id);
           setData(prev => ({
             ...prev,
             customers: prev.customers.map(c => c.id === cust.id ? { ...c, store_credit: nc } : c)
           }));
-          showToast(isAr ? `✅ ${usedCredit.toFixed(2)} SAR ${cust.name} के क्रेडिट से उपयोग किया गया` : `✅ ${usedCredit.toFixed(2)} SAR used from ${cust.name}'s credit`);
+          showToast(isAr ? `✅ تم استخدام ${usedCredit.toFixed(2)} ريال من رصيد ${cust.name}` : `✅ ${usedCredit.toFixed(2)} SAR used from ${cust.name}'s credit`);
           // Log the usage in the credit ledger, linked to the refund
           // (invForm.linkedInvId) that originally created this credit
           // where known — this is what lets an invoice show exactly
@@ -1658,9 +1658,9 @@ Thank you for choosing us!`;
           .eq('id', editInvId)
           .select('*, customers(name), corporates(name), employees(name)')
           .single();
-        if (upErr) throw new Error(isAr ? 'अपडेट विफल: ' + upErr.message : 'Update failed: ' + upErr.message);
+        if (upErr) throw new Error(isAr ? 'فشل التحديث: ' + upErr.message : 'Update failed: ' + upErr.message);
         setData(prev => ({ ...prev, invoices: prev.invoices.map(i => i.id === editInvId ? upInv : i) }));
-        showToast(isAr ? '✅ इनवॉइस अपडेट हो गई' : '✅ Invoice Updated');
+        showToast(isAr ? '✅ تم تحديث الفاتورة' : '✅ Invoice Updated');
         setEditInvId(null);
       } else {
         const invNo = `INV-${Date.now()}`;
@@ -1669,7 +1669,7 @@ Thank you for choosing us!`;
           .insert([{ invoice_no: invNo, ...payload }])
           .select('*, customers(name), corporates(name), employees(name)')
           .single();
-        if (invErr) throw new Error(isAr ? 'बनाने में विफल: ' + invErr.message : 'Creation failed: ' + invErr.message);
+        if (invErr) throw new Error(isAr ? 'فشل الإنشاء: ' + invErr.message : 'Creation failed: ' + invErr.message);
 
         const newBal = (portal.current_balance || 0) - cost;
         await supabase.from('portals').update({ current_balance: newBal }).eq('id', portal.id);
@@ -1700,7 +1700,7 @@ Thank you for choosing us!`;
             reference_id: newInv.id
           }]).select().single();
           if (nCO) newCbEntries.push(nCO);
-          showToast(isAr ? `✅ ${cashReturn.toFixed(2)} SAR वापस किए गए` : `✅ ${cashReturn.toFixed(2)} SAR returned`);
+          showToast(isAr ? `✅ تم إرجاع ${cashReturn.toFixed(2)} ريال` : `✅ ${cashReturn.toFixed(2)} SAR returned`);
         }
 
         if (usedCredit > 0) {
@@ -1732,7 +1732,7 @@ Thank you for choosing us!`;
           corporates: newCorporateRecord ? [newCorporateRecord, ...prev.corporates] : prev.corporates,
           customerCredits: creditUsageEntry ? [creditUsageEntry, ...(prev.customerCredits || [])] : (prev.customerCredits || [])
         }));
-        showToast(isAr ? '✅ इनवॉइस बन गई' : '✅ Invoice Generated');
+        showToast(isAr ? '✅ تم إنشاء الفاتورة' : '✅ Invoice Generated');
       }
 
       // Reset form
@@ -1821,7 +1821,7 @@ Thank you for choosing us!`;
         .single();
       if (error) throw error;
       setData(prev => ({ ...prev, staffMistakes: [newM, ...(prev.staffMistakes || [])] }));
-      showToast(isAr ? '✅ मिस्टेक लॉग हो गया' : '✅ Mistake Logged');
+      showToast(isAr ? '✅ تم تسجيل الخطأ' : '✅ Mistake Logged');
       fd.reset();
       fetchAll?.();
     } catch (err) {
@@ -1836,11 +1836,11 @@ Thank you for choosing us!`;
   };
 
   const handleDeleteMistake = async (m) => {
-    if (!confirm(isAr ? 'क्या आप इस मिस्टेक को हटाना चाहते हैं?' : 'Delete this mistake?')) return;
+    if (!confirm(isAr ? 'هل تريد حذف هذا الخطأ؟' : 'Delete this mistake?')) return;
     try {
       { const { error: _delErr4 } = await supabase.from('staff_mistakes').delete().eq('id', m.id); if (_delErr4) throw new Error(_delErr4.message); }
       setData(prev => ({ ...prev, staffMistakes: prev.staffMistakes.filter(x => x.id !== m.id) }));
-      showToast(isAr ? '✅ हटा दिया' : '✅ Deleted');
+      showToast(isAr ? '✅ تم الحذف' : '✅ Deleted');
     } catch (err) {
       showToast('Error: ' + err.message);
     }
@@ -1856,7 +1856,7 @@ Thank you for choosing us!`;
   };
 
   const handleDeletePayroll = async (pay) => {
-    if (!confirm(isAr ? 'क्या आप इस सैलरी स्लिप को हटाना चाहते हैं?' : 'Delete this salary slip?')) return;
+    if (!confirm(isAr ? 'هل تريد حذف كشف الراتب هذا؟' : 'Delete this salary slip?')) return;
     try {
       const cbs = data.cashbook?.filter(c => c.reference_id === pay.id) || [];
       for (const cb of cbs) await supabase.from('cashbook').delete().eq('id', cb.id);
@@ -1866,7 +1866,7 @@ Thank you for choosing us!`;
         payroll: prev.payroll.filter(p => p.id !== pay.id),
         cashbook: prev.cashbook.filter(c => !cbs.find(x => x.id === c.id))
       }));
-      showToast(isAr ? '✅ हटा दिया' : '✅ Deleted');
+      showToast(isAr ? '✅ تم الحذف' : '✅ Deleted');
     } catch (err) {
       showToast('Error: ' + err.message);
     }
@@ -1876,9 +1876,9 @@ Thank you for choosing us!`;
     e.preventDefault();
     try {
       const empId = payForm.employee_id;
-      if (!empId) throw new Error(isAr ? 'कर्मचारी चुनें' : 'Select employee');
+      if (!empId) throw new Error(isAr ? 'اختر الموظف' : 'Select employee');
       const emp = data.employees?.find(em => em.id === empId);
-      if (!emp) throw new Error(isAr ? 'कर्मचारी नहीं मिला' : 'Employee not found');
+      if (!emp) throw new Error(isAr ? 'الموظف غير موجود' : 'Employee not found');
 
       const month = payForm.month || today.slice(0, 7);
       const base = parseFloat(emp.salary) || 0;
@@ -1962,7 +1962,7 @@ Thank you for choosing us!`;
       }));
 
       await logAction(`Payroll: ${emp.name} - ${netPay.toFixed(2)} SAR (${month})`);
-      showToast(isAr ? `✅ ${emp.name} - ${netPay.toFixed(2)} SAR सैलरी दी गई` : `✅ ${emp.name} - ${netPay.toFixed(2)} SAR Salary Processed`);
+      showToast(isAr ? `✅ ${emp.name} - تم صرف راتب ${netPay.toFixed(2)} ريال` : `✅ ${emp.name} - ${netPay.toFixed(2)} SAR Salary Processed`);
 
       setPayForm({
         employee_id: '',
@@ -1987,9 +1987,9 @@ Thank you for choosing us!`;
   const handleAddAdvance = async (e) => {
     e.preventDefault();
     try {
-      if (!advForm.employee_id) throw new Error(isAr ? 'कर्मचारी चुनें' : 'Select employee');
+      if (!advForm.employee_id) throw new Error(isAr ? 'اختر الموظف' : 'Select employee');
       const amount = parseFloat(advForm.amount) || 0;
-      if (amount <= 0) throw new Error(isAr ? 'सही राशि डालें' : 'Enter valid amount');
+      if (amount <= 0) throw new Error(isAr ? 'أدخل مبلغًا صحيحًا' : 'Enter valid amount');
 
       const { data: newAdv, error } = await supabase
         .from('emp_advances')
@@ -2009,7 +2009,7 @@ Thank you for choosing us!`;
         ...prev,
         empAdvances: [newAdv, ...(prev.empAdvances || [])]
       }));
-      showToast(isAr ? '✅ एडवांस दर्ज किया' : '✅ Advance recorded');
+      showToast(isAr ? '✅ تم تسجيل السلفة' : '✅ Advance recorded');
       await logAction(`Advance of ${amount.toFixed(2)} SAR to ${newAdv.employees?.name || ''}`);
       setAdvForm({ employee_id: '', amount: '', date: today, status: 'Pending', reason: '' });
     } catch (err) {
@@ -2024,21 +2024,21 @@ Thank you for choosing us!`;
         ...prev,
         empAdvances: prev.empAdvances.map(a => a.id === adv.id ? { ...a, status } : a)
       }));
-      showToast(isAr ? '✅ अपडेट हो गया' : '✅ Updated');
+      showToast(isAr ? '✅ تم التحديث' : '✅ Updated');
     } catch (err) {
       showToast('Error: ' + err.message);
     }
   };
 
   const handleDeleteAdvance = async (adv) => {
-    if (!confirm(isAr ? 'हटाएं?' : 'Delete?')) return;
+    if (!confirm(isAr ? 'حذف؟' : 'Delete?')) return;
     try {
       { const { error: _delErr6 } = await supabase.from('emp_advances').delete().eq('id', adv.id); if (_delErr6) throw new Error(_delErr6.message); }
       setData(prev => ({
         ...prev,
         empAdvances: prev.empAdvances.filter(a => a.id !== adv.id)
       }));
-      showToast(isAr ? '✅ हटा दिया' : '✅ Deleted');
+      showToast(isAr ? '✅ تم الحذف' : '✅ Deleted');
     } catch (err) {
       showToast('Error: ' + err.message);
     }
@@ -2049,7 +2049,7 @@ Thank you for choosing us!`;
   // ============================================================
   const handleGenerateContract = (e) => {
     e.preventDefault();
-    if (!contractCorpName) return showToast(isAr ? 'कॉर्पोरेट नाम डालें' : 'Enter Corporate Name');
+    if (!contractCorpName) return showToast(isAr ? 'أدخل اسم الشركة' : 'Enter Corporate Name');
     const html = getContractHTML(
       data.settings,
       contractCorpName,
@@ -2065,7 +2065,7 @@ Thank you for choosing us!`;
 
   const handleGenerateOffer = (e) => {
     e.preventDefault();
-    if (!contractCorpName) return showToast(isAr ? 'कॉर्पोरेट नाम डालें' : 'Enter Corporate Name');
+    if (!contractCorpName) return showToast(isAr ? 'أدخل اسم الشركة' : 'Enter Corporate Name');
     const html = getContractHTML(
       data.settings,
       contractCorpName,
@@ -2093,7 +2093,7 @@ Thank you for choosing us!`;
       });
       const resData = await res.json();
       if (resData.error) throw new Error(resData.error);
-      showToast(isAr ? `✅ एजेंसी बन गई! Email: ${tenantForm.owner_email} | Pass: ${tempPass}` : `✅ Agency Created! Email: ${tenantForm.owner_email} | Pass: ${tempPass}`);
+      showToast(isAr ? `✅ تم إنشاء الوكالة! البريد الإلكتروني: ${tenantForm.owner_email} | كلمة المرور: ${tempPass}` : `✅ Agency Created! Email: ${tenantForm.owner_email} | Pass: ${tempPass}`);
       setTenantForm({
         agency_name: '',
         owner_email: '',
@@ -2117,7 +2117,7 @@ Thank you for choosing us!`;
         .update({ is_paid: !tenant.is_paid })
         .eq('id', tenant.id);
       if (error) throw error;
-      showToast(isAr ? '✅ सब्सक्रिप्शन अपडेट हो गया' : '✅ Subscription Updated');
+      showToast(isAr ? '✅ تم تحديث الاشتراك' : '✅ Subscription Updated');
       fetchAll();
     } catch (err) {
       showToast('Error: ' + err.message);
@@ -2125,10 +2125,10 @@ Thank you for choosing us!`;
   };
 
   const handleDeleteTenant = async (id) => {
-    if (!confirm(isAr ? 'क्या आप इस एजेंसी को हटाना चाहते हैं?' : 'Delete this Agency permanently?')) return;
+    if (!confirm(isAr ? 'هل تريد حذف هذه الوكالة؟' : 'Delete this Agency permanently?')) return;
     try {
       { const { error: _delErr7 } = await supabase.from('tenants').delete().eq('id', id); if (_delErr7) throw new Error(_delErr7.message); }
-      showToast(isAr ? '✅ एजेंसी हटा दी' : '✅ Agency Deleted');
+      showToast(isAr ? '✅ تم حذف الوكالة' : '✅ Agency Deleted');
       fetchAll();
     } catch (err) {
       showToast('Error: ' + err.message);
@@ -2215,12 +2215,12 @@ Thank you for choosing us!`;
             filename = 'portals';
             break;
           default:
-            return showToast(isAr ? '❌ गलत डेटा टाइप!' : '❌ Invalid export type!');
+            return showToast(isAr ? '❌ نوع بيانات غير صحيح!' : '❌ Invalid export type!');
         }
       }
 
       if (!exportData || exportData.length === 0) {
-        return showToast(isAr ? '❌ कोई डेटा नहीं' : '❌ No data to export');
+        return showToast(isAr ? '❌ لا توجد بيانات' : '❌ No data to export');
       }
 
       const headers = Object.keys(exportData[0]);
@@ -2235,7 +2235,7 @@ Thank you for choosing us!`;
       link.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`;
       link.click();
       URL.revokeObjectURL(link.href);
-      showToast(isAr ? `✅ ${filename}.csv डाउनलोड हो गया` : `✅ ${filename}.csv exported`);
+      showToast(isAr ? `✅ تم تنزيل ${filename}.csv` : `✅ ${filename}.csv exported`);
     } catch (err) {
       showToast('Export Error: ' + err.message);
     }
