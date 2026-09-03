@@ -30,7 +30,28 @@ export default function Login() {
       return setMsg(isAr ? '✨ تم إرسال رابط السحر! تحقق من بريدك الإلكتروني لإعادة تعيين كلمة المرور.' : '✨ Magic link sent! Check your email to reset password.');
     }
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    // ==== USERNAME LOGIN SUPPORT ====
+    let loginEmail = email.trim();
+    // If input does NOT contain '@', treat it as username
+    if (!loginEmail.includes('@')) {
+      // Query app_users to find email by username
+      const { data, error } = await supabase
+        .from('app_users')
+        .select('email')
+        .eq('username', loginEmail)
+        .maybeSingle();
+
+      if (error || !data) {
+        setLoading(false);
+        return setMsg(isAr ? '⚠️ اسم المستخدم غير موجود.' : '⚠️ Username not found.');
+      }
+      loginEmail = data.email;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: loginEmail,
+      password: password
+    });
     setLoading(false);
     if (error) return setMsg(isAr ? '⚠️ بيانات الاعتماد غير صالحة. يرجى المحاولة مرة أخرى.' : '⚠️ Invalid credentials. Please try again.');
     router.push('/');
@@ -118,8 +139,8 @@ export default function Login() {
           <div style={styles.inputGroup}>
             <span style={styles.inputIcon}>📧</span>
             <input
-              type="email"
-              placeholder={isAr ? 'البريد الإلكتروني / Email' : 'Email / البريد الإلكتروني'}
+              type="text"
+              placeholder={isAr ? 'البريد الإلكتروني أو اسم المستخدم' : 'Email or Username'}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -133,7 +154,7 @@ export default function Login() {
               <span style={styles.inputIcon}>🔒</span>
               <input
                 type={showPassword ? 'text' : 'password'}
-                placeholder={isAr ? 'كلمة المرور / Password' : 'Password / كلمة المرور'}
+                placeholder={isAr ? 'كلمة المرور' : 'Password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
