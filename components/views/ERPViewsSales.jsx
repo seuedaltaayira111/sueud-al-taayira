@@ -316,7 +316,11 @@ export default function ERPViewsSales(props) {
     downloadPDF, getExpenseHTML, getMistakeHTML, fetchAll, setData, setPreviewHTML,
     showToast, userProfile,
     mistakeForm, setMistakeForm,
-    rechargeForm, setRechargeForm, handleRecharge,
+    // ===== FIX: Default values for rechargeForm =====
+    rechargeForm = { portal_id: '', amount: '', source: 'Cash', recharge_date: today, reference: '', notes: '' },
+    setRechargeForm = () => {},
+    handleRecharge = () => {},
+    // ===== END FIX =====
     getInvoiceHTML, getRefundHTML
   } = props;
 
@@ -1338,7 +1342,6 @@ export default function ERPViewsSales(props) {
   // ============================================================
   if (page === 'portals') {
     const totalBalance = (data.portals || []).reduce((s, p) => s + (p.current_balance || 0), 0);
-    const { rechargeForm, setRechargeForm, handleRecharge } = props;
 
     return (
       <div style={styles.container}>
