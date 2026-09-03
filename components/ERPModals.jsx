@@ -1,23 +1,20 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export default function ERPModals({
   modal, setModal, passForm, setPassForm, handleChangePassword,
   settleForm, setSettleForm, handleSettlePayment,
   refundForm, setRefundForm, handleRefund,
   previewHTML, downloadPDF, lang, theme, data, showToast,
-  // Portal Edit props
   portalForm, setPortalForm, handleAddEditPortal,
-  // Cashbook Edit props
   cashbookEditForm, setCashbookEditForm, setData, userProfile,
-  // Additional
-  setForm, setSetForm, handleSaveSettings,
 }) {
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
 
-  // AI suggestion for refund amount (auto-calculate based on original invoice)
+  // AI suggestion for refund amount
   useEffect(() => {
     if (modal.type === 'refund' && modal.data) {
       const inv = modal.data;
@@ -30,7 +27,7 @@ export default function ERPModals({
     }
   }, [modal.type, modal.data]);
 
-  // AI suggestion for settle amount (auto-fill due amount)
+  // AI suggestion for settle amount
   useEffect(() => {
     if (modal.type === 'settle' && modal.data) {
       const inv = modal.data;
@@ -41,7 +38,6 @@ export default function ERPModals({
     }
   }, [modal.type, modal.data]);
 
-  // ===== STYLES =====
   const styles = {
     input: {
       width: '100%',
@@ -248,9 +244,7 @@ export default function ERPModals({
 
   return (
     <>
-      {/* ============================================================
-          CHANGE PASSWORD MODAL
-          ============================================================ */}
+      {/* ===== CHANGE PASSWORD MODAL ===== */}
       {modal.type === 'password' && (
         <div style={overlay}>
           <div style={styles.card}>
@@ -258,9 +252,7 @@ export default function ERPModals({
               🔒 {isAr ? 'تغيير كلمة المرور' : 'Change Password'}
             </h3>
             <form onSubmit={handleChangePassword}>
-              <label style={styles.label}>
-                {isAr ? 'كلمة المرور الجديدة' : 'New Password'}
-              </label>
+              <label style={styles.label}>{isAr ? 'كلمة المرور الجديدة' : 'New Password'}</label>
               <input
                 type="password"
                 placeholder={isAr ? 'أدخل كلمة المرور الجديدة' : 'Enter new password'}
@@ -288,9 +280,7 @@ export default function ERPModals({
         </div>
       )}
 
-      {/* ============================================================
-          SETTLE PAYMENT MODAL – with AI Suggestion
-          ============================================================ */}
+      {/* ===== SETTLE PAYMENT MODAL ===== */}
       {modal.type === 'settle' && (
         <div style={overlay}>
           <div style={styles.card}>
@@ -299,62 +289,26 @@ export default function ERPModals({
               <span style={styles.aiBadge}>AI</span>
             </h3>
             <form onSubmit={handleSettlePayment}>
-              <label style={styles.label}>
-                {isAr ? 'تاريخ التسوية' : 'Settlement Date'}
-              </label>
-              <input
-                type="date"
-                value={settleForm?.date || ''}
-                onChange={e => setSettleForm({ ...settleForm, date: e.target.value })}
-                style={styles.input}
-                required
-              />
-
-              <label style={styles.label}>
-                {isAr ? 'طريقة الدفع' : 'Payment Method'}
-              </label>
-              <select
-                value={settleForm?.mode || 'Cash'}
-                onChange={e => setSettleForm({ ...settleForm, mode: e.target.value })}
-                style={styles.select}
-              >
+              <label style={styles.label}>{isAr ? 'تاريخ التسوية' : 'Settlement Date'}</label>
+              <input type="date" value={settleForm?.date || ''} onChange={e => setSettleForm({ ...settleForm, date: e.target.value })} style={styles.input} required />
+              <label style={styles.label}>{isAr ? 'طريقة الدفع' : 'Payment Method'}</label>
+              <select value={settleForm?.mode || 'Cash'} onChange={e => setSettleForm({ ...settleForm, mode: e.target.value })} style={styles.select}>
                 <option value="Cash">💰 {isAr ? 'نقداً' : 'Cash'}</option>
                 <option value="Bank Transfer">🏦 {isAr ? 'تحويل بنكي' : 'Bank Transfer'}</option>
                 <option value="Card">💳 {isAr ? 'بطاقة' : 'Card'}</option>
               </select>
-
-              <div style={{
-                background: isDark ? '#0F172A' : '#F1F5F9',
-                padding: '12px',
-                borderRadius: '8px',
-                marginTop: '12px',
-                display: 'flex',
-                justifyContent: 'space-between'
-              }}>
+              <div style={{ background: isDark ? '#0F172A' : '#F1F5F9', padding: '12px', borderRadius: '8px', marginTop: '12px', display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#94A3B8' }}>{isAr ? 'المبلغ المستحق' : 'Due Amount'}</span>
-                <span style={{ color: '#FBBF24', fontWeight: 700 }}>
-                  {modal.data?.due_amount?.toFixed(2) || '0.00'} SAR
-                </span>
+                <span style={{ color: '#FBBF24', fontWeight: 700 }}>{modal.data?.due_amount?.toFixed(2) || '0.00'} SAR</span>
               </div>
-
-              <button type="submit" style={{ ...styles.btnPrimary, marginTop: '20px' }}>
-                {isAr ? 'تسوية الدفع' : 'Settle Payment'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setModal({ type: null, data: null })}
-                style={{ ...styles.btnDanger, width: '100%', marginTop: '10px' }}
-              >
-                {isAr ? 'إلغاء' : 'Cancel'}
-              </button>
+              <button type="submit" style={{ ...styles.btnPrimary, marginTop: '20px' }}>{isAr ? 'تسوية الدفع' : 'Settle Payment'}</button>
+              <button type="button" onClick={() => setModal({ type: null, data: null })} style={{ ...styles.btnDanger, width: '100%', marginTop: '10px' }}>{isAr ? 'إلغاء' : 'Cancel'}</button>
             </form>
           </div>
         </div>
       )}
 
-      {/* ============================================================
-          PROCESS REFUND MODAL – with AI Suggestion
-          ============================================================ */}
+      {/* ===== PROCESS REFUND MODAL ===== */}
       {modal.type === 'refund' && (
         <div style={overlay}>
           <div style={{ ...styles.card, width: '550px' }}>
@@ -363,82 +317,28 @@ export default function ERPModals({
               <span style={styles.aiBadge}>AI</span>
             </h3>
             <form onSubmit={handleRefund}>
-              <label style={styles.label}>
-                {isAr ? 'تاريخ الاسترجاع' : 'Refund Date'}
-              </label>
-              <input
-                type="date"
-                value={refundForm?.date || ''}
-                onChange={e => setRefundForm({ ...refundForm, date: e.target.value })}
-                style={styles.input}
-                required
-              />
-
-              <label style={styles.label}>
-                {isAr ? 'استرجاع الشركة (يرجع إلى البوابة)' : 'Company Refund (Goes back to Portal)'}
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={refundForm?.compRefund || ''}
-                onChange={e => setRefundForm({ ...refundForm, compRefund: e.target.value })}
-                style={styles.input}
-                required
-              />
-
-              <label style={styles.label}>
-                {isAr ? 'مبلغ استرجاع العميل' : 'Customer Refund Amount'}
-                <span style={styles.aiBadge}>AI Suggested</span>
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={refundForm?.custRefund || ''}
-                onChange={e => setRefundForm({ ...refundForm, custRefund: e.target.value })}
-                style={styles.input}
-                required
-              />
+              <label style={styles.label}>{isAr ? 'تاريخ الاسترجاع' : 'Refund Date'}</label>
+              <input type="date" value={refundForm?.date || ''} onChange={e => setRefundForm({ ...refundForm, date: e.target.value })} style={styles.input} required />
+              <label style={styles.label}>{isAr ? 'استرجاع الشركة (يرجع إلى البوابة)' : 'Company Refund (Goes back to Portal)'}</label>
+              <input type="number" step="0.01" value={refundForm?.compRefund || ''} onChange={e => setRefundForm({ ...refundForm, compRefund: e.target.value })} style={styles.input} required />
+              <label style={styles.label}>{isAr ? 'مبلغ استرجاع العميل' : 'Customer Refund Amount'} <span style={styles.aiBadge}>AI Suggested</span></label>
+              <input type="number" step="0.01" value={refundForm?.custRefund || ''} onChange={e => setRefundForm({ ...refundForm, custRefund: e.target.value })} style={styles.input} required />
               <p style={{ fontSize: '11px', color: '#94A3B8', marginTop: '4px' }}>
                 {isAr ? 'القيمة المقترحة' : 'AI suggested'}: {refundForm?.custRefund || '0.00'} SAR
               </p>
-
-              <label style={styles.label}>
-                {isAr ? 'طريقة استرجاع العميل' : 'Customer Refund Method'}
-              </label>
-              <select
-                value={refundForm?.mode || 'Cash'}
-                onChange={e => setRefundForm({ ...refundForm, mode: e.target.value })}
-                style={styles.select}
-                required
-              >
+              <label style={styles.label}>{isAr ? 'طريقة استرجاع العميل' : 'Customer Refund Method'}</label>
+              <select value={refundForm?.mode || 'Cash'} onChange={e => setRefundForm({ ...refundForm, mode: e.target.value })} style={styles.select} required>
                 <option value="Cash">💰 {isAr ? 'نقداً' : 'Cash'}</option>
                 <option value="Bank Transfer">🏦 {isAr ? 'تحويل بنكي' : 'Bank Transfer'}</option>
                 <option value="Credit">💳 {isAr ? 'رصيد لحجز جديد' : 'Credit for New Booking'}</option>
               </select>
-
               {refundForm?.mode === 'Credit' && (
-                <div style={{
-                  background: '#065F46',
-                  color: '#34D399',
-                  padding: '12px',
-                  borderRadius: '8px',
-                  marginTop: '10px',
-                  fontSize: '14px',
-                  fontWeight: 'bold'
-                }}>
+                <div style={{ background: '#065F46', color: '#34D399', padding: '12px', borderRadius: '8px', marginTop: '10px', fontSize: '14px', fontWeight: 'bold' }}>
                   ✅ {isAr ? 'الرصيد المتاح' : 'Available Credit Balance'}: {refundForm?.creditBalance?.toFixed(2) || '0.00'} SAR
                 </div>
               )}
-
-              <label style={styles.label}>
-                {isAr ? 'سبب الاسترجاع' : 'Refund Reason'}
-              </label>
-              <select
-                value={refundForm?.reason || ''}
-                onChange={e => setRefundForm({ ...refundForm, reason: e.target.value })}
-                style={styles.select}
-                required
-              >
+              <label style={styles.label}>{isAr ? 'سبب الاسترجاع' : 'Refund Reason'}</label>
+              <select value={refundForm?.reason || ''} onChange={e => setRefundForm({ ...refundForm, reason: e.target.value })} style={styles.select} required>
                 <option value="">{isAr ? 'اختر السبب' : 'Select Reason'}</option>
                 <option value="Cancel by Airline">✈️ {isAr ? 'إلغاء من قبل الخطوط الجوية' : 'Cancel by Airline'}</option>
                 <option value="Cancel by Customer">👤 {isAr ? 'إلغاء من قبل العميل' : 'Cancel by Customer'}</option>
@@ -448,44 +348,25 @@ export default function ERPModals({
                 <option value="Visa Rejected">🛂 {isAr ? 'رفض التأشيرة' : 'Visa Rejected'}</option>
                 <option value="Other">📌 {isAr ? 'أخرى' : 'Other'}</option>
               </select>
-
-              <div style={{
-                background: isDark ? '#0F172A' : '#F1F5F9',
-                padding: '12px',
-                borderRadius: '8px',
-                marginTop: '12px',
-                display: 'flex',
-                justifyContent: 'space-between'
-              }}>
+              <div style={{ background: isDark ? '#0F172A' : '#F1F5F9', padding: '12px', borderRadius: '8px', marginTop: '12px', display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#94A3B8' }}>{isAr ? 'الفاتورة الأصلية' : 'Original Invoice'}</span>
                 <span style={{ color: '#60A5FA', fontWeight: 700 }}>{modal.data?.invoice_no || 'N/A'}</span>
               </div>
-
-              <button type="submit" style={{ ...styles.btnPrimary, marginTop: '20px' }}>
-                {isAr ? 'معالجة الاسترجاع' : 'Process Refund'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setModal({ type: null, data: null })}
-                style={{ ...styles.btnDanger, width: '100%', marginTop: '10px' }}
-              >
-                {isAr ? 'إلغاء' : 'Cancel'}
-              </button>
+              <button type="submit" style={{ ...styles.btnPrimary, marginTop: '20px' }}>{isAr ? 'معالجة الاسترجاع' : 'Process Refund'}</button>
+              <button type="button" onClick={() => setModal({ type: null, data: null })} style={{ ...styles.btnDanger, width: '100%', marginTop: '10px' }}>{isAr ? 'إلغاء' : 'Cancel'}</button>
             </form>
           </div>
         </div>
       )}
 
-      {/* ============================================================
-          PREVIEW INVOICE MODAL
-          ============================================================ */}
+      {/* ===== PREVIEW INVOICE MODAL – FIXED ===== */}
       {modal.type === 'preview' && previewHTML && (
         <div style={{ ...overlay, background: 'rgba(0,0,0,0.95)' }}>
           <div style={{
             background: isDark ? '#1E293B' : '#FFFFFF',
             width: '95vw',
             maxWidth: '1000px',
-            height: '95vh',
+            height: '90vh',
             borderRadius: '16px',
             overflow: 'hidden',
             display: 'flex',
@@ -501,39 +382,27 @@ export default function ERPModals({
               borderBottom: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
               flexWrap: 'wrap',
               gap: '10px',
-              background: isDark ? '#0F172A' : '#F8FAFC'
+              background: isDark ? '#0F172A' : '#F8FAFC',
+              flexShrink: 0
             }}>
               <h3 style={{ margin: 0, color: '#FBBF24', fontSize: '18px' }}>
                 📄 {isAr ? 'معاينة المستند' : 'Document Preview'}
               </h3>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                <button
-                  onClick={handlePrintPreview}
-                  style={{ ...styles.btnInfo, width: 'auto', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}
-                >
-                  🖨️ {isAr ? 'طباعة' : 'Print'}
-                </button>
-                <button
-                  onClick={handleDownloadPDF}
-                  style={{ ...styles.btnSuccess, width: 'auto', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}
-                >
-                  ⬇️ {isAr ? 'تحميل PDF' : 'Download PDF'}
-                </button>
-                <button
-                  onClick={() => setModal({ type: null, data: null })}
-                  style={{ ...styles.btnDanger, width: 'auto', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}
-                >
-                  ✖ {isAr ? 'إغلاق' : 'Close'}
-                </button>
+                <button onClick={handlePrintPreview} style={{ ...styles.btnInfo, width: 'auto', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}>🖨️ {isAr ? 'طباعة' : 'Print'}</button>
+                <button onClick={handleDownloadPDF} style={{ ...styles.btnSuccess, width: 'auto', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}>⬇️ {isAr ? 'تحميل PDF' : 'Download PDF'}</button>
+                <button onClick={() => setModal({ type: null, data: null })} style={{ ...styles.btnDanger, width: 'auto', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}>✖ {isAr ? 'إغلاق' : 'Close'}</button>
               </div>
             </div>
 
+            {/* ===== FIXED: Full height iframe with scrolling ===== */}
             <div style={{
               flex: 1,
               overflow: 'auto',
-              background: '#F1F5F9',
+              background: '#E8ECF0',
               display: 'flex',
               justifyContent: 'center',
+              alignItems: 'flex-start',
               padding: '20px'
             }}>
               <iframe
@@ -541,10 +410,13 @@ export default function ERPModals({
                 style={{
                   width: '100%',
                   height: '100%',
+                  minHeight: '900px',
                   border: 'none',
                   background: 'white',
                   borderRadius: '8px',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                  transform: 'scale(0.95)',
+                  transformOrigin: 'top center'
                 }}
                 title="Document Preview"
                 sandbox="allow-scripts allow-same-origin"
@@ -554,9 +426,7 @@ export default function ERPModals({
         </div>
       )}
 
-      {/* ============================================================
-          PORTAL EDIT MODAL
-          ============================================================ */}
+      {/* ===== PORTAL EDIT MODAL ===== */}
       {modal.type === 'portalEdit' && (
         <div style={overlay}>
           <div style={styles.card}>
@@ -566,7 +436,6 @@ export default function ERPModals({
             <form onSubmit={handleAddEditPortal}>
               <label style={styles.label}>{isAr ? 'اسم البوابة' : 'Portal Name'}</label>
               <input style={styles.input} value={portalForm.name} onChange={e => setPortalForm({ ...portalForm, name: e.target.value })} required />
-
               <label style={styles.label}>{isAr ? 'النوع' : 'Type'}</label>
               <select style={styles.select} value={portalForm.portal_type} onChange={e => setPortalForm({ ...portalForm, portal_type: e.target.value })}>
                 <option>GDS</option>
@@ -575,43 +444,24 @@ export default function ERPModals({
                 <option>Hotel Supplier</option>
                 <option>Other</option>
               </select>
-
               <label style={styles.label}>{isAr ? 'الرصيد الافتتاحي' : 'Opening Balance'}</label>
               <input type="number" step="0.01" style={styles.input} value={portalForm.initial_balance} onChange={e => setPortalForm({ ...portalForm, initial_balance: e.target.value })} />
-
               <label style={styles.label}>{isAr ? 'الرصيد الحالي' : 'Current Balance'}</label>
               <input type="number" step="0.01" style={styles.input} value={portalForm.current_balance} onChange={e => setPortalForm({ ...portalForm, current_balance: e.target.value })} />
-
               <label style={styles.label}>{isAr ? 'جهة الاتصال' : 'Contact Person'}</label>
               <input style={styles.input} value={portalForm.contact_person} onChange={e => setPortalForm({ ...portalForm, contact_person: e.target.value })} />
-
               <label style={styles.label}>{isAr ? 'الهاتف' : 'Phone'}</label>
               <input style={styles.input} value={portalForm.phone} onChange={e => setPortalForm({ ...portalForm, phone: e.target.value })} />
-
               <label style={styles.label}>{isAr ? 'حد الائتمان' : 'Credit Limit'}</label>
               <input type="number" step="0.01" style={styles.input} value={portalForm.credit_limit} onChange={e => setPortalForm({ ...portalForm, credit_limit: e.target.value })} />
-
-              <button type="submit" style={{ ...styles.btnPrimary, marginTop: '20px' }}>
-                {isAr ? 'حفظ التغييرات' : 'Save Changes'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setModal({ type: null, data: null });
-                  setPortalForm({ name: '', portal_type: 'GDS', current_balance: 0, initial_balance: 0, phone: '', contact_person: '', credit_limit: 0 });
-                }}
-                style={{ ...styles.btnDanger, width: '100%', marginTop: '10px' }}
-              >
-                {isAr ? 'إلغاء' : 'Cancel'}
-              </button>
+              <button type="submit" style={{ ...styles.btnPrimary, marginTop: '20px' }}>{isAr ? 'حفظ التغييرات' : 'Save Changes'}</button>
+              <button type="button" onClick={() => { setModal({ type: null, data: null }); setPortalForm({ name: '', portal_type: 'GDS', current_balance: 0, initial_balance: 0, phone: '', contact_person: '', credit_limit: 0 }); }} style={{ ...styles.btnDanger, width: '100%', marginTop: '10px' }}>{isAr ? 'إلغاء' : 'Cancel'}</button>
             </form>
           </div>
         </div>
       )}
 
-      {/* ============================================================
-          CASHBOOK EDIT MODAL
-          ============================================================ */}
+      {/* ===== CASHBOOK EDIT MODAL ===== */}
       {modal.type === 'cashbookEdit' && (
         <div style={overlay}>
           <div style={styles.card}>
@@ -620,21 +470,9 @@ export default function ERPModals({
             </h3>
             <form onSubmit={handleCashbookEditSubmit}>
               <label style={styles.label}>{isAr ? 'التاريخ' : 'Date'}</label>
-              <input
-                type="date"
-                style={styles.input}
-                value={cashbookEditForm?.trans_date || ''}
-                onChange={e => setCashbookEditForm({ ...cashbookEditForm, trans_date: e.target.value })}
-                required
-              />
-
+              <input type="date" style={styles.input} value={cashbookEditForm?.trans_date || ''} onChange={e => setCashbookEditForm({ ...cashbookEditForm, trans_date: e.target.value })} required />
               <label style={styles.label}>{isAr ? 'النوع' : 'Type'}</label>
-              <select
-                style={styles.select}
-                value={cashbookEditForm?.type || ''}
-                onChange={e => setCashbookEditForm({ ...cashbookEditForm, type: e.target.value })}
-                required
-              >
+              <select style={styles.select} value={cashbookEditForm?.type || ''} onChange={e => setCashbookEditForm({ ...cashbookEditForm, type: e.target.value })} required>
                 <option value="Cash-In">💰 Cash-In</option>
                 <option value="Cash-Out">💰 Cash-Out</option>
                 <option value="Bank-In">🏦 Bank-In</option>
@@ -642,46 +480,18 @@ export default function ERPModals({
                 <option value="Investor-In">📈 Investor-In</option>
                 <option value="Investor-Out">📈 Investor-Out</option>
               </select>
-
               <label style={styles.label}>{isAr ? 'الوصف' : 'Description'}</label>
-              <input
-                style={styles.input}
-                value={cashbookEditForm?.description || ''}
-                onChange={e => setCashbookEditForm({ ...cashbookEditForm, description: e.target.value })}
-                required
-              />
-
+              <input style={styles.input} value={cashbookEditForm?.description || ''} onChange={e => setCashbookEditForm({ ...cashbookEditForm, description: e.target.value })} required />
               <label style={styles.label}>{isAr ? 'المبلغ' : 'Amount'}</label>
-              <input
-                type="number"
-                step="0.01"
-                style={styles.input}
-                value={cashbookEditForm?.amount || 0}
-                onChange={e => setCashbookEditForm({ ...cashbookEditForm, amount: e.target.value })}
-                required
-              />
-
-              <button type="submit" style={{ ...styles.btnPrimary, marginTop: '20px' }}>
-                {isAr ? 'حفظ التغييرات' : 'Save Changes'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setModal({ type: null, data: null });
-                  setCashbookEditForm({});
-                }}
-                style={{ ...styles.btnDanger, width: '100%', marginTop: '10px' }}
-              >
-                {isAr ? 'إلغاء' : 'Cancel'}
-              </button>
+              <input type="number" step="0.01" style={styles.input} value={cashbookEditForm?.amount || 0} onChange={e => setCashbookEditForm({ ...cashbookEditForm, amount: e.target.value })} required />
+              <button type="submit" style={{ ...styles.btnPrimary, marginTop: '20px' }}>{isAr ? 'حفظ التغييرات' : 'Save Changes'}</button>
+              <button type="button" onClick={() => { setModal({ type: null, data: null }); setCashbookEditForm({}); }} style={{ ...styles.btnDanger, width: '100%', marginTop: '10px' }}>{isAr ? 'إلغاء' : 'Cancel'}</button>
             </form>
           </div>
         </div>
       )}
 
-      {/* ============================================================
-          CUSTOM MODAL (Generic)
-          ============================================================ */}
+      {/* ===== CUSTOM MODAL ===== */}
       {modal.type === 'custom' && modal.content && (
         <div style={overlay}>
           <div style={styles.card}>
