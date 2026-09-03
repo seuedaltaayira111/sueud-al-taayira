@@ -482,7 +482,14 @@ export default function useERPState() {
   const [settleForm, setSettleForm] = useState({ id: '', date: today, mode: 'Cash', amount: '', reference: '', notes: '' });
   const [refundForm, setRefundForm] = useState({ id: '', date: today, compRefund: 0, custRefund: 0, mode: 'Cash', reason: '', portalId: '', creditBalance: 0, notes: '', refund_to: 'customer' });
   const [transferForm, setTransferForm] = useState({ from: 'Cash', to: 'Bank', amount: '', date: today, description: '', reference: '', category: 'Internal' });
-  const [rechargeForm, setRechargeForm] = useState({ portal_id: '', amount: '', source: 'Cash', recharge_date: today, reference: '', notes: '' });
+  const [rechargeForm, setRechargeForm] = useState({
+    portal_id: '',
+    amount: '',
+    source: 'Cash',
+    recharge_date: today,
+    reference: '',
+    notes: ''
+  });
   const [setForm, setSetForm] = useState({});
   const [userForm, setUserForm] = useState({
     email: '', username: '', role: 'Staff', is_admin: false,
