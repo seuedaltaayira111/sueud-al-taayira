@@ -316,35 +316,16 @@ export default function ERPViewsSales(props) {
     downloadPDF, getExpenseHTML, getMistakeHTML, fetchAll, setData, setPreviewHTML,
     showToast, userProfile,
     mistakeForm, setMistakeForm,
-    // ===== FALLBACK FOR RECHARGE =====
+    // These might be undefined; we'll use local fallback inside portals page
     rechargeForm: propRechargeForm,
     setRechargeForm: propSetRechargeForm,
     handleRecharge: propHandleRecharge,
-    // ===== END =====
     getInvoiceHTML, getRefundHTML
   } = props;
 
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
   const t = (key, fallback) => tr?.[key] || fallback || key;
-
-  // ===== LOCAL FALLBACK FOR RECHARGE =====
-  const [localRechargeForm, localSetRechargeForm] = useState({
-    portal_id: '',
-    amount: '',
-    source: 'Cash',
-    recharge_date: today || new Date().toISOString().split('T')[0],
-    reference: '',
-    notes: ''
-  });
-
-  const rechargeForm = propRechargeForm || localRechargeForm;
-  const setRechargeForm = propSetRechargeForm || localSetRechargeForm;
-  const handleRecharge = propHandleRecharge || ((e) => {
-    e.preventDefault();
-    showToast?.(isAr ? '⚠️ Recharge function not available' : '⚠️ Recharge function not available');
-  });
-  // ===== END FALLBACK =====
 
   // ===== STYLES =====
   const styles = {
@@ -1354,10 +1335,95 @@ export default function ERPViewsSales(props) {
   }
 
   // ============================================================
-  // PORTALS (with edit modal and recharge slip) - FIXED with fallback
+  // PORTALS (with edit modal and recharge slip) - COMPLETE FIX with local fallback
   // ============================================================
   if (page === 'portals') {
     const totalBalance = (data.portals || []).reduce((s, p) => s + (p.current_balance || 0), 0);
+
+    // ===== LOCAL RECHARGE STATE (fallback) =====
+    const [localRechargeForm, localSetRechargeForm] = useState({
+      portal_id: '',
+      amount: '',
+      source: 'Cash',
+      recharge_date: today || new Date().toISOString().split('T')[0],
+      reference: '',
+      notes: ''
+    });
+
+    // Use props if available, else local
+    const rechargeForm = (typeof propRechargeForm !== 'undefined' && propRechargeForm) || localRechargeForm;
+    const setRechargeForm = (typeof propSetRechargeForm !== 'undefined' && propSetRechargeForm) || localSetRechargeForm;
+    const handleRecharge = (typeof propHandleRecharge === 'function') ? propHandleRecharge : async (e) => {
+      e.preventDefault();
+      try {
+        const amt = parseFloat(rechargeForm.amount) || 0;
+        if (!rechargeForm.portal_id) throw new Error(isAr ? 'اختر البوابة!' : 'Select a portal!');
+        if (amt <= 0) throw new Error(isAr ? 'أدخل مبلغًا صحيحًا!' : 'Enter a valid amount!');
+
+        const portal = data.portals.find(p => p.id === rechargeForm.portal_id);
+        if (!portal) throw new Error('Portal not found');
+
+        const rechargeDate = rechargeForm.recharge_date || today;
+        let cbType = '';
+        if (rechargeForm.source === 'Cash') cbType = 'Cash-Out';
+        else if (rechargeForm.source === 'Bank Transfer') cbType = 'Bank-Out';
+        else if (rechargeForm.source === 'Investor') cbType = 'Investor-Out';
+        else cbType = 'Cash-Out';
+
+        // Insert into recharges
+        const { data: rc, error: rcErr } = await supabase.from('recharges').insert([{
+          portal_id: rechargeForm.portal_id,
+          amount: amt,
+          recharge_date: rechargeDate,
+          source: rechargeForm.source,
+          reference: rechargeForm.reference || '',
+          notes: rechargeForm.notes || '',
+          tenant_id: userProfile.tenant_id
+        }]).select().single();
+        if (rcErr) throw new Error('Recharge insert failed: ' + rcErr.message);
+
+        // Insert into cashbook
+        const { data: cb, error: cbErr } = await supabase.from('cashbook').insert([{
+          trans_date: rechargeDate,
+          type: cbType,
+          description: `Portal recharge: ${portal.name}${rechargeForm.reference ? ' (' + rechargeForm.reference + ')' : ''}`,
+          amount: amt,
+          tenant_id: userProfile.tenant_id,
+          reference_id: rc.id
+        }]).select().single();
+        if (cbErr) throw new Error('Cashbook insert failed: ' + cbErr.message);
+
+        // Update portal balance
+        const newBal = (portal.current_balance || 0) + amt;
+        const { error: upErr } = await supabase.from('portals').update({ current_balance: newBal }).eq('id', portal.id);
+        if (upErr) throw new Error('Portal update failed: ' + upErr.message);
+
+        // Update state
+        if (typeof setData === 'function') {
+          setData(prev => ({
+            ...prev,
+            portals: prev.portals.map(p => p.id === portal.id ? { ...p, current_balance: newBal } : p),
+            cashbook: cb ? [cb, ...prev.cashbook] : prev.cashbook,
+            recharges: rc ? [rc, ...(prev.recharges || [])] : (prev.recharges || [])
+          }));
+        } else {
+          // fallback: directly modify data if setData not available
+          if (data.portals) {
+            const updatedPortals = data.portals.map(p => p.id === portal.id ? { ...p, current_balance: newBal } : p);
+            setData({ ...data, portals: updatedPortals, cashbook: cb ? [cb, ...data.cashbook] : data.cashbook });
+          }
+        }
+
+        await logAction?.(`Recharged portal ${portal.name} with ${amt.toFixed(2)} SAR from ${rechargeForm.source}`);
+        showToast?.(isAr ? `✅ تمت إعادة الشحن: ${amt.toFixed(2)} ريال` : `✅ Recharged ${amt.toFixed(2)} SAR`);
+        setRechargeForm({ portal_id: '', amount: '', source: 'Cash', recharge_date: today, reference: '', notes: '' });
+        // refresh data
+        fetchAll?.();
+      } catch (err) {
+        console.error('Recharge error:', err);
+        showToast?.(`Error: ${err.message}`);
+      }
+    };
 
     return (
       <div style={styles.container}>
