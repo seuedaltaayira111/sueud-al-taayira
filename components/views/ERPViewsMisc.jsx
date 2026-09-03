@@ -644,13 +644,13 @@ function CreateInvoiceView(props) {
 
   useEffect(() => {
     if (dueAmount > 0 && creditUsed > 0) {
-      // Ensure payment method for remaining is set
       if (!f.payment || f.payment === 'Credit Balance') {
         setInvForm({ ...f, payment: remainingPaymentMethod });
       }
     }
   }, [dueAmount, creditUsed]);
 
+  // AI auto-fill
   useEffect(() => {
     if (f.custId && f.custId !== 'new' && f.service === 'Flight Ticket') {
       const customerInvs = data.invoices?.filter(i => i.customer_id === f.custId && !i.invoice_no?.startsWith('REF-')) || [];
@@ -661,6 +661,49 @@ function CreateInvoiceView(props) {
       }
     }
   }, [f.custId, f.service]);
+
+  // ===== FIXED: Previous Booking Selection =====
+  const handlePreviousBookingSelect = (e) => {
+    const refundNo = e.target.value;
+    const custRefunds = (data.invoices || []).filter(i => i.customer_id === f.custId && i.invoice_no?.startsWith('REF-'));
+    const r = custRefunds.find(x => x.invoice_no === refundNo);
+    if (!r) {
+      setInvForm({
+        ...f,
+        linkedInvId: '',
+        oldTicketNo: '',
+        oldPnr: '',
+        oldAirline: '',
+        oldSector: '',
+        oldSellPrice: 0,
+        oldBookingDate: '',
+        oldPassengers: '',
+        oldFlightType: '',
+        oldPaymentMethod: '',
+        refundReason: '',
+        bookingType: 'New Booking',
+        refundAmount: 0
+      });
+      return;
+    }
+    // Populate all old fields from the refund record
+    setInvForm({
+      ...f,
+      linkedInvId: r.invoice_no,
+      oldTicketNo: r.old_ticket_no || r.ticket_no || '',
+      oldPnr: r.old_pnr || r.pnr || '',
+      oldAirline: r.old_airline || r.airline || '',
+      oldSector: r.old_sector || r.flight_sector || r.sector || '',
+      oldSellPrice: r.old_sell_price || r.total_sell || 0,
+      oldBookingDate: r.old_booking_date || r.invoice_date || '',
+      oldPassengers: r.old_passengers || r.passenger_names || '',
+      oldFlightType: r.old_flight_type || r.flight_type || '',
+      oldPaymentMethod: r.old_payment_method || r.payment_method || '',
+      refundReason: r.refund_reason || '',
+      refundAmount: r.refund_customer || 0,
+      bookingType: 'Reissue'
+    });
+  };
 
   const renderCreditBalancePayment = () => {
     const cust = data.customers?.find(c => c.id === f.custId);
@@ -696,7 +739,6 @@ function CreateInvoiceView(props) {
         >
           {isAr ? 'استخدام الحد الأقصى المتاح' : 'Use max available'}
         </button>
-
         {remaining > 0 && creditUsedVal > 0 && (
           <div style={{
             marginTop: '12px',
@@ -758,7 +800,10 @@ function CreateInvoiceView(props) {
                 }}>
                   <option value="new">+ {t('new', 'New Customer')}</option>
                   {(data.customers || []).map(c => (
-                    <option key={c.id} value={c.id}>{c.name} — {c.phone}{(c.store_credit || 0) > 0 ? ` (💰 ${(c.store_credit || 0).toFixed(2)} SAR credit)` : ''}</option>
+                    <option key={c.id} value={c.id}>
+                      {c.name} — {c.phone}
+                      {(c.store_credit || 0) > 0 ? ` (💰 ${(c.store_credit || 0).toFixed(2)} SAR credit)` : ''}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -793,108 +838,66 @@ function CreateInvoiceView(props) {
           )}
         </div>
 
-        {/* Previous Booking */}
-        {f.custType === 'Individual' && f.custId && f.custId !== 'new' && (() => {
-          const cust = data.customers?.find(c => c.id === f.custId);
-          const custRefunds = (data.invoices || []).filter(i => i.customer_id === f.custId && i.invoice_no?.startsWith('REF-'));
-          const selectedRefund = custRefunds.find(r => r.invoice_no === f.linkedInvId);
-
-          return (
-            <div style={{ ...s.card, border: '1px solid #F59E0B' }}>
-              <h3 style={{ ...s.sectionTitle, color: '#F59E0B' }}>🔗 {isAr ? 'حجز سابق / رصيد مخزن' : 'Previous Booking / Store Credit'}</h3>
-              <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap' }}>
-                <div style={{ background: isDark ? '#0F172A' : '#F8FAFC', padding: '10px 16px', borderRadius: '8px' }}>
-                  <div style={s.statLabel}>{isAr ? 'الرصيد المتاح' : 'Available Store Credit'}</div>
-                  <div style={{ fontWeight: 700, color: '#34D399', fontSize: '16px' }}>{fmt(cust?.store_credit || 0)}</div>
-                </div>
+        {/* ===== PREVIOUS BOOKING – FIXED ===== */}
+        {f.custType === 'Individual' && f.custId && f.custId !== 'new' && (
+          <div style={{ ...s.card, border: '1px solid #F59E0B' }}>
+            <h3 style={{ ...s.sectionTitle, color: '#F59E0B' }}>🔗 {isAr ? 'حجز سابق / رصيد مخزن' : 'Previous Booking / Store Credit'}</h3>
+            <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap' }}>
+              <div style={{ background: isDark ? '#0F172A' : '#F8FAFC', padding: '10px 16px', borderRadius: '8px' }}>
+                <div style={s.statLabel}>{isAr ? 'الرصيد المتاح' : 'Available Store Credit'}</div>
+                <div style={{ fontWeight: 700, color: '#34D399', fontSize: '16px' }}>{fmt(data.customers?.find(c => c.id === f.custId)?.store_credit || 0)}</div>
               </div>
+            </div>
 
-              {custRefunds.length > 0 && (
-                <div style={s.formGroup}>
-                  <label style={s.formLabel}>{isAr ? 'ربط استرجاع سابق' : 'Link a previous refund'}</label>
-                  <select
-                    style={s.select}
-                    value={f.linkedInvId || ''}
-                    onChange={e => {
-                      const r = custRefunds.find(x => x.invoice_no === e.target.value);
-                      if (!r) {
-                        setInvForm({
-                          ...f,
-                          linkedInvId: '',
-                          oldTicketNo: '',
-                          oldPnr: '',
-                          oldAirline: '',
-                          oldSector: '',
-                          oldSellPrice: 0,
-                          oldBookingDate: '',
-                          oldPassengers: '',
-                          oldFlightType: '',
-                          oldPaymentMethod: '',
-                          refundReason: '',
-                          bookingType: 'New Booking',
-                          refundAmount: 0
-                        });
-                        return;
-                      }
-                      setInvForm({
-                        ...f,
-                        linkedInvId: r.invoice_no,
-                        oldTicketNo: r.old_ticket_no || r.ticket_no || '',
-                        oldPnr: r.old_pnr || r.pnr || '',
-                        oldAirline: r.old_airline || r.airline || '',
-                        oldSector: r.old_sector || r.flight_sector || r.sector || '',
-                        oldSellPrice: r.old_sell_price || r.total_sell || 0,
-                        oldBookingDate: r.old_booking_date || r.invoice_date || '',
-                        oldPassengers: r.old_passengers || r.passenger_names || '',
-                        oldFlightType: r.old_flight_type || r.flight_type || '',
-                        oldPaymentMethod: r.old_payment_method || r.payment_method || '',
-                        refundReason: r.refund_reason || '',
-                        bookingType: 'Reissue',
-                        refundAmount: r.refund_customer || 0
-                      });
-                    }}
-                  >
-                    <option value="">— {isAr ? 'لا يوجد حجز مرتبط' : 'No linked booking'} —</option>
-                    {custRefunds.map(r => (
-                      <option key={r.id} value={r.invoice_no}>
-                        {r.invoice_no} — refunded {fmt(r.refund_customer)} on {r.refund_date || r.invoice_date}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+            {(data.invoices || []).filter(i => i.customer_id === f.custId && i.invoice_no?.startsWith('REF-')).length > 0 && (
+              <div style={s.formGroup}>
+                <label style={s.formLabel}>{isAr ? 'ربط استرجاع سابق' : 'Link a previous refund'}</label>
+                <select
+                  style={s.select}
+                  value={f.linkedInvId || ''}
+                  onChange={handlePreviousBookingSelect}
+                >
+                  <option value="">— {isAr ? 'لا يوجد حجز مرتبط' : 'No linked booking'} —</option>
+                  {(data.invoices || []).filter(i => i.customer_id === f.custId && i.invoice_no?.startsWith('REF-')).map(r => (
+                    <option key={r.id} value={r.invoice_no}>
+                      {r.invoice_no} — refunded {fmt(r.refund_customer)} on {r.refund_date || r.invoice_date}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
-              {f.linkedInvId && (
-                <div style={{ background: isDark ? '#0F172A' : '#F8FAFC', padding: '12px 16px', borderRadius: '8px', fontSize: '13px', color: '#94A3B8', lineHeight: 1.8 }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                    <div><strong>{isAr ? 'التذكرة القديمة' : 'Old Ticket'}:</strong> <b style={{ color: isDark ? '#CBD5E1' : '#1E293B' }}>{f.oldTicketNo || '-'}</b></div>
-                    <div><strong>{isAr ? 'شركة الطيران' : 'Airline'}:</strong> <b style={{ color: isDark ? '#CBD5E1' : '#1E293B' }}>{f.oldAirline || '-'}</b></div>
-                    <div><strong>{isAr ? 'القطاع' : 'Sector'}:</strong> <b style={{ color: isDark ? '#CBD5E1' : '#1E293B' }}>{f.oldSector || '-'}</b></div>
-                    <div><strong>PNR:</strong> <b style={{ color: isDark ? '#CBD5E1' : '#1E293B' }}>{f.oldPnr || '-'}</b></div>
-                    <div><strong>{isAr ? 'التاريخ' : 'Date'}:</strong> <b style={{ color: isDark ? '#CBD5E1' : '#1E293B' }}>{f.oldBookingDate || '-'}</b></div>
-                    <div><strong>{isAr ? 'السعر الأصلي' : 'Original Price'}:</strong> <b style={{ color: '#FBBF24' }}>{fmt(f.oldSellPrice)}</b></div>
-                    <div style={{ gridColumn: 'span 2' }}>
-                      <strong>{isAr ? 'الركاب' : 'Passengers'}:</strong>
-                      <b style={{ color: isDark ? '#CBD5E1' : '#1E293B', display: 'block', fontSize: '12px', marginTop: '2px' }}>{f.oldPassengers || '-'}</b>
-                    </div>
-                    <div style={{ gridColumn: 'span 2' }}>
-                      <strong>{isAr ? 'المسترد للعميل' : 'Refunded to customer'}:</strong>
-                      <b style={{ color: '#FBBF24' }}>
-                        {selectedRefund?.refund_customer !== undefined ? fmt(selectedRefund.refund_customer) : (f.refundAmount !== undefined ? fmt(f.refundAmount) : 'N/A')}
-                      </b>
-                    </div>
-                    <div style={{ gridColumn: 'span 2' }}>
-                      <strong>{isAr ? 'السبب' : 'Reason'}:</strong>
-                      <b style={{ color: isDark ? '#CBD5E1' : '#1E293B' }}>{f.refundReason || '-'}</b>
-                    </div>
+            {/* Display previous booking details if linked */}
+            {f.linkedInvId && (
+              <div style={{ background: isDark ? '#0F172A' : '#F8FAFC', padding: '12px 16px', borderRadius: '8px', fontSize: '13px', color: '#94A3B8', lineHeight: 1.8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div><strong>{isAr ? 'التذكرة القديمة' : 'Old Ticket'}:</strong> <b style={{ color: isDark ? '#CBD5E1' : '#1E293B' }}>{f.oldTicketNo || '-'}</b></div>
+                  <div><strong>{isAr ? 'شركة الطيران' : 'Airline'}:</strong> <b style={{ color: isDark ? '#CBD5E1' : '#1E293B' }}>{f.oldAirline || '-'}</b></div>
+                  <div><strong>{isAr ? 'القطاع' : 'Sector'}:</strong> <b style={{ color: isDark ? '#CBD5E1' : '#1E293B' }}>{f.oldSector || '-'}</b></div>
+                  <div><strong>PNR:</strong> <b style={{ color: isDark ? '#CBD5E1' : '#1E293B' }}>{f.oldPnr || '-'}</b></div>
+                  <div><strong>{isAr ? 'التاريخ' : 'Date'}:</strong> <b style={{ color: isDark ? '#CBD5E1' : '#1E293B' }}>{f.oldBookingDate || '-'}</b></div>
+                  <div><strong>{isAr ? 'السعر الأصلي' : 'Original Price'}:</strong> <b style={{ color: '#FBBF24' }}>{fmt(f.oldSellPrice)}</b></div>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <strong>{isAr ? 'الركاب' : 'Passengers'}:</strong>
+                    <b style={{ color: isDark ? '#CBD5E1' : '#1E293B', display: 'block', fontSize: '12px', marginTop: '2px' }}>
+                      {f.oldPassengers || '-'}
+                    </b>
+                  </div>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <strong>{isAr ? 'المسترد للعميل' : 'Refunded to customer'}:</strong>
+                    <b style={{ color: '#FBBF24' }}>{fmt(f.refundAmount || 0)}</b>
+                  </div>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <strong>{isAr ? 'السبب' : 'Reason'}:</strong>
+                    <b style={{ color: isDark ? '#CBD5E1' : '#1E293B' }}>{f.refundReason || '-'}</b>
                   </div>
                 </div>
-              )}
-            </div>
-          );
-        })()}
+              </div>
+            )}
+          </div>
+        )}
 
-        {/* Booking Info */}
+        {/* Booking Info, Service Details, Pricing, Payment – same as before */}
         <div style={s.card}>
           <h3 style={s.sectionTitle}>📅 {isAr ? 'معلومات الحجز' : 'Booking Info'}</h3>
           <div style={s.formRow}>
@@ -906,7 +909,6 @@ function CreateInvoiceView(props) {
           </div>
         </div>
 
-        {/* Service Details */}
         <div style={s.card}>
           <h3 style={s.sectionTitle}>🛫 {isAr ? 'تفاصيل الخدمة' : 'Service Details'}</h3>
           <div style={s.formRow}>
@@ -955,7 +957,6 @@ function CreateInvoiceView(props) {
           </div>
         </div>
 
-        {/* Pricing */}
         <div style={s.card}>
           <h3 style={s.sectionTitle}>💰 {isAr ? 'التسعير' : 'Pricing'}</h3>
           <div style={s.formRow}>
@@ -975,7 +976,6 @@ function CreateInvoiceView(props) {
           </div>
         </div>
 
-        {/* Payment */}
         <div style={s.card}>
           <h3 style={s.sectionTitle}>💳 {isAr ? 'الدفع' : 'Payment'}</h3>
           <div style={s.formRow}>
