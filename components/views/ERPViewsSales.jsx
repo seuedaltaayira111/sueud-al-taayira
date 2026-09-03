@@ -316,21 +316,37 @@ export default function ERPViewsSales(props) {
     downloadPDF, getExpenseHTML, getMistakeHTML, fetchAll, setData, setPreviewHTML,
     showToast, userProfile,
     mistakeForm, setMistakeForm,
-    // ===== FIX: Default values for rechargeForm =====
-    rechargeForm = { portal_id: '', amount: '', source: 'Cash', recharge_date: today, reference: '', notes: '' },
-    setRechargeForm = () => {},
-    handleRecharge = () => {},
-    // ===== END FIX =====
+    // ===== FALLBACK FOR RECHARGE =====
+    rechargeForm: propRechargeForm,
+    setRechargeForm: propSetRechargeForm,
+    handleRecharge: propHandleRecharge,
+    // ===== END =====
     getInvoiceHTML, getRefundHTML
   } = props;
 
   const isAr = lang === 'ar';
   const isDark = theme === 'dark';
-
-  // Translation helper for main component
   const t = (key, fallback) => tr?.[key] || fallback || key;
 
-  // ===== STYLES (same as before) =====
+  // ===== LOCAL FALLBACK FOR RECHARGE =====
+  const [localRechargeForm, localSetRechargeForm] = useState({
+    portal_id: '',
+    amount: '',
+    source: 'Cash',
+    recharge_date: today || new Date().toISOString().split('T')[0],
+    reference: '',
+    notes: ''
+  });
+
+  const rechargeForm = propRechargeForm || localRechargeForm;
+  const setRechargeForm = propSetRechargeForm || localSetRechargeForm;
+  const handleRecharge = propHandleRecharge || ((e) => {
+    e.preventDefault();
+    showToast?.(isAr ? '⚠️ Recharge function not available' : '⚠️ Recharge function not available');
+  });
+  // ===== END FALLBACK =====
+
+  // ===== STYLES =====
   const styles = {
     container: {
       padding: '24px',
@@ -1338,7 +1354,7 @@ export default function ERPViewsSales(props) {
   }
 
   // ============================================================
-  // PORTALS (with edit modal and recharge slip) - FIXED
+  // PORTALS (with edit modal and recharge slip) - FIXED with fallback
   // ============================================================
   if (page === 'portals') {
     const totalBalance = (data.portals || []).reduce((s, p) => s + (p.current_balance || 0), 0);
