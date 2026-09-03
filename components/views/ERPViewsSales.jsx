@@ -1338,7 +1338,7 @@ export default function ERPViewsSales(props) {
   }
 
   // ============================================================
-  // PORTALS (with edit modal and recharge slip)
+  // PORTALS (with edit modal and recharge slip) - FIXED
   // ============================================================
   if (page === 'portals') {
     const totalBalance = (data.portals || []).reduce((s, p) => s + (p.current_balance || 0), 0);
