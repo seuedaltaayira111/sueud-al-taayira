@@ -822,12 +822,11 @@ export default function useERPActions(state) {
       if (!portal) throw new Error('Portal not found');
 
       const rechargeDate = rechargeForm.recharge_date || today;
-      // Determine cashbook type: Cash-Out, Bank-Out, or Investor-Out
       let cbType = '';
       if (rechargeForm.source === 'Cash') cbType = 'Cash-Out';
       else if (rechargeForm.source === 'Bank Transfer') cbType = 'Bank-Out';
       else if (rechargeForm.source === 'Investor') cbType = 'Investor-Out';
-      else cbType = 'Cash-Out'; // fallback
+      else cbType = 'Cash-Out';
 
       const { data: rc, error: rcErr } = await supabase.from('recharges').insert([{
         portal_id: rechargeForm.portal_id,
@@ -1471,7 +1470,6 @@ Thank you for choosing us!`;
       serviceName: '',
       creditCustId: ''
     });
-    // Switch to create page
     setPage('create');
   };
 
@@ -1568,7 +1566,7 @@ Thank you for choosing us!`;
           const { data: cue } = await supabase.from('customer_credits').insert([{
             customer_id: cust.id,
             source_invoice_no: invForm.linkedInvId || null,
-            used_invoice_no: null, // filled after invoice creation
+            used_invoice_no: null,
             amount: -usedCredit,
             entry_type: 'Used',
             reason: 'Applied to new booking',
@@ -1696,7 +1694,6 @@ Thank you for choosing us!`;
           if (nCU) newCbEntries.push(nCU);
         }
 
-        // Update credit usage entry with real invoice number
         if (creditUsageEntry) {
           await supabase.from('customer_credits').update({ used_invoice_no: newInv.invoice_no }).eq('id', creditUsageEntry.id);
           creditUsageEntry = { ...creditUsageEntry, used_invoice_no: newInv.invoice_no };
@@ -1714,7 +1711,6 @@ Thank you for choosing us!`;
         showToast(isAr ? '✅ تم إنشاء الفاتورة' : '✅ Invoice Generated');
       }
 
-      // Reset form
       setInvForm({
         custType: 'Individual',
         custId: 'new',
@@ -1778,7 +1774,7 @@ Thank you for choosing us!`;
   };
 
   // ============================================================
-  // STAFF MISTAKES (controlled form)
+  // STAFF MISTAKES
   // ============================================================
   const handleAddMistake = async (e) => {
     e.preventDefault();
@@ -1834,7 +1830,7 @@ Thank you for choosing us!`;
   };
 
   // ============================================================
-  // PAYROLL – FIXED (handles synthetic events properly)
+  // PAYROLL – FIXED (column name)
   // ============================================================
   const handleGenerateSlip = (pay) => {
     const html = getSalarySlipHTML(pay, data.settings, lang);
@@ -1860,9 +1856,6 @@ Thank you for choosing us!`;
     }
   };
 
-  // ============================================================
-  // handleProcessPayroll – FIXED to handle synthetic events
-  // ============================================================
   const handleProcessPayroll = async (e) => {
     e.preventDefault();
     try {
@@ -1884,7 +1877,6 @@ Thank you for choosing us!`;
 
       const base = parseFloat(emp.salary) || 0;
 
-      // Commission from invoices
       const monthInvoices = data.invoices?.filter(i =>
         i.employee_id === empId &&
         i.invoice_date?.startsWith(month) &&
@@ -1894,7 +1886,6 @@ Thank you for choosing us!`;
       const commissionRate = parseFloat(emp.commission_rate) || 0;
       const commissionAmt = commissionBase * (commissionRate / 100);
 
-      // Auto-deduct pending advances
       const pendingAdvances = (data.empAdvances || []).filter(a => a.employee_id === empId && a.status === 'Pending');
       const totalPendingAdvance = pendingAdvances.reduce((sum, a) => sum + (a.amount || 0), 0);
 
@@ -1916,6 +1907,7 @@ Thank you for choosing us!`;
       const gross = base + commissionAmt + overtime + gift;
       const netPay = gross - totalDed;
 
+      // ✅ FIXED: Use correct column name 'advance' instead of 'advance_deduction'
       const { data: newPay, error } = await supabase
         .from('payroll')
         .insert([{
@@ -1925,7 +1917,7 @@ Thank you for choosing us!`;
           commission: commissionAmt,
           overtime,
           gift,
-          advance_deduction: advanceDed,
+          advance: advanceDed,               // ✅ column name fixed
           mistakes_deduction: mistakesDed,
           other_deduction: otherDed,
           gross_salary: gross,
